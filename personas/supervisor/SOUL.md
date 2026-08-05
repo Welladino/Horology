@@ -30,6 +30,11 @@ Notes:
 - `delegate_task` does not let you restrict a subagent's tools — it inherits whatever you have enabled. So the persona's own stated boundaries (what it should and shouldn't do) are the only real constraint. Don't delegate a task that pushes a subagent outside its persona's stated scope.
 - If a task doesn't clearly fit any listed subagent, don't force a delegation — handle it yourself or ask the founder which lens applies.
 - Never paste a subagent's full persona text into your own memory/journal entries — reference it by name/file instead. Personas can grow and change; don't let stale copies accumulate in your memory.
+- **Do not trust `delegate_task`'s returned summary as the subagent's full answer.** There is a known bug where it gets truncated. Every subagent persona is instructed to write its real output via the `write_document` tool instead and report back only a pointer. After a delegation returns, use `get_document` or `list_documents` (document-graph tools) to retrieve the actual full content if you need it — don't relay a truncated summary to the founder as if it were complete.
+
+## Document graph
+
+You have access to a `document-graph` tool (`write_document`, `link_documents`, `get_document`, `list_documents`) connected to Horology's own Postgres database — separate from your own memory/journal. Use it for anything that's a real, findable artifact (a recommendation, a piece of content, a research finding, a status report worth keeping) — not for ordinary conversation. `doc_type` must be one of `recommendation | content | analysis | report`. This is also where you retrieve a delegated subagent's real output (see Delegation notes above).
 
 ## What you do on each scheduled run
 

@@ -13,10 +13,10 @@ The Neon connection string (`DATABASE_URL_POOLED`) lives only in this container'
 
 ## Running it
 
-It's a service in `docker-compose.yml` (`document-graph-mcp`), built from `mcp-servers/document-graph/`. It idles (`sleep infinity`) rather than running as a standalone daemon — the actual MCP server process is invoked per-connection via `docker exec`, matching how `hermes mcp serve` itself works (stdio transport, no exposed port).
+It's a service in `docker-compose.yml` (`document-graph-mcp`), built from `mcp-servers/document-graph/`. It runs `streamable-http` transport on port `8765`, **not published to the host** — reachable only from other containers on the same Docker Compose network, by service name (`http://document-graph-mcp:8765/mcp`).
 
 ```bash
-# Build + start (idling, ready for exec)
+# Build + start
 docker compose up -d document-graph-mcp
 
 # Rebuild after changing server.py or requirements.txt
@@ -24,24 +24,35 @@ docker compose build document-graph-mcp
 docker compose up -d document-graph-mcp
 ```
 
+### Why HTTP-on-internal-network instead of stdio-via-docker-exec
+
+The original plan was stdio transport, with Hermes reaching it via `docker exec -i horology-document-graph-mcp python server.py` (matching how `hermes mcp serve` itself works). That requires mounting `/var/run/docker.sock` into Hermes's own container — which gives that container control over *every* container on the host, not just this one. Rejected as too broad a permission grant for an autonomous agent container. `streamable-http` with no host port published gives the same practical isolation (Hermes can reach only this one service, nothing else) without the Docker-socket escalation.
+
 ## Testing it directly (without a real MCP client)
 
-The server speaks JSON-RPC over stdio. You can hand-test it, but a heredoc that closes stdin immediately after the last line will kill the process before an async tool-call response is flushed back — use a persistent stdin (e.g. a subshell with a trailing `sleep`) instead:
-
 ```bash
-(
-echo '{"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2024-11-05", "capabilities": {}, "clientInfo": {"name": "test-client", "version": "1.0"}}}'
-echo '{"jsonrpc": "2.0", "method": "notifications/initialized"}'
-echo '{"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}'
-sleep 2
-) | docker exec -i horology-document-graph-mcp python server.py
-```
+# Confirm it's NOT reachable from the host (should fail to connect):
+curl -sS http://localhost:8765/mcp
 
-Known gotcha found during setup: if stdin closes before the response is flushed, the tool call can still have executed server-side (e.g. a `write_document` call that appears to "hang" may have already committed the row) — don't assume a missing response means nothing happened. Check the DB directly if unsure.
+# Confirm it IS reachable from Hermes's container (400 is fine — that's the
+# server correctly rejecting a bare GET without proper MCP session headers,
+# not a networking failure):
+docker exec horology-hermes curl -sS -o /dev/null -w "%{http_code}\n" http://document-graph-mcp:8765/mcp
+```
 
 ## Connecting Hermes to it
 
-Not yet wired up. Planned: register it as an MCP server Hermes can call via `hermes mcp add`, using `docker exec -i horology-document-graph-mcp python server.py` as the command (same stdio-subprocess pattern as the Claude-to-Hermes bridge documented in the founding-decisions and subagent-design notes).
+```bash
+printf "n\ny\n" | docker exec -i horology-hermes hermes mcp add document-graph --url http://document-graph-mcp:8765/mcp
+```
+
+The `printf "n\ny\n"` answers two interactive prompts non-interactively: "Does this server require authentication?" (no) and "Enable all N tools?" (yes). Verify with:
+
+```bash
+docker exec horology-hermes hermes mcp list
+```
+
+Verified end-to-end through Hermes itself (not just the raw protocol test above): asked Second-Soul directly whether the tool was available, and it correctly discovered and called `list_documents`.
 
 ## Dependency pinning
 

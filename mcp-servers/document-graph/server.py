@@ -139,4 +139,9 @@ def list_documents(doc_type: str | None = None, limit: int = 20) -> list[dict]:
 
 
 if __name__ == "__main__":
-    mcp.run(transport="stdio")
+    # streamable-http, bound to 0.0.0.0 *inside this container only* - no
+    # host port is published for this service (see docker-compose.yml), so
+    # it's reachable exclusively from other containers on the same Docker
+    # network, by service name. This avoids mounting the Docker socket into
+    # Hermes's container just to reach this one via `docker exec`.
+    mcp.run(transport="streamable-http", host="0.0.0.0", port=8765)

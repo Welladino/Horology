@@ -3,11 +3,11 @@ services:
     build: ./mcp-servers/document-graph
     container_name: horology-document-graph-mcp
     restart: unless-stopped
-    # Idles - the actual MCP server (server.py) is invoked per-connection via
-    # `docker exec -i horology-document-graph-mcp python server.py`, not as a
-    # standalone daemon. This keeps a built, ready container available for
-    # that exec without exposing a network port.
-    entrypoint: ["sleep", "infinity"]
+    # No `ports:` here deliberately - not published to the host at all.
+    # Reachable only from other containers on this compose network, by
+    # service name (http://document-graph-mcp:8765/mcp), which is how the
+    # hermes service connects to it. Avoids mounting the Docker socket into
+    # Hermes's container just to reach this one via `docker exec`.
     environment:
       - DATABASE_URL_POOLED=${DATABASE_URL_POOLED:?set DATABASE_URL_POOLED in .env}
 
