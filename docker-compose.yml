@@ -5,8 +5,8 @@ services:
     restart: unless-stopped
     command: gateway run
     ports:
-      - "8642:8642"   # OpenAI-compatible API + health endpoint
-      - "9119:9119"   # Web dashboard
+      - "127.0.0.1:8642:8642"   # OpenAI-compatible API + health endpoint (localhost only — no auth on this port)
+      - "127.0.0.1:9119:9119"   # Web dashboard (localhost only)
     volumes:
       - ./hermes-data:/opt/data
     environment:
