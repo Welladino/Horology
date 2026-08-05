@@ -57,6 +57,24 @@ The dashboard gives you a browser-based chat with the running agent, plus visibi
 
 The agent's OpenAI-compatible API also runs on port `8642` (no dashboard auth on that port by default — see Hermes's own docs before exposing it beyond `localhost`).
 
+## Syncing personas into the running container
+
+Persona files (e.g. `personas/supervisor/SOUL.md`) are authored and version-controlled in this repo, then copied into the running container's `hermes-data/` — Hermes reads `SOUL.md` from `/opt/data/SOUL.md`, which is *not* the same as the repo's `personas/supervisor/SOUL.md` until you sync it.
+
+After editing a persona file in the repo:
+
+```bash
+docker cp personas/supervisor/SOUL.md horology-hermes:/opt/data/SOUL.md
+```
+
+Verify it took effect:
+
+```bash
+docker exec horology-hermes hermes chat -q "In one sentence, who are you and what's your role?"
+```
+
+There is currently no automatic sync (no file watcher) — this is a manual step after every persona edit. Worth revisiting once there are enough personas/subagents that manual `docker cp` per file becomes tedious.
+
 ### Troubleshooting
 
 - **Container won't start / immediately exits:** `docker compose logs hermes` — usually a malformed `hermes-data/config.yaml` or a missing required env var (Compose will error clearly if `DASHBOARD_PASSWORD` isn't set, since it's marked required in `docker-compose.yml`).
