@@ -59,5 +59,5 @@ Investigating Hermes's actual delegation API before designing (a) avoided buildi
 
 - If NousResearch/hermes-agent#9459 (native agent profiles for `delegate_task`) ships, revisit whether to migrate off the repo-file-context-injection workaround onto the native mechanism.
 - Decide GitHub monitoring scope precisely (which repo(s), which signals) before minting the PAT — not yet decided, just the access pattern.
-- Neon DB not yet created — (c) is designed but not implemented.
+- ~~Neon DB not yet created~~ — done 2026-08-05: schema applied (`documents`/`document_links`/`run_log`), see `docs/runbook/db/alembic_workflow.md`. (c) still needs the actual script-only cron job wired up.
 - GCP service account for (d) not yet created — likely reuse/mirror the least-privilege patterns already documented in `Article_aggregator_agent`'s `docs/planning/notes/2026-07-20_trackD-D4d-phaseC-keyless-deployment-identities.md` and related G-track notes rather than reinventing GCP access design from scratch.
