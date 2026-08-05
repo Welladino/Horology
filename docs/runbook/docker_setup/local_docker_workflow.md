@@ -59,21 +59,30 @@ The agent's OpenAI-compatible API also runs on port `8642` (no dashboard auth on
 
 ## Syncing personas into the running container
 
-Persona files (e.g. `personas/supervisor/SOUL.md`) are authored and version-controlled in this repo, then copied into the running container's `hermes-data/` — Hermes reads `SOUL.md` from `/opt/data/SOUL.md`, which is *not* the same as the repo's `personas/supervisor/SOUL.md` until you sync it.
+Persona files (`personas/supervisor/SOUL.md`, `personas/subagents/*.md`) are authored and version-controlled in this repo, then copied into the running container's `hermes-data/` — Hermes reads them from `/opt/data/...`, which is *not* the same as the repo copies until you sync.
 
-After editing a persona file in the repo:
+After editing any persona file in the repo:
 
 ```bash
+# Supervisor
 docker cp personas/supervisor/SOUL.md horology-hermes:/opt/data/SOUL.md
+
+# Subagent personas + index (whole folder)
+docker exec horology-hermes mkdir -p /opt/data/personas/subagents
+docker cp personas/subagents/. horology-hermes:/opt/data/personas/subagents/
 ```
 
 Verify it took effect:
 
 ```bash
-docker exec horology-hermes hermes chat -q "In one sentence, who are you and what's your role?"
+docker exec horology-hermes hermes chat -q "What subagents are available to you and what's each one's scope, in one line each?"
 ```
 
 There is currently no automatic sync (no file watcher) — this is a manual step after every persona edit. Worth revisiting once there are enough personas/subagents that manual `docker cp` per file becomes tedious.
+
+### Why persona files use absolute paths (`/opt/data/...`), not relative ones
+
+`SOUL.md`'s own instructions reference `/opt/data/personas/subagents/INDEX.md` as an absolute path deliberately, not `personas/subagents/INDEX.md`. The agent's file-tool working directory is `/opt/hermes` (Hermes's own installed codebase), not `/opt/data` (our mounted volume) — a relative path resolves against the wrong root and the agent will report the file "doesn't exist." Confirmed by testing: the first version of this instruction (relative path) failed with exactly that error; switching to the absolute `/opt/data/...` path fixed it. Any future persona/index file that references another file by path should use the full `/opt/data/...` form.
 
 ### Troubleshooting
 
