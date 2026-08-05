@@ -4,14 +4,16 @@ How the document-graph database (Neon Postgres: `documents`, `document_links`, `
 
 ## One-time setup
 
+One shared venv at the repo root covers Alembic and editor/import resolution for `mcp-servers/` — not a separate venv per component.
+
 ```bash
 cd Horology
 python3 -m venv .venv
 source .venv/bin/activate
-pip install alembic psycopg2-binary python-dotenv
+pip install -r requirements-dev.txt
 ```
 
-`.venv/` is gitignored — every machine that runs migrations sets this up locally, it's not committed.
+`.venv/` is gitignored — every machine that runs migrations sets this up locally, it's not committed. Point your editor's Python interpreter at `Horology/.venv/bin/python` for the whole repo, including files under `mcp-servers/`.
 
 ## Connection strings — direct vs. pooled, and why both exist
 
