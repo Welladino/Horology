@@ -7,6 +7,8 @@ Working area for research and implementation notes on Horology itself (the super
 - `docs/planning/research/` - discovery briefs: open questions, options considered, recommendation
 - `docs/planning/notes/` - implementation notes: decisions made, rationale, what changed and why
 - `docs/planning/templates/` - reusable templates for the above
+- `docs/architecture/` - standing, current-state design reference (updated in place, not dated)
+- `docs/archive/` - completed/superseded planning docs, moved here once done
 
 ## Recommended File Naming
 
@@ -22,3 +24,7 @@ Working area for research and implementation notes on Horology itself (the super
 ## Research Index
 
 - `docs/planning/research/index/HOROLOGY_RESEARCH_INDEX.md`
+
+## Archive Index
+
+- `docs/archive/index/HOROLOGY_ARCHIVE_INDEX.md`
