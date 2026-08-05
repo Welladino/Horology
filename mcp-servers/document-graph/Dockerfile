@@ -1,4 +1,7 @@
-FROM python:3.12-slim
+# Matches local dev Python (3.14) for consistency across this project's
+# tooling — no technical requirement to use this specific version, the
+# mcp SDK and psycopg2-binary both work fine on 3.12+ too.
+FROM python:3.14-slim
 
 WORKDIR /app
 
