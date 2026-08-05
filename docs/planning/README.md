@@ -9,6 +9,7 @@ Working area for research and implementation notes on Horology itself (the super
 - `docs/planning/templates/` - reusable templates for the above
 - `docs/architecture/` - standing, current-state design reference (updated in place, not dated)
 - `docs/archive/` - completed/superseded planning docs, moved here once done
+- `docs/runbook/` - practical how-to operational docs (setup, day-to-day commands), organized by topic subfolder
 
 ## Recommended File Naming
 

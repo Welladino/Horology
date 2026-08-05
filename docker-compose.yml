@@ -1,0 +1,18 @@
+services:
+  hermes:
+    image: nousresearch/hermes-agent:latest
+    container_name: horology-hermes
+    restart: unless-stopped
+    command: gateway run
+    ports:
+      - "8642:8642"   # OpenAI-compatible API + health endpoint
+      - "9119:9119"   # Web dashboard
+    volumes:
+      - ./hermes-data:/opt/data
+    environment:
+      - HERMES_DASHBOARD=1
+      - HERMES_DASHBOARD_HOST=0.0.0.0
+      - HERMES_DASHBOARD_BASIC_AUTH_USERNAME=${DASHBOARD_USERNAME:-admin}
+      - HERMES_DASHBOARD_BASIC_AUTH_PASSWORD=${DASHBOARD_PASSWORD:?set DASHBOARD_PASSWORD in .env}
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}

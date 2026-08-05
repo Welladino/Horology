@@ -1,1 +1,6 @@
 .DS_Store
+
+# Hermes container state — API keys, sessions, memories. Never commit.
+hermes-data/
+.env
+
