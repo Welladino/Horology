@@ -4,3 +4,8 @@
 hermes-data/
 .env
 
+# Python virtualenv for Alembic/DB tooling
+.venv/
+__pycache__/
+*.pyc
+
