@@ -10,10 +10,12 @@ One shared venv at the repo root covers Alembic and editor/import resolution for
 cd Horology
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements-dev.txt
+pip install -r requirements-dev.lock.txt
 ```
 
 `.venv/` is gitignored — every machine that runs migrations sets this up locally, it's not committed. Point your editor's Python interpreter at `Horology/.venv/bin/python` for the whole repo, including files under `mcp-servers/`.
+
+Install from `requirements-dev.lock.txt` (the full pinned set, direct + transitive), not `requirements-dev.txt` (the short human-edited list of what's actually depended on directly) — the lockfile guarantees the exact same versions get installed on any machine, rather than whatever the latest compatible transitive versions happen to be at install time. If you add/change a direct dependency, edit `requirements-dev.txt`, then regenerate the lockfile (`pip install -r requirements-dev.txt && pip freeze > requirements-dev.lock.txt`) and re-run the test suite before committing both files.
 
 ## Connection strings — direct vs. pooled, and why both exist
 
