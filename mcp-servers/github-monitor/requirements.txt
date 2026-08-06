@@ -1,0 +1,4 @@
+# Pinned exact, not >=: see mcp-servers/document-graph/requirements.txt for
+# why (the mcp SDK's API changed between versions during this project).
+mcp==2.0.0
+httpx==0.28.1
