@@ -9,3 +9,4 @@ Running list of research briefs under `docs/planning/research/`. Add a row when 
 | 2026-08-06 | Hardening/config options (token cap, fallback model, toolsets, isolation) | `2026-08-06_hardening-config-options_research.md` |
 | 2026-08-06 | MCP transport isolation (Docker socket vs. HTTP) | `2026-08-06_mcp-transport-isolation_research.md` |
 | 2026-08-06 | Kanban timeout signaling | `2026-08-06_kanban-timeout-signaling_research.md` |
+| 2026-08-06 | Tavily feature surface (crawl/map/sheets) and web search fallback | `2026-08-06_tavily-feature-surface-and-web-fallback_research.md` |
