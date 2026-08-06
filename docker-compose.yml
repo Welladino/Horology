@@ -10,6 +10,7 @@ services:
     # Hermes's container just to reach this one via `docker exec`.
     environment:
       - DATABASE_URL_POOLED=${DATABASE_URL_POOLED:?set DATABASE_URL_POOLED in .env}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:?set OPENROUTER_API_KEY in .env}
 
   github-monitor-mcp:
     build: ./mcp-servers/github-monitor

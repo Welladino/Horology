@@ -1,12 +1,18 @@
-"""MCP server exposing exactly four operations against Horology's document
-graph (documents / document_links / run_log on Neon Postgres).
+"""MCP server exposing operations against Horology's document graph
+(documents / document_links / document_embeddings / run_log on Neon
+Postgres), plus embedding-based auto-linking of similar documents.
 
 No arbitrary SQL is exposed to callers. Every tool runs one fixed,
 parameterized query. The DB connection string lives only in this process's
-environment (DATABASE_URL_POOLED) - callers never see it.
+environment (DATABASE_URL_POOLED) - callers never see it. Embeddings go
+through OpenRouter (reusing the same key Hermes uses for chat - OpenRouter
+proxies google/gemini-embedding-001 via an OpenAI-compatible /v1/embeddings
+endpoint), not a separate Gemini/GCP key - see
+docs/planning/notes/2026-08-06_auto-link-similar-documents_note.md.
 """
 import os
 
+import httpx
 import psycopg2
 import psycopg2.extras
 from mcp.server.mcpserver import MCPServer
@@ -17,11 +23,41 @@ DATABASE_URL = os.environ.get("DATABASE_URL_POOLED")
 if not DATABASE_URL:
     raise RuntimeError("DATABASE_URL_POOLED is not set in this server's environment.")
 
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
+EMBED_MODEL = os.environ.get("EMBED_MODEL", "google/gemini-embedding-001")
+OPENROUTER_EMBEDDINGS_URL = "https://openrouter.ai/api/v1/embeddings"
+
 mcp = MCPServer("horology-document-graph")
 
 
 def _connect():
     return psycopg2.connect(DATABASE_URL)
+
+
+EMBED_DIMENSIONS = 768  # must match the document_embeddings.embedding column's vector(N) width
+
+
+def _embed(text: str) -> list[float]:
+    """Embed text via OpenRouter's OpenAI-compatible /v1/embeddings endpoint.
+    Raises if OPENROUTER_API_KEY is unset or the request fails - callers
+    should let this propagate as a tool error rather than silently skip
+    auto-linking.
+
+    `dimensions` is undocumented on OpenRouter's embeddings endpoint but
+    verified working live (passed through to Gemini's native
+    output_dimensionality) - the model's un-truncated output is 3072 dims,
+    which exceeds pgvector's 2000-dim HNSW index limit, so this is required,
+    not optional."""
+    if not OPENROUTER_API_KEY:
+        raise RuntimeError("OPENROUTER_API_KEY is not set in this server's environment.")
+    resp = httpx.post(
+        OPENROUTER_EMBEDDINGS_URL,
+        headers={"Authorization": f"Bearer {OPENROUTER_API_KEY}"},
+        json={"model": EMBED_MODEL, "input": text, "dimensions": EMBED_DIMENSIONS},
+        timeout=30,
+    )
+    resp.raise_for_status()
+    return resp.json()["data"][0]["embedding"]
 
 
 @mcp.tool()
@@ -136,6 +172,75 @@ def list_documents(doc_type: str | None = None, limit: int = 20) -> list[dict]:
             d["created_at"] = d["created_at"].isoformat()
             results.append(d)
         return results
+
+
+@mcp.tool()
+def auto_link_similar_documents(document_id: int, threshold: float = 0.85) -> dict:
+    """Embed a document and compare it against all other documents' stored
+    embeddings, creating a 'related_to' link (via link_documents) for any
+    pair scoring above the cosine-similarity threshold (0-1, default 0.85).
+
+    Call this once after writing a new document, passing its id. Backfills
+    the document's own embedding first if it doesn't have one yet.
+    Idempotent - re-running for the same document just re-checks and
+    re-creates any missing links; existing links are never duplicated.
+    Returns which document ids (if any) were newly linked.
+    """
+    with _connect() as conn, conn.cursor() as cur:
+        cur.execute("SELECT content FROM documents WHERE id = %s", (document_id,))
+        row = cur.fetchone()
+        if row is None:
+            raise ValueError(f"No document with id {document_id}")
+        content = row[0]
+
+        cur.execute(
+            "SELECT embedding FROM document_embeddings WHERE document_id = %s",
+            (document_id,),
+        )
+        existing = cur.fetchone()
+        if existing is None or existing[0] is None:
+            embedding = _embed(content)
+            cur.execute(
+                """
+                INSERT INTO document_embeddings (document_id, embedding)
+                VALUES (%s, %s)
+                ON CONFLICT (document_id) DO UPDATE SET embedding = EXCLUDED.embedding
+                """,
+                (document_id, embedding),
+            )
+            conn.commit()
+
+        cur.execute(
+            """
+            SELECT document_id, 1 - (embedding <=> (
+                SELECT embedding FROM document_embeddings WHERE document_id = %s
+            )) AS similarity
+            FROM document_embeddings
+            WHERE document_id != %s AND embedding IS NOT NULL
+            ORDER BY similarity DESC
+            """,
+            (document_id, document_id),
+        )
+        candidates = cur.fetchall()
+
+        linked = []
+        for other_id, similarity in candidates:
+            if similarity < threshold:
+                continue
+            cur.execute(
+                """
+                INSERT INTO document_links (from_doc_id, to_doc_id, relation)
+                VALUES (%s, %s, 'related_to')
+                ON CONFLICT (from_doc_id, to_doc_id, relation) DO NOTHING
+                RETURNING id
+                """,
+                (document_id, other_id),
+            )
+            if cur.fetchone() is not None:
+                linked.append({"document_id": other_id, "similarity": round(float(similarity), 4)})
+        conn.commit()
+
+        return {"document_id": document_id, "newly_linked": linked, "candidates_checked": len(candidates)}
 
 
 if __name__ == "__main__":

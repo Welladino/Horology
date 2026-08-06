@@ -42,7 +42,8 @@ Any subagent (or Second-Soul itself) that produces a **finished, substantive out
 **Conventions, enforced in every subagent persona:**
 - Write the **full** answer as `content` — assume it's read standalone.
 - Set `created_by_agent` to the profile name.
-- Use `supersedes_id` when a document replaces an earlier one's conclusion; `link_documents` (with a `relation` like `related_to`/`informed_by`/`contradicts`) when two documents are connected but neither replaces the other.
+- Use `supersedes_id` when a document replaces an earlier one's conclusion; `link_documents` (with a `relation` like `informed_by`/`contradicts`) for a specific relationship you know, distinct from generic similarity.
+- **Call `auto_link_similar_documents` with the new document's id immediately after every `write_document`** — this embeds the document and auto-creates `related_to` links to any existing document above a similarity threshold, catching related documents that share almost no vocabulary (which `link_documents` called manually would likely miss). This is the default linking mechanism now, not optional.
 - A kanban task must still call `kanban_complete`/`kanban_block` after writing a document — the two systems are separate. Keep the kanban summary brief (a pointer to the document id/title), not a duplicate of the content.
 
 ## Working in This Repo — Quick Notes

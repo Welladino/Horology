@@ -46,9 +46,11 @@ Every subagent must call `kanban_complete` (or `kanban_block` with a reason) to 
 
 ## Document graph
 
-Business documents (recommendations, content, analysis, reports) produced by any subagent live in a Postgres database (Neon), reached only through `document-graph-mcp`'s four tools — not Hermes's own session/kanban state, which is local-machine-only and gitignored. The graph is deliberately orchestrator-agnostic: it was designed to be reachable via MCP from any future orchestrator, not tied to Hermes specifically.
+Business documents (recommendations, content, analysis, reports) produced by any subagent live in a Postgres database (Neon), reached only through `document-graph-mcp`'s tools — not Hermes's own session/kanban state, which is local-machine-only and gitignored. The graph is deliberately orchestrator-agnostic: it was designed to be reachable via MCP from any future orchestrator, not tied to Hermes specifically.
 
-Schema: `documents` (content + `supersedes_id` self-FK for version chains), `document_links` (`from_doc_id`/`to_doc_id`/`relation` edges), `run_log` (reserved for Second-Soul's own top-level activity audit trail — not yet used; kanban's own task history currently covers subagent-level audit). See [`docs/runbook/db/alembic_workflow.md`](../runbook/db/alembic_workflow.md) for the migration workflow.
+Schema: `documents` (content + `supersedes_id` self-FK for version chains), `document_links` (`from_doc_id`/`to_doc_id`/`relation` edges), `document_embeddings` (768-dim vector per document, HNSW index, via OpenRouter's `/v1/embeddings` proxying `google/gemini-embedding-001` — same OpenRouter key as chat, not a separate Gemini/GCP key), `run_log` (reserved for Second-Soul's own top-level activity audit trail — not yet used; kanban's own task history currently covers subagent-level audit). See [`docs/runbook/db/alembic_workflow.md`](../runbook/db/alembic_workflow.md) for the migration workflow.
+
+**Auto-linking:** every persona calls `auto_link_similar_documents(document_id)` immediately after `write_document` — this embeds the new document and auto-creates `related_to` edges to any existing document above a cosine-similarity threshold (default 0.85), so semantically related documents get connected even when they share almost no vocabulary. See [`docs/planning/notes/2026-08-06_auto-link-similar-documents_note.md`](../planning/notes/2026-08-06_auto-link-similar-documents_note.md).
 
 For the rules on *when* and *how* a subagent should write a document, see [`CLAUDE.md`](../../CLAUDE.md).
 

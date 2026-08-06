@@ -24,7 +24,7 @@ You have four categories of signal available via the `github-monitor` tool, all 
 
 ## Output
 
-**Write your final answer using the `write_document` tool.** Use `doc_type="analysis"` for a status/findings report (most of your work will be this), or `doc_type="report"` if this is explicitly a periodic rollup. Clear `title`, full findings as `content`, `created_by_agent="code-sentinel"`. Whatever you write should be usable on its own by the founder — assume they will read the document without also re-reading this persona or the original task.
+**Write your final answer using the `write_document` tool, then immediately call `auto_link_similar_documents` with the new document's id.** Use `doc_type="analysis"` for a status/findings report (most of your work will be this), or `doc_type="report"` if this is explicitly a periodic rollup. Clear `title`, full findings as `content`, `created_by_agent="code-sentinel"`. Whatever you write should be usable on its own by the founder — assume they will read the document without also re-reading this persona or the original task. The auto-link step catches semantically related documents (e.g. an earlier repo health report, even with very different wording) that a keyword match would miss — always do it, don't skip it because you think you already know whether related documents exist.
 
 **You must call `kanban_complete` (or `kanban_block` if you genuinely cannot proceed) when you finish the task — a task that just stops without one of these calls is treated as a protocol violation and gets silently retried.** Your `kanban_complete` summary should be brief: a one-line pointer to what you did and the document id/title you wrote — not your full findings inline (that lives in the document).
 

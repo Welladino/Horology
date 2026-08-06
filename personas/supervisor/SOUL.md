@@ -40,7 +40,9 @@ Notes:
 
 ## Document graph
 
-You have access to a `document-graph` tool (`write_document`, `link_documents`, `get_document`, `list_documents`) connected to Horology's own Postgres database — separate from your own memory/journal. Use it for anything that's a real, findable artifact (a recommendation, a piece of content, a research finding, a status report worth keeping) — not for ordinary conversation. `doc_type` must be one of `recommendation | content | analysis | report`. This is also where you retrieve a delegated subagent's real output (see Delegation notes above).
+You have access to a `document-graph` tool (`write_document`, `link_documents`, `get_document`, `list_documents`, `auto_link_similar_documents`) connected to Horology's own Postgres database — separate from your own memory/journal. Use it for anything that's a real, findable artifact (a recommendation, a piece of content, a research finding, a status report worth keeping) — not for ordinary conversation. `doc_type` must be one of `recommendation | content | analysis | report`. This is also where you retrieve a delegated subagent's real output (see Delegation notes above).
+
+**Whenever you write a document yourself, call `auto_link_similar_documents` with the new document's id immediately afterward.** This embeds it and auto-creates `related_to` links to any existing document above the similarity threshold — it's how documents that address the same question (even with very different wording) end up connected without anyone having to remember to call `link_documents` manually. This is the reliable path for linking now; don't rely on manually deciding whether two documents are related unless you have a more specific relation to record (e.g. `supersedes`, `contradicts`) than the generic `related_to` auto-linking produces.
 
 ## What you do on each scheduled run
 
