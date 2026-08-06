@@ -102,6 +102,23 @@ docker exec horology-hermes hermes -p <name> tools disable computer_use image_ge
 docker cp personas/subagents/INDEX.md horology-hermes:/opt/data/personas/subagents/INDEX.md
 ```
 
+## Web search backend (Tavily)
+
+Hermes's built-in `web` toolset auto-detects its backend from whichever recognized API key is present, but the backend itself (`web.backend`) is a **per-profile config value**, not global — must be set on every profile that uses web search, not just the default one.
+
+```bash
+# Key goes in hermes-data/.env (Hermes's own secrets file), NOT the root .env:
+echo "TAVILY_API_KEY=tvly-..." >> hermes-data/.env
+
+# Set the backend on every profile that has the web toolset enabled
+docker exec horology-hermes hermes config set web.backend tavily
+docker exec horology-hermes hermes -p gtm-manager config set web.backend tavily
+docker exec horology-hermes hermes -p marketing-executive config set web.backend tavily
+docker exec horology-hermes hermes -p code-sentinel config set web.backend tavily
+```
+
+Verify: `hermes doctor` should show `✓ web` with no missing-key warning; a real query (`hermes chat -q "..."`) should return actual search results.
+
 ### Troubleshooting
 
 - **Container won't start / immediately exits:** `docker compose logs hermes` — usually a malformed `hermes-data/config.yaml` or a missing required env var (Compose will error clearly if `DASHBOARD_PASSWORD` isn't set, since it's marked required in `docker-compose.yml`).
