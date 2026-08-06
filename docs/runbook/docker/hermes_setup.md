@@ -115,7 +115,15 @@ docker exec horology-hermes hermes config set web.backend tavily
 docker exec horology-hermes hermes -p gtm-manager config set web.backend tavily
 docker exec horology-hermes hermes -p marketing-executive config set web.backend tavily
 docker exec horology-hermes hermes -p code-sentinel config set web.backend tavily
+
+# Cap searches per turn (native guardrail, blocks cleanly with an explanation once hit)
+docker exec horology-hermes hermes config set tool_loop_guardrails.loop_caps.max_web_searches 10
+docker exec horology-hermes hermes -p gtm-manager config set tool_loop_guardrails.loop_caps.max_web_searches 10
+docker exec horology-hermes hermes -p marketing-executive config set tool_loop_guardrails.loop_caps.max_web_searches 10
+docker exec horology-hermes hermes -p code-sentinel config set tool_loop_guardrails.loop_caps.max_web_searches 10
 ```
+
+Hermes has no fallback web-search backend and no crawl/map/sheets tools wired in (Tavily's basic search/extract only) — see [`docs/planning/research/2026-08-06_tavily-feature-surface-and-web-fallback_research.md`](../../planning/research/2026-08-06_tavily-feature-surface-and-web-fallback_research.md).
 
 Verify: `hermes doctor` should show `✓ web` with no missing-key warning; a real query (`hermes chat -q "..."`) should return actual search results.
 
