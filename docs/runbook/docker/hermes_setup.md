@@ -96,7 +96,10 @@ printf "n\ny\n" | docker exec -i horology-hermes hermes -p <name> mcp add docume
 
 # Trim skills/tools to the minimum justified for its role
 printf "y\n" | docker exec -i horology-hermes hermes -p <name> skills opt-out --remove --yes
-docker exec horology-hermes hermes -p <name> tools disable computer_use image_gen video_gen video bfl vision homeassistant spotify yuanbao tts stt x_search code_execution terminal delegation cronjob
+docker exec horology-hermes hermes -p <name> tools disable computer_use image_gen video_gen video bfl vision homeassistant spotify yuanbao tts stt x_search code_execution terminal delegation cronjob browser
+
+# Cap web searches (native guardrail — see "Web search backend" section below)
+docker exec horology-hermes hermes -p <name> config set tool_loop_guardrails.loop_caps.max_web_searches 10
 
 # Add a row to personas/subagents/INDEX.md in the repo, then sync it
 docker cp personas/subagents/INDEX.md horology-hermes:/opt/data/personas/subagents/INDEX.md

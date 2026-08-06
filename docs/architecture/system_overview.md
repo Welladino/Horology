@@ -65,3 +65,24 @@ For the rules on *when* and *how* a subagent should write a document, see [`CLAU
 | `code-sentinel` | CI/PR/security monitoring for `Article_aggregator_agent` | document-graph + github-monitor |
 
 Planned, not yet built: a combined DevOps/Infra subagent covering GCP and Supabase monitoring.
+
+## Toolset and caps
+
+Second-Soul has the broadest toolset; the three subagents share an identical, further-trimmed set (no `terminal`, `code_execution`, `browser`, `delegation`, `cronjob` — none of their actual work needs shell/code execution or browser automation, and `delegation`/`cronjob` don't fit their "only act when assigned a kanban task" role).
+
+| Tool | Second-Soul | Subagents | Native cap? |
+|---|---|---|---|
+| `web_search` | ✓ | ✓ | ✓ 10 calls/turn (`tool_loop_guardrails.loop_caps.max_web_searches`) |
+| `web_extract` | ✓ | ✓ | ✗ none — Hermes has no equivalent key for extract, confirmed by testing (`config set` flags it unrecognized) |
+| `browser` | ✗ disabled | ✗ disabled | — |
+| `terminal` | ✗ disabled | ✗ disabled | — |
+| `code_execution` | ✗ disabled | ✗ disabled | — |
+| `file` | ✓ | ✓ | ✗ none (but single-read size is bounded by `file_read_max_chars`, default 100k) |
+| `skills`, `todo`, `memory`, `session_search`, `clarify` | ✓ | ✓ | ✗ none |
+| `delegation` | ✓ (unused — kanban replaced `delegate_task`) | ✗ disabled | ✓ `delegation.max_iterations` (50), effectively moot now |
+| `cronjob` | ✓ | ✗ disabled | — |
+| `document-graph` MCP (4 tools) | ✓ | ✓ | ✗ none |
+| `github-monitor` MCP (8 tools) | ✓ | `code-sentinel` only | ✗ none |
+| **`agent.max_turns`** (overall ceiling, all tools combined) | 150 | 50 | ✓ per turn |
+
+**No general per-tool call-count mechanism exists in Hermes** — `tool_loop_guardrails.loop_caps` is hardcoded to exactly two names, `max_web_searches` and `max_subagents`; nothing else (including custom MCP tools) can get a native hard cap. `agent.max_turns` is the only backstop against any other single tool being called repeatedly — it bounds the total budget, not any one tool's share of it. Deliberately not using soft (persona-instructed, unenforced) caps to approximate this gap — see [`docs/planning/notes/2026-08-06_tool-surface-cleanup_note.md`](../planning/notes/2026-08-06_tool-surface-cleanup_note.md).
