@@ -8,6 +8,9 @@ A small, purpose-built MCP server exposing exactly four operations against the d
 - `link_documents(from_doc_id, to_doc_id, relation)` — free-text `relation`; duplicate edges are silently ignored.
 - `get_document(id)` — full content of one document.
 - `list_documents(doc_type?, limit?)` — metadata only (no content), most recent first.
+- `auto_link_similar_documents(document_id, threshold=0.85)` — embeds the document (if not already embedded) and auto-creates `related_to` links to any existing document above the cosine-similarity threshold. Called by every persona immediately after `write_document`. See [`docs/planning/notes/2026-08-06_auto-link-similar-documents_note.md`](../../planning/notes/2026-08-06_auto-link-similar-documents_note.md).
+
+Embeddings go through OpenRouter's `/v1/embeddings` (proxying `google/gemini-embedding-001`, requested at 768 dims via an undocumented-but-verified `dimensions` param) — reuses the same `OPENROUTER_API_KEY` as Hermes's chat models, kept as this container's own copy of the credential rather than mounting `hermes-data/.env`.
 
 The Neon connection string (`DATABASE_URL_POOLED`) lives only in this container's own environment — never in Hermes's environment, never visible to whatever calls these tools.
 
