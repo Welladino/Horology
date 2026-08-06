@@ -4,3 +4,8 @@ Running list of research briefs under `docs/planning/research/`. Add a row when 
 
 | Date | Topic | File |
 |------|-------|------|
+| 2026-08-05 | Horology founding options (orchestration, execution platform, doc storage, commercialization) | `2026-08-05_horology-founding-options_research.md` |
+| 2026-08-06 | delegate_task vs. kanban profiles | `2026-08-06_delegate-task-vs-kanban-profiles_research.md` |
+| 2026-08-06 | Hardening/config options (token cap, fallback model, toolsets, isolation) | `2026-08-06_hardening-config-options_research.md` |
+| 2026-08-06 | MCP transport isolation (Docker socket vs. HTTP) | `2026-08-06_mcp-transport-isolation_research.md` |
+| 2026-08-06 | Kanban timeout signaling | `2026-08-06_kanban-timeout-signaling_research.md` |
