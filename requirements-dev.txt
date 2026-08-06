@@ -1,12 +1,14 @@
 # Local dev/editor tooling for the whole Horology repo — one shared venv,
-# not one per component. Actual runtime deps for the MCP server itself
-# still live in mcp-servers/document-graph/requirements.txt (that's what
-# the Dockerfile installs); this file just mirrors them here too so a
-# single root .venv can run Alembic AND satisfy the editor's import
-# resolution for mcp-servers/document-graph/server.py.
+# not one per component. Actual runtime deps for each MCP server still
+# live in mcp-servers/<name>/requirements.txt (that's what each
+# Dockerfile installs); this file mirrors them here too so a single
+# root .venv can run Alembic, pytest, and satisfy the editor's import
+# resolution for mcp-servers/*/server.py.
 
 alembic==1.19.0
 psycopg2-binary==2.9.12
 python-dotenv==1.2.2
 mcp==2.0.0
 httpx==0.28.1
+pytest==9.0.3
+pip-audit==2.10.1
