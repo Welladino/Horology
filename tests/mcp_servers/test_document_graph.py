@@ -122,6 +122,50 @@ class TestEmbed:
             server_module._embed("text")
 
 
+class TestGetRelatedDocuments:
+    def test_returns_outgoing_and_incoming_edges(self, server_module):
+        fake_conn, fake_cursor = _fake_conn()
+        fake_cursor.fetchall.return_value = [
+            {"id": 5, "title": "Doc 5", "doc_type": "analysis", "relation": "related_to", "direction": "outgoing"},
+            {"id": 2, "title": "Doc 2", "doc_type": "recommendation", "relation": "supersedes", "direction": "incoming"},
+        ]
+        with patch.object(server_module, "_connect", return_value=fake_conn):
+            result = server_module.get_related_documents(document_id=1)
+
+        assert len(result) == 2
+        assert result[0]["direction"] == "outgoing"
+        assert result[1]["direction"] == "incoming"
+
+    def test_returns_empty_list_for_unlinked_document(self, server_module):
+        fake_conn, fake_cursor = _fake_conn()
+        fake_cursor.fetchall.return_value = []
+        with patch.object(server_module, "_connect", return_value=fake_conn):
+            result = server_module.get_related_documents(document_id=1)
+        assert result == []
+
+
+class TestListUnembeddedDocuments:
+    def test_returns_documents_missing_an_embedding(self, server_module):
+        fake_conn, fake_cursor = _fake_conn()
+        fake_cursor.fetchall.return_value = [
+            {"id": 3, "title": "Old doc", "doc_type": "report",
+             "created_at": MagicMock(isoformat=lambda: "2026-08-01T00:00:00")},
+        ]
+        with patch.object(server_module, "_connect", return_value=fake_conn):
+            result = server_module.list_unembedded_documents()
+
+        assert len(result) == 1
+        assert result[0]["id"] == 3
+        assert result[0]["created_at"] == "2026-08-01T00:00:00"
+
+    def test_returns_empty_list_when_nothing_missing(self, server_module):
+        fake_conn, fake_cursor = _fake_conn()
+        fake_cursor.fetchall.return_value = []
+        with patch.object(server_module, "_connect", return_value=fake_conn):
+            result = server_module.list_unembedded_documents()
+        assert result == []
+
+
 class TestAutoLinkSimilarDocuments:
     def test_raises_for_unknown_document(self, server_module):
         fake_conn, fake_cursor = _fake_conn()

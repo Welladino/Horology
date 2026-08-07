@@ -175,6 +175,63 @@ def list_documents(doc_type: str | None = None, limit: int = 20) -> list[dict]:
 
 
 @mcp.tool()
+def get_related_documents(document_id: int) -> list[dict]:
+    """Return every document linked to or from the given document, via
+    document_links - both auto-created ('related_to', from
+    auto_link_similar_documents) and manually-created edges (e.g.
+    supersedes, contradicts, informed_by).
+
+    Each result includes the related document's id/title/doc_type, the
+    relation, and direction ('outgoing' if this document points to it,
+    'incoming' if it points to this document). Does not include content -
+    use get_document for that.
+    """
+    with _connect() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute(
+            """
+            SELECT d.id, d.title, d.doc_type, l.relation, 'outgoing' AS direction
+            FROM document_links l JOIN documents d ON d.id = l.to_doc_id
+            WHERE l.from_doc_id = %s
+            UNION ALL
+            SELECT d.id, d.title, d.doc_type, l.relation, 'incoming' AS direction
+            FROM document_links l JOIN documents d ON d.id = l.from_doc_id
+            WHERE l.to_doc_id = %s
+            """,
+            (document_id, document_id),
+        )
+        return [dict(row) for row in cur.fetchall()]
+
+
+@mcp.tool()
+def list_unembedded_documents() -> list[dict]:
+    """Return every document that has no stored embedding yet - written
+    before auto-linking existed, or where a prior auto_link_similar_documents
+    call was skipped or failed before completing.
+
+    Each returned id can be passed directly into auto_link_similar_documents
+    to backfill it. Normally returns few or zero rows - a non-empty result
+    means something to catch up on, not a broken system.
+    """
+    with _connect() as conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute(
+            """
+            SELECT d.id, d.title, d.doc_type, d.created_at
+            FROM documents d
+            LEFT JOIN document_embeddings e ON e.document_id = d.id
+            WHERE e.document_id IS NULL
+            ORDER BY d.created_at
+            """
+        )
+        rows = cur.fetchall()
+        results = []
+        for row in rows:
+            r = dict(row)
+            r["created_at"] = r["created_at"].isoformat()
+            results.append(r)
+        return results
+
+
+@mcp.tool()
 def auto_link_similar_documents(document_id: int, threshold: float = 0.85) -> dict:
     """Embed a document and compare it against all other documents' stored
     embeddings, creating a 'related_to' link (via link_documents) for any

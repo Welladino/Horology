@@ -46,6 +46,16 @@ alembic current
 alembic history
 ```
 
+### Migrations that need extra env vars
+
+Most migrations only need `DATABASE_URL`. `20260807_001_add_readonly_role_for_cron_sweep.py` also requires `CRON_SWEEP_RO_PASSWORD` (the password for the new read-only role it creates) — it raises immediately if unset rather than inventing or hardcoding one:
+
+```bash
+CRON_SWEEP_RO_PASSWORD="$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')" alembic upgrade head
+```
+
+After running it, build the connection string by hand (Neon's pooled hostname, same host/db as `DATABASE_URL_POOLED` but with the new role's name/password) and add it to `.env` as `CRON_SWEEP_RO_DATABASE_URL` — see `.env.example` for the exact shape. This is not stored anywhere by the migration itself (only the role/password exist in Postgres after `upgrade`) — you're responsible for saving the password you generated, same as any other credential.
+
 ## Creating a new migration
 
 Filenames follow `YYYYMMDD_NNN_description.py` — date, then a counter that starts at `001` and resets each new day (not Alembic's default hash-based naming). This is set via an explicit `--rev-id` on every `alembic revision` call — `file_template` in `alembic.ini` can't express a per-day-resetting counter on its own.

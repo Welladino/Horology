@@ -33,7 +33,7 @@ This is a separate project from `Article_aggregator_agent` (the actual product/b
 ```
 
 - **`hermes`** — the agent runtime. Runs Second-Soul plus every subagent as its own Hermes **profile**: a fully separate identity with its own persona (`SOUL.md`), model config, memory, and tool/skill set — not an ephemeral one-shot delegation. Chosen over Claude Code/Codex CLI specifically to keep scheduled automation cost/usage isolated from interactive coding work (Claude Code's usage bucket is shared with interactive coding sessions). See the founding-decisions note above for the full platform comparison.
-- **`document-graph-mcp`** — a purpose-built MCP server exposing 4 narrow tools (`write_document`, `link_documents`, `get_document`, `list_documents`) against a Neon Postgres database. Where agents write real, findable output. No arbitrary SQL is ever exposed.
+- **`document-graph-mcp`** — a purpose-built MCP server exposing 7 narrow tools (`write_document`, `link_documents`, `get_document`, `list_documents`, `auto_link_similar_documents`, `get_related_documents`, `list_unembedded_documents`) against a Neon Postgres database. Where agents write real, findable output. No arbitrary SQL is ever exposed.
 - **`github-monitor-mcp`** — a purpose-built MCP server exposing 8 read-only tools against `Article_aggregator_agent` on GitHub (CI status, PRs, Dependabot alerts, code search, PR diffs, file content). No write capability anywhere, enforced at the credential level (a fine-grained PAT scoped to Read-only).
 
 Neither MCP server publishes a host port — reachable only from `hermes`, over the internal Compose network, by service name. Each server holds its own credential in its own container's environment, never in Hermes's own environment — this is the standing security pattern for any future integration too. See [`docs/runbook/mcp/README.md`](../runbook/mcp/README.md) for the pattern to follow when adding a new one.
@@ -51,6 +51,8 @@ Business documents (recommendations, content, analysis, reports) produced by any
 Schema: `documents` (content + `supersedes_id` self-FK for version chains), `document_links` (`from_doc_id`/`to_doc_id`/`relation` edges), `document_embeddings` (768-dim vector per document, HNSW index, via OpenRouter's `/v1/embeddings` proxying `google/gemini-embedding-001` — same OpenRouter key as chat, not a separate Gemini/GCP key), `run_log` (reserved for Second-Soul's own top-level activity audit trail — not yet used; kanban's own task history currently covers subagent-level audit). See [`docs/runbook/db/alembic_workflow.md`](../runbook/db/alembic_workflow.md) for the migration workflow.
 
 **Auto-linking:** every persona calls `auto_link_similar_documents(document_id)` immediately after `write_document` — this embeds the new document and auto-creates `related_to` edges to any existing document above a cosine-similarity threshold (default 0.85), so semantically related documents get connected even when they share almost no vocabulary. See [`docs/planning/notes/2026-08-06_auto-link-similar-documents_note.md`](../planning/notes/2026-08-06_auto-link-similar-documents_note.md).
+
+**Reading the graph back:** `get_related_documents(document_id)` returns a document's outgoing/incoming `document_links` edges (title, doc_type, relation, direction) — the read side of the graph auto-linking builds. `list_unembedded_documents()` returns any document with no stored embedding yet (written before auto-linking existed, or where a prior `auto_link_similar_documents` call was skipped or failed) — the detection mechanism for the gap that `write_document` and `auto_link_similar_documents` being separate, non-atomic calls leaves open. See [`docs/planning/notes/2026-08-07_document-graph-completeness-punch-list_note.md`](../planning/notes/2026-08-07_document-graph-completeness-punch-list_note.md).
 
 For the rules on *when* and *how* a subagent should write a document, see [`CLAUDE.md`](../../CLAUDE.md).
 
@@ -83,7 +85,7 @@ Second-Soul has the broadest toolset; the three subagents share an identical, fu
 | `skills`, `todo`, `memory`, `session_search`, `clarify` | ✓ | ✓ | ✗ none |
 | `delegation` | ✓ (unused — kanban replaced `delegate_task`) | ✗ disabled | ✓ `delegation.max_iterations` (50), effectively moot now |
 | `cronjob` | ✓ | ✗ disabled | — |
-| `document-graph` MCP (4 tools) | ✓ | ✓ | ✗ none |
+| `document-graph` MCP (7 tools) | ✓ | ✓ | ✗ none |
 | `github-monitor` MCP (8 tools) | ✓ | `code-sentinel` only | ✗ none |
 | **`agent.max_turns`** (overall ceiling, all tools combined) | 150 | 50 | ✓ per turn |
 

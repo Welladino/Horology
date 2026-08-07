@@ -40,3 +40,10 @@ services:
       - HERMES_DASHBOARD_BASIC_AUTH_PASSWORD=${DASHBOARD_PASSWORD:?set DASHBOARD_PASSWORD in .env}
       - PUID=${PUID:-1000}
       - PGID=${PGID:-1000}
+      # Read-only Neon credential for the daily document-graph backfill sweep
+      # (scripts/check_unembedded_documents.py). Cron scripts don't inherit
+      # Hermes-managed secrets by design, but this is a plain container env
+      # var, not a Hermes-managed one - verified hands-on that it survives
+      # into the cron script's subprocess environment, see
+      # docs/planning/research/2026-08-07_cron-script-security-pattern_research.md.
+      - CRON_SWEEP_RO_DATABASE_URL=${CRON_SWEEP_RO_DATABASE_URL:?set CRON_SWEEP_RO_DATABASE_URL in .env}

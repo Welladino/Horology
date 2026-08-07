@@ -71,6 +71,26 @@ There is currently no automatic sync (no file watcher) — this is a manual step
 
 `SOUL.md`'s own instructions reference `/opt/data/personas/subagents/INDEX.md` as an absolute path deliberately, not `personas/subagents/INDEX.md`. The agent's file-tool working directory is `/opt/hermes` (Hermes's own installed codebase), not `/opt/data` (our mounted volume) — a relative path resolves against the wrong root and the agent will report the file "doesn't exist." Confirmed by testing: the first version of this instruction (relative path) failed with exactly that error; switching to the absolute `/opt/data/...` path fixed it. Any future persona/index file that references another file by path should use the full `/opt/data/...` form.
 
+## Syncing cron scripts into the running container
+
+Cron `--script` files (e.g. `scripts/check_unembedded_documents.py`) are authored and version-controlled in this repo under `scripts/`, then copied into the running container's `/opt/data/scripts/` — same pattern as personas. Hermes only reads scripts by relative filename from that directory (`hermes cron create ... --script <filename>`); absolute/`~` paths outside it aren't supported.
+
+After editing a script in the repo:
+
+```bash
+docker cp scripts/check_unembedded_documents.py horology-hermes:/opt/data/scripts/check_unembedded_documents.py
+```
+
+No automatic sync here either — same manual `docker cp` step as personas, for the same reason (few enough scripts that a file watcher isn't worth building yet).
+
+### Cron script runtime notes (verified hands-on, 2026-08-07)
+
+- `.sh`/`.bash` scripts run under bash; anything else (e.g. `.py`) runs under Hermes's own bundled Python interpreter (`/opt/hermes/.venv/bin/python3` inside the container) — **not** the repo's own `.venv`. Check what's importable there before assuming a dependency is available: `docker exec horology-hermes /opt/hermes/.venv/bin/python3 -c "import <module>"`. Confirmed `psycopg2` is *not* present there but `asyncpg` is — `scripts/check_unembedded_documents.py` uses `asyncpg` for exactly this reason, unlike the psycopg2-based MCP servers.
+- Cron scripts do **not** inherit Hermes-managed secrets (provider API keys, etc.) — confirmed by design, per Hermes's own docs. A script needing a credential (e.g. a database connection string) needs its own env var, added to the `hermes` service's `environment:` block in `docker-compose.yml` (a plain container env var survives into the cron subprocess fine — verified hands-on; it's specifically *Hermes-managed* secrets that get stripped, not every env var).
+- **The `wakeAgent` gate** (a cron job's `--script`, without `--no-agent`, decides at runtime whether the agent should run at all): a final stdout line of exactly `{"wakeAgent": false}` skips the agent entirely for that run — confirmed zero LLM turn, `hermes cron runs <job_id>` shows "Script gate returned `wakeAgent=false` — agent skipped." Any other outcome (line omitted, or `{"wakeAgent": true}`) wakes the agent and injects **all** of the script's stdout — including the gate line itself, unstripped — verbatim into the agent's prompt under a "## Script Output" heading. This is the mechanism behind the daily document-graph embedding sweep (see [`docs/planning/notes/2026-08-07_document-graph-completeness-punch-list_note.md`](../../planning/notes/2026-08-07_document-graph-completeness-punch-list_note.md)) — cheap on days nothing needs backfilling, an agent turn only on days something does.
+- `--no-agent` is a different mode entirely (script IS the whole job, stdout delivered verbatim, no agent involved ever) — not used for the embedding sweep, since that needs an agent to actually call `auto_link_similar_documents` when something is found.
+- To test a job immediately without waiting for its schedule: `hermes cron run <job_id>`. Output lands in `/opt/data/cron/output/<job_id>/<timestamp>.md`.
+
 ## Creating a new subagent profile
 
 ```bash
