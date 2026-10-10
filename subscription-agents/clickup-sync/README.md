@@ -59,3 +59,5 @@ A read-only clasp clone succeeded after refreshing the Google login. The live
 source includes testClickUpConnection and the Clickuplist discovery utility,
 in addition to the sync modules. Offline tests isolate deployment-specific
 configuration so running tests never uses credentials or modifies the project.
+
+For step-by-step authentication, project connection, comparison and publishing, see the [clasp runbook](../../docs/runbook/subscription-agents/clasp.md).
