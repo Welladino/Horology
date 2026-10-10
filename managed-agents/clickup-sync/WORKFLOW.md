@@ -1,7 +1,7 @@
 # Welladino: ClickUp ↔ Pipeline sync
 
-Prepared against the live Master headers on 10 October 2026. This package has
-not been connected to your accounts or scheduled. It uses ClickUp's direct API,
+Prepared against the live Master headers on 10 October 2026. The existing live project was imported through clasp; local tests do not confirm
+which runtime triggers are currently installed. It uses ClickUp's direct API,
 not its official MCP. No custom fields are required. The script transfers records;
 it does not run agents, create research, approve spending, or implement code.
 
@@ -10,11 +10,11 @@ it does not run agents, create research, approve spending, or implement code.
 1. Create a **standalone Apps Script project** at https://script.google.com/ under
    your Welladino Google account. Name it `Welladino — ClickUp Sync`.
    Standalone keeps script access separate from ordinary spreadsheet editors.
-2. Create each supplied `.gs` file in that project and paste its matching content.
-   Delete the empty default Code.gs file. Apps Script shares globals across these
+2. Create each supplied `.js` file in that project and paste its matching content.
+   Delete the empty default Code.js file. Apps Script shares globals across these
    files; no import statements or bundling are needed. Set timezone to Asia/Singapore.
 3. Open **Project Settings → Script Properties** and add only **CLICKUP_TOKEN**.
-   Edit non-secret settings in **Config.gs**, and domain list IDs in **DomainLists.gs**.
+   Edit non-secret settings in **Config.js**, and domain list IDs in **DomainLists.js**.
    Generate a personal ClickUp API token in ClickUp's settings/integrations.
    Enter it directly in Script Properties, never in chat, sheet cells, or source.
    Script project editors can access the token; restrict that access.
@@ -43,7 +43,7 @@ it does not run agents, create research, approve spending, or implement code.
    actions/errors in the execution log. It does not change tasks, comments,
    spreadsheet rows, or sync state. Preview requires API access and the schema.
 10. Check matches, list selection, statuses, descriptions and decision comments.
-    Set `ENABLE_WRITES: true` in Config.gs and run `applySync()` manually for the pilot.
+    Set `ENABLE_WRITES: true` in Config.js and run `applySync()` manually for the pilot.
 11. Inspect the actual tasks and comment links, and run the sync again to check
     it doesn't create duplicates. Test a review round in the pilot before enabling
     ClickUp review ingestion. This live check has not been performed by Codex.
@@ -55,13 +55,13 @@ it does not run agents, create research, approve spending, or implement code.
 
 **Script Properties has one entry:** `CLICKUP_TOKEN`.
 
-**Config.gs** holds spreadsheet IDs, pilot Pipeline IDs, maximum items per run,
+**Config.js** holds spreadsheet IDs, pilot Pipeline IDs, maximum items per run,
 write enablement, ClickUp review enablement, adoption policy and all-row selection.
 Use JavaScript booleans `true`/`false`, and an array of IDs, e.g.
 `PILOT_PIPELINE_IDS: ['18', '20']`. All three spreadsheet IDs are already filled from
-verified records. For test copies, replace those IDs in Config.gs.
+verified records. For test copies, replace those IDs in Config.js.
 
-**DomainLists.gs** contains the editable domain-to-list mapping:
+**DomainLists.js** contains the editable domain-to-list mapping:
 
 ```javascript
 const DOMAIN_LISTS = {
@@ -81,18 +81,18 @@ move or duplicate existing tasks automatically.
 
 | File | Responsibility |
 |---|---|
-| Config.gs | Non-secret settings, status mapping and token loading |
-| DomainLists.gs | Domain → ClickUp list mapping |
-| Sync.gs | Preview/apply entry points, locking and run limits |
-| Tasks.gs | Task matching, description and per-row coordination |
-| Decisions.gs | Review checks, approvals and rework transitions |
-| DecisionComments.gs | One complete comment per decision row |
-| ClickUpApi.gs | Direct API requests, pacing and list pagination |
-| Documents.gs | Indexed document lookup and count refresh |
-| Sheets.gs | Read Master headers/rows and update specific cells |
-| SyncState.gs | Task IDs, comment IDs, snapshots and pending writes |
-| Setup.gs | Add schema fields and install/remove the trigger |
-| Utils.gs | Shared normalization and hashing |
+| Config.js | Non-secret settings, status mapping and token loading |
+| DomainLists.js | Domain → ClickUp list mapping |
+| Sync.js | Preview/apply entry points, locking and run limits |
+| Tasks.js | Task matching, description and per-row coordination |
+| Decisions.js | Review checks, approvals and rework transitions |
+| DecisionComments.js | One complete comment per decision row |
+| ClickUpApi.js | Direct API requests, pacing and list pagination |
+| Documents.js | Indexed document lookup and count refresh |
+| Sheets.js | Read Master headers/rows and update specific cells |
+| SyncState.js | Task IDs, comment IDs, snapshots and pending writes |
+| Setup.js | Add schema fields and install/remove the trigger |
+| Utils.js | Shared normalization and hashing |
 
 All files belong to **one Apps Script project**, not separate projects. Keep every
 module when installing; filenames organize the source but don't isolate globals.
@@ -146,7 +146,7 @@ Handed off / Stage 3 / No action. Decisions `parked` or `rejected` stop selectio
 Sheet decisions are applied once; ordinary subsequent row edits do not repeatedly
 queue the same accepted decision.
 
-For **approval in ClickUp**, first set ALLOW_CLICKUP_REVIEW: true in Config.gs. Only a transition
+For **approval in ClickUp**, first set ALLOW_CLICKUP_REVIEW: true in Config.js. Only a transition
 from an established `review` baseline is accepted: `open` accepts the selected
 proposal, `blocked` parks it, and `rejected` rejects it. `closed` isn't an approval
 shortcut. `backlog` isn't interpreted as rework; enter feedback in the register.
@@ -175,7 +175,7 @@ ClickUp status changes outside a published review are flagged, not imported.
 
 Existing Pipeline task links were migrated from the old mixed reference cells.
 For a deliberate existing-task migration, inspect its original description,
-preserve any useful context, then opt into ALLOW_ADOPT_EXISTING: true in Config.gs temporarily.
+preserve any useful context, then opt into ALLOW_ADOPT_EXISTING: true in Config.js temporarily.
 Its description will become mirror-owned. Turn the option off after migration.
 The script also discovers tasks with the exact Pipeline marker before creating
 new ones. Duplicate markers or conflicting task IDs stop the item.
@@ -191,7 +191,7 @@ Inspect ClickUp and reconcile the task/comment ID in state before clearing pendi
 Contact the script maintainer if unsure; don't simply delete the state tab.
 Task PUT/comment PUT operations target stable IDs; comments have pending guards too.
 
-Use `stopSync()` and ENABLE_WRITES: false in Config.gs to pause. Keep source and a backup of
+Use `stopSync()` and ENABLE_WRITES: false in Config.js to pause. Keep source and a backup of
 state before changes. Task/comment creation can't be rolled back by disabling sync.
 The script uses a lock and paced requests, caps work per run and rotates its cursor.
 No AI is invoked. Console output contains IDs/actions/errors, not tokens or bodies.
@@ -231,8 +231,8 @@ writing. Run refreshDocumentCounts() to refresh every row without ClickUp access
 Counts are stored values and refresh when these functions run. New agent-created
 documents must include Pipeline ID in the Index.
 
-In your existing Apps Script project, add Documents.gs; replace Sync.gs, Tasks.gs,
-Sheets.gs and Setup.gs. Add DOCUMENT_INDEX_SHEET_ID from Config.gs to your own
-Config.gs, preserving your pilot IDs, list mapping and write settings. Do not
-replace your configured DomainLists.gs. Keep existing-task adoption disabled
+In your existing Apps Script project, add Documents.js; replace Sync.js, Tasks.js,
+Sheets.js and Setup.js. Add DOCUMENT_INDEX_SHEET_ID from Config.js to your own
+Config.js, preserving your pilot IDs, list mapping and write settings. Do not
+replace your configured DomainLists.js. Keep existing-task adoption disabled
 until you have reviewed the original description: adoption overwrites it.

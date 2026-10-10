@@ -74,4 +74,3 @@ function applySheetDecision(c,pt,dt,row,s,live,out) {
     }
   }
 }
-
