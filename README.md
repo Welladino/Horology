@@ -46,6 +46,7 @@ Full setup detail (persona syncing, cron scripts, troubleshooting): [`docs/runbo
 
 | Path | What's there |
 |---|---|
+| `managed-agents/` | Subscription-agent workflow infrastructure; currently the portable Google Apps Script Sheets/ClickUp sync. See [its README](managed-agents/README.md). |
 | `personas/` | Source-of-truth persona files (`supervisor/SOUL.md`, `subagents/*.md`) — edited here, then synced into the running container. Never edit `hermes-data/` directly. |
 | `mcp-servers/` | The two purpose-built MCP servers (`document-graph`, `github-monitor`) — each its own Dockerfile, `requirements.txt`, and credential. |
 | `alembic/` | Postgres migrations for the document graph (Neon). Workflow: [`docs/runbook/db/alembic_workflow.md`](docs/runbook/db/alembic_workflow.md). |
