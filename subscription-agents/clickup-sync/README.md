@@ -1,4 +1,4 @@
-# ClickUp sync for managed agents
+# ClickUp sync for subscription agents
 
 ## Current state
 
@@ -50,8 +50,8 @@ If someone edits in the browser, pull into a temporary directory and compare
 before replacing tracked files. Avoid blind pull/push against local changes.
 Only source and manifest in src are published; README and tests stay local.
 
-No CLI authentication, remote pull, push, trigger or deployment has been run
-as part of creating this folder.
+The live source was imported through clasp. No upload, trigger or deployment
+was performed during setup.
 
 ## Verification on 10 October 2026
 

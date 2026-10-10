@@ -1,5 +1,5 @@
 {
-  "name": "welladino-managed-agents-clickup-sync",
+  "name": "welladino-subscription-agents-clickup-sync",
   "private": true,
   "version": "0.1.0",
   "scripts": {

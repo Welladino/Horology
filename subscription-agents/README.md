@@ -1,4 +1,4 @@
-# Managed agents
+# Subscription agents
 
 Workflow infrastructure for using existing ChatGPT/Codex and Claude subscriptions
 for Welladino research, assessment and planning. The aim is to use available
