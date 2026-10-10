@@ -27,7 +27,11 @@ Four kinds of doc, four folders — matching content to the right one is what ke
 
 See `docs/planning/README.md` for the full workflow and naming convention.
 
-## How Subagents Should Create Documents
+## Subscription agents
+
+The secondary workflow in `subscription-agents/` uses personal AI subscriptions, Drive instructions and Sheets records. Read [its architecture](docs/architecture/subscription_agents.md) and [runbook](docs/runbook/subscription-agents/README.md) before changing it. Its skill source is `subscription-agents/skills/`; installed copies and plugins are distributions. Subscription-agent business outputs go to Drive/Sheets. The Neon and kanban rules below apply to Hermes/Second-Soul agents, not subscription-agent sessions.
+
+## How Hermes Subagents Should Create Documents
 
 This is a separate thing from the repo docs above — this is about the **business documents subagents produce while running** (GTM recommendations, marketing copy, findings), stored in Postgres via the document-graph MCP server, not as files in this repo.
 

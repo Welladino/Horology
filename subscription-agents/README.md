@@ -23,6 +23,7 @@ planning-note deliverable, not automatic implementation.
 
 | Folder | Purpose | Runtime |
 | --- | --- | --- |
+| [skills](skills/) | Shared capture, research and technical-assessment instructions | Loaded by the selected agent platform |
 | [clickup-sync](clickup-sync/README.md) | Modular Sheets/ClickUp sync and document lookup | Google Apps Script |
 
 The files here are versioned in Horology, but do not depend on a running Hermes
@@ -33,3 +34,5 @@ be added when needed; this folder does not enable them.
 Maintain each component locally, test it, review the Git diff and publish only
 the selected component. Keep credentials outside Git and record meaningful
 workflow changes in the repository planning notes.
+
+Current design: [architecture](../docs/architecture/subscription_agents.md). Maintenance and publishing: [runbook](../docs/runbook/subscription-agents/README.md).

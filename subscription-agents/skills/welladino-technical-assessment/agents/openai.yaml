@@ -1,0 +1,6 @@
+interface:
+  display_name: "Welladino Technical Assessment"
+  short_description: "Assess software options, effort, cost and uncertainty"
+  default_prompt: "Use $welladino-technical-assessment to investigate this Pipeline item and prepare a Stage 1 assessment for my decision."
+policy:
+  allow_implicit_invocation: true

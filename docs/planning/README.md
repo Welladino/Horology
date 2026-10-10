@@ -1,6 +1,6 @@
 # Planning Workspace
 
-Working area for research and implementation notes on Horology itself (the supervisor + subagent system, not the business docs it produces while running — those live in Horology's own Supabase project, kept separate from this repo).
+Working area for research and implementation notes on Horology itself, including Hermes and subscription-agent infrastructure. Business outputs remain outside this repo: Hermes uses the Neon document graph; subscription agents use Drive and Sheets.
 
 ## Structure
 
