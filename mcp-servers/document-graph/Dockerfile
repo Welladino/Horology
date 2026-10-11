@@ -5,12 +5,13 @@ FROM python:3.14-slim
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY shared-runtime /opt/shared-runtime
+COPY mcp-servers/document-graph/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt /opt/shared-runtime
 
-COPY server.py .
+COPY mcp-servers/document-graph/server.py .
 
-# stdio transport: this container is meant to be `docker exec`'d into with
-# the process attached to stdin/stdout, not left running as a standalone
-# service. See docs/runbook/mcp/document_graph_server.md.
+COPY mcp-servers/document-graph/document_graph ./document_graph
+
+# Internal Compose network only; no published host port.
 CMD ["python", "server.py"]

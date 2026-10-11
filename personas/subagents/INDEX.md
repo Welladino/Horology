@@ -8,4 +8,4 @@ Adding a subagent = create a real Hermes profile (`hermes profile create <name>`
 |---|---|---|
 | gtm-manager | Positioning, channel/market strategy, sequencing, pricing-adjacent strategic questions | `/opt/data/personas/subagents/gtm-manager.md` |
 | marketing-executive | Copy, content drafts, campaign execution, messaging | `/opt/data/personas/subagents/marketing-executive.md` |
-| code-sentinel | CI status, open PRs, dependency security alerts, code quality for Article_aggregator_agent (read-only GitHub, single repo) | `/opt/data/personas/subagents/code-sentinel.md` |
+| code-sentinel | CI status, open PRs, dependency security alerts, code quality for policy-approved repositories (read-only GitHub gateway) | `/opt/data/personas/subagents/code-sentinel.md` |

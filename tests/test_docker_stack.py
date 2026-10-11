@@ -1,11 +1,11 @@
 """
 Container-level health/isolation test for the full Horology Docker
-Compose stack (hermes, document-graph-mcp, github-monitor-mcp).
+Compose stack (hermes, document-graph-mcp).
 
 Covers:
-- All three containers reach a running state after `docker compose up -d`
-- Neither MCP server is reachable from the host (no published port)
-- Both MCP servers ARE reachable from inside the hermes container (the
+- Both main-stack containers reach a running state after `docker compose up -d`
+- The document graph MCP server is reachable from the host (no published port)
+- The document graph MCP server ARE reachable from inside the hermes container (the
   internal Docker network works, matching how Hermes actually connects)
 - Hermes has exactly one host mount (hermes-data/), no others
 - No container is running --privileged
@@ -98,7 +98,7 @@ def _container_inspect(name: str) -> dict:
 class TestContainersHealthy:
     @pytest.mark.parametrize(
         "container_name",
-        ["horology-hermes", "horology-document-graph-mcp", "horology-github-monitor-mcp"],
+        ["horology-hermes", "horology-document-graph-mcp"],
     )
     def test_container_is_running(self, running_stack, container_name):
         info = _container_inspect(container_name)
@@ -106,7 +106,7 @@ class TestContainersHealthy:
 
     @pytest.mark.parametrize(
         "container_name",
-        ["horology-hermes", "horology-document-graph-mcp", "horology-github-monitor-mcp"],
+        ["horology-hermes", "horology-document-graph-mcp"],
     )
     def test_container_is_not_privileged(self, running_stack, container_name):
         info = _container_inspect(container_name)
@@ -123,7 +123,7 @@ class TestMountIsolation:
         assert mounts[0]["Source"].endswith("hermes-data")
 
     @pytest.mark.parametrize(
-        "container_name", ["horology-document-graph-mcp", "horology-github-monitor-mcp"]
+        "container_name", ["horology-document-graph-mcp"]
     )
     def test_mcp_servers_have_no_host_mounts(self, running_stack, container_name):
         info = _container_inspect(container_name)
@@ -136,9 +136,6 @@ class TestNetworkIsolation:
         with pytest.raises(httpx.ConnectError):
             httpx.get("http://localhost:8765/mcp", timeout=3)
 
-    def test_github_monitor_mcp_not_reachable_from_host(self, running_stack):
-        with pytest.raises(httpx.ConnectError):
-            httpx.get("http://localhost:8766/mcp", timeout=3)
 
     def test_document_graph_mcp_reachable_from_hermes_container(self, running_stack):
         result = subprocess.run(
@@ -154,16 +151,6 @@ class TestNetworkIsolation:
             f"stdout={result.stdout!r} stderr={result.stderr!r}"
         )
 
-    def test_github_monitor_mcp_reachable_from_hermes_container(self, running_stack):
-        result = subprocess.run(
-            ["docker", "exec", "horology-hermes", "curl", "-sS", "-o", "/dev/null",
-             "-w", "%{http_code}", "http://github-monitor-mcp:8766/mcp"],
-            capture_output=True, text=True, timeout=15,
-        )
-        assert result.stdout.strip() in ("400", "404", "406"), (
-            f"Unexpected response reaching github-monitor-mcp from hermes container: "
-            f"stdout={result.stdout!r} stderr={result.stderr!r}"
-        )
 
 
 @requires_docker

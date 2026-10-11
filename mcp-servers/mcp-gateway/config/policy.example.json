@@ -1,0 +1,116 @@
+{
+  "repositories": [
+    "Welladino/Horology",
+    "Welladino/Article_aggregator_agent"
+  ],
+  "supabase": {
+    "project": "pyywbjossvjngoxocdxk",
+    "schemas": [
+      "public"
+    ]
+  },
+  "drive": {
+    "files": [
+      "1BBZNwuGodU6JlrCk-09L7aZ2BqOBED6Vir0vpDMiJoo"
+    ],
+    "sheet_ranges": {
+      "1BBZNwuGodU6JlrCk-09L7aZ2BqOBED6Vir0vpDMiJoo": [
+        "'MCP'!A1:M24"
+      ]
+    }
+  },
+  "budgets": {
+    "tavily": {
+      "daily": 50,
+      "monthly": 500,
+      "assignment": 4,
+      "calls_per_assignment": 2
+    },
+    "firecrawl": {
+      "daily": 50,
+      "monthly": 500,
+      "assignment": 2,
+      "calls_per_assignment": 2
+    }
+  },
+  "disabled_access_ids": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    10,
+    11,
+    12,
+    13,
+    18,
+    21,
+    22,
+    23
+  ],
+  "assignments": {
+    "local-smoke": {
+      "expires_at": 0,
+      "tools": [
+        "gateway_status",
+        "github_read_file",
+        "github_read_records",
+        "drive_list_documents",
+        "drive_read_document",
+        "supabase_list_schema",
+        "supabase_describe_table",
+        "tavily_search",
+        "supabase_performance_summary",
+        "firecrawl_scrape_page",
+        "github_read_tree",
+        "github_search_code",
+        "github_read_pr_files",
+        "github_repo_status",
+        "github_recent_commits",
+        "github_ci_status",
+        "github_dependabot_alerts"
+      ],
+      "repositories": [
+        "Welladino/Horology",
+        "Welladino/Article_aggregator_agent"
+      ],
+      "schemas": [
+        "public"
+      ],
+      "drive_files": [
+        "1BBZNwuGodU6JlrCk-09L7aZ2BqOBED6Vir0vpDMiJoo"
+      ],
+      "sheet_ranges": {
+        "1BBZNwuGodU6JlrCk-09L7aZ2BqOBED6Vir0vpDMiJoo": [
+          "'MCP'!A1:M24"
+        ]
+      },
+      "limits": {
+        "github_read_file": 2,
+        "github_read_records": 2,
+        "drive_list_documents": 2,
+        "drive_read_document": 2,
+        "supabase_list_schema": 2,
+        "supabase_describe_table": 2,
+        "tavily_search": 2,
+        "tavily_advanced_search": 2,
+        "supabase_performance_summary": 2,
+        "firecrawl_scrape_page": 2,
+        "github_read_tree": 2,
+        "github_search_code": 2,
+        "github_read_pr_files": 2,
+        "github_repo_status": 2,
+        "github_recent_commits": 2,
+        "github_ci_status": 2,
+        "github_dependabot_alerts": 2
+      },
+      "approved_urls": []
+    }
+  },
+  "firecrawl": {
+    "approved_urls": [],
+    "scrape_credits": 1
+  }
+}

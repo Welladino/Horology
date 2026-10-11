@@ -8,35 +8,13 @@ A solo founder's personal "AI co-founder" system: **Second-Soul**, a supervisor 
 
 This is a separate project from `Article_aggregator_agent` (the actual product/business) — no shared code, database, or credentials. See [`docs/planning/notes/2026-08-05_horology-founding-decisions_note.md`](../planning/notes/2026-08-05_horology-founding-decisions_note.md) for why.
 
-## Runtime: three Docker containers
+## Runtime: main stack and restricted gateway
 
-```
-┌──────────────────────────┐
-│   hermes                 │   Hermes Agent (Nous Research)
-│   (horology-hermes)      │   - Second-Soul (default profile)
-│                           │   - gtm-manager, marketing-executive,
-│   127.0.0.1:8642 (API)   │     code-sentinel, ... (subagent profiles)
-│   127.0.0.1:9119 (dash)  │
-└─────────────┬─────────────┘
-              │ internal Docker network only (no host port on either target)
-    ┌─────────┴─────────┐
-    ▼                   ▼
-┌─────────────────┐  ┌──────────────────────┐
-│ document-graph-  │  │ github-monitor-mcp    │
-│ mcp              │  │                        │
-│ :8765/mcp        │  │ :8766/mcp              │
-│                   │  │                        │
-│ -> Neon Postgres  │  │ -> GitHub API          │
-│ (external)        │  │ (Article_aggregator_   │
-│                   │  │  agent, read-only)      │
-└─────────────────┘  └──────────────────────┘
-```
+The main Compose stack runs Hermes and document-graph-mcp. Document graph listens on port 8765 only inside the Docker network, persists business outputs to Neon, and uses OpenRouter embeddings. Its seven narrow document tools expose no arbitrary SQL.
 
-- **`hermes`** — the agent runtime. Runs Second-Soul plus every subagent as its own Hermes **profile**: a fully separate identity with its own persona (`SOUL.md`), model config, memory, and tool/skill set — not an ephemeral one-shot delegation. Chosen over Claude Code/Codex CLI specifically to keep scheduled automation cost/usage isolated from interactive coding work (Claude Code's usage bucket is shared with interactive coding sessions). See the founding-decisions note above for the full platform comparison.
-- **`document-graph-mcp`** — a purpose-built MCP server exposing 7 narrow tools (`write_document`, `link_documents`, `get_document`, `list_documents`, `auto_link_similar_documents`, `get_related_documents`, `list_unembedded_documents`) against a Neon Postgres database. Where agents write real, findable output. No arbitrary SQL is ever exposed.
-- **`github-monitor-mcp`** — a purpose-built MCP server exposing 8 read-only tools against `Article_aggregator_agent` on GitHub (CI status, PRs, Dependabot alerts, code search, PR diffs, file content). No write capability anywhere, enforced at the credential level (a fine-grained PAT scoped to Read-only).
+The restricted mcp-gateway runs in its own Compose project on localhost port 8767. The optional compose.hermes-network.yaml joins the existing horology_default network under alias horology-mcp-gateway. Both Second-Soul and Code Sentinel connect to it with separate authenticated GitHub-only assignments. Repository access comes from policy and assignment intersection; both assignments currently cover Welladino/Horology and Welladino/Article_aggregator_agent. Provider credentials remain in gateway .env.local, never in Hermes; Hermes holds only its gateway bearer credentials. The old github-monitor server and Compose service are retired.
 
-Neither MCP server publishes a host port — reachable only from `hermes`, over the internal Compose network, by service name. Each server holds its own credential in its own container's environment, never in Hermes's own environment — this is the standing security pattern for any future integration too. See [`docs/runbook/mcp/README.md`](../runbook/mcp/README.md) for the pattern to follow when adding a new one.
+The gateway exposes seventeen tools; Hermes monitoring profiles select only gateway_status plus nine GitHub tools. Local assignments expire after 24 hours, and per-tool usage persists across restarts. Scheduling still requires fresh assignment provisioning per run. The standalone gateway's localhost port requires authentication. Document graph publishes no host port and currently relies on internal network isolation; public cloud authentication remains future work.
 
 ## Dispatch mechanism
 
@@ -66,7 +44,7 @@ For the rules on *when* and *how* a subagent should write a document, see [`CLAU
 |---|---|---|
 | `gtm-manager` | GTM strategy, positioning, channel/sequencing recommendations | document-graph only |
 | `marketing-executive` | Copy, content drafts, campaign execution | document-graph only |
-| `code-sentinel` | CI/PR/security monitoring for `Article_aggregator_agent` | document-graph + github-monitor |
+| `code-sentinel` | CI/PR/security monitoring for policy-approved repos | document-graph + mcp-gateway |
 
 Planned, not yet built: a combined DevOps/Infra subagent covering GCP and Supabase monitoring.
 
@@ -86,7 +64,19 @@ Second-Soul has the broadest toolset; the three subagents share an identical, fu
 | `delegation` | ✓ (unused — kanban replaced `delegate_task`) | ✗ disabled | ✓ `delegation.max_iterations` (50), effectively moot now |
 | `cronjob` | ✓ | ✗ disabled | — |
 | `document-graph` MCP (7 tools) | ✓ | ✓ | ✗ none |
-| `github-monitor` MCP (8 tools) | ✓ | `code-sentinel` only | ✗ none |
+| `mcp-gateway` GitHub tools | ✓ | `code-sentinel` only | ✗ none |
 | **`agent.max_turns`** (overall ceiling, all tools combined) | 150 | 50 | ✓ per turn |
 
 **No general per-tool call-count mechanism exists in Hermes** — `tool_loop_guardrails.loop_caps` is hardcoded to exactly two names, `max_web_searches` and `max_subagents`; nothing else (including custom MCP tools) can get a native hard cap. `agent.max_turns` is the only backstop against any other single tool being called repeatedly — it bounds the total budget, not any one tool's share of it. Deliberately not using soft (persona-instructed, unenforced) caps to approximate this gap — see [`docs/planning/notes/2026-08-06_tool-surface-cleanup_note.md`](../planning/notes/2026-08-06_tool-surface-cleanup_note.md).
+
+## Restricted gateway migration
+
+Second-Soul and Code Sentinel use the authenticated mcp-gateway for policy-approved GitHub reads. Provider implementations and MCP tools are separate modules. Gateway local Code Sentinel assignment expires after 24 hours, with two invocations per tool. Recurring assignment provisioning remains pending. The optional gateway Compose override joins the Hermes network; client-side tool filtering and server-side assignment policy both restrict Code Sentinel to GitHub.
+
+Document graph stays separate. Its entrypoint registers seven operations from document_graph/tools.py backed by document_graph/client.py. It has its own pinned requirements and private mcp-servers/document-graph/.env loaded by root Compose; DATABASE_URL_POOLED and OPENROUTER_API_KEY are required, EMBED_MODEL is optional. Public cloud authentication and embedding budgets remain pending.
+
+## MCP logging and failure handling
+
+Both MCP services emit argument-free JSON operation events to stdout with correlation IDs, duration and outcome. Gateway events include the authenticated assignment. Clients receive sanitized error categories with a request ID, rather than raw provider/database exceptions. Automatic retries are disabled. Neon has five-second connection, ten-second statement and three-second lock timeouts; existing HTTP/Supabase timeouts remain. Standard transport/access logs remain separate from the application JSON events.
+
+MCP timeouts and error/logging policy have a single source under `shared-runtime/horology_runtime/`: settings.py holds immutable timeout values and operations.py implements safe error categories and structured operation logging. Both images install this package, and the common root .dockerignore excludes private configuration from the larger build context.

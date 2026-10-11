@@ -1,0 +1,23 @@
+services:
+  gateway:
+    build:
+      context: ../..
+      dockerfile: mcp-servers/mcp-gateway/Dockerfile
+    ports:
+      - "127.0.0.1:8767:8767"
+    env_file:
+      - .env.local
+    environment:
+      PGSSLROOTCERT: /certs/supabase-ca.crt
+      SSL_CERT_FILE: /etc/ssl/certs/ca-certificates.crt
+    volumes:
+      - ./config/policy.local.json:/config/policy.json:ro
+      - gateway-state:/state
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: "no"
+volumes:
+  gateway-state:

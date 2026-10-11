@@ -53,3 +53,13 @@ Operational steps: [subscription-agent runbook](../runbook/subscription-agents/R
 ## Domain routing
 
 Pipeline and the registers support Welladino, Article Aggregator, Newsletter, Ecommerce and Horology, using their live dropdown spelling. Horology maps to ClickUp list `901820246905` in DomainLists.js. Its Entity is blank. Repository access and Drive output destinations remain separately configured; the agent must verify both before work.
+
+## Local restricted MCP gateway
+
+`mcp-servers/mcp-gateway/` contains one standalone Docker service with fixed provider read adapters, assignment-bound local bearer authentication, explicit resource allowlists and persistent SQLite budget accounting. It binds to loopback port 8767 and does not alter Hermes MCP services. GitHub is scoped to Horology and Article_aggregator_agent; Supabase to project pyywbjossvjngoxocdxk, public metadata and sanitized performance counters, excluding auth and row data. Firecrawl/Tavily each have 50 daily/500 monthly credit caps and two paid upstream requests per assignment.
+
+This prototype has no subscription scheduler, cloud OAuth, distributed accounting or register writes. Several Agent Register rows remain disabled; provider credentials and live integration verification are prerequisites. See the [gateway README](../../mcp-servers/mcp-gateway/README.md) for exact coverage/setup and the [implementation note](../planning/notes/2026-10-11_subscription-agent-mcp-gateway_note.md) for decisions and remaining work.
+
+The gateway’s Supabase connection uses `verify-full` with the official public CA tracked at `mcp-servers/mcp-gateway/certs/supabase-prod-ca-2021.crt` and packaged into the Docker image at `/certs/supabase-ca.crt`, with `PGSSLROOTCERT` pointing to it. No private key or credential is included. System trust alone was insufficient for the tested pooler. See the [CA relocation note](../planning/notes/2026-10-11_gateway-ca-in-repository_note.md).
+
+The gateway implementation groups fixed provider operations and scope checks under `integrations/{github,supabase,tavily,firecrawl,google_drive}/`. Shared bounded HTTP transport and text sanitization live under `shared/`. Each integration separates provider operations in `client.py` from MCP registration in `tools.py`; `server.py` assembles these modules. Authentication stays in the server, with shared assignment and quota enforcement in `shared/access.py` backed by `policy.py`. The image includes these nested Python packages. (verified: local unit tests and Docker MCP smoke, 2026-10-11)

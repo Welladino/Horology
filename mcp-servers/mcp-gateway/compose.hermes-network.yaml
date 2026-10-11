@@ -1,0 +1,10 @@
+services:
+  gateway:
+    networks:
+      default:
+      hermes:
+        aliases: [horology-mcp-gateway]
+networks:
+  hermes:
+    external: true
+    name: horology_default

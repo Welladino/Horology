@@ -27,7 +27,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-SERVER_PATH = Path(__file__).parent.parent.parent / "mcp-servers" / "document-graph" / "server.py"
+SERVER_PATH = Path(__file__).parent.parent.parent / "mcp-servers" / "document-graph" / "document_graph" / "integrations" / "neon" / "client.py"
 
 
 def _fake_conn():
@@ -50,12 +50,24 @@ def server_module(monkeypatch):
     monkeypatch.setenv("DATABASE_URL_POOLED", "postgresql://fake:fake@localhost/fake")
     monkeypatch.setenv("OPENROUTER_API_KEY", "sk-or-fake-key")
 
-    spec = importlib.util.spec_from_file_location("document_graph_server", SERVER_PATH)
+    monkeypatch.syspath_prepend(str(SERVER_PATH.parents[3]))
+    spec = importlib.util.spec_from_file_location("document_graph.integrations.neon.test_client", SERVER_PATH)
     module = importlib.util.module_from_spec(spec)
     sys.modules["document_graph_server"] = module
     spec.loader.exec_module(module)
     yield module
     del sys.modules["document_graph_server"]
+
+
+@pytest.fixture
+def embedding_module(monkeypatch):
+    monkeypatch.setenv("OPENROUTER_API_KEY", "sk-or-fake-key")
+    monkeypatch.syspath_prepend(str(SERVER_PATH.parents[3]))
+    path = SERVER_PATH.parents[1] / "openrouter" / "client.py"
+    spec = importlib.util.spec_from_file_location("document_graph.integrations.openrouter.test_client", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 class TestWriteDocument:
@@ -98,7 +110,7 @@ class TestListDocuments:
 
 
 class TestEmbed:
-    def test_sends_correct_openrouter_request_shape(self, server_module):
+    def test_sends_correct_openrouter_request_shape(self, embedding_module):
         """Regression test for the real bug: the model's un-truncated output
         is 3072 dims (exceeds pgvector's 2000-dim HNSW limit), fixed by
         explicitly requesting 768 via `dimensions`. If this param is ever
@@ -107,8 +119,8 @@ class TestEmbed:
         fake_response.json.return_value = {"data": [{"embedding": [0.1] * 768}]}
         fake_response.raise_for_status.return_value = None
 
-        with patch.object(server_module.httpx, "post", return_value=fake_response) as mock_post:
-            result = server_module._embed("some document text")
+        with patch.object(embedding_module.httpx, "post", return_value=fake_response) as mock_post:
+            result = embedding_module._embed("some document text")
 
         assert len(result) == 768
         _, kwargs = mock_post.call_args
@@ -116,10 +128,10 @@ class TestEmbed:
         assert kwargs["json"]["model"] == "google/gemini-embedding-001"
         assert kwargs["headers"]["Authorization"] == "Bearer sk-or-fake-key"
 
-    def test_raises_without_api_key(self, server_module, monkeypatch):
-        monkeypatch.setattr(server_module, "OPENROUTER_API_KEY", None)
-        with pytest.raises(RuntimeError, match="OPENROUTER_API_KEY"):
-            server_module._embed("text")
+    def test_raises_without_api_key(self, embedding_module, monkeypatch):
+        monkeypatch.setattr(embedding_module, "OPENROUTER_API_KEY", None)
+        with pytest.raises(RuntimeError, match="operation_failed; request_id="):
+            embedding_module._embed("text")
 
 
 class TestGetRelatedDocuments:

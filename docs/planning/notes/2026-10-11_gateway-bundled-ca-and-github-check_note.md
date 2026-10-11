@@ -1,0 +1,7 @@
+# Bundled gateway CA and GitHub authentication check
+
+Docker now includes the official public Supabase CA at `/certs/supabase-ca.crt`, with `PGSSLROOTCERT` set by the image. The build context allows only the named public certificate; local credentials and policy files remain excluded. Compose no longer mounts the host CA. This prepares certificate packaging for cloud use; it does not deploy or complete Cloud Run configuration.
+
+Verification: local image build succeeded; the bundled certificate DER SHA256 remained `807025ad50d4ed219d2c9c7d299c004f824eb00cf7f65afef607d07b72e6cafa`; Supabase authenticated with TLS 1.3 and verify-full without issuing SQL; 16 gateway tests passed; authenticated MCP smoke passed with thirteen tools and auth/scope denial checks. Existing quota state was preserved and no paid provider calls were made.
+
+GitHub: the running container contains GITHUB_TOKEN, with no surrounding whitespace. Its configured value matches Horology’s root .env. One bounded GET to https://api.github.com/user returned HTTP 401, so repository requests were not attempted. This indicates rejected credentials, rather than proving any repository permission problem. Expiration, revocation, or an incorrect value cannot be distinguished from this response. Replace the token in the private configuration and recreate the gateway before checking both allowlisted repositories. No token values were logged.

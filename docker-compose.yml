@@ -1,6 +1,8 @@
 services:
   document-graph-mcp:
-    build: ./mcp-servers/document-graph
+    build:
+      context: .
+      dockerfile: mcp-servers/document-graph/Dockerfile
     container_name: horology-document-graph-mcp
     restart: unless-stopped
     # No `ports:` here deliberately - not published to the host at all.
@@ -8,20 +10,8 @@ services:
     # service name (http://document-graph-mcp:8765/mcp), which is how the
     # hermes service connects to it. Avoids mounting the Docker socket into
     # Hermes's container just to reach this one via `docker exec`.
-    environment:
-      - DATABASE_URL_POOLED=${DATABASE_URL_POOLED:?set DATABASE_URL_POOLED in .env}
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:?set OPENROUTER_API_KEY in .env}
-
-  github-monitor-mcp:
-    build: ./mcp-servers/github-monitor
-    container_name: horology-github-monitor-mcp
-    restart: unless-stopped
-    # No `ports:` here deliberately - same isolation pattern as
-    # document-graph-mcp. Reachable only from other containers on this
-    # compose network (http://github-monitor-mcp:8766/mcp).
-    environment:
-      - GITHUB_TOKEN=${GITHUB_TOKEN:?set GITHUB_TOKEN in .env}
-      - GITHUB_REPO=${GITHUB_REPO:-Welladino/Article_aggregator_agent}
+    env_file:
+      - ./mcp-servers/document-graph/.env
 
   hermes:
     image: nousresearch/hermes-agent:latest

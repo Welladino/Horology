@@ -1,0 +1,7 @@
+# Policy-based monitoring and separate document integrations
+
+Broadened Code Sentinel repository assignment to the gateway policy's two approved repositories without clearing existing quotas. Second-Soul received its own GitHub-only 24-hour local assignment and authenticated gateway connection; the old monitor connection and Compose service were removed after the user deleted its server source. Synced supervisor/subagent personas and index. Retired obsolete old-monitor tests and updated stack coverage and current docs. Historical notes remain intact.
+
+Split document graph client into Neon persistence/orchestration and OpenRouter embeddings under document_graph/integrations. Seven document tool names and signatures remain unchanged. DATABASE_URL_POOLED is now the consistent connection variable; no DATABASE_URL environment variable is needed. Added optional DOCUMENT_GRAPH_BIND, default 0.0.0.0 inside Docker, with no published host port. This preserves cross-container reachability; public cloud auth remains pending. No migrations, document writes or paid embedding calls were performed.
+
+Validation: 43 full repository/gateway tests passed, document graph image rebuilt, authenticated MCP status confirmed both repositories for both profiles and denied out-of-policy repositories/non-GitHub tools, both Hermes profiles report ten selected gateway tools, and document graph MCP discovery verified seven tools. Removed the obsolete monitor container.
