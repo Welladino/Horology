@@ -16,7 +16,7 @@ Generate the top summary and JSON from the same evidence and written reasons. Di
 
 Read live sheet metadata and headers before saving. Pipeline Master is editable; domain tabs are views. Resolve by permanent numeric ID, not row position or External ID. Agent type includes Manual; automated selection skips Manual. Link type/URL/GitHub branch identify the work target, while Document Index associates documents with Pipeline ID.
 
-Upsert [Document Index](https://docs.google.com/spreadsheets/d/1kObhQNjsFhziS-wRzjaEIzr9j8jjbfvd-ZgvzuwQ-Jc/edit) by Drive file ID/URL, preserving its document ID. Allocate permanent numeric Document IDs from live records and match dropdowns. Record the assessment as research, Draft, with Related Pipeline URL. Entity is blank for Article Aggregator and Welladino; use it only for a named Newsletter/Ecommerce business. No graph importer is configured.
+Upsert [Document Index](https://docs.google.com/spreadsheets/d/1kObhQNjsFhziS-wRzjaEIzr9j8jjbfvd-ZgvzuwQ-Jc/edit) by Drive file ID/URL, preserving its document ID. Allocate permanent numeric Document IDs from live records and match dropdowns. Record the assessment as research, Draft, with Related Pipeline URL. Entity is blank for Article Aggregator, Welladino and Horology; use it only for a named Newsletter/Ecommerce business. No graph importer is configured.
 
 In [Pipeline](https://docs.google.com/spreadsheets/d/1aL678ACs97YpLIGrGU5LbpXHc7jQBxl64ED-sLyehvI/edit), update the specific next decision/question; record document links in Document Index. Set Awaiting decision when ready for founder review, not when evidence still blocks the assessment.
 

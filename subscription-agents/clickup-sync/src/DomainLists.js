@@ -5,5 +5,6 @@ const DOMAIN_LISTS = {
   'welladino': '',
   'Article Aggregator': '901816729049',
   'newsletter': '',
-  'ecommerce': ''
+  'ecommerce': '',
+  'Horology': '901820246905'
 };

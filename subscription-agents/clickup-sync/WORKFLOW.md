@@ -236,3 +236,9 @@ Sheets.js and Setup.js. Add DOCUMENT_INDEX_SHEET_ID from Config.js to your own
 Config.js, preserving your pilot IDs, list mapping and write settings. Do not
 replace your configured DomainLists.js. Keep existing-task adoption disabled
 until you have reviewed the original description: adoption overwrites it.
+
+## Horology domain
+
+Domain Horology maps to ClickUp list `901820246905` in DomainLists.js. Entity is blank. Verify its repository and branch from the Pipeline row; do not infer a Drive destination from the repo location.
+
+During the founder-authorised development cleanup on 10 October 2026, test/retired rows were removed and register IDs compacted with their references. Normal operation retains permanent IDs. No managed ClickUp sync-state tab was present during the reset; existing task URLs were preserved. Do not apply old cached IDs or descriptions without a fresh preview.

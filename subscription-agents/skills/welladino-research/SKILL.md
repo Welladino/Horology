@@ -28,7 +28,7 @@ Edit Pipeline Master only; domain tabs are automatic views. Resolve records by p
 
 ## Decision and permission boundaries
 
-ID is permanent and unique across the whole Pipeline. Allocate the next unused numeric ID; never renumber after sorting or reuse a removed ID. External ID is optional and holds historical EPIC-NEWS or other source identifiers. Entity is only for named Newsletter or Ecommerce businesses; leave it empty for Article Aggregator and Welladino.
+ID is permanent and unique across the whole Pipeline. Allocate the next unused numeric ID; never renumber after sorting or reuse a removed ID. External ID is optional and holds historical EPIC-NEWS or other source identifiers. Entity is only for named Newsletter or Ecommerce businesses; leave it empty for Article Aggregator, Welladino and Horology.
 
 Agent status is No action or Ready; Agent type is Manual, Unassigned, ChatGPT, ChatGPT Work, Codex, Claude Code, Claude Cowork, or Horology. Default new captures to No action and Unassigned unless the user selects otherwise. Ready selects the stated Next step / Research question but does not launch an automatic run. A user request or authorised schedule starts work; selection never implies acceptance of a recommendation or permission for unrelated implementation.
 

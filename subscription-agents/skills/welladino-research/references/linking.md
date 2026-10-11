@@ -8,6 +8,6 @@ Read live headers and dropdowns before writing. Edit Pipeline and Decision Regis
 
 Allocate independent numeric IDs within each register; never renumber or reuse IDs. Use a single writer and reread before saving; concurrent allocation is not implemented. External IDs and Drive file IDs remain separate identifiers.
 
-Metadata carries domain, entity, Pipeline ID/link, purpose, draft status and related decision when applicable. Entity is blank for Welladino and Article Aggregator. Templates and destinations are resolved from the Location Directory. Copy templates; preserve originals. Use native headings, lists and tables according to the Presentation Guide.
+Metadata carries domain, entity, Pipeline ID/link, purpose, draft status and related decision when applicable. Entity is blank for Welladino, Article Aggregator and Horology. Templates and destinations are resolved from the Location Directory. Copy templates; preserve originals. Use native headings, lists and tables according to the Presentation Guide.
 
 No graph importer is configured. Never claim graph synchronization merely because a document is indexed. Verify live graph inclusion/sync selections before setting them. Platform skills, Drive access and scheduling must each be configured separately.
