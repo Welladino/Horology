@@ -1,0 +1,58 @@
+# Manual source upload. Every gate must pass before Cloud Build publishes images.
+steps:
+  - id: source-security
+    name: aquasec/trivy:0.75.0
+    args: [fs, --scanners, 'secret,misconfig', --severity, 'HIGH,CRITICAL', --exit-code, '1', --no-progress, .]
+  - id: postgres
+    name: gcr.io/cloud-builders/docker
+    args: [run, -d, --name, horology-ci-postgres, --network, cloudbuild, -e, POSTGRES_PASSWORD=ci-admin-only, postgres:16-alpine]
+  - id: tests-and-dependency-audit
+    name: python:3.12-slim
+    entrypoint: bash
+    args: [scripts/ci/check.sh]
+    env:
+      - GATEWAY_TEST_DATABASE_URL=postgresql://postgres:ci-admin-only@horology-ci-postgres:5432/postgres
+      - GATEWAY_TEST_RUNTIME_URL=postgresql://horology_gateway:ci-runtime-only@horology-ci-postgres:5432/postgres
+  - id: build-gateway
+    name: gcr.io/cloud-builders/docker
+    args: [build, --pull, -f, mcp-servers/mcp-gateway/Dockerfile, -t, '${_REGISTRY}/mcp-gateway:$BUILD_ID', -t, '${_REGISTRY}/mcp-gateway:latest', .]
+  - id: build-document-graph
+    name: gcr.io/cloud-builders/docker
+    args: [build, --pull, -f, mcp-servers/document-graph/Dockerfile, -t, '${_REGISTRY}/document-graph:$BUILD_ID', -t, '${_REGISTRY}/document-graph:latest', .]
+  - id: verify-gateway-image
+    name: gcr.io/cloud-builders/docker
+    entrypoint: bash
+    args: [-c, 'docker run --rm -i --entrypoint python "${_REGISTRY}/mcp-gateway:$BUILD_ID" - < scripts/ci/check_image.py']
+  - id: verify-document-graph-image
+    name: gcr.io/cloud-builders/docker
+    entrypoint: bash
+    args: [-c, 'docker run --rm -i --entrypoint python "${_REGISTRY}/document-graph:$BUILD_ID" - < scripts/ci/check_image.py']
+  - id: export-gateway
+    name: gcr.io/cloud-builders/docker
+    args: [save, -o, /workspace/gateway.tar, "${_REGISTRY}/mcp-gateway:$BUILD_ID"]
+  - id: export-document-graph
+    name: gcr.io/cloud-builders/docker
+    args: [save, -o, /workspace/document-graph.tar, "${_REGISTRY}/document-graph:$BUILD_ID"]
+  - id: report-gateway-vulnerabilities
+    name: aquasec/trivy:0.75.0
+    args: [image, --scanners, vuln, --severity, 'HIGH,CRITICAL', --exit-code, '0', --no-progress, --input, /workspace/gateway.tar]
+  - id: report-document-graph-vulnerabilities
+    name: aquasec/trivy:0.75.0
+    args: [image, --scanners, vuln, --severity, 'HIGH,CRITICAL', --exit-code, '0', --no-progress, --input, /workspace/document-graph.tar]
+  - id: scan-gateway
+    name: aquasec/trivy:0.75.0
+    args: [image, --scanners, 'vuln,secret', --ignore-unfixed, --severity, 'HIGH,CRITICAL', --exit-code, '1', --no-progress, --input, /workspace/gateway.tar]
+  - id: scan-document-graph
+    name: aquasec/trivy:0.75.0
+    args: [image, --scanners, 'vuln,secret', --ignore-unfixed, --severity, 'HIGH,CRITICAL', --exit-code, '1', --no-progress, --input, /workspace/document-graph.tar]
+images:
+  - '${_REGISTRY}/mcp-gateway:$BUILD_ID'
+  - '${_REGISTRY}/mcp-gateway:latest'
+  - '${_REGISTRY}/document-graph:$BUILD_ID'
+  - '${_REGISTRY}/document-graph:latest'
+substitutions:
+  _REGISTRY: us-central1-docker.pkg.dev/horology-dev/mcp-servers
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: E2_STANDARD_2
+timeout: 1800s

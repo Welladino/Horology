@@ -4,3 +4,7 @@ state/
 __pycache__/
 .pytest_cache/
 config/client.local.json
+
+.env.cloud
+config/policy.cloud.json
+config/client.cloud.json

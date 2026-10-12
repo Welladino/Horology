@@ -13,6 +13,10 @@
 !mcp-servers/mcp-gateway/integrations/**/*.py
 !mcp-servers/mcp-gateway/shared/
 !mcp-servers/mcp-gateway/shared/*.py
+!mcp-servers/mcp-gateway/shared/oauth/
+!mcp-servers/mcp-gateway/shared/oauth/*.py
+!mcp-servers/mcp-gateway/shared/oauth/
+!mcp-servers/mcp-gateway/shared/oauth/*.py
 !mcp-servers/mcp-gateway/certs/
 !mcp-servers/mcp-gateway/certs/supabase-prod-ca-2021.crt
 !mcp-servers/document-graph/
@@ -23,3 +27,5 @@
 !mcp-servers/document-graph/document_graph/**/*.py
 !mcp-servers/document-graph/document_graph/*.py
 **/__pycache__/
+
+!mcp-servers/mcp-gateway/shared/oauth/*.css

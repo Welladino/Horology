@@ -12,7 +12,8 @@ class ToolAccess:
         token = get_access_token()
         if token is None:
             raise Denied('Authentication required')
-        return token.client_id, authorize(self.policy, token.client_id, tool)
+        assignment = (token.claims or {}).get('assignment', token.client_id)
+        return assignment, authorize(self.policy, assignment, tool)
 
     def reserve(self, assignment, config, tool, provider='', cost=0):
         self.ledger.reserve(assignment, tool, config.get('limits', {}).get(tool, 0), provider, cost, self.policy.get('budgets', {}).get(provider))
@@ -20,4 +21,4 @@ class ToolAccess:
 
 def current_assignment():
     token = get_access_token()
-    return token.client_id if token else None
+    return (token.claims or {}).get('assignment', token.client_id) if token else None

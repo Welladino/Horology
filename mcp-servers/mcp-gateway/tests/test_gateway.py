@@ -21,8 +21,21 @@ from integrations.google_drive import client as google_drive
 from integrations.supabase import client as supabase
 from integrations.firecrawl import client as firecrawl
 from integrations.tavily import client as tavily
-from policy import Denied, Ledger, authorize, load_policy
+from policy import Denied, authorize, load_policy
+from shared.ledger import Ledger
+import os
+import psycopg2
 from server import build_server
+
+
+@pytest.fixture
+def ledger_dsn():
+    dsn = os.environ.get('GATEWAY_TEST_DATABASE_URL')
+    if not dsn:
+        pytest.skip('Set GATEWAY_TEST_DATABASE_URL to a disposable migrated Postgres database')
+    with psycopg2.connect(dsn) as db, db.cursor() as cur:
+        cur.execute('TRUNCATE gateway_quotas.reservations, gateway_quotas.cache')
+    yield os.environ.get('GATEWAY_TEST_RUNTIME_URL', dsn)
 
 
 @pytest.fixture
@@ -50,8 +63,8 @@ def test_global_scope_cannot_be_widened(tmp_path, policy):
 
 
 
-def test_atomic_budget_across_assignments_and_connections(tmp_path):
-    path = tmp_path / 'ledger.sqlite3'
+def test_atomic_budget_across_assignments_and_connections(ledger_dsn):
+    path = ledger_dsn
     Ledger(path)
     def reserve(i):
         try:
@@ -65,8 +78,8 @@ def test_atomic_budget_across_assignments_and_connections(tmp_path):
 
 
 
-def test_fail_closed_budget_and_restart_counts(tmp_path):
-    path = tmp_path / 'ledger.sqlite3'
+def test_fail_closed_budget_and_restart_counts(ledger_dsn):
+    path = ledger_dsn
     ledger = Ledger(path)
     with pytest.raises(Denied):
         ledger.reserve('a', 'search', 5, 'tavily', 1, {'daily': 0, 'monthly': 10, 'assignment': 5, 'calls_per_assignment': 5})
@@ -76,8 +89,8 @@ def test_fail_closed_budget_and_restart_counts(tmp_path):
 
 
 
-def test_assignment_credit_cap_combines_basic_and_advanced(tmp_path):
-    ledger = Ledger(tmp_path / 'ledger.sqlite3')
+def test_assignment_credit_cap_combines_basic_and_advanced(ledger_dsn):
+    ledger = Ledger(ledger_dsn)
     budget = {'daily': 100, 'monthly': 100, 'assignment': 5, 'calls_per_assignment': 5}
     ledger.reserve('a', 'basic', 5, 'tavily', 1, budget)
     ledger.reserve('a', 'advanced', 2, 'tavily', 2, budget)
@@ -87,8 +100,8 @@ def test_assignment_credit_cap_combines_basic_and_advanced(tmp_path):
 
 
 
-def test_cache_is_assignment_scoped(tmp_path):
-    ledger = Ledger(tmp_path / 'ledger.sqlite3')
+def test_cache_is_assignment_scoped(ledger_dsn):
+    ledger = Ledger(ledger_dsn)
     ledger.save_cache('a', 'q', [])
     assert ledger.cached('a', 'q') == []
     assert ledger.cached('b', 'q') is None
@@ -138,8 +151,8 @@ def test_tavily_no_auto_upgrade(policy, monkeypatch):
 
 
 
-def test_two_paid_calls_combined_across_tools(tmp_path):
-    ledger = Ledger(tmp_path / 'ledger.sqlite3')
+def test_two_paid_calls_combined_across_tools(ledger_dsn):
+    ledger = Ledger(ledger_dsn)
     budget = {'daily': 50, 'monthly': 500, 'assignment': 4, 'calls_per_assignment': 2}
     ledger.reserve('a', 'basic', 2, 'tavily', 1, budget)
     ledger.reserve('a', 'advanced', 2, 'tavily', 2, budget)
@@ -148,8 +161,8 @@ def test_two_paid_calls_combined_across_tools(tmp_path):
 
 
 
-def test_monthly_budget_shared_across_assignments(tmp_path):
-    ledger = Ledger(tmp_path / 'ledger.sqlite3')
+def test_monthly_budget_shared_across_assignments(ledger_dsn):
+    ledger = Ledger(ledger_dsn)
     budget = {'daily': 50, 'monthly': 2, 'assignment': 2, 'calls_per_assignment': 2}
     ledger.reserve('a', 'search', 2, 'tavily', 2, budget)
     with pytest.raises(Denied, match='Shared provider budget'):
@@ -223,3 +236,42 @@ def test_dependabot_bounds_payload_and_rejects_invalid_state(policy):
         request.assert_not_called()
         assert asyncio.run(github.github_dependabot_alerts(policy, policy['assignments']['local-smoke'], 'Welladino/Horology')) == []
         assert request.call_args.kwargs['params']['per_page'] == 5
+
+
+def test_previous_day_and_month_do_not_consume_current_budget(ledger_dsn):
+    ledger = Ledger(ledger_dsn)
+    budget = {'daily': 1, 'monthly': 1, 'assignment': 2, 'calls_per_assignment': 2}
+    ledger.reserve('old', 'search', 2, 'tavily', 1, budget)
+    with psycopg2.connect(os.environ['GATEWAY_TEST_DATABASE_URL']) as db, db.cursor() as cur:
+        cur.execute("UPDATE gateway_quotas.reservations SET day=CURRENT_DATE-40, month=date_trunc('month', CURRENT_DATE-40)::date")
+    ledger.reserve('new', 'search', 2, 'tavily', 1, budget)
+    with pytest.raises(Denied, match='Shared provider budget'):
+        ledger.reserve('other', 'search', 2, 'tavily', 1, budget)
+
+
+def test_database_failure_has_no_local_fallback():
+    ledger = Ledger('host=unused')
+    with patch('shared.ledger.psycopg2.connect', side_effect=psycopg2.OperationalError('unavailable')):
+        with pytest.raises(psycopg2.OperationalError):
+            ledger.reserve('a', 'read', 2)
+
+
+def test_runtime_role_cannot_reset_history_or_create_tables(ledger_dsn):
+    if not os.environ.get('GATEWAY_TEST_RUNTIME_URL'):
+        pytest.skip('Set GATEWAY_TEST_RUNTIME_URL to the restricted gateway role')
+    ledger = Ledger(ledger_dsn)
+    for query in ('DELETE FROM gateway_quotas.reservations', 'TRUNCATE gateway_quotas.reservations', 'CREATE TABLE gateway_quotas.escape (id integer)'):
+        with pytest.raises(psycopg2.errors.InsufficientPrivilege):
+            with ledger.connect() as db, db.cursor() as cur:
+                cur.execute(query)
+    ledger.check_ready()
+
+
+def test_neon_tls_uses_public_trust_instead_of_supabase_ca(monkeypatch):
+    monkeypatch.setenv('PGSSLROOTCERT', '/certs/supabase-ca.crt')
+    ledger = Ledger('host=example.neon.tech user=horology_gateway sslmode=require')
+    with patch('shared.ledger.psycopg2.connect', side_effect=psycopg2.OperationalError('test')) as connect:
+        with pytest.raises(psycopg2.OperationalError):
+            ledger.check_ready()
+    assert connect.call_args.kwargs['sslmode'] == 'verify-full'
+    assert connect.call_args.kwargs['sslrootcert'] != '/certs/supabase-ca.crt'

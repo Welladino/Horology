@@ -1,0 +1,9 @@
+{
+  "title": "Horology existing service updater",
+  "description": "Routine Horology deployment permissions; grant only at the scope documented in the IAM runbook.",
+  "stage": "GA",
+  "includedPermissions": [
+    "run.services.get",
+    "run.services.update"
+  ]
+}

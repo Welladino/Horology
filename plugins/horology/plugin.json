@@ -1,0 +1,23 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "dev-6acc6833d128819185f9cf4241d60942",
+  "version": "1.0.1",
+  "description": "Horology",
+  "author": {
+    "name": "App developer"
+  },
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "capabilities": [],
+        "category": "Other",
+        "defaultPrompt": null,
+        "developerName": "App developer",
+        "displayName": "Horology",
+        "longDescription": "Horology",
+        "shortDescription": "Horology"
+      },
+      "apps": "./.app.json"
+    }
+  }
+}

@@ -1,10 +1,10 @@
 """
 Container-level health/isolation test for the full Horology Docker
-Compose stack (hermes, document-graph-mcp).
+Compose projects (Hermes and the independent document-graph MCP).
 
 Covers:
-- Both main-stack containers reach a running state after `docker compose up -d`
-- The document graph MCP server is reachable from the host (no published port)
+- Both independently started containers reach a running state
+- The document graph MCP server is reachable only through a localhost port binding
 - The document graph MCP server ARE reachable from inside the hermes container (the
   internal Docker network works, matching how Hermes actually connects)
 - Hermes has exactly one host mount (hermes-data/), no others
@@ -26,7 +26,7 @@ containers themselves build, start, and stay correctly isolated from
 each other and the host - the same properties verified by hand after
 every docker-compose.yml change this project has made.
 
-Source under test: docker-compose.yml
+Source under test: docker-compose.yml and mcp-servers/document-graph/compose*.yaml
 """
 import json
 import subprocess
@@ -73,7 +73,16 @@ def running_stack():
     if not (REPO_ROOT / ".env").exists():
         pytest.skip(".env not found - container tests need real credentials to build/start the stack.")
 
-    build = _compose("build", timeout=300)
+    # Both MCP overlays share this network independently of Hermes's project name.
+    inspected = subprocess.run(["docker", "network", "inspect", "horology_default"], capture_output=True, timeout=10)
+    if inspected.returncode != 0:
+        subprocess.run(["docker", "network", "create", "horology_default"], capture_output=True, timeout=10, check=True)
+    # Ensure the official Hermes image is available on fresh machines.
+    image = subprocess.run(["docker", "image", "inspect", "nousresearch/hermes-agent:latest"], capture_output=True, timeout=10)
+    if image.returncode != 0:
+        subprocess.run(["docker", "pull", "nousresearch/hermes-agent:latest"], capture_output=True, timeout=300, check=True)
+    graph_files = ["-f", "mcp-servers/document-graph/compose.yaml", "-f", "mcp-servers/document-graph/compose.hermes-network.yaml"]
+    build = _compose(*graph_files, "build", timeout=300)
     if build.returncode != 0:
         pytest.fail(f"docker compose build failed:\n{build.stderr}")
 
@@ -81,8 +90,30 @@ def running_stack():
     if up.returncode != 0:
         pytest.fail(f"docker compose up failed:\n{up.stderr}")
 
-    # Give containers a moment to reach a stable running state.
-    time.sleep(3)
+    graph_up = _compose(*graph_files, "up", "-d", timeout=120)
+    if graph_up.returncode != 0:
+        pytest.fail(f"document-graph compose up failed:\n{graph_up.stderr}")
+
+    # Wait for the existing Hermes dashboard instead of racing its startup.
+    deadline = time.monotonic() + 30
+    while time.monotonic() < deadline:
+        try:
+            response = httpx.get("http://localhost:9119/", timeout=2, follow_redirects=False)
+            graph_ready = subprocess.run(
+                ["docker", "exec", "horology-hermes", "curl", "-sS", "--max-time", "2",
+                 "-o", "/dev/null", "-w", "%{http_code}", "-X", "POST",
+                 "-H", "Content-Type: application/json",
+                 "-H", "Accept: application/json, text/event-stream",
+                 "-d", "{}", "http://document-graph-mcp:8765/mcp"],
+                capture_output=True, text=True, timeout=5,
+            )
+            if response.status_code in (200, 302, 401) and graph_ready.stdout.strip() in ("400", "404", "406"):
+                break
+        except httpx.TransportError:
+            pass
+        time.sleep(0.5)
+    else:
+        pytest.fail("Hermes dashboard and document-graph did not become reachable within 30 seconds")
     yield
 
 
@@ -132,18 +163,26 @@ class TestMountIsolation:
 
 @requires_docker
 class TestNetworkIsolation:
-    def test_document_graph_mcp_not_reachable_from_host(self, running_stack):
-        with pytest.raises(httpx.ConnectError):
-            httpx.get("http://localhost:8765/mcp", timeout=3)
+    def test_document_graph_mcp_published_only_on_localhost(self, running_stack):
+        info = _container_inspect("horology-document-graph-mcp")
+        bindings = info["HostConfig"]["PortBindings"]
+        assert bindings == {"8765/tcp": [{"HostIp": "127.0.0.1", "HostPort": "8765"}]}
+        response = httpx.post("http://127.0.0.1:8765/mcp", json={},
+                              headers={"Accept": "application/json, text/event-stream"}, timeout=5)
+        assert response.status_code == 400
 
 
     def test_document_graph_mcp_reachable_from_hermes_container(self, running_stack):
         result = subprocess.run(
-            ["docker", "exec", "horology-hermes", "curl", "-sS", "-o", "/dev/null",
-             "-w", "%{http_code}", "http://document-graph-mcp:8765/mcp"],
+            ["docker", "exec", "horology-hermes", "curl", "-sS", "--max-time", "5",
+             "-o", "/dev/null", "-w", "%{http_code}", "-X", "POST",
+             "-H", "Content-Type: application/json",
+             "-H", "Accept: application/json, text/event-stream",
+             "-d", "{}", "http://document-graph-mcp:8765/mcp"],
             capture_output=True, text=True, timeout=15,
         )
-        # 400 is expected (bare GET without MCP session headers) - it proves
+        # 400 is expected (invalid JSON-RPC POST); a GET opens an event stream.
+        # The bounded POST proves
         # network reachability, not an error. A connection failure (curl
         # exit code, no HTTP status at all) would mean the network is broken.
         assert result.stdout.strip() in ("400", "404", "406"), (

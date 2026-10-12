@@ -1,4 +1,4 @@
-"""Offline HTTP smoke test: real MCP handshake/auth; no provider credentials/calls."""
+"""Local HTTP smoke test: real MCP handshake/auth; no provider credentials/calls."""
 import asyncio
 import hashlib
 import json
@@ -48,7 +48,7 @@ def main():
         path = Path(tmp) / 'policy.json'
         path.write_text(json.dumps(policy))
         env = {k: v for k, v in os.environ.items() if k not in ('GITHUB_TOKEN', 'GOOGLE_READ_ACCESS_TOKEN', 'SUPABASE_METADATA_DSN', 'TAVILY_API_KEY', 'FIRECRAWL_API_KEY')}
-        env.update(GATEWAY_POLICY=str(path), GATEWAY_LEDGER=str(Path(tmp) / 'ledger.sqlite3'), GATEWAY_BIND='127.0.0.1', GATEWAY_TOKEN_HASHES=json.dumps({hashlib.sha256(token.encode()).hexdigest(): 'local-smoke'}))
+        env.update(GATEWAY_POLICY=str(path), GATEWAY_BIND='127.0.0.1', GATEWAY_TOKEN_HASHES=json.dumps({hashlib.sha256(token.encode()).hexdigest(): 'local-smoke'}))
         # Port deliberately fixed to the documented local port. Fail if occupied.
         import socket
         with socket.socket() as sock:

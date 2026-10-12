@@ -16,7 +16,7 @@ token = secrets.token_urlsafe(32)
 hashes = json.dumps({hashlib.sha256(token.encode()).hexdigest(): 'local-smoke'}, separators=(',', ':'))
 files = {
     'config/policy.local.json': json.dumps(policy, indent=2) + '\n',
-    '.env.local': f"GATEWAY_TOKEN_HASHES='{hashes}'\nGITHUB_TOKEN=\nGOOGLE_READ_ACCESS_TOKEN=\nSUPABASE_METADATA_DSN=\nTAVILY_API_KEY=\nFIRECRAWL_API_KEY=\n",
+    '.env.local': f"GATEWAY_TOKEN_HASHES='{hashes}'\nGATEWAY_DATABASE_URL=\nGITHUB_TOKEN=\nGOOGLE_READ_ACCESS_TOKEN=\nSUPABASE_METADATA_DSN=\nTAVILY_API_KEY=\nFIRECRAWL_API_KEY=\n",
     'config/client.local.json': json.dumps({'url': 'http://127.0.0.1:8767/mcp', 'headers': {'Authorization': 'Bearer ' + token}}, indent=2) + '\n',
 }
 for filename, content in files.items():

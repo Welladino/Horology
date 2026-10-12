@@ -1,0 +1,142 @@
+* {
+    box-sizing: border-box
+}
+
+body {
+    margin: 0;
+    background: #f3f5f8;
+    color: #18243a;
+    font: 16px/1.55 system-ui, -apple-system, sans-serif;
+    padding: 40px 20px
+}
+
+main {
+    max-width: 620px;
+    margin: auto;
+    background: white;
+    border: 1px solid #dfe5ee;
+    border-radius: 20px;
+    padding: 36px;
+    box-shadow: 0 12px 40px #1a29400a
+}
+
+.brand {
+    letter-spacing: .18em;
+    font-size: 12px;
+    font-weight: 750;
+    color: #52627b
+}
+
+h1 {
+    font-size: 28px;
+    line-height: 1.25;
+    margin: 14px 0
+}
+
+h2 {
+    font-size: 18px;
+    margin-top: 28px
+}
+
+.intro {
+    color: #52627b
+}
+
+.account {
+    padding: 14px 18px;
+    background: #f3f5f8;
+    border-radius: 10px;
+    overflow-wrap: anywhere
+}
+
+.account span {
+    display: block;
+    font-size: 12px;
+    color: #52627b
+}
+
+.permissions {
+    list-style: none;
+    padding: 0
+}
+
+.permissions li {
+    padding: 14px 0;
+    border-bottom: 1px solid #e8edf3
+}
+
+.permissions p {
+    margin: 4px 0 0;
+    color: #52627b;
+    font-size: 14px
+}
+
+.note,
+.footer {
+    font-size: 13px;
+    color: #52627b
+}
+
+details {
+    margin: 24px 0
+}
+
+summary {
+    cursor: pointer;
+    font-size: 14px
+}
+
+.tools {
+    font-size: 12px;
+    overflow-wrap: anywhere
+}
+
+form {
+    display: flex;
+    gap: 12px;
+    margin-top: 28px
+}
+
+button {
+    font: inherit;
+    font-weight: 650;
+    border-radius: 9px;
+    padding: 11px 20px;
+    cursor: pointer
+}
+
+.allow {
+    background: #234ac7;
+    color: white;
+    border: 1px solid #234ac7
+}
+
+.deny {
+    background: white;
+    color: #24344f;
+    border: 1px solid #ccd5e2
+}
+
+button:focus-visible,
+summary:focus-visible {
+    outline: 3px solid #779dff;
+    outline-offset: 4px
+}
+
+@media(max-width:480px) {
+    body {
+        padding: 16px 12px
+    }
+
+    main {
+        padding: 24px
+    }
+
+    h1 {
+        font-size: 24px
+    }
+
+    form {
+        flex-direction: column
+    }
+}

@@ -1,0 +1,32 @@
+[
+  {
+    "name": "keep-deployed",
+    "action": {
+      "type": "Keep"
+    },
+    "condition": {
+      "tagState": "tagged",
+      "tagPrefixes": [
+        "deployed-"
+      ]
+    }
+  },
+  {
+    "name": "keep-five-recent",
+    "action": {
+      "type": "Keep"
+    },
+    "mostRecentVersions": {
+      "keepCount": 5
+    }
+  },
+  {
+    "name": "delete-other-versions",
+    "action": {
+      "type": "Delete"
+    },
+    "condition": {
+      "tagState": "any"
+    }
+  }
+]

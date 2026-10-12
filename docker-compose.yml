@@ -1,18 +1,6 @@
-services:
-  document-graph-mcp:
-    build:
-      context: .
-      dockerfile: mcp-servers/document-graph/Dockerfile
-    container_name: horology-document-graph-mcp
-    restart: unless-stopped
-    # No `ports:` here deliberately - not published to the host at all.
-    # Reachable only from other containers on this compose network, by
-    # service name (http://document-graph-mcp:8765/mcp), which is how the
-    # hermes service connects to it. Avoids mounting the Docker socket into
-    # Hermes's container just to reach this one via `docker exec`.
-    env_file:
-      - ./mcp-servers/document-graph/.env
+name: horology-hermes
 
+services:
   hermes:
     image: nousresearch/hermes-agent:latest
     container_name: horology-hermes
@@ -37,3 +25,9 @@ services:
       # into the cron script's subprocess environment, see
       # docs/planning/research/2026-08-07_cron-script-security-pattern_research.md.
       - CRON_SWEEP_RO_DATABASE_URL=${CRON_SWEEP_RO_DATABASE_URL:?set CRON_SWEEP_RO_DATABASE_URL in .env}
+
+# Shared network is managed independently of the Hermes project.
+networks:
+  default:
+    external: true
+    name: horology_default

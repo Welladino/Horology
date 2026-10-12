@@ -1,0 +1,22 @@
+{
+  "title": "Horology build submission and deployment visibility",
+  "description": "Routine Horology deployment permissions; grant only at the scope documented in the IAM runbook.",
+  "stage": "GA",
+  "includedPermissions": [
+    "resourcemanager.projects.get",
+    "serviceusage.services.use",
+    "cloudbuild.builds.create",
+    "cloudbuild.builds.get",
+    "cloudbuild.builds.list",
+    "run.services.get",
+    "run.services.list",
+    "run.revisions.get",
+    "run.revisions.list",
+    "run.configurations.get",
+    "run.configurations.list",
+    "run.routes.get",
+    "run.routes.list",
+    "run.operations.get",
+    "run.operations.list"
+  ]
+}

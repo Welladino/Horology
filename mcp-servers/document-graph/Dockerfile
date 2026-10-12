@@ -7,11 +7,16 @@ WORKDIR /app
 
 COPY shared-runtime /opt/shared-runtime
 COPY mcp-servers/document-graph/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt /opt/shared-runtime
+RUN pip install --no-cache-dir --upgrade pip==26.2.1 \
+    && pip install --no-cache-dir -r requirements.txt /opt/shared-runtime \
+    && pip uninstall -y pip setuptools wheel \
+    && useradd --uid 10001 --create-home --shell /usr/sbin/nologin horology
 
 COPY mcp-servers/document-graph/server.py .
 
 COPY mcp-servers/document-graph/document_graph ./document_graph
 
-# Internal Compose network only; no published host port.
+USER 10001
+
+# Compose controls port publication; local host access is loopback only.
 CMD ["python", "server.py"]

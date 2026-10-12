@@ -1,0 +1,15 @@
+name: horology-document-graph-mcp
+
+services:
+  document-graph-mcp:
+    image: horology-document-graph-mcp:latest
+    build:
+      context: ../..
+      dockerfile: mcp-servers/document-graph/Dockerfile
+    container_name: horology-document-graph-mcp
+    restart: unless-stopped
+    env_file:
+      - .env
+    # Laptop clients can connect; do not expose this unauthenticated service on the LAN.
+    ports:
+      - "127.0.0.1:8765:8765"

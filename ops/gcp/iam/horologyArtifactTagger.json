@@ -1,0 +1,11 @@
+{
+  "title": "Horology image tag maintenance",
+  "description": "Routine Horology deployment permissions; grant only at the scope documented in the IAM runbook.",
+  "stage": "GA",
+  "includedPermissions": [
+    "artifactregistry.tags.create",
+    "artifactregistry.tags.update",
+    "artifactregistry.tags.get",
+    "artifactregistry.tags.list"
+  ]
+}

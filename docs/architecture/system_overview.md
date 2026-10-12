@@ -10,11 +10,11 @@ This is a separate project from `Article_aggregator_agent` (the actual product/b
 
 ## Runtime: main stack and restricted gateway
 
-The main Compose stack runs Hermes and document-graph-mcp. Document graph listens on port 8765 only inside the Docker network, persists business outputs to Neon, and uses OpenRouter embeddings. Its seven narrow document tools expose no arbitrary SQL.
+Hermes runs in the root `horology-hermes` Compose project. Document-graph-mcp runs in its own `horology-document-graph-mcp` project; its optional `compose.hermes-network.yaml` attaches it to the Hermes network as `document-graph-mcp`. Document graph listens on container port 8765 and publishes it only on laptop localhost at `127.0.0.1:8765`, persists business outputs to Neon, and uses OpenRouter embeddings. Its seven narrow document tools expose no arbitrary SQL.
 
 The restricted mcp-gateway runs in its own Compose project on localhost port 8767. The optional compose.hermes-network.yaml joins the existing horology_default network under alias horology-mcp-gateway. Both Second-Soul and Code Sentinel connect to it with separate authenticated GitHub-only assignments. Repository access comes from policy and assignment intersection; both assignments currently cover Welladino/Horology and Welladino/Article_aggregator_agent. Provider credentials remain in gateway .env.local, never in Hermes; Hermes holds only its gateway bearer credentials. The old github-monitor server and Compose service are retired.
 
-The gateway exposes seventeen tools; Hermes monitoring profiles select only gateway_status plus nine GitHub tools. Local assignments expire after 24 hours, and per-tool usage persists across restarts. Scheduling still requires fresh assignment provisioning per run. The standalone gateway's localhost port requires authentication. Document graph publishes no host port and currently relies on internal network isolation; public cloud authentication remains future work.
+The gateway exposes seventeen tools; Hermes monitoring profiles select only gateway_status plus nine GitHub tools. Local assignments expire after 24 hours, and per-tool usage persists across restarts. Scheduling still requires fresh assignment provisioning per run. The standalone gateway's localhost port requires authentication. Local document-graph uses localhost binding and the shared Docker network, with no application authentication. Its Cloud Run deployment separately requires IAM authentication.
 
 ## Dispatch mechanism
 

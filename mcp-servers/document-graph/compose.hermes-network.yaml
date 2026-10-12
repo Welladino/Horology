@@ -1,0 +1,10 @@
+services:
+  document-graph-mcp:
+    networks:
+      default:
+      hermes:
+        aliases: [document-graph-mcp]
+networks:
+  hermes:
+    external: true
+    name: horology_default

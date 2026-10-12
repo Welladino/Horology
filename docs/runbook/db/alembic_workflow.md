@@ -79,3 +79,13 @@ Current tables (as of `20260805_001_create_document_graph.py`):
 - **`run_log`** — one row per supervisor/subagent run: `agent`, `goal`, `summary`, optionally linked to the `document_id` it produced. The human-readable audit trail, distinct from the documents themselves.
 
 No `document_embeddings` table yet — semantic search over documents is deliberately deferred (see founding-decisions note) until document volume actually makes structural filtering (by `doc_type`, date, etc.) insufficient.
+
+## Gateway quota ledger
+
+Migration `20261011_001_gateway_quota_ledger.py` adds `gateway_quotas.reservations`, `gateway_quotas.cache` and the single-row `gateway_quotas.reservation_lock`. It also creates `horology_gateway`, a dedicated login without ownership, elevated attributes or access grants to document tables.
+
+Before `alembic upgrade head`, save a strong `GATEWAY_DB_PASSWORD` in the private root `.env`. Use the existing direct owner DATABASE_URL for migrations. Runtime uses GATEWAY_DATABASE_URL in `mcp-servers/mcp-gateway/.env.local`: the existing pooled Neon host/database, with user horology_gateway and the new password (URL-encoded). Do not copy the document-graph owner credential into the gateway.
+
+The runtime role cannot delete reservations, truncate tables or create objects in the quota schema. Reservations serialize through a transaction row lock before totals are checked. The downgrade drops quota data and the dedicated role; stop the gateway and back up accounting before any downgrade.
+
+For local quota regression tests, use a disposable Postgres database, stamp its baseline as `20260807_001` and upgrade just the quota migration. This baseline stamp is for an empty test database only, never the deployed Neon database. Set GATEWAY_TEST_DATABASE_URL to the disposable admin connection and GATEWAY_TEST_RUNTIME_URL to its restricted gateway connection; tests truncate the test quota tables. Never point these test variables at Neon production data.

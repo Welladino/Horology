@@ -1,0 +1,153 @@
+# Deploy the MCP services to Cloud Run
+
+Start with [MCP operations: how the pieces connect](../architecture/mcp_operations.md) for diagrams, identities, security checks and client access.
+
+Status: Google-backed gateway OAuth deployed and private cloud checks verified on 2026-10-11. Eleven secrets exist. Public gateway ingress is enabled and unauthenticated tools are rejected; native browser login remains pending. Document graph remains IAM-private.
+
+## Target
+
+Project `horology-dev`, region `us-central1`, Artifact Registry repository `mcp-servers`. Service names `mcp-gateway` and `document-graph`. Use explicit project/region flags on every cloud command. Deploy private first. Gateway OAuth clients need externally reachable discovery/sign-in routes; granting allUsers gateway invocation requires the operator’s explicit approval. Keep document graph IAM-private.
+
+## Prerequisites
+
+Cloud Run (`run.googleapis.com`), Artifact Registry (`artifactregistry.googleapis.com`), Secret Manager (`secretmanager.googleapis.com`) and IAM (`iam.googleapis.com`) must be enabled. All four were enabled by the operator and verified on 2026-10-11. Local Docker builds do not need Cloud Build. No APIs were enabled by the preparation work.
+
+## Images
+
+From the repository root:
+
+```sh
+docker buildx build --platform linux/amd64 --load -t horology-mcp-gateway:cloud -f mcp-servers/mcp-gateway/Dockerfile .
+docker buildx build --platform linux/amd64 --load -t horology-document-graph:cloud -f mcp-servers/document-graph/Dockerfile .
+```
+
+The root build allowlist packages shared-runtime and the gateway public CA, excluding private env/config files. The repository now exists and the initial tested images are uploaded. Use the Horology gcloud configuration for registry authentication on future uploads. Tag each image with a unique release tag; deploy the resulting digest.
+
+## Runtime settings and secrets
+
+Both servers read Cloud Run's PORT and use stateless JSON MCP requests. Existing local ports remain 8767 and 8765. No persistent container filesystem is needed.
+
+| Service | Secret Manager input | Private local source |
+| --- | --- | --- |
+| gateway | GATEWAY_DATABASE_URL | gateway .env.local |
+| gateway | GITHUB_TOKEN, TAVILY_API_KEY, FIRECRAWL_API_KEY, SUPABASE_METADATA_DSN | gateway .env.local |
+| gateway | GATEWAY_TOKEN_HASHES | fresh cloud assignment mapping; do not reuse expiring local assignments |
+| gateway | gateway policy file mounted at /config/policy.json | cloud policy prepared separately from local policy |
+| document graph | DATABASE_URL_POOLED, OPENROUTER_API_KEY | document-graph .env |
+
+Google sign-in credentials now exist in service-specific Secret Manager secrets; Google Drive provider credentials remain absent. Never place secret values in tracked files, command arguments, logs or container layers. Pin deployed secret versions instead of silently relying on latest. Give each runtime identity secretAccessor on its own secrets only. A gateway credential never needs access to document-graph DB/OpenRouter secrets.
+
+Set GATEWAY_PUBLIC_URL to the actual HTTPS Cloud Run service base URL, without /mcp. Auth metadata uses this base URL and its /mcp endpoint. A private initial revision may start using the local metadata default while discovering the service URL; immediately update GATEWAY_PUBLIC_URL and verify the revised metadata before client testing. With GATEWAY_OAUTH_ENABLED=true, the gateway publishes authorization-server discovery as well as protected-resource metadata.
+
+## First deployment settings
+
+Use --no-allow-unauthenticated, --min-instances=0, --max-instances=1, --concurrency=4, --cpu=1, --memory=512Mi, --port=8080, --timeout=60 and request-based billing (--cpu-throttling). These are initial operating limits, not a spending cap. Neon reservations remain atomic even if revisions overlap. Choose a billing alert amount with the operator.
+
+Cloud Run IAM protects document graph until application/client authentication is implemented. The gateway also retains assignment-bearer authorization. A test client for the gateway sends its Cloud Run identity token in X-Serverless-Authorization and its assignment bearer in Authorization; document graph needs only Cloud Run authentication. Do not expose document graph publicly to simplify testing.
+
+Initial deployment uses these concrete resources (all secret versions are 1):
+
+- Gateway identity: mcp-gateway@horology-dev.iam.gserviceaccount.com.
+- Document-graph identity: document-graph@horology-dev.iam.gserviceaccount.com.
+- Gateway image: us-central1-docker.pkg.dev/horology-dev/mcp-servers/mcp-gateway@sha256:a751997a7dfe8e47a3079d443ed2769e9bafd574be8a1430d61aef157c55a029.
+- Graph image: us-central1-docker.pkg.dev/horology-dev/mcp-servers/document-graph@sha256:ad8b516cc09877d7ed9936cb2a8d981fd282fabcd2ea1bd1ab45a2a71e79bdb0.
+
+Gateway secret mappings: GATEWAY_DATABASE_URL=horology-gateway-db:1, GITHUB_TOKEN=horology-gateway-github:1, TAVILY_API_KEY=horology-gateway-tavily:1, FIRECRAWL_API_KEY=horology-gateway-firecrawl:1, SUPABASE_METADATA_DSN=horology-gateway-supabase:1, GATEWAY_TOKEN_HASHES=horology-gateway-token-hashes:1, /config/policy.json=horology-gateway-policy:1.
+Graph mappings: DATABASE_URL_POOLED=horology-graph-db:1, OPENROUTER_API_KEY=horology-graph-openrouter:1.
+
+## Verified endpoints and revisions
+
+- Gateway: https://mcp-gateway-366292507424.us-central1.run.app/mcp; current OAuth revision mcp-gateway-00004-25t. Initial static-token revision mcp-gateway-00002-df9 remains a rollback reference.
+- Document graph: https://document-graph-366292507424.us-central1.run.app/mcp; revision document-graph-00001-k69.
+- Cloud Run also advertises legacy hashed service URL aliases. Gateway auth metadata uses the verified endpoint above.
+- Both services have no service-level invoker bindings; callers need inherited project permission or an explicit later invoker grant. Neither has allUsers access.
+
+The private cloud client file is config/client.cloud.json, ignored by Git. It contains the assignment bearer only; a compatible test client must obtain a fresh Cloud Run identity token separately. The initial cloud assignment expires 24 hours after provisioning. Do not extend or reuse run IDs to reset counters. Generate a fresh operator-approved assignment for each future run, update versioned policy/token mappings and retain shared quota history.
+
+## Inspect and roll back
+
+```sh
+gcloud --configuration=horology run services describe mcp-gateway --project=horology-dev --region=us-central1
+gcloud --configuration=horology run services describe document-graph --project=horology-dev --region=us-central1
+# Replace the revision placeholder with a previously verified revision:
+gcloud --configuration=horology run services update-traffic mcp-gateway --project=horology-dev --region=us-central1 --to-revisions=VERIFIED_REVISION=100
+```
+
+For a future deployment use `gcloud --configuration=horology run deploy SERVICE`, specifying the target project/region, pinned image, corresponding runtime identity and secret mapping above, and the first deployment settings. Retain GATEWAY_PUBLIC_URL on gateway revisions. Never dump secret values to diagnose a deployment.
+
+## Validation and rollback
+
+Verify unauthenticated requests fail at ingress; then test MCP initialization, tools and denied scopes with the compatible authenticated client. Check metadata URLs, quota totals across service restarts, safe errors and JSON operation logs. Keep paid calls minimal. Document graph writes/embeddings remain deferred until its cloud access and usage limits are verified. Record image digest, revision, URLs and secret version numbers without values.
+
+Before updating an existing service, record the current revision. Rollback sends traffic to the prior verified revision; it does not downgrade the Neon quota schema or reset usage history.
+
+Sources: [container contract](https://docs.cloud.google.com/run/docs/container-contract), [service authentication](https://docs.cloud.google.com/run/docs/authenticating/service-to-service).
+
+## OAuth revision
+
+Gateway image: `us-central1-docker.pkg.dev/horology-dev/mcp-servers/mcp-gateway@sha256:2bb10839baf17a5cb93001a594c80bfadbdafa92efa85fcd30f6498cc31f4f71`, tag `20261011-oauth-2`, revision `mcp-gateway-00004-25t`.
+
+Additional mappings: GOOGLE_OAUTH_CLIENT_ID=horology-gateway-google-client-id:1 and GOOGLE_OAUTH_CLIENT_SECRET=horology-gateway-google-client-secret:1. Policy is now horology-gateway-policy:2. GATEWAY_OAUTH_ENABLED=true; approved email-to-assignment mapping is configured in GATEWAY_OAUTH_ASSIGNMENTS. The owner-interactive assignment is independently provisioned for 30 days and retains all existing caps; the previous cloud-smoke expiry is unchanged.
+
+Google callback: `https://mcp-gateway-366292507424.us-central1.run.app/auth/google/callback`. MCP clients register with the gateway, not with Google. The gateway alone holds the Google client secret. Google only supplies identity, not Drive access.
+
+Alembic revision 20261011_002 persists OAuth clients, login state and grants in gateway_auth. See the [OAuth note](../../planning/notes/2026-10-11_gateway-oauth_note.md) for credential storage, scopes, expiry and validation.
+
+The application omits Uvicorn access logs. The `_Default` Logging sink has exclusion `horology-oauth-query-privacy` for gateway `/auth/` and `/authorize` request URLs; all other tool/request/error and required audit logging remains. Preserve this exclusion and copy it to any future custom request-log sink.
+
+Private cloud smoke verified discovery, DCR, Google redirect, callback CSRF rejection and 17-tool initialization using the existing assignment bearer. Seventy-six regression tests passed. No paid upstream calls were made.
+
+External ingress is currently pending: automatic approval review rejected granting `allUsers` `roles/run.invoker` because the earlier setup authorization did not explicitly cover public IAM exposure. The operator has been asked to approve that exact gateway-only change. No public binding was applied. Native Codex login remains pending the ingress decision and operator browser sign-in. Document graph has no public invoker binding.
+
+If external ingress is approved, grant gateway invocation, verify anonymous `/mcp` returns 401 and document graph remains inaccessible, then connect Codex using DCR and complete the Google browser flow. If ingress remains private, a compatible client needs Cloud Run identity headers in addition to OAuth; standard remote clients cannot be assumed to supply them.
+
+Rollback from externally accessible OAuth must restore private ingress before reverting to an older revision. Do not leave an old static-token revision publicly reachable by accident. Preserve quota and OAuth schema/history during rollback.
+
+### Public ingress decision update
+
+The operator approved option 1 (externally reachable gateway protected by OAuth). Applying an allUsers Cloud Run Invoker binding failed with GCP FAILED_PRECONDITION because of an organization policy restricting permitted IAM members. No binding was applied.
+
+Google's documented alternative is a service-level `--no-invoker-iam-check` update on mcp-gateway only. Automatic approval review rejected this fallback because the transcript did not explicitly authorize that distinct setting. The gateway remains IAM-private, and native OAuth login cannot yet reach discovery publicly. Document graph is unchanged. Await explicit approval for disabling the gateway's invoker IAM check; do not alter organization policies.
+
+Reference: [Cloud Run public access](https://docs.cloud.google.com/run/docs/authenticating/public). Restore `--invoker-iam-check` to reverse this service-level setting if it is later enabled.
+
+### Public gateway enabled
+
+The operator explicitly approved disabling the invoker IAM check on mcp-gateway only. Applied `--no-invoker-iam-check` to horology-dev/us-central1 on 2026-10-11; service annotation `run.googleapis.com/invoker-iam-disabled=true`. Revision remains mcp-gateway-00004-25t. No organization policy or document-graph setting was changed.
+
+External checks passed: OAuth discovery 200; anonymous and invalid-bearer `/mcp` requests 401; document graph anonymous request 403. Codex DCR login initiated and browser sign-in is pending. Reverse gateway public ingress with `--invoker-iam-check` before rolling back to a revision that lacks OAuth protection.
+
+### Consent CSP release
+
+Deployed revision mcp-gateway-00005-wjd, tag 20261011-oauth-csp-1, digest sha256:9f9eb79e1ed223ec904d738aa737248f105edbb25e2ac6bf4558bcd8750162c6. Consent-page form-action now permits the validated client's exact callback origin and port so Chrome can follow the final OAuth redirect. Discovery and auth boundary checks passed after deployment. Browser verification is pending a fresh login; do not reuse a consumed consent page. See [fix note](../../planning/notes/2026-10-11_oauth-consent-csp-fix_note.md).
+
+### Native Codex OAuth completed
+
+On 2026-10-12 the operator completed Google sign-in and gateway consent. Codex CLI confirmed `Successfully logged in to MCP server 'horology'`; `codex mcp list` reports horology enabled with OAuth. The consent CSP fix is verified by this completed browser flow. The existing chat has not reloaded its native tool catalog, so direct OAuth-authenticated tool invocation in this chat remains pending a fresh connection. No paid tools were called during login verification.
+
+### One-page warm Firecrawl timing test
+
+On 2026-10-12, the operator requested a fresh scrape of a different page. Approved https://example.com/ in the global Firecrawl URL policy and owner-interactive assignment without changing limits or expiry. Policy Secret Manager version is now 3; current revision mcp-gateway-00006-wf2 uses the same image digest as the consent CSP release. No application code changed for this test.
+
+After a successful gateway_status warm-up, the native scrape took 13.554 seconds as observed from the assistant and 9.098 seconds inside the handler. It returned 959 markdown characters. Instance-start logs precede the measured call; no new instance-start event occurred during it. The preceding Forbes test took 32.342 seconds including an instance startup and OAuth token renewal, with 9.487 seconds inside its handler. These are single samples from different pages, not a controlled estimate of cold-start savings. Provider, database, auth and client overhead are not fully separated.
+
+## Current release path (2026-10-12)
+
+Use [Cloud Build release instructions](cloud_build.md) instead of producing locally versioned release images. Both services now use images built and scanned by the root `cloudbuild.yaml` pipeline in `us-central1`.
+
+- Gateway: `mcp-gateway-00007-r2c`, image digest `sha256:faf5e1ef426684baa4bbb4bbe6468643082f9291c3eca2a2cd971a9c7a885ef5`.
+- Document graph: `document-graph-00002-rks`, image digest `sha256:81c61b59660cb8e59a96ed22a35a2d6b208d2332c90cf6bbd859729e267f7d9f`.
+- Artifact Registry cleanup: five recent versions per package plus protected `deployed-` tags. Both current images have `deployed-current`.
+- Build account: `mcp-build@horology-dev.iam.gserviceaccount.com`; repository writer, project log writer, source-bucket object viewer. No provider-secret or deployment permissions.
+
+Rollback to the previous gateway revision while its image remains retained:
+
+```bash
+gcloud --configuration=horology run services update-traffic mcp-gateway --project=horology-dev --region=us-central1 --to-revisions=mcp-gateway-00006-wf2=100
+```
+
+If using an older revision for a lasting rollback, move `deployed-current` to its digest before cleanup can remove it. Preserve intentional rollback digests with `deployed-` tags when older than five versions.
+
+## Routine deployment identity
+
+Use `--configuration=horology` for builds and updates; it now selects the everyday account and impersonates `horology-deployer`. Use `--configuration=horology-admin` for IAM/infrastructure commands in earlier setup sections. See [IAM and deployment access](../architecture/gcp_access.md). Existing runtime accounts, secrets, ingress and live service revisions are unchanged by this IAM setup.
