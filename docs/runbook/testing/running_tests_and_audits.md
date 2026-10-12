@@ -48,7 +48,7 @@ pip-audit
 
 # Each MCP server's actual production requirements.txt (what its Dockerfile installs)
 pip-audit -r mcp-servers/document-graph/requirements.txt
-pip-audit -r mcp-servers/github-monitor/requirements.txt
+pip-audit -r mcp-servers/mcp-gateway/requirements.txt
 ```
 
 Run all three whenever a dependency is added or bumped, and periodically (e.g. before any deployment) since a package can gain a new CVE after it's already pinned. If a vulnerability is found: check what it actually is (`pip-audit --desc`) before reflexively bumping — some are low-relevance to this project's actual usage (e.g. a local-multi-user issue on a single-user dev machine), but bumping to the fixed version is still usually the right call when there's no compatibility cost (re-run the test suite after bumping to confirm nothing broke).
@@ -56,3 +56,5 @@ Run all three whenever a dependency is added or bumped, and periodically (e.g. b
 Note: `pip-audit` only checks Python dependencies here — Hermes's own bundled dependency vulnerabilities (found via `hermes doctor` / `hermes security audit` inside the container, not this tool) are tracked separately, see [`docs/planning/notes/2026-08-06_hardening-config-audit_note.md`](../../planning/notes/2026-08-06_hardening-config-audit_note.md).
 
 For both MCP servers, install the shared runtime into the native development environment before tests: `.venv/bin/python -m pip install --no-deps -e shared-runtime`. Docker images install it from the shared build context automatically.
+
+Gateway tests and the local HTTP smoke helper live in `tests/mcp_servers/gateway/`. Run the helper with `.venv/bin/python tests/mcp_servers/gateway/smoke.py` and a disposable migrated `GATEWAY_DATABASE_URL`. The helper does not call external providers.

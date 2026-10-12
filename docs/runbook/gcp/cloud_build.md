@@ -36,3 +36,7 @@ Use Docker Compose for local testing; keep its single `latest` tag per service. 
 ## Reports and limitations
 
 Cloud Build logs contain pytest/audit/scanner results in Cloud Logging. JUnit is written under `/workspace/reports` during the build; configure a report bucket if persistent downloadable JUnit is needed. Scans report all HIGH/CRITICAL image vulnerabilities, then block HIGH/CRITICAL vulnerabilities with available fixes, secrets and infrastructure misconfiguration; they do not replace a manual security review. Scanner versions are pinned; review upgrades and vulnerability database availability periodically. No broad ignore lists or `allowFailure` bypasses.
+
+## Moving an existing deployed tag with restricted IAM
+
+The routine deployer has tags.update but no tags.delete. The gcloud docker tags add command can delete/recreate an existing tag and fails in that case. Use Artifact Registry's tags.patch API with updateMask=version to move an existing deployed-current tag, keeping the restricted IAM unchanged. Authenticate through the horology configuration, hold the resulting access token only in process memory, and verify the returned version equals the deployed digest. See [the verified rollout note](../../planning/notes/2026-10-12_mcp-read-capabilities_note.md).

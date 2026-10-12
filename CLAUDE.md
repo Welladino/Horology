@@ -29,7 +29,7 @@ See `docs/planning/README.md` for the full workflow and naming convention.
 
 ## Subscription agents
 
-The secondary workflow in `subscription-agents/` uses personal AI subscriptions, Drive instructions and Sheets records. Read [its architecture](docs/architecture/subscription_agents.md) and [runbook](docs/runbook/subscription-agents/README.md) before changing it. Its skill source is `subscription-agents/skills/`; installed copies and plugins are distributions. Subscription-agent business outputs go to Drive/Sheets. The Neon and kanban rules below apply to Hermes/Second-Soul agents, not subscription-agent sessions.
+The secondary subscription-agent workflow uses personal AI subscriptions, Drive instructions and Sheets records. Read [its architecture](docs/architecture/subscription_agents.md) and [runbook](docs/runbook/subscription-agents/README.md) before changing it. Its skill source is `plugins/welladino-workflows/skills/`; installed copies are distributions. Subscription-agent business outputs go to Drive/Sheets. The Neon and kanban rules below apply to Hermes/Second-Soul agents, not subscription-agent sessions.
 
 ## How Hermes Subagents Should Create Documents
 

@@ -10,7 +10,7 @@
   },
   "apps": "./.app.json",
   "name": "dev-6acc6833d128819185f9cf4241d60942",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Horology",
   "author": {
     "name": "App developer"

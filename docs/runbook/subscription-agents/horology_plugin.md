@@ -2,8 +2,8 @@
 
 ## Source locations
 
-- `personas/subagents/research.md`: Agent Register Master ID 1, Research prompt.
-- `personas/subagents/technical-assessment.md`: Master ID 2, Technical Assessment prompt.
+- `personas/subscriptions/research.md`: Agent Register Master ID 1, Research prompt.
+- `personas/subscriptions/technical-assessment.md`: Master ID 2, Technical Assessment prompt.
 - `plugins/horology/`: Horology App-backed plugin manifests, preserved `.app.json` binding and the `horology-mcp-access` operating skill.
 
 The two personas are subscription-agent prompts, not provisioned Hermes profiles. Their original Instructions / Prompt text is preserved under that heading. Keep the Research and Technical Assessment workflow skills installed separately; the gateway skill does not replace them.
@@ -25,3 +25,7 @@ The existing private personal plugin is [Horology](https://chatgpt.com/plugins/p
 7. Check `gateway_status` for connectivity without invoking paid provider tools.
 
 Existing tools remain supplied by the App connection. A saved skill release does not prove it has reloaded into an already open chat; verify discovery in a refreshed host before claiming the host used the new skill. No server redeployment or OAuth reconnect is required just to save these instructions.
+
+## Read capability expansion (1.0.2)
+
+Release pluginrel_6accc08041f0819195ce29023943ab84 updates the skill for fixed Alexandria reads and bounded Tavily extraction. The App binding is unchanged. Google, GitHub writes and DataForSEO remain deferred. Refresh host tool discovery/instructions if new tools are absent; reconnecting is not a quota reset.

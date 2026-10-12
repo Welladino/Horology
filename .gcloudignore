@@ -24,8 +24,8 @@
 !mcp-servers/mcp-gateway/integrations/**
 !mcp-servers/mcp-gateway/shared/
 !mcp-servers/mcp-gateway/shared/**
-!mcp-servers/mcp-gateway/tests/
-!mcp-servers/mcp-gateway/tests/**
+!tests/mcp_servers/gateway/
+!tests/mcp_servers/gateway/**
 !mcp-servers/mcp-gateway/config/
 !mcp-servers/mcp-gateway/config/policy.example.json
 !mcp-servers/mcp-gateway/certs/
@@ -41,3 +41,11 @@
 **/.env*
 **/*.local.json
 **/*.pyc
+
+!mcp-servers/mcp-gateway/database/
+!mcp-servers/mcp-gateway/database/**/
+!mcp-servers/mcp-gateway/database/**/*.py
+!mcp-servers/mcp-gateway/database/*.py
+
+# Private manual-test credentials must never enter Cloud Build source.
+**/fixtures/private/**

@@ -27,7 +27,7 @@ export GATEWAY_DB_PASSWORD=ci-runtime-only
 python -m alembic stamp 20260807_001
 python -m alembic upgrade head
 mkdir -p /workspace/reports
-python -m pytest tests/ mcp-servers/mcp-gateway/tests/ -q -p no:cacheprovider --junitxml=/workspace/reports/tests.xml
+python -m pytest tests/ -q -p no:cacheprovider --junitxml=/workspace/reports/tests.xml
 python - <<'CHECK_SKIPS'
 import xml.etree.ElementTree as ET
 for case in ET.parse('/workspace/reports/tests.xml').iter('testcase'):

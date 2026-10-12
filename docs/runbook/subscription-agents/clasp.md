@@ -1,13 +1,13 @@
 # clasp: Apps Script source management
 
-Use clasp to maintain the existing Welladino — ClickUp Sync project from Git. Commands below match the locally verified clasp 3.1.0 CLI. Run component commands from `subscription-agents/clickup-sync/` unless stated otherwise.
+Use clasp to maintain the existing Welladino — ClickUp Sync project from Git. Commands below match the locally verified clasp 3.1.0 CLI. Run component commands from `google_appscript/clickup-sync/` unless stated otherwise.
 
 ## Set up the local CLI
 
 From the Horology root:
 
 ```sh
-cd subscription-agents/clickup-sync
+cd google_appscript/clickup-sync
 npm install
 npx clasp --version
 ```
@@ -84,7 +84,7 @@ npm run clasp:push
 
 Push updates the connected project's source. Avoid `--force` and `--watch` for routine updates. Source push is separate from creating a deployment, running a function or installing a trigger. This sync does not require a new web-app deployment merely to update source.
 
-5. In the Apps Script editor, run `previewSync`. Check the proposed task, status and comment changes against the selected pilot rows. Preview does not write to ClickUp. Follow the [sync workflow](../../../subscription-agents/clickup-sync/WORKFLOW.md) before enabling writes and running `applySync` or installing a trigger. Restore intended write/trigger settings only after verifying the result.
+5. In the Apps Script editor, run `previewSync`. Check the proposed task, status and comment changes against the selected pilot rows. Preview does not write to ClickUp. Follow the [sync workflow](../../../google_appscript/clickup-sync/WORKFLOW.md) before enabling writes and running `applySync` or installing a trigger. Restore intended write/trigger settings only after verifying the result.
 
 ## Troubleshooting
 

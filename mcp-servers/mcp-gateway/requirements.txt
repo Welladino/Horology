@@ -3,3 +3,6 @@ httpx==0.28.1
 psycopg2-binary==2.9.12
 certifi==2026.7.22
 PyJWT[crypto]==2.15.1
+
+psycopg[binary]==3.3.6
+psycopg-pool==3.3.3

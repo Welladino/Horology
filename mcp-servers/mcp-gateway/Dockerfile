@@ -8,6 +8,7 @@ RUN pip install --no-cache-dir --upgrade pip==26.2.1 \
 COPY mcp-servers/mcp-gateway/server.py mcp-servers/mcp-gateway/policy.py ./
 COPY mcp-servers/mcp-gateway/integrations ./integrations
 COPY mcp-servers/mcp-gateway/shared ./shared
+COPY mcp-servers/mcp-gateway/database ./database
 COPY mcp-servers/mcp-gateway/certs/supabase-prod-ca-2021.crt /certs/supabase-ca.crt
 USER 10001:10001
 ENV PGSSLROOTCERT=/certs/supabase-ca.crt PYTHONDONTWRITEBYTECODE=1 GATEWAY_BIND=0.0.0.0 GATEWAY_POLICY=/config/policy.json

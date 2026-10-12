@@ -1,24 +1,24 @@
-"""Shared authenticated assignment and quota enforcement for every integration."""
+"""Shared authenticated client_id and quota enforcement for every integration."""
 from mcp.server.auth.middleware.auth_context import get_access_token
 from policy import Denied, authorize
 
 
 class ToolAccess:
-    def __init__(self, policy, ledger):
+    def __init__(self, policy, quotas, cache):
         self.policy = policy
-        self.ledger = ledger
+        self.quotas = quotas
+        self.cache = cache
 
     def scope(self, tool):
         token = get_access_token()
         if token is None:
             raise Denied('Authentication required')
-        assignment = (token.claims or {}).get('assignment', token.client_id)
-        return assignment, authorize(self.policy, assignment, tool)
+        return token.client_id, authorize(self.policy, tool)
 
-    def reserve(self, assignment, config, tool, provider='', cost=0):
-        self.ledger.reserve(assignment, tool, config.get('limits', {}).get(tool, 0), provider, cost, self.policy.get('budgets', {}).get(provider))
+    async def reserve(self, client_id, config, tool, provider='', cost=0):
+        await self.quotas.reserve(client_id, tool, provider, cost, self.policy.get('budgets', {}).get(provider))
 
 
-def current_assignment():
+def current_client_id():
     token = get_access_token()
-    return (token.claims or {}).get('assignment', token.client_id) if token else None
+    return token.client_id if token else None

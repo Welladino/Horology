@@ -9,3 +9,6 @@ hermes-data/
 __pycache__/
 *.pyc
 
+
+# Generated Python packaging metadata
+*.egg-info/

@@ -29,3 +29,8 @@
 **/__pycache__/
 
 !mcp-servers/mcp-gateway/shared/oauth/*.css
+
+!mcp-servers/mcp-gateway/database/
+!mcp-servers/mcp-gateway/database/**/
+!mcp-servers/mcp-gateway/database/**/*.py
+!mcp-servers/mcp-gateway/database/*.py

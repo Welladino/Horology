@@ -22,3 +22,15 @@ See [maintenance runbook](../../runbook/subscription-agents/horology_plugin.md).
 - [ ] Verify unattended access in the actual scheduled-agent runtime, including token refresh and timeouts.
 - [ ] Separate identity from per-run assignments/quotas; enforce fresh run limits without reconnecting.
 - [ ] Add clickable GitHub prompt links to Agent Register after publishing the persona files.
+
+## Prompt directory separation
+
+Moved the subscription prompt sources and their index to `personas/subscriptions/`. `personas/subagents/INDEX.md` now lists only Hermes profiles. Updated the current architecture, plugin runbook and Agent Register Master paths; GitHub links remain pending publication. Prompt contents are unchanged.
+
+## Initial follow-up review
+
+See [MCP next steps research](../research/2026-10-12_mcp-next-steps_research.md) for the capability inventory and proposed sequence. Trivy 0.75.0 remains the latest official release on 2026-10-12, so no version change was made. Remaining checklist items are not marked complete by this review.
+
+## Read capability follow-up
+
+See [read capability expansion](2026-10-12_mcp-read-capabilities_note.md). The non-Google read subset is implemented/deployed; Google and GitHub writer activation were deferred explicitly, and DataForSEO remains future work. Unattended runtime verification and identity/run quotas remain pending.

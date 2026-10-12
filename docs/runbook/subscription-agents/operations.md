@@ -13,7 +13,7 @@ Read [architecture](../../architecture/subscription_agents.md) for responsibilit
 
 ## Maintain and install skills
 
-Edit source in `subscription-agents/skills/`. Read each SKILL.md and its linked references. Update live-field guidance when the workflow changes, keeping exact column positions out of instructions.
+Edit source in `plugins/welladino-workflows/skills/`. Read each SKILL.md and its linked references. Update live-field guidance when the workflow changes, keeping exact column positions out of instructions.
 
 For local Codex copies, run from the Horology root:
 
@@ -21,7 +21,7 @@ For local Codex copies, run from the Horology root:
 mkdir -p "${CODEX_HOME:-$HOME/.codex}/skills"
 for skill in welladino-capture-triage welladino-research welladino-technical-assessment; do
   mkdir -p "${CODEX_HOME:-$HOME/.codex}/skills/$skill"
-  cp -R "subscription-agents/skills/$skill/." "${CODEX_HOME:-$HOME/.codex}/skills/$skill/"
+  cp -R "plugins/welladino-workflows/skills/$skill/." "${CODEX_HOME:-$HOME/.codex}/skills/$skill/"
 done
 ```
 
@@ -41,4 +41,4 @@ Before adding a schedule, verify platform support and access in that environment
 
 ## Maintain ClickUp integration
 
-Use the [clasp runbook](clasp.md) to connect, inspect, compare and publish Apps Script source. The [sync workflow](../../../subscription-agents/clickup-sync/WORKFLOW.md) defines schema, status mapping, preview and apply behaviour.
+Use the [clasp runbook](clasp.md) to connect, inspect, compare and publish Apps Script source. The [sync workflow](../../../google_appscript/clickup-sync/WORKFLOW.md) defines schema, status mapping, preview and apply behaviour.

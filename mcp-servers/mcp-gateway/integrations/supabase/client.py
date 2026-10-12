@@ -7,7 +7,7 @@ from policy import Denied, credential
 
 def schema_query(policy, config, schema, table='', performance=False):
     if schema not in policy['supabase']['schemas'] or schema not in config.get('schemas', []):
-        raise Denied('Schema is outside assignment scope')
+        raise Denied('Schema is outside shared access scope')
     dsn = credential('SUPABASE_METADATA_DSN')
     details = psycopg2.extensions.parse_dsn(dsn)
     project = policy['supabase']['project']

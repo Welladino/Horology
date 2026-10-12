@@ -12,8 +12,8 @@ Subscription agents are Horology's secondary, document-driven workflow. Users us
 | Document Index | Document associations, revision sequence and supersedes history | Sheets in `01_Registers` |
 | Templates | Native document structure and visual assets | Drive `02_Templates` |
 | Domain outputs | Research, direction and plans | Domain/entity folders resolved from the Location Directory |
-| Shared skills | Versioned agent instructions | `subscription-agents/skills/` |
-| ClickUp sync | Sheets/ClickUp tasks, statuses and decision comments | `subscription-agents/clickup-sync/` → Google Apps Script |
+| Shared skills | Versioned agent instructions | `plugins/welladino-workflows/skills/` |
+| ClickUp sync | Sheets/ClickUp tasks, statuses and decision comments | `google_appscript/clickup-sync/` → Google Apps Script |
 
 The workflow is driven by documents and structured records. Sheets is the operational record; Drive holds the detailed deliverables. ClickUp is a review UI. The repository versions skills and integration code; it is not a full mirror of Drive or Sheets.
 
@@ -44,7 +44,7 @@ No subscription-agent scheduler or concurrent writer coordination is implemented
 
 ## Boundaries and source ownership
 
-Hermes outputs continue through its document-graph MCP and kanban rules. Subscription-agent outputs follow Drive/Sheets rules. Neon backfill is a future integration, not an active dependency. Skills under this folder are separate from gitignored Hermes runtime skills and tracked personas.
+Hermes outputs continue through its document-graph MCP and kanban rules. Subscription-agent outputs follow Drive/Sheets rules. Neon backfill is a future integration, not an active dependency. Workflow plugin skills are separate from gitignored Hermes runtime skills and tracked personas.
 
 The ClickUp token belongs only in Apps Script Script Properties. Repo configuration contains sheet/list identifiers, not credentials. Local clasp target and authentication files stay outside Git. Preview before publishing or applying sync changes; source publishing can affect existing triggers.
 
@@ -83,4 +83,23 @@ The consent page permits form submissions to its own origin and the SDK-validate
 
 ## Agent Register prompt sources
 
-Research and Technical Assessment prompts from Agent Register Master IDs 1 and 2 live in `personas/subagents/research.md` and `personas/subagents/technical-assessment.md`. The Master prompt-source column records repository paths; clickable GitHub links are pending publication. These are subscription-agent personas, separate from the provisioned Hermes profiles listed in the same directory. The Horology App plugin instruction source is versioned under `plugins/horology/`; its gateway operating skill does not replace the Welladino workflow skills.
+Research and Technical Assessment prompts from Agent Register Master IDs 1 and 2 live in `personas/subscriptions/research.md` and `personas/subscriptions/technical-assessment.md`. The Master prompt-source column records repository paths; clickable GitHub links are pending publication. These are subscription-agent personas, separate from the provisioned Hermes profiles in `personas/subagents/`. The Horology App plugin instruction source is versioned under `plugins/horology/`; its gateway operating skill does not replace the Welladino workflow skills.
+
+### Additional bounded provider reads
+
+The gateway includes fixed Alexandria discovery, global Shopify search/product, Alibaba search/product, trends interest-over-time and Tavily basic extraction adapters. They share the existing Neon ledger; two paid calls per provider/assignment, Firecrawl 5-credit Alexandria / 1-credit scrape pricing, daily/monthly 50/500 caps. Exact URL and market policies apply; no arbitrary provider execution. Google remains deferred. The GitHub note writer has been removed; planning deliverables will be draft Google Docs in approved domain planning folders. See [the expansion note](../planning/notes/2026-10-12_mcp-read-capabilities_note.md) for live rollout and verification state.
+
+## Gateway scope after native-connector decision (2026-10-13)
+
+The local gateway source exposes only Supabase metadata/performance, capped Firecrawl scraping/Alexandria reads, Tavily search/extraction and status (13 tools). GitHub and Google Drive/Docs/Sheets adapters and their implementation-specific tests/scripts/helpers are parked under `placeholders/connectors/`, outside build inputs. Native platform connectors are the intended repository/document workflow path; availability and permissions must be verified in the chosen scheduled runtime. They are outside the gateway's resource and credit enforcement. Research authorization does not authorize code changes.
+
+Google-backed MCP identity OAuth remains active. GitHub/Drive provider credentials are retained in an ignored private placeholder file, not the active gateway environment. Existing cloud revisions, policies, secret bindings and installed plugin releases are unchanged pending a later release. Server-controlled quota windows were selected but their interval/implementation and scheduled-runtime verification remain pending. No Cloud Build or deployment was run for extraction.
+
+## Shared policy without assignments (local source, 2026-10-13)
+
+The active gateway source uses one shared JSON access policy, OAuth client authentication with an approved-email list, and per-provider daily/monthly credit budgets. It has no assignment selection, assignment expiry, per-session quotas or quota windows. OAuth token lifetimes and per-client grants still exist. Client IDs serve auditing and cache isolation only. The new non-destructive column-rename migration and cloud policy/environment update must precede release; the existing cloud revision retains its older behavior until deployed. Live revocation verification remains planned for that release.
+
+
+### Gateway persistence (local source, verified 2026-10-13)
+
+Gateway Neon reads/writes now use Psycopg 3 async repositories under `mcp-servers/mcp-gateway/database/`: `connection.py` owns the pool/transaction lifecycle and `repositories/{quotas,cache,oauth}.py` own SQL. The HTTP lifespan opens the pool before serving MCP or OAuth routes and closes it on shutdown; at most four client connections exist per gateway process. The Neon transaction pool remains the database endpoint. Quota row locks and OAuth advisory transaction locks preserve atomic reservations, refresh rotation and revocation. Cache lifetime is one hour, isolated by OAuth client identity. Database failures still block provider execution; no fallback store exists. Supabase metadata, document-graph and migration drivers are unchanged. This structure is verified locally and is not yet deployed.

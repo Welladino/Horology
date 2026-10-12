@@ -1,0 +1,7 @@
+.env*
+*.local.json
+__pycache__/
+*.pyc
+
+# Private historical cloud policy snapshot.
+google_drive/config/policy.cloud.json

@@ -7,7 +7,7 @@ import uuid
 from .logging import logger
 from .error_handling import SafeToolError, category
 
-def observe(integration, assignment=None):
+def observe(integration, client_id=None):
     """Preserve tool signatures; never log args, results or exception messages."""
     def decorate(fn):
         def start():
@@ -18,9 +18,9 @@ def observe(integration, assignment=None):
                      'tool': fn.__name__, 'integration': integration,
                      'duration_ms': round((time.monotonic() - started) * 1000, 2),
                      'outcome': outcome}
-            if assignment:
-                # Only a server-provisioned assignment identifier, never the token.
-                event['assignment'] = assignment()
+            if client_id:
+                # Only a authenticated client identifier, never the token.
+                event['client_id'] = client_id()
             if error_category:
                 event['error_category'] = error_category
             logger.info(json.dumps(event, separators=(',', ':')))

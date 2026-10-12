@@ -1,0 +1,27 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "author": {
+    "email": "saravanaraj.subramaniam@welladino.com",
+    "name": "Saravanaraj"
+  },
+  "description": "Capture and triage Welladino Pipeline ideas, and research selected questions with linked evidence and proposed decisions.",
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "category": "Productivity",
+        "composerIcon": "./assets/icon.svg",
+        "defaultPrompt": [
+          "Capture these ideas in the Welladino Pipeline and check for duplicates.",
+          "Research this selected Pipeline item and prepare evidence and a recommendation for my decision."
+        ],
+        "developerName": "Saravanaraj",
+        "displayName": "Welladino Workflows",
+        "logo": "./assets/icon.svg",
+        "longDescription": "Welladino skills for retaining ideas in Pipeline and investigating selected questions, and assessing software alternatives, effort, cost, and uncertainty before implementation. Preserves duplicate checks, source evidence, document linking, and founder decision boundaries. Requires separately connected Google Drive, Docs, and Sheets; ClickUp access is needed when a task uses ClickUp.",
+        "shortDescription": "Capture, triage, and research"
+      }
+    }
+  },
+  "name": "welladino-workflows",
+  "version": "0.1.3"
+}

@@ -9,3 +9,9 @@ async def tavily(query, advanced=False):
         raise Denied('Search query must contain 1–400 characters')
     data = await request('POST', 'https://api.tavily.com/search', token=credential('TAVILY_API_KEY'), body={'query': query, 'search_depth': 'advanced' if advanced else 'basic', 'auto_parameters': False, 'max_results': 5, 'include_answer': False, 'include_raw_content': False, 'include_images': False, 'include_usage': True})
     return [{'title': clean_text(r.get('title'), 500), 'url': r.get('url'), 'content': clean_text(r.get('content'), 5000)} for r in data.get('results', [])[:5]]
+
+
+async def extract(urls):
+    data = await request('POST', 'https://api.tavily.com/extract', token=credential('TAVILY_API_KEY'), body={'urls': urls, 'extract_depth': 'basic', 'format': 'markdown', 'include_images': False, 'include_favicon': False, 'include_usage': True, 'timeout': 20})
+    approved = set(urls)
+    return {'results': [{'url': r['url'], 'content': clean_text(r.get('raw_content'), 20_000)} for r in data.get('results', [])[:5] if r.get('url') in approved], 'failed_urls': [r['url'] for r in data.get('failed_results', [])[:5] if r.get('url') in approved]}

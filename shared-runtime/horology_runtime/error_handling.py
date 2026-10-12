@@ -10,6 +10,13 @@ try:
 except ImportError:
     psycopg2 = None
 
+try:
+    import psycopg
+    from psycopg_pool import PoolTimeout
+except ImportError:
+    psycopg = None
+    PoolTimeout = None
+
 class SafeToolError(RuntimeError):
     """Only a category and correlation ID may reach an MCP client."""
     def __init__(self, category, request_id):
@@ -22,6 +29,10 @@ def category(error):
         return error.category
     if isinstance(error, TimeoutError) or (httpx and isinstance(error, httpx.TimeoutException)) or (psycopg2 and isinstance(error, psycopg2.errors.QueryCanceled)):
         return 'timeout'
+    if psycopg and isinstance(error, (psycopg.errors.QueryCanceled, PoolTimeout)):
+        return 'timeout'
+    if psycopg and isinstance(error, (psycopg.OperationalError, psycopg.InterfaceError)):
+        return 'connection_failed'
     if httpx and isinstance(error, httpx.HTTPStatusError):
         return 'provider_rejected'
     if (httpx and isinstance(error, httpx.RequestError)) or (psycopg2 and isinstance(error, (psycopg2.OperationalError, psycopg2.InterfaceError))):
@@ -37,6 +48,8 @@ def category(error):
         return 'invalid_provider_response'
     if isinstance(error, ValueError):
         return 'invalid_input'
+    if psycopg and isinstance(error, psycopg.Error):
+        return 'database_failed'
     if psycopg2 and isinstance(error, psycopg2.Error):
         return 'database_failed'
     return 'operation_failed'

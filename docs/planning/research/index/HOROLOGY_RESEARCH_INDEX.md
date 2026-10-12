@@ -12,3 +12,4 @@ Running list of research briefs under `docs/planning/research/`. Add a row when 
 | 2026-08-06 | Tavily feature surface (crawl/map/sheets) and web search fallback | `2026-08-06_tavily-feature-surface-and-web-fallback_research.md` |
 | 2026-08-06 | Document linking approach (text search vs. embeddings vs. hybrid) | `2026-08-06_document-linking-approach_research.md` |
 | 2026-08-07 | Cron script security pattern (no_agent sweep, Neon Data API vs. read-only DB role) | `2026-08-07_cron-script-security-pattern_research.md` |
+| 2026-10-12 | Pending MCP capabilities, document-graph access and index integration | `2026-10-12_mcp-next-steps_research.md` |

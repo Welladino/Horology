@@ -8,3 +8,6 @@ config/client.local.json
 .env.cloud
 config/policy.cloud.json
 config/client.cloud.json
+
+# Private policy candidates and other local configuration variants.
+config/*.local.json

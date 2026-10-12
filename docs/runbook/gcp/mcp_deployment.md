@@ -62,7 +62,7 @@ Graph mappings: DATABASE_URL_POOLED=horology-graph-db:1, OPENROUTER_API_KEY=horo
 - Cloud Run also advertises legacy hashed service URL aliases. Gateway auth metadata uses the verified endpoint above.
 - Both services have no service-level invoker bindings; callers need inherited project permission or an explicit later invoker grant. Neither has allUsers access.
 
-The private cloud client file is config/client.cloud.json, ignored by Git. It contains the assignment bearer only; a compatible test client must obtain a fresh Cloud Run identity token separately. The initial cloud assignment expires 24 hours after provisioning. Do not extend or reuse run IDs to reset counters. Generate a fresh operator-approved assignment for each future run, update versioned policy/token mappings and retain shared quota history.
+The historical private cloud test client file is now tests/mcp_servers/gateway/fixtures/private/client.cloud.json, ignored by Git and excluded from source uploads. It contains the assignment bearer only; a compatible test client must obtain a fresh Cloud Run identity token separately. The initial cloud assignment expires 24 hours after provisioning. Do not extend or reuse run IDs to reset counters. Generate a fresh operator-approved assignment for each future run, update versioned policy/token mappings and retain shared quota history.
 
 ## Inspect and roll back
 
@@ -151,3 +151,7 @@ If using an older revision for a lasting rollback, move `deployed-current` to it
 ## Routine deployment identity
 
 Use `--configuration=horology` for builds and updates; it now selects the everyday account and impersonates `horology-deployer`. Use `--configuration=horology-admin` for IAM/infrastructure commands in earlier setup sections. See [IAM and deployment access](../architecture/gcp_access.md). Existing runtime accounts, secrets, ingress and live service revisions are unchanged by this IAM setup.
+
+## 12 October read capability expansion
+
+Gateway revision mcp-gateway-00008-kqw serves sha256:2fce0a9483aa16281a0c501c15bbe7f7ab19f698ed923bc809bab38e944ea46f with horology-gateway-policy:4, from successful Cloud Build 7d73cbd5-423c-4c29-bd45-64ac209228f5. Fixed Shopify/Alibaba/trends reads and Tavily basic extraction are deployed; owner advanced search is policy-enabled. Google, DataForSEO and the optional GitHub writer remain disabled. Assignment identities, expiry and recorded usage were preserved; existing exhausted paid allowances remain exhausted. See [expansion verification](../../planning/notes/2026-10-12_mcp-read-capabilities_note.md). Document graph's rebuilt candidate was not deployed.

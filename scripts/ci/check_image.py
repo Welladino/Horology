@@ -10,6 +10,13 @@ assert not Path("/app/.env.local").exists()
 assert not Path("/app/config/policy.local.json").exists()
 if Path("/app/policy.py").exists():
     import server
+    from database.connection import Database
+    from database.repositories.quotas import QuotaRepository
+    from database.repositories.cache import CacheRepository
+    from database.repositories.oauth import OAuthRepository
+    assert importlib.util.find_spec("integrations.github") is None
+    assert importlib.util.find_spec("integrations.google_drive") is None
+    assert not Path("/app/shared/writes.py").exists()
     from shared.oauth.consent_page import render_consent
     assert Path("/certs/supabase-ca.crt").is_file()
     assert Path("/app/shared/oauth/consent.css").is_file()
