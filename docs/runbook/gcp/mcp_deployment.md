@@ -175,7 +175,7 @@ gcloud --configuration=horology run services update mcp-gateway --project=horolo
 
 Rollback: route traffic back to `mcp-gateway-00008-kqw`. The rename migration must be reverted first, because the old image expects the old column names; do not downgrade while the new revision serves traffic.
 
-## Document graph sign-in and sheet sync release (prepared 2026-10-13, partly run)
+## Document graph sign-in and sheet sync release (deployed and verified 2026-10-13)
 
 Progress 2026-10-13, from Cloud Build `d7ed4029-3498-4d0e-991d-f2bc3e6cce72` (gateway `sha256:e8747865707adfc13058d92c121ff01a84a7d12924c750922ba892482a532356`, document-graph `sha256:4a9bebc118984b02cfed82be4613e7f74a9abff5b723ce50685d33746b41f254`):
 
@@ -183,7 +183,11 @@ Progress 2026-10-13, from Cloud Build `d7ed4029-3498-4d0e-991d-f2bc3e6cce72` (ga
 - Step 12 done after operator approval: invoker check turned off with `--configuration=horology-admin` (the deployer lacks `run.services.setIamPolicy`). Externally: discovery 200 (scope `graph`, registration on), anonymous `/mcp` 401, a token not issued by document-graph 401.
 - Steps 5, 8 and the redirect URI done. The operator shared the Document Index (Editor) and `02_Article aggregator/01_Strategy` (Viewer). The job reads and writes the sheet. The `not_shared` status shipped in Cloud Build `34a769c2-7623-45d6-a585-83a8f775dc6f`; job image `sha256:c4c50a1af5ef0f086270e8428f413c0a7df6be8539324253b629b0b58870b5d7`. The service still runs `sha256:4a9bebc1…`, which is the same code apart from the job.
 - Verified run: Document ID 14 (a Google Doc in the unshared `01_Welladino/00_Guides`) was marked `not_shared`.
-- Open: step 13 (connect from Claude/Codex, search, `sync_graph`).
+- Step 13 verified 2026-10-13.
+  - **Releases:** Cloud Build `4512ec3b-b53f-4572-af7c-f334d44a0058` (sync embeds before saving and re-imports rows without an embedding) runs on service revision `document-graph-00004-6r2` and on the job, image `sha256:fcd94740a1a5f4ad0bfa9eb5eb25ccaf8fe61290f5eabb9993ffc17c583ff2bc`.
+  - **OpenRouter key:** the earlier key had expired and returned 401. The operator added `horology-graph-openrouter:2` and destroyed version 1; service and job now use `:2`.
+  - **Claude end to end:** a custom connector with "Sign in now" and "Register automatically (DCR)" signed in as the mapped Welladino account. Claude's `sync_graph` started execution `document-graph-sync-4jz42`, which synced Document ID 14 (sheet: `synced`, Graph Document ID 9, revision 16). `search_documents` ranked it first (0.73).
+  - **Rotating the OpenRouter key:** add a secret version, then update both the service (`horology`) and the job (`horology-admin`) to it before disabling the old one. A service pinned to a destroyed version cannot start new instances.
 - By design, `horology-deployer` (the `horology` configuration) only updates services. Create, run and update the `document-graph-sync` job, and change service access (`--no-invoker-iam-check`), with `--configuration=horology-admin`. The operator decided on 2026-10-13 not to widen the deployer.
 - The gateway's own release (section above) ran at the same time: revision `mcp-gateway-00009-8hr`, without `GATEWAY_OAUTH_ASSIGNMENTS`, `GITHUB_TOKEN`, `GATEWAY_TOKEN_HASHES` or policy volumes. Anonymous `/mcp` returns 401 and discovery 200.
 

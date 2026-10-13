@@ -45,5 +45,7 @@
 - **Not done:** no Cloud Build, no deployment, no secrets or IAM changed. Migration `20261013_003` was applied to Neon on 2026-10-13 (password in the root `.env`); the local document-graph container now runs as `horology_graph` and `list_documents` works. The Sheets/Drive APIs are not enabled. The job has not run against the real sheet or Drive.
 
 ## Follow-Ups
-- Run the [release steps](../../runbook/gcp/mcp_deployment.md#document-graph-sign-in-and-sheet-sync-release-prepared-2026-10-13-not-yet-run). Steps 5 and 12 need operator approval.
+- Deployed and verified 2026-10-13. See the runbook section for revisions, digests and the end-to-end run from Claude.
+- The first cloud run found a real bug: the document was stored before embedding, so an OpenRouter failure left it unsearchable and later treated as unchanged. Fixed in `c1d647b` and covered by a test.
+- Superseded follow-up, kept for reference: run the [release steps](../../runbook/gcp/mcp_deployment.md#document-graph-sign-in-and-sheet-sync-release-prepared-2026-10-13-not-yet-run). Steps 5 and 12 need operator approval.
 - Later: the sheet menu that starts the same job.
