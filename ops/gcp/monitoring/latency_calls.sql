@@ -54,7 +54,8 @@ SELECT
     WHEN outcome = 'error' THEN CONCAT('Error: ', IFNULL(error_category, 'unknown'))
     WHEN server_ms IS NULL THEN 'No matching request log (no trace id on this call)'
     WHEN cold_start AND first_on_instance THEN 'Cold start: new instance and new database connections'
-    WHEN first_on_instance THEN 'First call on this instance: may open new connections'
+    WHEN first_on_instance AND server_ms > 300 THEN 'First call on this instance: may open new connections'
+    WHEN server_ms < 50 THEN 'Fast: sign-in check and MCP handling only'
     WHEN tool_ms >= 0.7 * server_ms THEN 'Mostly our code: database or provider calls'
     ELSE 'Mostly outside our code: sign-in check and MCP handling'
   END AS why

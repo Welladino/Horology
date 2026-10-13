@@ -110,7 +110,7 @@ Two SQL queries join each tool log to its Cloud Run request log by trace id:
 
 Paste one into **Logging → Log Analytics** (console.cloud.google.com/logs/analytics?project=horology-dev), run it, then **Save** it to keep it in the console. Queries are free. Times are measured at the server, so they leave out the network leg between the caller and Iowa; the live check below measures that. Tool calls made before the trace-id release have no match and say so.
 
-The `_Default` bucket must be upgraded to Log Analytics once (free; it can't be undone):
+The `_Default` bucket was upgraded to Log Analytics on 2026-10-13 (free; it can't be undone). Only logs from about 14:35 UTC that day onward are queryable here; older logs remain in Logs Explorer. The upgrade command, for reference:
 
 ```bash
 gcloud --configuration=horology-admin logging buckets update _Default --location=global --enable-analytics --project=horology-dev
