@@ -148,7 +148,7 @@ gcloud --configuration=horology run services update-traffic mcp-gateway --projec
 
 If using an older revision for a lasting rollback, move `deployed-current` to its digest before cleanup can remove it. Preserve intentional rollback digests with `deployed-` tags when older than five versions.
 
-## Next gateway release: shared access policy (prepared 2026-10-13, not yet run)
+## Next gateway release: shared access policy (prepared 2026-10-13, deployed 2026-10-13 as mcp-gateway-00009-8hr)
 
 Revision `mcp-gateway-00008-kqw` still runs the old assignment-based image. The new image needs these changes in this order; skipping one stops the new revision from starting or lets nobody sign in. Why: [remove assignments](../../planning/notes/2026-10-13_remove-assignments_note.md), [Audience sign-in and baked policy](../../planning/notes/2026-10-13_audience-signin-baked-policy_note.md).
 
@@ -175,7 +175,15 @@ gcloud --configuration=horology run services update mcp-gateway --project=horolo
 
 Rollback: route traffic back to `mcp-gateway-00008-kqw`. The rename migration must be reverted first, because the old image expects the old column names; do not downgrade while the new revision serves traffic.
 
-## Document graph sign-in and sheet sync release (prepared 2026-10-13, not yet run)
+## Document graph sign-in and sheet sync release (prepared 2026-10-13, partly run)
+
+Progress 2026-10-13, from Cloud Build `d7ed4029-3498-4d0e-991d-f2bc3e6cce72` (gateway `sha256:e8747865707adfc13058d92c121ff01a84a7d12924c750922ba892482a532356`, document-graph `sha256:4a9bebc118984b02cfed82be4613e7f74a9abff5b723ce50685d33746b41f254`):
+
+- Done: steps 1–4, 6, 7, 9, 10 and 11. `horology-graph-db:2` added; Sheets and Drive APIs enabled; `document-graph-sync` identity created and allowed its two secrets; job `document-graph-sync` created; `document-graph` allowed to start it with overrides; `horology-graph-google-client-id`/`-secret` created by the operator; revision `document-graph-00003-7cv` serves with sign-in on, `horology-graph-db:2` and the map `saravanaraj.subramaniam@welladino.com` → `welladino`. It started cleanly; the invoker check is still on, so it could not be tested from outside.
+- Open: step 5 (Drive sharing, operator), the redirect URI in step 10 (operator, console), step 8 (manual job run, after sharing), step 12 (invoker check off, needs approval) and step 13.
+- `horology-deployer` cannot create jobs (`run.jobs.create` denied); the job was created with `--configuration=horology-admin`. Check whether it may update the job's image on later releases.
+- The gateway's own release (section above) ran at the same time: revision `mcp-gateway-00009-8hr`, without `GATEWAY_OAUTH_ASSIGNMENTS`, `GITHUB_TOKEN`, `GATEWAY_TOKEN_HASHES` or policy volumes. Anonymous `/mcp` returns 401 and discovery 200.
+
 
 Puts document-graph on Google sign-in (second connector), moves it to the `horology_graph` login, and adds the `document-graph-sync` job. Why: [document-graph plan](../../planning/notes/2026-10-13_document-graph-sheet-controlled-access_note.md), [sign-in and sync note](../../planning/notes/2026-10-13_document-graph-signin-and-sheet-sync_note.md). Run the steps in order; steps marked **approval** change access and need the operator's explicit go-ahead.
 
