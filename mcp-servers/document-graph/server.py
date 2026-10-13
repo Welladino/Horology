@@ -11,6 +11,7 @@ from contextlib import asynccontextmanager
 from mcp.server.auth.settings import AuthSettings, ClientRegistrationOptions, RevocationOptions
 from mcp.server.mcpserver import MCPServer
 from horology_runtime.database import Database
+from horology_runtime.operations import TraceMiddleware
 from horology_runtime.oauth.store import OAuthRepository
 from horology_runtime.settings import DATABASE, document_graph_public_url, http_server_options
 from document_graph import graph
@@ -58,6 +59,7 @@ def build_server(database=None, oauth_config=None):
 def database_app(mcp, database, **options):
     """Open the pool on the serving event loop before any MCP or sign-in request."""
     app = mcp.streamable_http_app(**options)
+    app.add_middleware(TraceMiddleware)
     mcp_lifespan = app.router.lifespan_context
 
     @asynccontextmanager

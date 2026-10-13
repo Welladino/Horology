@@ -12,7 +12,7 @@ from integrations.supabase import tools as supabase_tools
 from integrations.tavily import tools as tavily_tools
 from integrations.firecrawl import tools as firecrawl_tools
 from shared.access import ToolAccess, current_client_id
-from horology_runtime.operations import observe
+from horology_runtime.operations import TraceMiddleware, observe
 from horology_runtime.settings import http_server_options, gateway_public_url
 from policy import Denied, authorize, load_policy
 from contextlib import asynccontextmanager
@@ -69,6 +69,7 @@ def build_server(policy, database, tokens, oauth_config=None):
 def database_app(mcp, database, **options):
     """Open the pool on the serving event loop, including OAuth HTTP routes."""
     app = mcp.streamable_http_app(**options)
+    app.add_middleware(TraceMiddleware)
     mcp_lifespan = app.router.lifespan_context
 
     @asynccontextmanager
