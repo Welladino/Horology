@@ -67,6 +67,10 @@ class FakeGoogle:
     async def write_cells(self, spreadsheet_id, updates):
         self.writes = updates
     async def file_metadata(self, file_id):
+        if file_id not in self.files:  # Drive hides unshared files as 404
+            import httpx
+            request = httpx.Request("GET", "https://www.googleapis.com/drive/v3/files/" + file_id)
+            raise httpx.HTTPStatusError("404", request=request, response=httpx.Response(404, request=request))
         mime, version, text = self.files[file_id]
         return {"id": file_id, "mimeType": mime, "version": version, "size": str(len(text))}
     async def file_text(self, meta):
@@ -91,7 +95,8 @@ def test_sync_imports_skips_unchanged_removes_and_writes_status(database):
                          row("1", "Pricing plan", "fileAAAAAAAAAA", True),
                          row("2", "Pricing v2", "fileBBBBBBBBBB", True, supersedes="1"),
                          row("3", "A register", "fileCCCCCCCCCC", True, doc_type="guide"),
-                         row("4", "Other workspace", "fileAAAAAAAAAA", True, workspace="other-ws")], files)
+                         row("4", "Other workspace", "fileAAAAAAAAAA", True, workspace="other-ws"),
+                         row("5", "Not shared", "fileZZZZZZZZZZ", True)], files)
     embed = AsyncMock(return_value=[0.1] * 768)
 
     async def run():
@@ -102,11 +107,12 @@ def test_sync_imports_skips_unchanged_removes_and_writes_status(database):
                     await cur.execute("DELETE FROM documents WHERE workspace IN ('test-ws', 'other-ws')")
                 with patch.object(openrouter, "_embed", embed):
                     first = await sync.sync_workspace(google, "test-ws", "sheet")
-                    assert first == {"workspace": "test-ws", "synced": 2, "unchanged": 0, "errors": 1, "removed": 0}
+                    assert first == {"workspace": "test-ws", "synced": 2, "unchanged": 0, "errors": 1, "not_shared": 1, "removed": 0}
                     status = {r: v[0] for r, v in google.writes}
                     assert status["'Document Index'!M2:O2"][0] == "synced" and status["'Document Index'!M2:O2"][2] == "1"
                     assert status["'Document Index'!M4:O4"] == ["error", "", ""]  # spreadsheets aren't indexed
                     assert not any("M5" in r for r, _ in google.writes)  # other workspace untouched
+                    assert status["'Document Index'!M6:O6"] == ["not_shared", "", ""]
                     stored = await graph.documents.sheet_revisions("test-ws")
                     newer, older = stored["2"][0], stored["1"][0]
                     related = await graph.documents.related("test-ws", newer)

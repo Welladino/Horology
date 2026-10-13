@@ -7,6 +7,8 @@ columns. Agent-written documents are never touched.
 """
 import logging
 
+import httpx
+
 from document_graph import graph
 from document_graph.integrations.openrouter import client as openrouter
 
@@ -15,6 +17,10 @@ from .google import INDEXABLE_TYPES
 
 log = logging.getLogger("graph_sync")
 EMBED_CHARS = 8000  # keeps one request inside the embedding model's input limit
+
+
+class NotShared(Exception):
+    """Drive answers 403/404 for files not shared with the job's identity."""
 
 
 def embedding_text(title, content):
@@ -34,6 +40,9 @@ async def sync_workspace(google, workspace, spreadsheet_id):
         try:
             results[row.index_id] = await _import(google, workspace, row, stored.get(row.index_id))
             graph_ids[row.index_id] = results[row.index_id][1]
+        except NotShared:
+            log.warning("row %s: file not shared with the sync identity", row.row_number)
+            results[row.index_id] = ("not_shared", "", "")
         except Exception as error:
             # One bad row never stops the rest; details stay in the job log.
             log.warning("row %s failed: %s", row.row_number, type(error).__name__)
@@ -51,6 +60,7 @@ async def sync_workspace(google, workspace, spreadsheet_id):
                "synced": sum(1 for r in results.values() if r[0] == "synced"),
                "unchanged": sum(1 for r in results.values() if r[0] == "unchanged"),
                "errors": sum(1 for r in results.values() if r[0] == "error"),
+               "not_shared": sum(1 for r in results.values() if r[0] == "not_shared"),
                "removed": len(removed)}
     log.info("sync finished %s", summary)
     return summary
@@ -62,7 +72,12 @@ async def _import(google, workspace, row, stored):
     file_id = index.drive_file_id(row.drive_url)
     if not file_id:
         raise ValueError("Drive URL has no file id")
-    meta = await google.file_metadata(file_id)
+    try:
+        meta = await google.file_metadata(file_id)
+    except httpx.HTTPStatusError as error:
+        if error.response.status_code in (403, 404):
+            raise NotShared() from None
+        raise
     if meta.get("trashed"):
         raise ValueError("Drive file is in the trash")
     if meta.get("mimeType") not in INDEXABLE_TYPES:
@@ -81,7 +96,7 @@ async def _import(google, workspace, row, stored):
 
 async def _link_supersedes(workspace, rows, results, graph_ids):
     for row in rows:
-        if row.index_id not in results or results[row.index_id][0] == "error" or not row.supersedes:
+        if row.index_id not in results or results[row.index_id][0] in ("error", "not_shared") or not row.supersedes:
             continue
         older = graph_ids.get(row.supersedes)
         if older is None:
@@ -96,7 +111,7 @@ def _status_updates(headers, rows, results):
     for row in rows:
         if row.included:
             status, doc_id, revision = results[row.index_id]
-            values = ["error", "", ""] if status == "error" else ["synced", str(doc_id), revision]
+            values = [status, "", ""] if status in ("error", "not_shared") else ["synced", str(doc_id), revision]
         else:
             values = ["not_applicable", "", ""]
         updates.append((index.status_range(headers, row.row_number), [values]))
