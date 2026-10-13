@@ -4,7 +4,7 @@ from horology_runtime.operations import observe
 
 TOOLS = (graph.write_document, graph.link_documents, graph.get_document, graph.list_documents,
          graph.search_documents, graph.get_related_documents, graph.list_unembedded_documents,
-         graph.auto_link_similar_documents)
+         graph.auto_link_similar_documents, graph.sync_graph)
 
 
 def register_tools(mcp):

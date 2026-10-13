@@ -14,6 +14,9 @@
 !shared-runtime/pyproject.toml
 !shared-runtime/horology_runtime/
 !shared-runtime/horology_runtime/*.py
+!shared-runtime/horology_runtime/oauth/
+!shared-runtime/horology_runtime/oauth/*.py
+!shared-runtime/horology_runtime/oauth/*.css
 !mcp-servers/
 !mcp-servers/mcp-gateway/
 !mcp-servers/mcp-gateway/Dockerfile
@@ -50,3 +53,10 @@
 
 # Private manual-test credentials must never enter Cloud Build source.
 **/fixtures/private/**
+
+# Document Index sync job, packaged into the document-graph image.
+!jobs/
+!jobs/document-graph-sync/
+!jobs/document-graph-sync/requirements.txt
+!jobs/document-graph-sync/graph_sync/
+!jobs/document-graph-sync/graph_sync/*.py

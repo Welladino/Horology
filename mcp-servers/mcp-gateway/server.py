@@ -14,12 +14,13 @@ from integrations.firecrawl import tools as firecrawl_tools
 from shared.access import ToolAccess, current_client_id
 from horology_runtime.operations import observe
 from horology_runtime.settings import http_server_options, gateway_public_url
-from policy import Denied, load_policy
+from policy import Denied, authorize, load_policy
 from contextlib import asynccontextmanager
 from database.connection import Database
 from database.repositories.quotas import QuotaRepository
 from database.repositories.cache import CacheRepository
-from database.repositories.oauth import OAuthRepository
+from horology_runtime.oauth.store import OAuthRepository
+from shared.consent import NOTE, gateway_consent
 
 def build_server(policy, database, tokens, oauth_config=None):
     class Verifier:
@@ -33,8 +34,12 @@ def build_server(policy, database, tokens, oauth_config=None):
     public_url = gateway_public_url()
     auth = AuthSettings(issuer_url=public_url, resource_server_url=public_url+'/mcp', required_scopes=['gateway'])
     if oauth_config:
-        from shared.oauth.provider import GoogleOAuthProvider
-        provider = GoogleOAuthProvider(OAuthRepository(database), policy, public_url, legacy=Verifier(), **oauth_config)
+        from horology_runtime.oauth.provider import GoogleOAuthProvider
+        provider = GoogleOAuthProvider(
+            OAuthRepository(database, 'gateway_auth.records'), public_url, legacy=Verifier(), scope='gateway',
+            consent=lambda: (*gateway_consent(policy), NOTE),
+            # Every caller shares one policy; this only fails if status is removed from it.
+            check=lambda email: authorize(policy, 'gateway_status'), **oauth_config)
         auth.client_registration_options = ClientRegistrationOptions(enabled=True, valid_scopes=['gateway'], default_scopes=['gateway'])
         auth.revocation_options = RevocationOptions(enabled=True)
         mcp = MCPServer('Welladino restricted gateway', auth_server_provider=provider, auth=auth)

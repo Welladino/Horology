@@ -198,3 +198,30 @@ class TestAutoLinkSimilarDocuments:
             run(graph.auto_link_similar_documents(document_id=1))
         embed.assert_awaited_once_with("content")
         assert any("INSERT INTO document_embeddings" in sql for sql, _ in db.executed)
+
+
+class TestSyncGraph:
+    def test_refuses_without_a_configured_job(self, db, monkeypatch):
+        monkeypatch.delenv("GRAPH_SYNC_JOB", raising=False)
+        with pytest.raises(ValueError, match="not configured"):
+            run(graph.sync_graph())
+
+    def test_starts_the_job_for_the_callers_workspace_only(self, db, monkeypatch):
+        from document_graph.integrations.cloud_run import client as cloud_run
+        monkeypatch.setenv("GRAPH_SYNC_JOB", "projects/horology-dev/locations/us-central1/jobs/document-graph-sync")
+        monkeypatch.setenv("DOCUMENT_GRAPH_WORKSPACE", "job")
+        response = MagicMock()
+        response.json.return_value = {"name": "operations/123"}
+        with patch.object(cloud_run, "_token", AsyncMock(return_value="token")), \
+                patch.object(cloud_run.httpx.AsyncClient, "post", AsyncMock(return_value=response)) as post:
+            result = run(graph.sync_graph())
+        url = post.call_args.args[0]
+        body = post.call_args.kwargs["json"]
+        assert url == "https://run.googleapis.com/v2/projects/horology-dev/locations/us-central1/jobs/document-graph-sync:run"
+        assert body["overrides"]["containerOverrides"][0]["env"] == [{"name": "GRAPH_SYNC_WORKSPACE", "value": "job"}]
+        assert result == {"started": True, "workspace": "job", "operation": "operations/123"}
+
+    def test_rejects_a_malformed_job_name(self, db, monkeypatch):
+        monkeypatch.setenv("GRAPH_SYNC_JOB", "https://evil.example/jobs/x")
+        with pytest.raises(ValueError, match="not configured"):
+            run(graph.sync_graph())

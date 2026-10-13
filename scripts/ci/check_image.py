@@ -17,18 +17,23 @@ if Path("/app/policy.py").exists():
         ("database.connection", "Database"),
         ("database.repositories.quotas", "QuotaRepository"),
         ("database.repositories.cache", "CacheRepository"),
-        ("database.repositories.oauth", "OAuthRepository"),
+        ("horology_runtime.oauth.store", "OAuthRepository"),
     ):
         getattr(importlib.import_module(module), symbol)
     assert importlib.util.find_spec("integrations.github") is None
     assert importlib.util.find_spec("integrations.google_drive") is None
     assert not Path("/app/shared/writes.py").exists()
-    getattr(importlib.import_module("shared.oauth.consent_page"), "render_consent")
+    getattr(importlib.import_module("horology_runtime.oauth.consent_page"), "render_consent")
+    getattr(importlib.import_module("shared.consent"), "gateway_consent")
     assert Path("/certs/supabase-ca.crt").is_file()
     getattr(importlib.import_module("policy"), "load_policy")("/config/policy.json")
-    assert Path("/app/shared/oauth/consent.css").is_file()
 else:
     # Import-time configuration only; no connection or provider call is made.
     os.environ["DATABASE_URL_POOLED"] = "postgresql://test@127.0.0.1:1/test"
     importlib.import_module("document_graph.tools")
+    # The sync job ships in the same image.
+    importlib.import_module("graph_sync.sync")
+    importlib.import_module("graph_sync.google")
+# The shared consent stylesheet must be installed with the shared runtime.
+assert (Path(importlib.import_module("horology_runtime").__file__).parent / "oauth" / "consent.css").is_file()
 print("Runtime image contract passed")

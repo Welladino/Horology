@@ -5,7 +5,7 @@ steps:
     args: [fs, --scanners, 'secret,misconfig', --severity, 'HIGH,CRITICAL', --exit-code, '1', --no-progress, .]
   - id: postgres
     name: gcr.io/cloud-builders/docker
-    args: [run, -d, --name, horology-ci-postgres, --network, cloudbuild, -e, POSTGRES_PASSWORD=ci-admin-only, postgres:16-alpine]
+    args: [run, -d, --name, horology-ci-postgres, --network, cloudbuild, -e, POSTGRES_PASSWORD=ci-admin-only, 'pgvector/pgvector:0.8.0-pg16']
   - id: tests-and-dependency-audit
     name: python:3.12-slim
     entrypoint: bash
@@ -13,6 +13,7 @@ steps:
     env:
       - GATEWAY_TEST_DATABASE_URL=postgresql://postgres:ci-admin-only@horology-ci-postgres:5432/postgres
       - GATEWAY_TEST_RUNTIME_URL=postgresql://horology_gateway:ci-runtime-only@horology-ci-postgres:5432/postgres
+      - GRAPH_TEST_RUNTIME_URL=postgresql://horology_graph:ci-graph-only@horology-ci-postgres:5432/postgres
   - id: build-gateway
     name: gcr.io/cloud-builders/docker
     args: [build, --pull, -f, mcp-servers/mcp-gateway/Dockerfile, -t, '${_REGISTRY}/mcp-gateway:$BUILD_ID', -t, '${_REGISTRY}/mcp-gateway:latest', .]

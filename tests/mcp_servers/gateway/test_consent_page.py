@@ -5,12 +5,14 @@ import re
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 'mcp-servers/mcp-gateway'))
-from shared.oauth.consent_page import render_consent
+from horology_runtime.oauth.consent_page import render_consent
+from shared.consent import NOTE, gateway_consent
 
 
 def test_consent_escapes_identity_and_preserves_callback_policy():
-    config = {"tools": ["supabase_list_schema"]}
-    body, csp = render_consent('<script>alert(1)</script>', 'owner@example.com', '\"/><script>', config, {}, 'http://localhost:9000')
+    policy = {"access": {"tools": ["gateway_status", "supabase_list_schema"]}}
+    sections, tools = gateway_consent(policy)
+    body, csp = render_consent('<script>alert(1)</script>', 'owner@example.com', '\"/><script>', sections, tools, 'http://localhost:9000', NOTE)
     assert '<script>' not in body
     assert '&lt;script&gt;' in body
     assert 'Database metadata' in body

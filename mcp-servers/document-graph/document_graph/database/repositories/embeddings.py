@@ -56,3 +56,4 @@ class EmbeddingRepository:
                 (document_id, document_id, workspace),
             )
             return await cur.fetchall()
+

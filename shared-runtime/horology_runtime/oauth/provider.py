@@ -1,4 +1,8 @@
-"""MCP OAuth client grants governed by shared access policy; Google establishes identity only."""
+"""MCP OAuth client grants for one service; Google establishes identity only.
+
+The service supplies its scope, an account check and its consent wording.
+Tokens are bound to that service's /mcp resource and stored in its own table.
+"""
 import asyncio
 import hmac
 import secrets
@@ -12,7 +16,6 @@ from mcp.server.auth.provider import AccessToken, AuthorizationCode, Authorizati
 from mcp.shared.auth import OAuthClientInformationFull, OAuthToken
 from starlette.responses import RedirectResponse, HTMLResponse
 from horology_runtime.settings import TIMEOUTS, OAUTH
-from policy import authorize
 from .consent_page import render_consent
 
 
@@ -28,12 +31,16 @@ class GatewayRefresh(RefreshToken):
 
 
 class GoogleOAuthProvider:
-    def __init__(self, store, policy, public_url, client_id, client_secret, legacy=None):
+    def __init__(self, store, public_url, client_id, client_secret, *, scope, consent, check=lambda email: None, legacy=None):
+        """consent() returns (sections, tool names, note) for the consent page.
+        check(email) raises when the signed-in account may not use this service
+        right now; it runs at sign-in and on every token load and refresh."""
         # Who may sign in is managed by Google Auth Platform Audience test users.
         if not client_id or not client_secret:
             raise ValueError('Google OAuth credentials are required')
-        self.store, self.policy, self.url = store, policy, public_url
+        self.store, self.url, self.scope = store, public_url, scope
         self.client_id, self.client_secret = client_id, client_secret
+        self.consent_info, self.check = consent, check
         self.legacy = legacy
         self.jwks = jwt.PyJWKClient('https://www.googleapis.com/oauth2/v3/certs', timeout=TIMEOUTS.gateway_http)
 
@@ -53,8 +60,8 @@ class GoogleOAuthProvider:
     async def authorize(self, client, params):
         if params.resource and params.resource != self.url+'/mcp':
             raise AuthorizeError(error='invalid_target', error_description='Unknown resource')
-        if params.scopes and set(params.scopes) != {'gateway'}:
-            raise AuthorizeError(error='invalid_scope', error_description='Only gateway scope is supported')
+        if params.scopes and set(params.scopes) != {self.scope}:
+            raise AuthorizeError(error='invalid_scope', error_description=f'Only {self.scope} scope is supported')
         state = secrets.token_urlsafe(32)
         await self.store.put('login', state, {'params': params.model_dump(mode='json'), 'client_id': client.client_id, 'nonce': secrets.token_urlsafe(32)}, time.time()+OAUTH.login_seconds)
         return self.url+'/auth/google/start?'+urlencode({'state':state})
@@ -93,7 +100,8 @@ class GoogleOAuthProvider:
             return HTMLResponse('Login expired. Start again.', status_code=400)
         try:
             claims = await self.verify_google(request.query_params.get('code',''), data['nonce'])
-            config = authorize(self.policy, 'gateway_status')
+            self.check(claims['email'].lower())
+            sections, tools, note = self.consent_info()
             client = await self.get_client(data['client_id'])
             if client is None:
                 raise ValueError('Client expired')
@@ -107,7 +115,7 @@ class GoogleOAuthProvider:
         # only this SDK-validated client callback origin, including its port.
         redirect = urlparse(data['params']['redirect_uri'])
         callback_origin = f'{redirect.scheme}://{redirect.netloc}'
-        body, csp = render_consent(client.client_name or client.client_id, claims["email"], consent, config, self.policy, callback_origin)
+        body, csp = render_consent(client.client_name or client.client_id, claims["email"], consent, sections, tools, callback_origin, note)
         response = HTMLResponse(body, headers={"Content-Security-Policy": csp, "X-Content-Type-Options": "nosniff"})
         return self.cookie(response, consent)
 
@@ -124,9 +132,12 @@ class GoogleOAuthProvider:
         if form.get('decision') != 'allow':
             query['error'] = 'access_denied'
         else:
-            authorize(self.policy, 'gateway_status')
+            try:
+                self.check(data.get('email', ''))
+            except Exception:
+                return HTMLResponse('Sign-in could not be authorized. Check the account is an approved test user.', status_code=403)
             code = secrets.token_urlsafe(32)
-            model = GatewayCode(code=code, scopes=['gateway'], expires_at=time.time()+OAUTH.code_seconds, client_id=data['client_id'], code_challenge=params.code_challenge, redirect_uri=params.redirect_uri, redirect_uri_provided_explicitly=params.redirect_uri_provided_explicitly, resource=self.url+'/mcp', subject=data['subject'], email=data.get('email', ''), grant_id=secrets.token_urlsafe(32))
+            model = GatewayCode(code=code, scopes=[self.scope], expires_at=time.time()+OAUTH.code_seconds, client_id=data['client_id'], code_challenge=params.code_challenge, redirect_uri=params.redirect_uri, redirect_uri_provided_explicitly=params.redirect_uri_provided_explicitly, resource=self.url+'/mcp', subject=data['subject'], email=data.get('email', ''), grant_id=secrets.token_urlsafe(32))
             await self.store.put('code', code, model.model_dump(mode='json',exclude={'code'}), model.expires_at)
             query['code'] = code
         target = str(params.redirect_uri)
@@ -145,13 +156,13 @@ class GoogleOAuthProvider:
         return GatewayRefresh(token=refresh_token, **data) if data else None
 
     async def issue(self, grant, scopes, records):
-        authorize(self.policy, 'gateway_status')
+        self.check(grant.email)
         now = int(time.time())
         access_expiry = now+OAUTH.access_seconds
         refresh_expiry = now+OAUTH.refresh_seconds
         access, refresh = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
         common = {'client_id':grant.client_id,'subject':grant.subject,'email':grant.email,'scopes':scopes,'resource':self.url+'/mcp'}
-        await records.put('access',access,{**common,'expires_at':access_expiry,'claims':{'grant_id':grant.grant_id},'grant_id':grant.grant_id},access_expiry)
+        await records.put('access',access,{**common,'expires_at':access_expiry,'claims':{'grant_id':grant.grant_id,'email':grant.email},'grant_id':grant.grant_id},access_expiry)
         await records.put('refresh',refresh,{**common,'expires_at':refresh_expiry,'grant_id':grant.grant_id},refresh_expiry)
         return OAuthToken(access_token=access,token_type='Bearer',expires_in=access_expiry-now,refresh_token=refresh,scope=' '.join(scopes))
 
@@ -161,7 +172,7 @@ class GoogleOAuthProvider:
                 data = await records.get('code', authorization_code.code, consume=True)
                 if not data or data['client_id'] != client.client_id:
                     raise ValueError('Code unavailable')
-                result = await self.issue(GatewayCode(code=authorization_code.code,**data), ['gateway'], records)
+                result = await self.issue(GatewayCode(code=authorization_code.code,**data), [self.scope], records)
         except ValueError:
             # SDK errors are frozen dataclasses: raise outside generator contexts.
             raise TokenError(error='invalid_grant',error_description='Authorization code unavailable') from None
@@ -171,7 +182,7 @@ class GoogleOAuthProvider:
         try:
             async with self.store.grant_transaction() as records:
                 data = await records.get('refresh', refresh_token.token, consume=True)
-                if not data or data['client_id'] != client.client_id or not set(scopes).issubset({'gateway'}):
+                if not data or data['client_id'] != client.client_id or not set(scopes).issubset({self.scope}):
                     raise ValueError('Refresh unavailable')
                 result = await self.issue(GatewayRefresh(token=refresh_token.token,**data),scopes, records)
         except ValueError:
@@ -181,8 +192,11 @@ class GoogleOAuthProvider:
     async def load_access_token(self, token):
         data = await self.store.get('access',token)
         if data:
+            # A token issued for another service's resource is never accepted here.
+            if data.get('resource') != self.url+'/mcp':
+                return None
             try:
-                authorize(self.policy,'gateway_status')
+                self.check(data.get('email', ''))
             except Exception:
                 return None
             data.pop('grant_id',None)

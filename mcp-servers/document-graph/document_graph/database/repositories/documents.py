@@ -83,3 +83,48 @@ class DocumentRepository:
                 (workspace,),
             )
             return await cur.fetchall()
+
+    # Document Index sync. Sheet rows are keyed by workspace + Index Document ID.
+
+    async def sheet_revisions(self, workspace):
+        """Return {index_document_id: (graph id, imported Drive revision)} for sheet rows."""
+        async with self.database.transaction() as conn, conn.cursor() as cur:
+            await cur.execute(
+                "SELECT index_document_id, id, source_revision FROM documents WHERE workspace = %s AND source = 'sheet'",
+                (workspace,),
+            )
+            return {index_id: (doc_id, revision) for index_id, doc_id, revision in await cur.fetchall()}
+
+    async def upsert_sheet_document(self, workspace, index_document_id, drive_file_id, drive_url, doc_type, title, content, revision):
+        """Insert or replace one sheet document; returns its graph id."""
+        async with self.database.transaction() as conn, conn.cursor() as cur:
+            await cur.execute(
+                """
+                INSERT INTO documents (doc_type, title, content, created_by_agent, workspace, source,
+                                       index_document_id, drive_file_id, drive_url, source_revision, synced_at)
+                VALUES (%s, %s, %s, 'document-index-sync', %s, 'sheet', %s, %s, %s, %s, now())
+                ON CONFLICT (workspace, index_document_id) WHERE source = 'sheet' DO UPDATE SET
+                    doc_type = EXCLUDED.doc_type, title = EXCLUDED.title, content = EXCLUDED.content,
+                    drive_file_id = EXCLUDED.drive_file_id, drive_url = EXCLUDED.drive_url,
+                    source_revision = EXCLUDED.source_revision, synced_at = now()
+                RETURNING id
+                """,
+                (doc_type, title, content, workspace, index_document_id, drive_file_id, drive_url, revision),
+            )
+            return (await cur.fetchone())[0]
+
+    async def set_supersedes(self, workspace, document_id, supersedes_id):
+        async with self.database.transaction() as conn, conn.cursor() as cur:
+            await cur.execute("UPDATE documents SET supersedes_id = %s WHERE id = %s AND workspace = %s",
+                              (supersedes_id, document_id, workspace))
+
+    async def delete_sheet_documents(self, workspace, index_document_ids):
+        """Remove sheet documents (their embeddings and links cascade); returns the ids removed."""
+        if not index_document_ids:
+            return []
+        async with self.database.transaction() as conn, conn.cursor() as cur:
+            await cur.execute(
+                "DELETE FROM documents WHERE workspace = %s AND source = 'sheet' AND index_document_id = ANY(%s) RETURNING index_document_id",
+                (workspace, list(index_document_ids)),
+            )
+            return [row[0] for row in await cur.fetchall()]

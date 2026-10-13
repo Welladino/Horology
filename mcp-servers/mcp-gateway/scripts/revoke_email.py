@@ -11,12 +11,12 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from database.connection import Database
-from database.repositories.oauth import OAuthRepository
+from horology_runtime.oauth.store import OAuthRepository
 
 
 async def main(email):
     async with Database(os.environ.get('GATEWAY_DATABASE_URL')) as database:
-        removed = await OAuthRepository(database).revoke_email(email)
+        removed = await OAuthRepository(database, 'gateway_auth.records').revoke_email(email)
     print(f'Removed {removed} token records for {email.lower()}')
 
 

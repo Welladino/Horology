@@ -10,3 +10,6 @@ dependencies = []
 
 [tool.setuptools.packages.find]
 include = ["horology_runtime*"]
+
+[tool.setuptools.package-data]
+horology_runtime = ["oauth/*.css"]

@@ -1,0 +1,5 @@
+# Google credentials for the sync job (Sheets + Drive) and the sync_graph tool
+# (Cloud Run Admin API). Finds the job's service account on Cloud Run and
+# application-default credentials locally. Installed into the document-graph image.
+google-auth==2.61.0
+requests==2.34.2

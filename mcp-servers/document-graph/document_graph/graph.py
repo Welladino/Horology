@@ -6,6 +6,7 @@ scoping and the embed-then-link steps.
 from .database.repositories.documents import DocumentRepository
 from .database.repositories.embeddings import EmbeddingRepository
 from .database.repositories.links import LinkRepository
+from .integrations.cloud_run import client as cloud_run
 from .integrations.openrouter import client as openrouter
 from .shared.workspace import current_workspace
 
@@ -164,3 +165,17 @@ async def link_similar(workspace, document_id, threshold):
         if similarity >= threshold and await links.add(document_id, other_id, "related_to") is not None:
             linked.append({"document_id": other_id, "similarity": round(float(similarity), 4)})
     return {"document_id": document_id, "newly_linked": linked, "candidates_checked": len(candidates)}
+
+
+async def sync_graph() -> dict:
+    """Start the Document Index -> graph sync for your workspace.
+
+    The job imports rows whose Graph Inclusion is TRUE (re-embedding only
+    changed documents), removes rows set to FALSE, and writes Graph Sync
+    Status back to the sheet. It runs in the background; this returns as
+    soon as it has started. Check the sheet's Graph Sync Status column for
+    results.
+    """
+    workspace = current_workspace()
+    operation = await cloud_run.start_sync(workspace)
+    return {"started": True, "workspace": workspace, "operation": operation}
