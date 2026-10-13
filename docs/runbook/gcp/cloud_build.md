@@ -9,8 +9,10 @@ See [IAM and deployment access](../architecture/gcp_access.md) for the daily-acc
 ## Submit
 
 ```bash
-gcloud --configuration=horology builds submit . --project=horology-dev --region=us-central1 --config=cloudbuild.yaml --gcs-source-staging-dir=gs://horology-dev-mcp-build-source/source --service-account=projects/horology-dev/serviceAccounts/mcp-build@horology-dev.iam.gserviceaccount.com
+gcloud --configuration=horology builds submit . --project=horology-dev --config=cloudbuild.yaml --gcs-source-staging-dir=gs://horology-dev-mcp-build-source/source --service-account=projects/horology-dev/serviceAccounts/mcp-build@horology-dev.iam.gserviceaccount.com
 ```
+
+Submit to the global endpoint (no `--region`). Only global builds on e2-standard-2 use the free-tier SKU "Build time e2-standard-2" (2,500 minutes a month per billing account); `--region=us-central1` builds are billed per vCPU and GiB from the first minute. See the [note](../../planning/notes/2026-10-13_cloud-build-global-free-tier_note.md). Images still go to the `us-central1` Artifact Registry.
 
 First configure the build identity with Artifact Registry Writer on the `mcp-servers` repository, Logs Writer in the project, and Storage Object Viewer on `horology-dev-mcp-build-source`. That private source bucket deletes uploads after seven days (GCS soft-delete retention can extend physical storage). The submitting account needs permission to submit builds and act as this service account. The builder needs no provider secrets or Cloud Run deployment privileges. Cloud Build API must be enabled.
 

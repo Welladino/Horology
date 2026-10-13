@@ -94,8 +94,13 @@ Open Cloud Build in `horology-dev`, select region `us-central1`, and open the bu
 For another build, replace `BUILD_ID`:
 
 ```bash
-gcloud --configuration=horology builds describe BUILD_ID --project=horology-dev --region=us-central1 --format='json(status,results.images)'
-gcloud --configuration=horology builds log BUILD_ID --project=horology-dev --region=us-central1
+gcloud --configuration=horology builds describe BUILD_ID --project=horology-dev --format='json(status,results.images)'
+gcloud --configuration=horology builds log BUILD_ID --project=horology-dev
+```
+
+Builds submitted up to 2026-10-13 ran regionally; look those up with `--region=us-central1` added.
+
+```bash
 ```
 
 Build output is retained in Cloud Logging. JUnit exists in the build workspace but has no persistent report-bucket export configured. These Trivy reports are build-log results; they are not an enabled Artifact Analysis vulnerability dashboard.
