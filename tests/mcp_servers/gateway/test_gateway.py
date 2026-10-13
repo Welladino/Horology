@@ -131,7 +131,7 @@ def test_cache_is_client_scoped(ledger_dsn):
 
 def test_supabase_wrong_project_and_role_never_connect(policy, monkeypatch):
     config = policy['access']
-    with patch.object(supabase.psycopg, 'connect') as connect:
+    with patch.object(supabase, 'pool_for') as connect:
         for dsn in ['host=db.other.supabase.co user=horology_agents', 'host=db.pyywbjossvjngoxocdxk.supabase.co user=postgres', 'host=db.pyywbjossvjngoxocdxk.supabase.co user=welladino_metadata']:
             monkeypatch.setenv('SUPABASE_METADATA_DSN', dsn)
             with pytest.raises(Denied):
@@ -180,7 +180,7 @@ def test_monthly_budget_shared_across_clients(ledger_dsn):
 
 
 def test_auth_schema_never_connects(policy):
-    with patch.object(supabase.psycopg, 'connect') as connect:
+    with patch.object(supabase, 'pool_for') as connect:
         with pytest.raises(Denied):
             supabase.schema_query(policy, policy['access'], 'auth', performance=True)
         connect.assert_not_called()
@@ -201,10 +201,19 @@ def test_fixed_schema_queries_parameterize_table_and_omit_sensitive_data(policy,
     connection.__enter__.return_value = connection
     cursor = connection.cursor.return_value.__enter__.return_value
     cursor.fetchall.return_value = []
-    with patch.object(supabase.psycopg, 'connect', return_value=connection) as connect:
+    supabase._pools.clear()
+    with patch.object(supabase, 'ConnectionPool') as pool:
+        pool.return_value.connection.return_value = connection
         supabase.schema_query(policy, policy['access'], 'public', "x'; DROP TABLE y;--")
-    assert connect.call_args.kwargs['sslmode'] == 'verify-full' and connect.call_args.kwargs['prepare_threshold'] is None
-    assert connection.read_only is True
+        supabase.schema_query(policy, policy['access'], 'public', 'other')
+    supabase._pools.clear()
+    pool.assert_called_once()
+    options = pool.call_args.kwargs
+    assert options['kwargs']['sslmode'] == 'verify-full' and options['kwargs']['prepare_threshold'] is None
+    assert options['max_size'] == 2 and options['check'] is pool.check_connection
+    configured = MagicMock()
+    options['configure'](configured)
+    assert configured.read_only is True
     sql, args = cursor.execute.call_args_list[1].args
     assert args == ('public', "x'; DROP TABLE y;--")
     assert 'DROP TABLE' not in sql

@@ -1,4 +1,8 @@
-"""Async Postgres pool and transaction policy shared by the MCP services; schema changes stay in Alembic."""
+"""Async Postgres pool shared by the MCP services; schema changes stay in Alembic.
+
+Statement and lock timeouts are defaults on the service logins (migration
+20261014_001), so each session gets them without extra round trips.
+"""
 from contextlib import asynccontextmanager
 
 import certifi
@@ -30,9 +34,6 @@ class Database:
     @asynccontextmanager
     async def transaction(self):
         # Pool connection contexts commit on success and roll back on failure,
-        # including cancellation. SET LOCAL is safe with Neon transaction pooling.
+        # including cancellation.
         async with self.pool.connection() as db:
-            async with db.cursor() as cur:
-                await cur.execute("SELECT set_config('statement_timeout', %s, true)", (str(TIMEOUTS.neon_statement_ms),))
-                await cur.execute("SELECT set_config('lock_timeout', %s, true)", (str(TIMEOUTS.neon_lock_ms),))
             yield db

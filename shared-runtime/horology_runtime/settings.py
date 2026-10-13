@@ -8,12 +8,7 @@ class TimeoutPolicy:
     openrouter_http: int = 30
     database_connect: int = 5
     supabase_statement_ms: int = 3000
-    neon_statement_ms: int = 10000
-    neon_lock_ms: int = 3000
-
-    @property
-    def neon_options(self):
-        return f"-c statement_timeout={self.neon_statement_ms} -c lock_timeout={self.neon_lock_ms}"
+    # Neon statement (10 s) and lock (3 s) timeouts are login defaults: alembic 20261014_001.
 
 
 TIMEOUTS = TimeoutPolicy()
@@ -62,6 +57,11 @@ class OAuthPolicy:
     access_seconds: int = 900
     refresh_seconds: int = 86400 * 7
     client_seconds: int = 86400 * 90
+    # Verified access tokens are remembered in memory to skip the database lookup.
+    # A token revoked outside this process (scripts/revoke_email.py) keeps working
+    # until its entry expires; a restart or new revision clears it at once.
+    access_cache_seconds: int = 300
+    access_cache_size: int = 256
 
 
 OAUTH = OAuthPolicy()
@@ -71,6 +71,7 @@ OAUTH = OAuthPolicy()
 class DatabasePolicy:
     gateway_pool_size: int = 4
     document_graph_pool_size: int = 4
+    supabase_pool_size: int = 2
 
 
 DATABASE = DatabasePolicy()

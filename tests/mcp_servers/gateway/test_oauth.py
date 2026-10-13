@@ -333,3 +333,37 @@ def test_store_accepts_only_known_tables():
     from horology_runtime.oauth.store import OAuthRepository
     with pytest.raises(ValueError):
         OAuthRepository(None, 'public.documents')
+
+
+def test_verified_token_is_remembered_but_account_check_still_runs(provider, monkeypatch):
+    async def run():
+        first = await provider.exchange_authorization_code(client(), await code(provider, 'owner@example.com'))
+        assert await provider.load_access_token(first.access_token) is not None
+        lookups = AsyncMock(side_effect=AssertionError('database lookup on a remembered token'))
+        monkeypatch.setattr(provider.store, 'get', lookups)
+        assert (await provider.load_access_token(first.access_token)).claims['email'] == 'owner@example.com'
+        assert first.access_token not in json.dumps([list(provider.verified)])
+        def refuse(email):
+            raise ValueError('not mapped')
+        provider.check = refuse
+        assert await provider.load_access_token(first.access_token) is None
+    asyncio.run(run())
+
+
+def test_remembered_token_expires_and_is_bounded(provider, monkeypatch):
+    from horology_runtime.oauth import provider as module
+    async def run():
+        first = await provider.exchange_authorization_code(client(), await code(provider))
+        await provider.load_access_token(first.access_token)
+        (until, _), = provider.verified.values()
+        assert until <= time.time() + module.OAUTH.access_cache_seconds
+        await provider.store.revoke('grant')
+        monkeypatch.setattr(module.time, 'time', lambda: until + 1)
+        assert await provider.load_access_token(first.access_token) is None
+        monkeypatch.undo()
+        monkeypatch.setattr(module, 'OAUTH', type(module.OAUTH)(access_cache_size=2))
+        tokens = [await provider.exchange_authorization_code(client(), await code(provider)) for _ in range(3)]
+        for token in tokens:
+            assert await provider.load_access_token(token.access_token) is not None
+        assert len(provider.verified) == 2
+    asyncio.run(run())

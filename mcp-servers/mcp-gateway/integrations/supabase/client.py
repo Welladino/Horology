@@ -1,9 +1,30 @@
 """Restricted supabase integration."""
-from horology_runtime.settings import TIMEOUTS
-import psycopg
+import threading
+
+from horology_runtime.settings import DATABASE, TIMEOUTS
 from psycopg.conninfo import conninfo_to_dict
 from psycopg.rows import dict_row
+from psycopg_pool import ConnectionPool
 from policy import Denied, credential
+
+_pools, _lock = {}, threading.Lock()
+
+
+def _read_only(connection):
+    connection.read_only = True
+
+
+def pool_for(dsn):
+    """A small reused pool per checked DSN. Connections are read-only and keep no
+    per-call state; each is checked before use, since the Supabase pooler drops idle ones."""
+    with _lock:
+        if dsn not in _pools:
+            # prepare_threshold=None: the Supabase pooler does not keep prepared statements.
+            _pools[dsn] = ConnectionPool(
+                dsn, kwargs={'sslmode': 'verify-full', 'connect_timeout': TIMEOUTS.database_connect, 'prepare_threshold': None},
+                configure=_read_only, check=ConnectionPool.check_connection, min_size=0,
+                max_size=DATABASE.supabase_pool_size, max_idle=120, timeout=TIMEOUTS.database_connect, open=True)
+        return _pools[dsn]
 
 
 def schema_query(policy, config, schema, table='', performance=False):
@@ -17,9 +38,8 @@ def schema_query(policy, config, schema, table='', performance=False):
         raise Denied('Database connection is outside the configured project')
     if details.get('user', '').split('.')[0] != 'horology_agents':
         raise Denied('Dedicated horology_agents role required')
-    # prepare_threshold=None: the Supabase pooler does not keep prepared statements.
-    with psycopg.connect(dsn, sslmode='verify-full', connect_timeout=TIMEOUTS.database_connect, prepare_threshold=None) as connection:
-        connection.read_only = True
+    # The pool context ends the transaction, so the timeout below applies to this call only.
+    with pool_for(dsn).connection() as connection:
         with connection.cursor(row_factory=dict_row) as cursor:
             cursor.execute("SELECT set_config('statement_timeout', %s, true)", (str(TIMEOUTS.supabase_statement_ms),))
             if performance:

@@ -4,10 +4,12 @@ The service supplies its scope, an account check and its consent wording.
 Tokens are bound to that service's /mcp resource and stored in its own table.
 """
 import asyncio
+import hashlib
 import hmac
 import secrets
 import re
 import time
+from collections import OrderedDict
 from urllib.parse import urlencode, urlparse
 
 import httpx
@@ -42,6 +44,8 @@ class GoogleOAuthProvider:
         self.client_id, self.client_secret = client_id, client_secret
         self.consent_info, self.check = consent, check
         self.legacy = legacy
+        # sha256(token) -> (remember_until, record); least recently used dropped first.
+        self.verified = OrderedDict()
         self.jwks = jwt.PyJWKClient('https://www.googleapis.com/oauth2/v3/certs', timeout=TIMEOUTS.gateway_http)
 
     async def get_client(self, client_id):
@@ -190,23 +194,36 @@ class GoogleOAuthProvider:
         return result
 
     async def load_access_token(self, token):
-        data = await self.store.get('access',token)
-        if data:
+        key = hashlib.sha256(token.encode()).hexdigest()
+        now = time.time()
+        cached = self.verified.pop(key, None)
+        if cached and cached[0] > now:
+            data = dict(cached[1])
+        else:
+            data = await self.store.get('access',token)
+            if not data:
+                return await self.legacy.verify_token(token) if self.legacy else None
             # A token issued for another service's resource is never accepted here.
             if data.get('resource') != self.url+'/mcp':
                 return None
-            try:
-                self.check(data.get('email', ''))
-            except Exception:
-                return None
-            data.pop('grant_id',None)
-            return AccessToken(token=token,**data)
-        return await self.legacy.verify_token(token) if self.legacy else None
+            cached = (min(now+OAUTH.access_cache_seconds, data['expires_at']), dict(data))
+        # The account check runs on every call, cached or not.
+        try:
+            self.check(data.get('email', ''))
+        except Exception:
+            return None
+        self.verified[key] = cached
+        while len(self.verified) > OAUTH.access_cache_size:
+            self.verified.popitem(last=False)
+        data.pop('grant_id',None)
+        return AccessToken(token=token,**data)
 
     async def revoke_token(self, token):
         grant = token.grant_id if isinstance(token,GatewayRefresh) else (token.claims or {}).get('grant_id')
         if grant:
             await self.store.revoke(grant)
+            for key in [k for k, (_, record) in self.verified.items() if record.get('grant_id') == grant]:
+                del self.verified[key]
 
     async def exchange_identity_assertion(self, client, params):
         raise TokenError(error='unsupported_grant_type',error_description='Identity assertion grants are disabled')
