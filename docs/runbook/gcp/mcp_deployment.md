@@ -182,7 +182,7 @@ Progress 2026-10-13, from Cloud Build `d7ed4029-3498-4d0e-991d-f2bc3e6cce72` (ga
 - Done: steps 1–4, 6, 7, 9, 10 and 11. `horology-graph-db:2` added; Sheets and Drive APIs enabled; `document-graph-sync` identity created and allowed its two secrets; job `document-graph-sync` created; `document-graph` allowed to start it with overrides; `horology-graph-google-client-id`/`-secret` created by the operator; revision `document-graph-00003-7cv` serves with sign-in on, `horology-graph-db:2` and the map `saravanaraj.subramaniam@welladino.com` → `welladino`. It started cleanly; the invoker check is still on, so it could not be tested from outside.
 - Step 12 done after operator approval: invoker check turned off with `--configuration=horology-admin` (the deployer lacks `run.services.setIamPolicy`). Externally: discovery 200 (scope `graph`, registration on), anonymous `/mcp` 401, a token not issued by document-graph 401.
 - Open: step 5 (Drive sharing, operator), the redirect URI in step 10 (operator, console), step 8 (manual job run, after sharing) and step 13.
-- `horology-deployer` cannot create jobs (`run.jobs.create` denied); the job was created with `--configuration=horology-admin`. Check whether it may update the job's image on later releases.
+- By design, `horology-deployer` (the `horology` configuration) only updates services. Create, run and update the `document-graph-sync` job, and change service access (`--no-invoker-iam-check`), with `--configuration=horology-admin`. The operator decided on 2026-10-13 not to widen the deployer.
 - The gateway's own release (section above) ran at the same time: revision `mcp-gateway-00009-8hr`, without `GATEWAY_OAUTH_ASSIGNMENTS`, `GITHUB_TOKEN`, `GATEWAY_TOKEN_HASHES` or policy volumes. Anonymous `/mcp` returns 401 and discovery 200.
 
 
@@ -219,13 +219,13 @@ for secret in horology-graph-db horology-graph-openrouter; do gcloud --configura
 7. Create the job. Replace `DIGEST`; the workbook map is JSON, so the `^|^` prefix changes gcloud's list separator:
 
 ```bash
-gcloud --configuration=horology run jobs create document-graph-sync --project=horology-dev --region=us-central1 --image=us-central1-docker.pkg.dev/horology-dev/mcp-servers/document-graph@sha256:DIGEST --command=python --args=-m,graph_sync --service-account=document-graph-sync@horology-dev.iam.gserviceaccount.com --set-secrets=DATABASE_URL_POOLED=horology-graph-db:2,OPENROUTER_API_KEY=horology-graph-openrouter:1 --set-env-vars='^|^GRAPH_SYNC_WORKBOOKS={"welladino":"1kObhQNjsFhziS-wRzjaEIzr9j8jjbfvd-ZgvzuwQ-Jc"}' --max-retries=0 --task-timeout=900s
+gcloud --configuration=horology-admin run jobs create document-graph-sync --project=horology-dev --region=us-central1 --image=us-central1-docker.pkg.dev/horology-dev/mcp-servers/document-graph@sha256:DIGEST --command=python --args=-m,graph_sync --service-account=document-graph-sync@horology-dev.iam.gserviceaccount.com --set-secrets=DATABASE_URL_POOLED=horology-graph-db:2,OPENROUTER_API_KEY=horology-graph-openrouter:1 --set-env-vars='^|^GRAPH_SYNC_WORKBOOKS={"welladino":"1kObhQNjsFhziS-wRzjaEIzr9j8jjbfvd-ZgvzuwQ-Jc"}' --max-retries=0 --task-timeout=900s
 ```
 
 8. Test the job by hand, then check the sheet's Graph Sync Status column and the execution log:
 
 ```bash
-gcloud --configuration=horology run jobs execute document-graph-sync --project=horology-dev --region=us-central1 --wait
+gcloud --configuration=horology-admin run jobs execute document-graph-sync --project=horology-dev --region=us-central1 --wait
 ```
 
 9. Let the document-graph service start that job, and only that job:
@@ -257,7 +257,7 @@ gcloud --configuration=horology run services update document-graph --project=hor
 12. **Approval.** Sign-in now guards the service, so turn off Cloud Run's built-in invoker check (the same change made for the gateway on 2026-10-11):
 
 ```bash
-gcloud --configuration=horology run services update document-graph --project=horology-dev --region=us-central1 --no-invoker-iam-check
+gcloud --configuration=horology-admin run services update document-graph --project=horology-dev --region=us-central1 --no-invoker-iam-check
 ```
 
 13. Verify: anonymous `/mcp` returns 401; `/.well-known/oauth-authorization-server` returns 200; a test user connects from Claude (Customize → Connectors → add custom connector with `https://document-graph-366292507424.us-central1.run.app/mcp`) or Codex (`codex mcp add document-graph --url https://document-graph-366292507424.us-central1.run.app/mcp --oauth-client-registration dcr`); `list_documents` shows only that workspace; `sync_graph` starts an execution and the sheet updates.
