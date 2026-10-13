@@ -7,7 +7,7 @@ from policy import Denied
 
 
 def register_tools(mcp, access):
-    policy, cache = access.policy, access.cache
+    policy = access.policy
     scope, reserve = access.scope, access.reserve
 
     @mcp.tool()

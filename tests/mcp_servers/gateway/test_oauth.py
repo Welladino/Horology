@@ -22,7 +22,6 @@ sys.path.insert(0, str(ROOT))
 from policy import authorize, load_policy
 from horology_runtime.oauth.provider import GoogleOAuthProvider, GatewayCode
 from shared.consent import NOTE, gateway_consent
-from server import build_server
 
 
 class MemoryStore:

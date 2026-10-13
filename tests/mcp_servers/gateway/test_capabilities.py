@@ -3,10 +3,7 @@
 All external provider calls are mocked; real Postgres accounting is tested elsewhere.
 """
 import asyncio
-import copy
-import json
 import sys
-import time
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 import pytest

@@ -171,9 +171,9 @@ sequenceDiagram
 
 Google only establishes identity using `openid email`. This login does not grant Gmail or Google Drive access. The Google client secret stays in the gateway. The AI client receives gateway tokens, not provider keys or database credentials.
 
-`GATEWAY_OAUTH_ASSIGNMENTS` maps approved emails to existing policy assignments. Adding an email requires a valid policy assignment and an updated deployed mapping; Google OAuth audience/test-user settings may also apply. Reconnecting or refreshing tokens does not reset the assignment's quotas or extend its policy expiry.
+Who can sign in is set in Google Auth Platform → Audience (test users, app in Testing); every signed-in account shares one policy and the daily/monthly provider caps. To remove someone, delete them from Audience and run `scripts/revoke_email.py` (see the [deployment runbook](../gcp/mcp_deployment.md#add-or-remove-a-person)). Reconnecting or refreshing tokens does not reset spending caps.
 
-The gateway's Cloud Run invoker IAM check is disabled for this service only so external clients can reach discovery/login. Application OAuth still protects `/mcp`. Document-graph retains Cloud Run IAM authentication; a normal gateway OAuth token does not authorize its private endpoint.
+The gateway's Cloud Run invoker IAM check is disabled for this service only so external clients can reach discovery/login. Application OAuth still protects `/mcp`. Document-graph is a separate connector with its own Google sign-in, token table and email → workspace map; gateway tokens are refused there and vice versa.
 
 Codex and ChatGPT web connections are verified. Claude connection compatibility remains to be tested. Connection in one platform does not automatically configure another platform or prove that a scheduled cloud run can use it unattended.
 

@@ -3,12 +3,8 @@
 All upstream requests are mocked. HTTP smoke testing is in smoke.py.
 """
 import asyncio
-import concurrent.futures
-import copy
-import hashlib
 import json
 import sys
-import time
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
@@ -25,8 +21,6 @@ from database.repositories.quotas import QuotaRepository
 from database.repositories.cache import CacheRepository
 import psycopg
 import os
-import psycopg
-from server import build_server
 
 
 @pytest.fixture

@@ -12,3 +12,6 @@ __pycache__/
 
 # Generated Python packaging metadata
 *.egg-info/
+
+# Private leftovers from the removed GitHub/Drive adapters (retired credentials, policy snapshots).
+placeholders/

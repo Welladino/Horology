@@ -1,1 +1,1 @@
-"""SQL belongs to the quota, cache and OAuth repositories."""
+"""SQL for the quota and cache repositories; OAuth records live in horology_runtime.oauth.store."""

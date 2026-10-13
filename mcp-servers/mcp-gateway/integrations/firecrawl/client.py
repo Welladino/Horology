@@ -4,7 +4,7 @@ from shared.http import request
 from shared.text import clean_text
 
 
-from shared.urls import public_url
+from shared.urls import public_url  # noqa: F401 - tools.py calls client.public_url
 
 async def firecrawl_scrape(url):
     data = await request('POST', 'https://api.firecrawl.dev/v2/scrape', token=credential('FIRECRAWL_API_KEY'), body={'url': url, 'formats': ['markdown'], 'onlyMainContent': True, 'parsers': [], 'actions': [], 'proxy': 'basic', 'skipTlsVerification': False, 'timeout': 20000})

@@ -3,7 +3,6 @@ import hashlib
 import json
 from pathlib import Path
 import secrets
-import time
 
 root = Path(__file__).resolve().parents[1]
 (root / 'config').mkdir(exist_ok=True)

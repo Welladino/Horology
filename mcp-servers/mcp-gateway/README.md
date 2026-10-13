@@ -138,9 +138,9 @@ The standalone Compose project and container are `horology-mcp-gateway`; its loc
 
 ## Parked native-connector alternatives
 
-GitHub and Google Drive/Docs/Sheets adapters are preserved outside the active gateway in `../../placeholders/connectors/` (from the repository root: `placeholders/connectors/`). Their code, tests, provider authorization helper, write receipts and unshipped migration are not included in runtime images or Cloud Build uploads. Native platform connectors will be evaluated separately; their permissions are outside this gateway's policy.
+GitHub and Google Drive/Docs/Sheets adapters were removed on 2026-10-13 in favour of native platform connectors, whose permissions are outside this gateway's policy. The code, tests, authorization helper and unshipped migration remain in Git history (`git show d643223:placeholders/connectors/README.md`).
 
-The active gateway exposes 13 tools: status, Supabase metadata/performance, capped Tavily search/extraction and fixed Firecrawl scrape/Alexandria reads. Google-backed MCP identity OAuth remains active; it grants no Google document access. Retired provider credentials are retained only in ignored `placeholders/connectors/.env.local`; existing cloud secret bindings are unchanged until a future deployment.
+The active gateway exposes 13 tools: status, Supabase metadata/performance, capped Tavily search/extraction and fixed Firecrawl scrape/Alexandria reads. Google-backed MCP identity OAuth remains active; it grants no Google document access. Retired provider credentials remain only in the ignored, untracked `placeholders/connectors/.env.local` until the operator revokes them; the cloud `GITHUB_TOKEN` binding is removed by the next gateway release.
 
 Tests and the local MCP smoke helper live at `tests/mcp_servers/gateway/` in the repository root. No Cloud Build or deployment was run for this extraction.
 
