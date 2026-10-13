@@ -45,3 +45,10 @@ cd plugins && zip -r ../horology-document-graph.zip horology-document-graph -x '
 ```
 
 The zip is a build artifact; don't commit it. Sign in to the bundled connector when Claude first asks.
+
+## Status (2026-10-13)
+
+- **Claude Code:** all three plugins are installed from this marketplace (user scope), and both connectors are signed in. Verified calls:
+  - document graph: `list_documents`;
+  - gateway: `gateway_status` and `supabase_list_schema`.
+- **Cowork:** the three plugin zips were built and uploaded by the operator, and the document-graph plugin appears there. The workflow skills read the Workflow Guide and Agent Location Directory through the Google Drive connector.

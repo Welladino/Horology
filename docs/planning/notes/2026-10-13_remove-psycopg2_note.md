@@ -33,7 +33,7 @@
   - 150 tests passed, none skipped.
   - The rebuilt gateway image passes `check_image.py` and contains no psycopg2. The document-graph image installs httpx2 2.13.1.
   - pip-audit: no known vulnerabilities in the three image requirement files or the dev lock file.
-- **Not verified:** the Supabase tools were not called live against Supabase after the change.
+- **Verified live 2026-10-13:** after the gateway release (`mcp-gateway-00009-8hr`), `gateway_status` and `supabase_list_schema` succeeded from Claude Code through the `horology-tools` plugin.
 
 ## Follow-Ups
-- Call `supabase_list_schema` once against the real project after the next gateway release.
+- None.
