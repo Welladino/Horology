@@ -37,20 +37,24 @@ class MemoryStore:
         yield self
     async def revoke(self, grant):
         self.data = {k:v for k,v in self.data.items() if v[0].get('grant_id') != grant}
+    async def revoke_email(self, email):
+        before = len(self.data)
+        self.data = {k:v for k,v in self.data.items() if not (k[0] in ('access','refresh') and v[0].get('email') == email.lower())}
+        return before - len(self.data)
 
 
 @pytest.fixture
 def provider():
     policy = load_policy(ROOT/'config/policy.example.json')
-    return GoogleOAuthProvider(MemoryStore(),policy,'http://localhost:8767','google-client','test-secret',['owner@example.com'])
+    return GoogleOAuthProvider(MemoryStore(),policy,'http://localhost:8767','google-client','test-secret')
 
 
 def client():
     return OAuthClientInformationFull(client_id='client',client_name='Test client',redirect_uris=['http://localhost:9000/callback'],scope='gateway',token_endpoint_auth_method='none',grant_types=['authorization_code','refresh_token'])
 
 
-async def code(provider):
-    value = GatewayCode(code='test-code',scopes=['gateway'],expires_at=time.time()+120,client_id='client',code_challenge='challenge',redirect_uri='http://localhost:9000/callback',redirect_uri_provided_explicitly=True,resource=provider.url+'/mcp',subject='google-subject',grant_id='grant')
+async def code(provider, email=''):
+    value = GatewayCode(email=email,code='test-code',scopes=['gateway'],expires_at=time.time()+120,client_id='client',code_challenge='challenge',redirect_uri='http://localhost:9000/callback',redirect_uri_provided_explicitly=True,resource=provider.url+'/mcp',subject='google-subject',grant_id='grant')
     await provider.store.put('code',value.code,value.model_dump(mode='json',exclude={'code'}),value.expires_at)
     return value
 
@@ -117,7 +121,8 @@ def test_google_callback_requires_cookie_approved_identity_and_consent(provider)
             state=parse_qs(urlparse(start).query)['state'][0]
             assert (await http.get('/auth/google/callback',params={'state':state,'code':'google-code'})).status_code==400
             await http.get(start)
-            provider.verify_google=AsyncMock(return_value={'email':'outsider@example.com','sub':'subject'})
+            # Google refuses accounts outside the Audience test users; any failed verification is rejected.
+            provider.verify_google=AsyncMock(side_effect=ValueError('Unverified Google identity'))
             assert (await http.get('/auth/google/callback',params={'state':state,'code':'google-code'})).status_code==403
             start=await provider.authorize(client(),params)
             state=parse_qs(urlparse(start).query)['state'][0]
@@ -133,6 +138,7 @@ def test_google_callback_requires_cookie_approved_identity_and_consent(provider)
             assert (await http.post('/auth/consent',data={'consent':'wrong','decision':'allow'})).status_code==400
             response=await http.post('/auth/consent',data={'consent':secret,'decision':'allow'})
             assert response.status_code==303
+            assert [v[0]['email'] for k,v in provider.store.data.items() if k[0]=='code']==['owner@example.com']
             assert parse_qs(urlparse(response.headers['location']).query)['state']==['client-state']
             assert (await http.post('/auth/consent',data={'consent':secret,'decision':'allow'})).status_code==400
     asyncio.run(run())
@@ -254,4 +260,44 @@ def test_persistent_wrong_client_exchange_rolls_back_code_consumption(provider):
             # Failure rolled back DELETE; the authorized client can still redeem.
             result = await provider.exchange_authorization_code(client(),value)
             assert await provider.load_access_token(result.access_token) is not None
+    asyncio.run(run())
+
+
+def test_provider_needs_no_email_allowlist():
+    import inspect
+    assert 'allowed_emails' not in inspect.signature(GoogleOAuthProvider).parameters
+
+
+def test_email_survives_refresh_and_revoke_email_removes_tokens(provider):
+    async def run():
+        first = await provider.exchange_authorization_code(client(), await code(provider, 'owner@example.com'))
+        refresh = await provider.load_refresh_token(client(), first.refresh_token)
+        assert refresh.email == 'owner@example.com'
+        second = await provider.exchange_refresh_token(client(), refresh, ['gateway'])
+        assert (await provider.load_refresh_token(client(), second.refresh_token)).email == 'owner@example.com'
+        other = await provider.exchange_authorization_code(client(), await code(provider, 'other@example.com'))
+        # The pre-refresh access token is still unexpired, so it is removed too.
+        assert await provider.store.revoke_email('Owner@Example.com') == 3
+        assert await provider.load_access_token(first.access_token) is None
+        assert await provider.load_access_token(second.access_token) is None
+        assert await provider.load_refresh_token(client(), second.refresh_token) is None
+        assert await provider.load_access_token(other.access_token) is not None
+    asyncio.run(run())
+
+
+def test_persistent_revoke_email_removes_only_that_person(provider):
+    import os
+    from database.connection import Database
+    from database.repositories.oauth import OAuthRepository
+    dsn = os.environ.get('GATEWAY_TEST_RUNTIME_URL')
+    if not dsn:
+        pytest.skip('Disposable runtime Postgres is required')
+    async def run():
+        async with Database(dsn) as database:
+            provider.store = OAuthRepository(database)
+            mine = await provider.exchange_authorization_code(client(), await code(provider, 'owner@example.com'))
+            theirs = await provider.exchange_authorization_code(client(), await code(provider, 'other@example.com'))
+            assert await provider.store.revoke_email('owner@example.com') == 2
+            assert await provider.load_access_token(mine.access_token) is None
+            assert await provider.load_access_token(theirs.access_token) is not None
     asyncio.run(run())

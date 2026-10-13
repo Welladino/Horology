@@ -45,6 +45,13 @@ def policy():
     return p
 
 
+def test_baked_cloud_policy_loads_and_holds_no_credentials():
+    path = ROOT / 'config/policy.cloud.json'
+    load_policy(path)
+    text = path.read_text().lower()
+    assert not any(word in text for word in ('password', 'secret', 'token', 'postgres://', 'postgresql://', 'api_key'))
+
+
 def test_shared_policy_rejects_unapproved_tools(policy):
     with pytest.raises(Denied):
         authorize(policy, 'delete_database')

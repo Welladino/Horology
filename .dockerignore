@@ -19,6 +19,8 @@
 !mcp-servers/mcp-gateway/shared/oauth/*.py
 !mcp-servers/mcp-gateway/certs/
 !mcp-servers/mcp-gateway/certs/supabase-prod-ca-2021.crt
+!mcp-servers/mcp-gateway/config/
+!mcp-servers/mcp-gateway/config/policy.cloud.json
 !mcp-servers/document-graph/
 !mcp-servers/document-graph/requirements.txt
 !mcp-servers/document-graph/server.py

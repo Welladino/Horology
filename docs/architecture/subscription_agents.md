@@ -97,7 +97,7 @@ Google-backed MCP identity OAuth remains active. GitHub/Drive provider credentia
 
 ## Shared policy without assignments (local source, 2026-10-13)
 
-The active gateway source uses one shared JSON access policy, OAuth client authentication with an approved-email list, and per-provider daily/monthly credit budgets. It has no assignment selection, assignment expiry, per-session quotas or quota windows. OAuth token lifetimes and per-client grants still exist. Client IDs serve auditing and cache isolation only. The new non-destructive column-rename migration and cloud policy/environment update must precede release; the existing cloud revision retains its older behavior until deployed. Live revocation verification remains planned for that release.
+The active gateway source uses one shared JSON access policy baked into the image from tracked `config/policy.cloud.json`, Google OAuth sign-in limited to the Google Auth Platform Audience test users (no gateway email list), and per-provider daily/monthly credit budgets. It has no assignment selection, assignment expiry, per-session quotas or quota windows. OAuth token lifetimes and per-client grants still exist. Client IDs serve auditing and cache isolation only. The new non-destructive column-rename migration and cloud policy/environment update must precede release; the existing cloud revision retains its older behavior until deployed. Live revocation verification remains planned for that release.
 
 
 ### Gateway persistence (local source, verified 2026-10-13)

@@ -30,9 +30,9 @@ Both servers read Cloud Run's PORT and use stateless JSON MCP requests. Existing
 | Service | Secret Manager input | Private local source |
 | --- | --- | --- |
 | gateway | GATEWAY_DATABASE_URL | gateway .env.local |
-| gateway | GITHUB_TOKEN, TAVILY_API_KEY, FIRECRAWL_API_KEY, SUPABASE_METADATA_DSN | gateway .env.local |
-| gateway | GATEWAY_TOKEN_HASHES | fresh cloud assignment mapping; do not reuse expiring local assignments |
-| gateway | gateway policy file mounted at /config/policy.json | cloud policy prepared separately from local policy |
+| gateway | TAVILY_API_KEY, FIRECRAWL_API_KEY, SUPABASE_METADATA_DSN | gateway .env.local |
+| gateway | GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET | Google Auth Platform client |
+| gateway (no secret) | policy at /config/policy.json, baked into the image | tracked `mcp-servers/mcp-gateway/config/policy.cloud.json` |
 | document graph | DATABASE_URL_POOLED, OPENROUTER_API_KEY | document-graph .env |
 
 Google sign-in credentials now exist in service-specific Secret Manager secrets; Google Drive provider credentials remain absent. Never place secret values in tracked files, command arguments, logs or container layers. Pin deployed secret versions instead of silently relying on latest. Give each runtime identity secretAccessor on its own secrets only. A gateway credential never needs access to document-graph DB/OpenRouter secrets.
@@ -147,6 +147,48 @@ gcloud --configuration=horology run services update-traffic mcp-gateway --projec
 ```
 
 If using an older revision for a lasting rollback, move `deployed-current` to its digest before cleanup can remove it. Preserve intentional rollback digests with `deployed-` tags when older than five versions.
+
+## Next gateway release: shared access policy (prepared 2026-10-13, not yet run)
+
+Revision `mcp-gateway-00008-kqw` still runs the old assignment-based image. The new image needs these changes in this order; skipping one stops the new revision from starting or lets nobody sign in. Why: [remove assignments](../../planning/notes/2026-10-13_remove-assignments_note.md), [Audience sign-in and baked policy](../../planning/notes/2026-10-13_audience-signin-baked-policy_note.md).
+
+1. In Google Auth Platform → Audience for `horology-dev`, confirm the app is External, status Testing, and every person who should connect is a test user.
+2. Build through [Cloud Build](cloud_build.md) and note the gateway image digest.
+3. Apply the column-rename migration with the direct owner `DATABASE_URL` (see [Alembic workflow](../db/alembic_workflow.md)):
+
+```bash
+.venv/bin/alembic upgrade head
+```
+
+From this step until step 4 finishes, the old revision's quota and cache queries fail, because it expects the old column names. Run steps 3 and 4 back to back.
+
+4. Deploy that digest, dropping the old settings. Replace `DIGEST`:
+
+```bash
+gcloud --configuration=horology run services update mcp-gateway --project=horology-dev --region=us-central1 --image=us-central1-docker.pkg.dev/horology-dev/mcp-servers/mcp-gateway@sha256:DIGEST --remove-env-vars=GATEWAY_OAUTH_ASSIGNMENTS --remove-secrets=GITHUB_TOKEN,GATEWAY_TOKEN_HASHES --clear-volume-mounts --clear-volumes
+```
+
+`--clear-volumes` removes both policy secret volumes (versions 3 and 4); the policy now comes from the image. Removing `GATEWAY_TOKEN_HASHES` makes the cloud OAuth-only; local Compose and Hermes keep bearer tokens.
+
+5. Verify: unauthenticated `/mcp` returns 401, a test user can sign in from a client, `gateway_status` lists the tools in `policy.cloud.json` and none starting with `github_` or `drive_`, and a non-test-user Google account is refused at Google sign-in.
+6. After the release has run cleanly for a while, disable (do not delete) secret versions `horology-gateway-policy`, `horology-gateway-github` and `horology-gateway-token-hashes`, and the ignored local `policy.cloud.secret-v4.local.json` snapshot can go.
+
+Rollback: route traffic back to `mcp-gateway-00008-kqw`. The rename migration must be reverted first, because the old image expects the old column names; do not downgrade while the new revision serves traffic.
+
+## Add or remove a person
+
+Add: Google Auth Platform → Audience (`horology-dev`) → Test users → **Add users**. Keep publishing status **Testing**.
+
+Remove:
+
+1. Delete them from Audience test users, so they cannot sign in again.
+2. Revoke their existing gateway tokens. From the repository root, with the gateway's private `GATEWAY_DATABASE_URL` from `mcp-servers/mcp-gateway/.env.local`:
+
+```bash
+set -a; . mcp-servers/mcp-gateway/.env.local; set +a; .venv/bin/python mcp-servers/mcp-gateway/scripts/revoke_email.py person@example.com
+```
+
+Their clients stop working within 15 minutes (access token lifetime). Only grants issued after the shared-access release carry an email; see the [note](../../planning/notes/2026-10-13_audience-signin-baked-policy_note.md).
 
 ## Routine deployment identity
 

@@ -115,11 +115,10 @@ Private gateway inputs:
 GOOGLE_OAUTH_CLIENT_ID=your-google-client-id
 GOOGLE_OAUTH_CLIENT_SECRET=your-google-client-secret
 GATEWAY_OAUTH_ENABLED=true
-GATEWAY_OAUTH_ALLOWED_EMAILS=["approved-email@example.com"]
 GATEWAY_PUBLIC_URL=https://mcp-gateway-366292507424.us-central1.run.app
 ```
 
-`GATEWAY_OAUTH_ALLOWED_EMAILS` is the approved Google sign-in email list; it is not an assignment map. These variables do not belong in Git. In Cloud Run, Google credentials use pinned Secret Manager versions. The schema is installed through Alembic, not server startup. Local Compose stays on its existing assignment-token configuration unless OAuth is explicitly enabled and a local callback is registered with Google.
+Who may sign in is managed in Google Auth Platform → Audience: the app is External with publishing status Testing, and only listed test users can complete Google sign-in. Keep it in Testing; publishing it would let any Google account sign in, because the gateway no longer keeps its own email list. Removing a test user blocks new sign-ins only; an already connected client keeps working until its gateway refresh token lapses (7 days without use) or its grant is revoked. These variables do not belong in Git. In Cloud Run, Google credentials use pinned Secret Manager versions. The schema is installed through Alembic, not server startup. Local Compose stays on its existing assignment-token configuration unless OAuth is explicitly enabled and a local callback is registered with Google.
 
 The OAuth modules live in `shared/oauth/`; token/state expiry policy lives in `shared-runtime/horology_runtime/settings.py`. OAuth refresh renews tokens while preserving client grant identity and shared daily/monthly spending history. Token and registration TTLs remain; there is no assignment expiry. Google sign-in does not provide Google Drive access.
 
@@ -147,7 +146,7 @@ Tests and the local MCP smoke helper live at `tests/mcp_servers/gateway/` in the
 
 ## Assignment removal release dependency
 
-Local source/configuration now uses shared `access`, JSON-list `GATEWAY_TOKEN_HASHES` and `GATEWAY_OAUTH_ALLOWED_EMAILS`. Alembic `20261013_001` renames the historical quota/cache identity columns to `client_id`, preserving all rows and budgets. Apply that migration and update cloud configuration during the later release, before directing traffic to the new image. Existing cloud deployment and OAuth sessions have not been changed by local preparation. Live client revocation verification remains deferred to release testing.
+Local source/configuration now uses shared `access`, JSON-list `GATEWAY_TOKEN_HASHES` and Audience-managed Google sign-in. Alembic `20261013_001` renames the historical quota/cache identity columns to `client_id`, preserving all rows and budgets. Apply that migration and update cloud configuration during the later release, before directing traffic to the new image. Existing cloud deployment and OAuth sessions have not been changed by local preparation. Live client revocation verification remains deferred to release testing.
 
 ## Async gateway database layer (local source)
 
@@ -172,13 +171,12 @@ This refactor is local only. Cloud Build, deployment and production migrations h
 
 - `config/policy.example.json` is tracked runtime policy documentation/default setup input, also used by mocked tests. It is not a private credential.
 - `config/policy.local.json` is ignored operator configuration mounted by local Docker Compose at `/config/policy.json`. It is runtime configuration, not a test fixture.
-- `config/policy.cloud.json` is an ignored, exact snapshot of the deployed Secret Manager policy; `policy.cloud.snapshot.local.json` records its version, revision and digest. It is a deployed-state reference, not a policy candidate. `policy.local.json` is the sole private working policy; the duplicate expansion file has been removed. The cloud service uses a separately uploaded, versioned Secret Manager policy mounted at `/config/policy.json`, with `GATEWAY_POLICY` pointing to that file. Changing a laptop file does not update the deployed secret or revision.
+- `config/policy.cloud.json` is the tracked cloud policy. It holds no credentials and is copied into the image at `/config/policy.json`, where `GATEWAY_POLICY` points. Changing it needs a rebuild and deploy; there is no policy secret for new revisions.
+- `config/policy.cloud.secret-v4.local.json` is an ignored copy of the old Secret Manager policy (`horology-gateway-policy:4`) still served by revision `mcp-gateway-00008-kqw`; `policy.cloud.snapshot.local.json` records its version, revision and digest. Keep both until the new image is released, for rollback reference.
 - `tests/mcp_servers/gateway/fixtures/private/client.{local,cloud}.json` contain private manual-test bearer credentials. Git and Cloud Build source exclude this directory; runtime images do not package tests. OAuth clients manage their own tokens independently.
 
 Psycopg 3 handles gateway Neon persistence. Psycopg 2 remains required by the Supabase metadata adapter, document-graph, and migration/CI/test consumers. Do not uninstall it until those consumers are migrated and verified.
 
 ### Policy drift and releases
 
-Maintain one working policy (`config/policy.local.json`) and one deployed snapshot (`config/policy.cloud.json`). Do not hand-edit the deployed snapshot or substitute the working policy for it before deployment. The snapshot currently mirrors secret `horology-gateway-policy:4` mounted at `/config` by revision `mcp-gateway-00008-kqw`, verified 2026-10-13. It retains the old assignment/disabled-access metadata required by the still-deployed code. Local source and working policy intentionally differ until the next release.
-
-After deployment, inspect the revision receiving traffic, identify its mounted policy secret/version, download that exact version to the ignored cloud snapshot, and record the revision/version/digest. If traffic is split across versions, document each revision rather than claiming one snapshot covers all traffic. These local files are never automatically synchronized with GCP.
+Local Compose uses `config/policy.local.json`, mounted over the baked file. Cloud uses the tracked `config/policy.cloud.json` inside the image, so the deployed policy is whatever the deployed image digest was built from. Review policy changes in Git like code. Until the next release, revision `mcp-gateway-00008-kqw` still serves the old policy secret; see the deployment runbook for the release steps.

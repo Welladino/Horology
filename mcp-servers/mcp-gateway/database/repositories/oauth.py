@@ -30,6 +30,10 @@ class OAuthRepository:
         async with self.grant_transaction() as records:
             await records.revoke(grant)
 
+    async def revoke_email(self, email):
+        async with self.grant_transaction() as records:
+            return await records.revoke_email(email)
+
     @asynccontextmanager
     async def grant_transaction(self):
         # Serialize issuance and revocation, including overlapping Cloud Run revisions.
@@ -56,3 +60,8 @@ class TransactionRecords:
 
     async def revoke(self, grant):
         await self.cursor.execute("DELETE FROM gateway_auth.records WHERE kind IN ('access','refresh') AND data->>'grant_id'=%s", (grant,))
+
+    async def revoke_email(self, email):
+        # Grants issued before emails were stored have no email and are not matched.
+        await self.cursor.execute("DELETE FROM gateway_auth.records WHERE kind IN ('access','refresh') AND data->>'email'=%s", (email.lower(),))
+        return self.cursor.rowcount

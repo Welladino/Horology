@@ -13,3 +13,4 @@ Running list of research briefs under `docs/planning/research/`. Add a row when 
 | 2026-08-06 | Document linking approach (text search vs. embeddings vs. hybrid) | `2026-08-06_document-linking-approach_research.md` |
 | 2026-08-07 | Cron script security pattern (no_agent sweep, Neon Data API vs. read-only DB role) | `2026-08-07_cron-script-security-pattern_research.md` |
 | 2026-10-12 | Pending MCP capabilities, document-graph access and index integration | `2026-10-12_mcp-next-steps_research.md` |
+| 2026-10-13 | Document-graph agent access, workspaces and on-demand sheet sync | `2026-10-13_document-graph-agent-access-and-sheet-sync_research.md` |

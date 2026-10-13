@@ -18,22 +18,22 @@ from .consent_page import render_consent
 
 class GatewayCode(AuthorizationCode):
     grant_id: str
+    email: str = ''
 
 
 class GatewayRefresh(RefreshToken):
     grant_id: str
     resource: str
+    email: str = ''
 
 
 class GoogleOAuthProvider:
-    def __init__(self, store, policy, public_url, client_id, client_secret, allowed_emails, legacy=None):
-        if not client_id or not client_secret or not isinstance(allowed_emails, list) or not allowed_emails:
-            raise ValueError('Google OAuth credentials and approved emails are required')
-        if any(not isinstance(email, str) or '@' not in email for email in allowed_emails):
-            raise ValueError('Invalid approved email list')
+    def __init__(self, store, policy, public_url, client_id, client_secret, legacy=None):
+        # Who may sign in is managed by Google Auth Platform Audience test users.
+        if not client_id or not client_secret:
+            raise ValueError('Google OAuth credentials are required')
         self.store, self.policy, self.url = store, policy, public_url
         self.client_id, self.client_secret = client_id, client_secret
-        self.allowed_emails = {email.lower() for email in allowed_emails}
         self.legacy = legacy
         self.jwks = jwt.PyJWKClient('https://www.googleapis.com/oauth2/v3/certs', timeout=TIMEOUTS.gateway_http)
 
@@ -93,16 +93,15 @@ class GoogleOAuthProvider:
             return HTMLResponse('Login expired. Start again.', status_code=400)
         try:
             claims = await self.verify_google(request.query_params.get('code',''), data['nonce'])
-            if claims['email'].lower() not in self.allowed_emails:
-                raise ValueError('Account is not approved')
             config = authorize(self.policy, 'gateway_status')
             client = await self.get_client(data['client_id'])
             if client is None:
                 raise ValueError('Client expired')
         except Exception:
-            return HTMLResponse('Sign-in could not be authorized. Check the approved account.', status_code=403)
+            return HTMLResponse('Sign-in could not be authorized. Check the account is an approved test user.', status_code=403)
         consent = secrets.token_urlsafe(32)
-        data.update(subject=claims['sub'])
+        # Stored in plain text on the grant so scripts/revoke_email.py can find it.
+        data.update(subject=claims['sub'], email=claims['email'].lower())
         await self.store.put('consent', consent, data, time.time()+OAUTH.login_seconds)
         # Chrome applies form-action to the POST's final redirect too. Permit
         # only this SDK-validated client callback origin, including its port.
@@ -127,7 +126,7 @@ class GoogleOAuthProvider:
         else:
             authorize(self.policy, 'gateway_status')
             code = secrets.token_urlsafe(32)
-            model = GatewayCode(code=code, scopes=['gateway'], expires_at=time.time()+OAUTH.code_seconds, client_id=data['client_id'], code_challenge=params.code_challenge, redirect_uri=params.redirect_uri, redirect_uri_provided_explicitly=params.redirect_uri_provided_explicitly, resource=self.url+'/mcp', subject=data['subject'], grant_id=secrets.token_urlsafe(32))
+            model = GatewayCode(code=code, scopes=['gateway'], expires_at=time.time()+OAUTH.code_seconds, client_id=data['client_id'], code_challenge=params.code_challenge, redirect_uri=params.redirect_uri, redirect_uri_provided_explicitly=params.redirect_uri_provided_explicitly, resource=self.url+'/mcp', subject=data['subject'], email=data.get('email', ''), grant_id=secrets.token_urlsafe(32))
             await self.store.put('code', code, model.model_dump(mode='json',exclude={'code'}), model.expires_at)
             query['code'] = code
         target = str(params.redirect_uri)
@@ -151,7 +150,7 @@ class GoogleOAuthProvider:
         access_expiry = now+OAUTH.access_seconds
         refresh_expiry = now+OAUTH.refresh_seconds
         access, refresh = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
-        common = {'client_id':grant.client_id,'subject':grant.subject,'scopes':scopes,'resource':self.url+'/mcp'}
+        common = {'client_id':grant.client_id,'subject':grant.subject,'email':grant.email,'scopes':scopes,'resource':self.url+'/mcp'}
         await records.put('access',access,{**common,'expires_at':access_expiry,'claims':{'grant_id':grant.grant_id},'grant_id':grant.grant_id},access_expiry)
         await records.put('refresh',refresh,{**common,'expires_at':refresh_expiry,'grant_id':grant.grant_id},refresh_expiry)
         return OAuthToken(access_token=access,token_type='Bearer',expires_in=access_expiry-now,refresh_token=refresh,scope=' '.join(scopes))

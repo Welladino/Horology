@@ -25,6 +25,7 @@ if Path("/app/policy.py").exists():
     assert not Path("/app/shared/writes.py").exists()
     getattr(importlib.import_module("shared.oauth.consent_page"), "render_consent")
     assert Path("/certs/supabase-ca.crt").is_file()
+    getattr(importlib.import_module("policy"), "load_policy")("/config/policy.json")
     assert Path("/app/shared/oauth/consent.css").is_file()
 else:
     # Import-time configuration only; no connection or provider call is made.

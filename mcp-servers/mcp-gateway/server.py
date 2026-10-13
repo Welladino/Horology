@@ -83,7 +83,7 @@ def main():
     tokens = json.loads(os.environ.get('GATEWAY_TOKEN_HASHES', '[]'))
     oauth_config = None
     if os.environ.get('GATEWAY_OAUTH_ENABLED', '').lower() == 'true':
-        oauth_config = {'client_id': os.environ.get('GOOGLE_OAUTH_CLIENT_ID'), 'client_secret': os.environ.get('GOOGLE_OAUTH_CLIENT_SECRET'), 'allowed_emails': json.loads(os.environ.get('GATEWAY_OAUTH_ALLOWED_EMAILS', '[]'))}
+        oauth_config = {'client_id': os.environ.get('GOOGLE_OAUTH_CLIENT_ID'), 'client_secret': os.environ.get('GOOGLE_OAUTH_CLIENT_SECRET')}
     if (not tokens and not oauth_config) or not isinstance(tokens, list) or any(not isinstance(digest, str) or len(digest) != 64 for digest in tokens):
         raise Denied('Provision hashed local credentials before startup')
     database = Database(os.environ.get('GATEWAY_DATABASE_URL'))

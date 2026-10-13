@@ -1,0 +1,77 @@
+{
+  "supabase": {
+    "project": "pyywbjossvjngoxocdxk",
+    "schemas": [
+      "public"
+    ]
+  },
+  "budgets": {
+    "tavily": {
+      "daily": 50,
+      "monthly": 500
+    },
+    "firecrawl": {
+      "daily": 50,
+      "monthly": 500
+    }
+  },
+  "firecrawl": {
+    "scrape_credits": 1,
+    "url_policy": "public_https"
+  },
+  "alexandria": {
+    "operations": [
+      "shopify_search",
+      "shopify_product",
+      "alibaba_search",
+      "alibaba_product",
+      "trends"
+    ],
+    "countries": [
+      "SG",
+      "US"
+    ]
+  },
+  "tavily": {
+    "approved_urls": [
+      "https://www.forbes.com/",
+      "https://example.com/"
+    ]
+  },
+  "access": {
+    "tools": [
+      "gateway_status",
+      "supabase_list_schema",
+      "supabase_describe_table",
+      "tavily_search",
+      "supabase_performance_summary",
+      "firecrawl_scrape_page",
+      "firecrawl_discover_tools",
+      "firecrawl_shopify_search",
+      "firecrawl_shopify_product",
+      "firecrawl_alibaba_search",
+      "firecrawl_alibaba_product",
+      "firecrawl_trends",
+      "tavily_extract_pages",
+      "tavily_advanced_search"
+    ],
+    "schemas": [
+      "public"
+    ],
+    "approved_urls": [
+      "https://www.forbes.com/",
+      "https://example.com/"
+    ],
+    "alexandria_operations": [
+      "shopify_search",
+      "shopify_product",
+      "alibaba_search",
+      "alibaba_product",
+      "trends"
+    ],
+    "alexandria_countries": [
+      "SG",
+      "US"
+    ]
+  }
+}

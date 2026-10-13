@@ -28,6 +28,7 @@
 !tests/mcp_servers/gateway/**
 !mcp-servers/mcp-gateway/config/
 !mcp-servers/mcp-gateway/config/policy.example.json
+!mcp-servers/mcp-gateway/config/policy.cloud.json
 !mcp-servers/mcp-gateway/certs/
 !mcp-servers/mcp-gateway/certs/supabase-prod-ca-2021.crt
 !mcp-servers/document-graph/
