@@ -9,7 +9,10 @@ timing, then lines up each call with the services' own Cloud Run and tool logs.
     .venv/bin/python scripts/ops/live_check.py --sync     # + start the sheet sync job
 
 Results print as a table and append to reports/live-checks.jsonl (git-ignored).
-Log matching uses `gcloud --configuration=horology-view` (read-only).
+Log matching uses `gcloud --configuration=horology-view` (read-only). On another
+machine, create it with `gcloud auth login` and
+`gcloud config configurations create horology-view --account=EMAIL --project=horology-dev`;
+without it the calls still run and only the tool-side columns stay empty.
 """
 import argparse
 import asyncio
@@ -156,10 +159,15 @@ def ts(value):
 
 
 def gcloud_logs(filter_, since):
-    out = subprocess.run(
-        ["gcloud", "--configuration=horology-view", "logging", "read", filter_, f"--project={PROJECT}",
-         "--format=json", "--limit=200", "--freshness=1h"], capture_output=True, text=True)
-    if out.returncode:
+    try:
+        out = subprocess.run(
+            ["gcloud", "--configuration=horology-view", "logging", "read", filter_, f"--project={PROJECT}",
+             "--format=json", "--limit=200", "--freshness=1h"], capture_output=True, text=True)
+    except FileNotFoundError:
+        out = None
+    if out is None or out.returncode:
+        # No gcloud or no horology-view sign-in: report client timings only.
+        print("Log matching skipped: gcloud with the horology-view configuration is unavailable.", file=sys.stderr)
         return []
     return [e for e in json.loads(out.stdout or "[]") if ts(e["timestamp"]) >= ts(since)]
 
