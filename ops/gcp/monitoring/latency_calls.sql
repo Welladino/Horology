@@ -10,7 +10,7 @@ WITH tools AS (
     JSON_VALUE(json_payload.error_category) AS error_category,
     SAFE_CAST(JSON_VALUE(json_payload.duration_ms) AS FLOAT64) AS tool_ms,
     JSON_VALUE(json_payload.trace_id) AS trace_id
-  FROM `horology-dev.global._Default._AllLogs`
+  FROM `horology-dev.global._Default._Default`
   WHERE timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 24 HOUR)
     AND resource.type = 'cloud_run_revision'
     AND JSON_VALUE(json_payload.event) = 'runtime_operation'
@@ -19,13 +19,13 @@ requests AS (
   SELECT
     REGEXP_EXTRACT(trace, r'/traces/([0-9a-f]{32})$') AS trace_id,
     IFNULL(http_request.latency.seconds, 0) * 1000 + IFNULL(http_request.latency.nanos, 0) / 1e6 AS server_ms
-  FROM `horology-dev.global._Default._AllLogs`
+  FROM `horology-dev.global._Default._Default`
   WHERE timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 25 HOUR)
     AND log_id = 'run.googleapis.com/requests'
 ),
 starts AS (
   SELECT JSON_VALUE(resource.labels.service_name) AS service, timestamp AS started
-  FROM `horology-dev.global._Default._AllLogs`
+  FROM `horology-dev.global._Default._Default`
   WHERE timestamp > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 25 HOUR)
     AND resource.type = 'cloud_run_revision'
     AND text_payload LIKE 'Starting new instance%'
