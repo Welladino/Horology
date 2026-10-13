@@ -1,0 +1,25 @@
+{
+  "name": "horology",
+  "description": "Horology and Welladino plugins: gateway tools, document graph and workflow skills.",
+  "owner": {
+    "name": "Saravanaraj",
+    "email": "saravanaraj.subramaniam@welladino.com"
+  },
+  "plugins": [
+    {
+      "name": "horology-tools",
+      "source": "./plugins/horology",
+      "description": "Gateway tools: Supabase metadata, Tavily search/extraction, Firecrawl scraping and Alexandria reads."
+    },
+    {
+      "name": "horology-document-graph",
+      "source": "./plugins/horology-document-graph",
+      "description": "Search and read your workspace's document graph, add agent documents, start the Document Index sync."
+    },
+    {
+      "name": "welladino-workflows",
+      "source": "./plugins/welladino-workflows",
+      "description": "Capture, triage, research and technical-assessment workflow skills."
+    }
+  ]
+}

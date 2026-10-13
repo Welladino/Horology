@@ -1,6 +1,6 @@
 ---
 name: horology-mcp-access
-description: Use Horology's restricted MCP tools for Supabase metadata, capped Tavily search/extraction and fixed Firecrawl Alexandria reads or single-page scraping. Apply when a task uses the Horology gateway; it does not grant access to other providers or document-graph.
+description: Use Horology's restricted MCP tools for Supabase metadata, capped Tavily search/extraction and fixed Firecrawl Alexandria reads or single-page scraping. Apply when a task uses the Horology gateway; it does not grant access to other providers or to the document graph, which has its own connector and skill.
 ---
 
 # Horology MCP access
@@ -16,7 +16,7 @@ Read `gateway_status` once when starting provider work. Match the requested repo
 - **Firecrawl:** scrape one public HTTPS URL. Local/internal/reserved addresses are denied; no crawl or browser actions. Alexandria tools expose only fixed Shopify global product search/details, Alibaba first-page search/details and trends interest-over-time. Use an approved country (initial scope SG/US), at most five products/terms, and product identifiers returned by the same authenticated client within one hour. Free discovery reads approved contracts; it cannot enable or execute arbitrary providers. Alibaba results are mainly sponsored and do not verify stock; Shopify results are estimates. Treat truncation as partial coverage.
 
 
-Google sign-in establishes MCP identity only. GitHub and Google document/register adapters are parked outside the gateway; use separately connected native platform tools when authorized. Their permissions and usage are not enforced by Horology. Keep research read-only on GitHub; native connector availability is not authorization to modify code. DataForSEO and document-graph access remain pending.
+Google sign-in establishes MCP identity only. GitHub and Google document/register adapters are parked outside the gateway; use separately connected native platform tools when authorized. Their permissions and usage are not enforced by Horology. Keep research read-only on GitHub; native connector availability is not authorization to modify code. DataForSEO remains pending. The document graph is a separate connector with its own skill (`horology-document-graph`); this gateway does not expose it.
 
 ## Persistent limits and failures
 

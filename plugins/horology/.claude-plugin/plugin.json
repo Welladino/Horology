@@ -1,0 +1,11 @@
+{
+  "name": "horology-tools",
+  "displayName": "Horology Tools",
+  "version": "1.0.2",
+  "description": "Horology gateway: Supabase metadata, capped Tavily search and extraction, and Firecrawl Alexandria reads and single-page scraping.",
+  "author": {
+    "name": "Saravanaraj",
+    "email": "saravanaraj.subramaniam@welladino.com"
+  },
+  "keywords": ["horology", "welladino", "gateway", "mcp"]
+}
