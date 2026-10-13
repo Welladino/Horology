@@ -285,7 +285,7 @@ Remove:
 set -a; . mcp-servers/mcp-gateway/.env.local; set +a; .venv/bin/python mcp-servers/mcp-gateway/scripts/revoke_email.py person@example.com
 ```
 
-Their clients stop working within 15 minutes (access token lifetime). Only grants issued after the shared-access release carry an email; see the [note](../../planning/notes/2026-10-13_audience-signin-baked-policy_note.md).
+Their clients stop working within 5 minutes, when the service's in-memory token cache expires. To cut them off at once, deploy a new revision ([note](../../planning/notes/2026-10-13_fewer-database-round-trips_note.md)). Only grants issued after the shared-access release carry an email; see the [note](../../planning/notes/2026-10-13_audience-signin-baked-policy_note.md).
 
 ## Routine deployment identity
 
