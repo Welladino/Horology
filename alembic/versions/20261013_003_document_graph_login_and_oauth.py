@@ -7,7 +7,7 @@ Tokens live apart from the gateway's `gateway_auth.records`.
 """
 import os
 from alembic import op
-from psycopg2 import sql
+from psycopg import sql
 
 revision = '20261013_003'
 down_revision = '20261013_002'

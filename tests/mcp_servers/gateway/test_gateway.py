@@ -25,7 +25,7 @@ from database.repositories.quotas import QuotaRepository
 from database.repositories.cache import CacheRepository
 import psycopg
 import os
-import psycopg2
+import psycopg
 from server import build_server
 
 
@@ -34,7 +34,7 @@ def ledger_dsn():
     dsn = os.environ.get('GATEWAY_TEST_DATABASE_URL')
     if not dsn:
         pytest.skip('Set GATEWAY_TEST_DATABASE_URL to a disposable migrated Postgres database')
-    with psycopg2.connect(dsn) as db, db.cursor() as cur:
+    with psycopg.connect(dsn) as db, db.cursor() as cur:
         cur.execute('TRUNCATE gateway_quotas.reservations, gateway_quotas.cache')
     yield os.environ.get('GATEWAY_TEST_RUNTIME_URL', dsn)
 
@@ -137,7 +137,7 @@ def test_cache_is_client_scoped(ledger_dsn):
 
 def test_supabase_wrong_project_and_role_never_connect(policy, monkeypatch):
     config = policy['access']
-    with patch.object(supabase.psycopg2, 'connect') as connect:
+    with patch.object(supabase.psycopg, 'connect') as connect:
         for dsn in ['host=db.other.supabase.co user=horology_agents', 'host=db.pyywbjossvjngoxocdxk.supabase.co user=postgres', 'host=db.pyywbjossvjngoxocdxk.supabase.co user=welladino_metadata']:
             monkeypatch.setenv('SUPABASE_METADATA_DSN', dsn)
             with pytest.raises(Denied):
@@ -186,7 +186,7 @@ def test_monthly_budget_shared_across_clients(ledger_dsn):
 
 
 def test_auth_schema_never_connects(policy):
-    with patch.object(supabase.psycopg2, 'connect') as connect:
+    with patch.object(supabase.psycopg, 'connect') as connect:
         with pytest.raises(Denied):
             supabase.schema_query(policy, policy['access'], 'auth', performance=True)
         connect.assert_not_called()
@@ -204,16 +204,18 @@ def test_fixed_schema_queries_parameterize_table_and_omit_sensitive_data(policy,
     from unittest.mock import MagicMock
     monkeypatch.setenv('SUPABASE_METADATA_DSN', 'host=db.pyywbjossvjngoxocdxk.supabase.co user=horology_agents')
     connection = MagicMock()
-    cursor = connection.__enter__.return_value.cursor.return_value.__enter__.return_value
+    connection.__enter__.return_value = connection
+    cursor = connection.cursor.return_value.__enter__.return_value
     cursor.fetchall.return_value = []
-    with patch.object(supabase.psycopg2, 'connect', return_value=connection):
+    with patch.object(supabase.psycopg, 'connect', return_value=connection) as connect:
         supabase.schema_query(policy, policy['access'], 'public', "x'; DROP TABLE y;--")
+    assert connect.call_args.kwargs['sslmode'] == 'verify-full' and connect.call_args.kwargs['prepare_threshold'] is None
+    assert connection.read_only is True
     sql, args = cursor.execute.call_args_list[1].args
     assert args == ('public', "x'; DROP TABLE y;--")
     assert 'DROP TABLE' not in sql
     assert 'attnum>0' in sql
     assert 'pg_get_expr' not in sql
-    connection.__enter__.return_value.set_session.assert_called_once_with(readonly=True)
 
 
 
@@ -233,7 +235,7 @@ def test_previous_day_and_month_do_not_consume_current_budget(ledger_dsn):
             cache = CacheRepository(database)
             budget = {'daily': 1, 'monthly': 1}
             await quotas.reserve('old', 'search', 'tavily', 1, budget)
-            with psycopg2.connect(os.environ['GATEWAY_TEST_DATABASE_URL']) as db, db.cursor() as cur:
+            with psycopg.connect(os.environ['GATEWAY_TEST_DATABASE_URL']) as db, db.cursor() as cur:
                 cur.execute("UPDATE gateway_quotas.reservations SET day=CURRENT_DATE-40, month=date_trunc('month', CURRENT_DATE-40)::date")
             await quotas.reserve('new', 'search', 'tavily', 1, budget)
             with pytest.raises(Denied, match='Shared provider budget'):

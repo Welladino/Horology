@@ -1,7 +1,7 @@
 """Persistent MCP quota accounting and a dedicated gateway database login."""
 import os
 from alembic import op
-from psycopg2 import sql
+from psycopg import sql
 
 revision = '20261011_001'
 down_revision = '20260807_001'

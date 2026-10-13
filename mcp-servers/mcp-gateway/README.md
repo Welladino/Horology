@@ -175,7 +175,7 @@ This refactor is local only. Cloud Build, deployment and production migrations h
 - `config/policy.cloud.secret-v4.local.json` is an ignored copy of the old Secret Manager policy (`horology-gateway-policy:4`) still served by revision `mcp-gateway-00008-kqw`; `policy.cloud.snapshot.local.json` records its version, revision and digest. Keep both until the new image is released, for rollback reference.
 - `tests/mcp_servers/gateway/fixtures/private/client.{local,cloud}.json` contain private manual-test bearer credentials. Git and Cloud Build source exclude this directory; runtime images do not package tests. OAuth clients manage their own tokens independently.
 
-Psycopg 3 handles gateway Neon persistence. Psycopg 2 remains required by the Supabase metadata adapter, document-graph, and migration/CI/test consumers. Do not uninstall it until those consumers are migrated and verified.
+Psycopg 3 handles everything: gateway Neon persistence, the Supabase metadata adapter (read-only session, `verify-full` TLS, no prepared statements for the pooler), document-graph, Alembic (`alembic/env.py` selects the `postgresql+psycopg` driver for any URL form), CI and tests. Psycopg 2 was removed on 2026-10-13.
 
 ### Policy drift and releases
 

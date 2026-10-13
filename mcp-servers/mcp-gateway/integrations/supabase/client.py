@@ -1,7 +1,8 @@
 """Restricted supabase integration."""
 from horology_runtime.settings import TIMEOUTS
-import psycopg2
-from psycopg2.extras import RealDictCursor
+import psycopg
+from psycopg.conninfo import conninfo_to_dict
+from psycopg.rows import dict_row
 from policy import Denied, credential
 
 
@@ -9,16 +10,17 @@ def schema_query(policy, config, schema, table='', performance=False):
     if schema not in policy['supabase']['schemas'] or schema not in config.get('schemas', []):
         raise Denied('Schema is outside shared access scope')
     dsn = credential('SUPABASE_METADATA_DSN')
-    details = psycopg2.extensions.parse_dsn(dsn)
+    details = conninfo_to_dict(dsn)
     project = policy['supabase']['project']
     # Direct host or Supabase pooler username must identify the exact project.
     if not (details.get('host') == f'db.{project}.supabase.co' or (details.get('host', '').endswith('.pooler.supabase.com') and details.get('user', '').endswith('.' + project))):
         raise Denied('Database connection is outside the configured project')
     if details.get('user', '').split('.')[0] != 'horology_agents':
         raise Denied('Dedicated horology_agents role required')
-    with psycopg2.connect(dsn, sslmode='verify-full', connect_timeout=TIMEOUTS.database_connect) as connection:
-        connection.set_session(readonly=True)
-        with connection.cursor(cursor_factory=RealDictCursor) as cursor:
+    # prepare_threshold=None: the Supabase pooler does not keep prepared statements.
+    with psycopg.connect(dsn, sslmode='verify-full', connect_timeout=TIMEOUTS.database_connect, prepare_threshold=None) as connection:
+        connection.read_only = True
+        with connection.cursor(row_factory=dict_row) as cursor:
             cursor.execute("SELECT set_config('statement_timeout', %s, true)", (str(TIMEOUTS.supabase_statement_ms),))
             if performance:
                 cursor.execute('SELECT numbackends,xact_commit,xact_rollback,blks_read,blks_hit,tup_returned,tup_fetched,deadlocks FROM pg_catalog.pg_stat_database WHERE datname=current_database()')

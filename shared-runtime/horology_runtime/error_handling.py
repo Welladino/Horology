@@ -6,11 +6,6 @@ try:
 except ImportError:
     httpx = None
 try:
-    import psycopg2
-except ImportError:
-    psycopg2 = None
-
-try:
     import psycopg
     from psycopg_pool import PoolTimeout
 except ImportError:
@@ -27,7 +22,7 @@ class SafeToolError(RuntimeError):
 def category(error):
     if isinstance(error, SafeToolError):
         return error.category
-    if isinstance(error, TimeoutError) or (httpx and isinstance(error, httpx.TimeoutException)) or (psycopg2 and isinstance(error, psycopg2.errors.QueryCanceled)):
+    if isinstance(error, TimeoutError) or (httpx and isinstance(error, httpx.TimeoutException)):
         return 'timeout'
     if psycopg and isinstance(error, (psycopg.errors.QueryCanceled, PoolTimeout)):
         return 'timeout'
@@ -35,7 +30,7 @@ def category(error):
         return 'connection_failed'
     if httpx and isinstance(error, httpx.HTTPStatusError):
         return 'provider_rejected'
-    if (httpx and isinstance(error, httpx.RequestError)) or (psycopg2 and isinstance(error, (psycopg2.OperationalError, psycopg2.InterfaceError))):
+    if (httpx and isinstance(error, httpx.RequestError)):
         return 'connection_failed'
     if type(error).__name__ == 'Denied':
         message = str(error)
@@ -49,7 +44,5 @@ def category(error):
     if isinstance(error, ValueError):
         return 'invalid_input'
     if psycopg and isinstance(error, psycopg.Error):
-        return 'database_failed'
-    if psycopg2 and isinstance(error, psycopg2.Error):
         return 'database_failed'
     return 'operation_failed'

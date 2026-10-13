@@ -1,4 +1,5 @@
 import os
+import re
 from logging.config import fileConfig
 
 from dotenv import load_dotenv
@@ -29,6 +30,8 @@ target_metadata = None
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 database_url = os.environ.get("DATABASE_URL")
 if database_url:
+    # Always the Psycopg 3 driver, whatever form the URL arrives in.
+    database_url = re.sub(r"^postgres(?:ql)?(?:\+psycopg2)?://", "postgresql+psycopg://", database_url)
     config.set_main_option("sqlalchemy.url", database_url)
 
 # other values from the config, defined by the needs of env.py,

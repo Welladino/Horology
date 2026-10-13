@@ -8,7 +8,7 @@ import json
 from unittest.mock import patch
 
 import httpx
-import psycopg2
+import psycopg
 import pytest
 
 from horology_runtime.operations import SafeToolError, observe
@@ -17,7 +17,7 @@ from horology_runtime.operations import SafeToolError, observe
 @pytest.mark.parametrize('error, expected', [
     (httpx.ReadTimeout('secret-token and document text'), 'timeout'),
     (httpx.ConnectError('postgresql://user:password@private-host/db'), 'connection_failed'),
-    (psycopg2.OperationalError('password and raw DSN'), 'connection_failed'),
+    (psycopg.OperationalError('password and raw DSN'), 'connection_failed'),
     (ValueError('sensitive input'), 'invalid_input'),
 ])
 def test_async_errors_are_sanitized_and_correlated(error, expected):

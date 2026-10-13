@@ -175,20 +175,20 @@ def test_sdk_pkce_and_anonymous_boundary(provider):
 
 def test_persistent_store_consumes_once_and_hashes_credentials():
     import os
-    import psycopg2
+    import psycopg
     from database.connection import Database
     from horology_runtime.oauth.store import OAuthRepository
     dsn = os.environ.get('GATEWAY_TEST_DATABASE_URL')
     if not dsn:
         pytest.skip('Disposable migrated Postgres is required')
-    with psycopg2.connect(dsn) as db, db.cursor() as cur:
+    with psycopg.connect(dsn) as db, db.cursor() as cur:
         cur.execute('TRUNCATE gateway_auth.records')
     async def run():
         async with Database(os.environ.get('GATEWAY_TEST_RUNTIME_URL', dsn)) as database:
             store = OAuthRepository(database, 'gateway_auth.records')
             key = 'opaque-code-do-not-store-raw'
             await store.put('code', key, {'client_id':'test'}, time.time()+120)
-            with psycopg2.connect(dsn) as db, db.cursor() as cur:
+            with psycopg.connect(dsn) as db, db.cursor() as cur:
                 cur.execute('SELECT key_hash,data FROM gateway_auth.records')
                 digest, data = cur.fetchone()
                 assert digest == hashlib.sha256(key.encode()).hexdigest()

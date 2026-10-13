@@ -6,21 +6,21 @@ python -m pip install --upgrade pip==26.2.1
 python -m pip install -r requirements-dev.txt -r mcp-servers/mcp-gateway/requirements.txt -r mcp-servers/document-graph/requirements.txt -r jobs/document-graph-sync/requirements.txt ./shared-runtime
 python - <<'CHECK'
 import os, time
-import psycopg2
+import psycopg
 from urllib.parse import urlparse
 url = os.environ['GATEWAY_TEST_DATABASE_URL']
 if urlparse(url).hostname not in ('horology-ci-postgres', '127.0.0.1', 'localhost'):
     raise SystemExit('CI must never migrate or truncate a production database')
 for attempt in range(30):
     try:
-        psycopg2.connect(url).close()
+        psycopg.connect(url).close()
         break
-    except psycopg2.OperationalError:
+    except psycopg.OperationalError:
         time.sleep(1)
 else:
     raise SystemExit('Disposable PostgreSQL did not become ready')
 CHECK
-export DATABASE_URL="${GATEWAY_TEST_DATABASE_URL/postgresql:\/\//postgresql+psycopg2:\/\/}"
+export DATABASE_URL="$GATEWAY_TEST_DATABASE_URL"  # alembic/env.py selects the Psycopg 3 driver
 export GATEWAY_DB_PASSWORD=ci-runtime-only GRAPH_DB_PASSWORD=ci-graph-only CRON_SWEEP_RO_PASSWORD=ci-cron-only
 # The CI Postgres image has pgvector, so every migration runs from an empty database.
 python -m alembic upgrade head
