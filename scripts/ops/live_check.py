@@ -202,7 +202,8 @@ async def main():
     args = parser.parse_args()
     since = now_iso()
     gateway = [("gateway_status (1st)", "gateway_status", {}), ("gateway_status (2nd)", "gateway_status", {}),
-               ("supabase_list_schema", "supabase_list_schema", {"schema": "public"})]
+               ("supabase_list_schema (1st)", "supabase_list_schema", {"schema": "public"}),
+               ("supabase_list_schema (2nd)", "supabase_list_schema", {"schema": "public"})]
     graph = [("list_documents (1st)", "list_documents", {"limit": 5}), ("list_documents (2nd)", "list_documents", {"limit": 5})]
     if args.search:
         graph.append(("search_documents", "search_documents", {"query": "how do subscription agents pick up work", "limit": 3}))
