@@ -42,7 +42,7 @@
   - `sync_graph` request shape.
 - **Images:** both build locally and pass `scripts/ci/check_image.py`.
 - **Small deploy-window effect:** the shared advisory-lock key now includes the table name, so during a gateway deploy overlap the old and new revisions serialize on different keys.
-- **Not done:** no Cloud Build, no deployment, no secrets or IAM changed. Migration `20261013_003` has not been applied to Neon, and the Sheets/Drive APIs are not enabled. The job has not run against the real sheet or Drive.
+- **Not done:** no Cloud Build, no deployment, no secrets or IAM changed. Migration `20261013_003` was applied to Neon on 2026-10-13 (password in the root `.env`); the local document-graph container now runs as `horology_graph` and `list_documents` works. The Sheets/Drive APIs are not enabled. The job has not run against the real sheet or Drive.
 
 ## Follow-Ups
 - Run the [release steps](../../runbook/gcp/mcp_deployment.md#document-graph-sign-in-and-sheet-sync-release-prepared-2026-10-13-not-yet-run). Steps 5 and 12 need operator approval.

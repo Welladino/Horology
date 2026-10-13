@@ -41,10 +41,10 @@ gcloud auth application-default login --scopes=openid,https://www.googleapis.com
 gcloud auth application-default set-quota-project horology-dev
 ```
 
-Then, from the repository root (uses this folder's `.env` for Neon and OpenRouter):
+Then, from the repository root. `dotenv` loads this folder's `.env` (Neon via `horology_graph`, OpenRouter); the shell can't source that file because its URLs contain `&`:
 
 ```bash
-set -a; . mcp-servers/document-graph/.env; set +a; GRAPH_SYNC_WORKBOOKS='{"welladino":"1kObhQNjsFhziS-wRzjaEIzr9j8jjbfvd-ZgvzuwQ-Jc"}' PYTHONPATH=mcp-servers/document-graph:jobs/document-graph-sync .venv/bin/python -m graph_sync
+GRAPH_SYNC_WORKBOOKS='{"welladino":"1kObhQNjsFhziS-wRzjaEIzr9j8jjbfvd-ZgvzuwQ-Jc"}' PYTHONPATH=mcp-servers/document-graph:jobs/document-graph-sync .venv/bin/dotenv -f mcp-servers/document-graph/.env run -- .venv/bin/python -m graph_sync
 ```
 
 It prints one summary line per workspace and writes status back to the sheet. Only rows with Graph Inclusion TRUE are imported; embeddings are made only for changed files.

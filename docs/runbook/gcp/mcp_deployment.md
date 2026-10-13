@@ -179,16 +179,12 @@ Rollback: route traffic back to `mcp-gateway-00008-kqw`. The rename migration mu
 
 Puts document-graph on Google sign-in (second connector), moves it to the `horology_graph` login, and adds the `document-graph-sync` job. Why: [document-graph plan](../../planning/notes/2026-10-13_document-graph-sheet-controlled-access_note.md), [sign-in and sync note](../../planning/notes/2026-10-13_document-graph-signin-and-sheet-sync_note.md). Run the steps in order; steps marked **approval** change access and need the operator's explicit go-ahead.
 
-1. Choose a password for the new login and apply the migration with the owner `DATABASE_URL` (see [Alembic workflow](../db/alembic_workflow.md)). Keep `GRAPH_DB_PASSWORD` private:
+1. Done 2026-10-13. Migration `20261013_003` was applied to Neon with a generated `GRAPH_DB_PASSWORD` (kept in the root `.env`, next to `GATEWAY_DB_PASSWORD`). The local `mcp-servers/document-graph/.env` now uses `horology_graph`. A check confirmed the login reads the graph and is refused on gateway tables and on `CREATE TABLE`.
+
+2. Add a new version of the document-graph database secret from the local `.env` value (the pooled URL with `horology_graph`). Nothing is printed:
 
 ```bash
-.venv/bin/alembic upgrade head
-```
-
-2. Add a new version of the document-graph database secret: the Neon **pooled** URL with user `horology_graph` and that password. Paste it when prompted; it is not echoed into history:
-
-```bash
-gcloud --configuration=horology-admin secrets versions add horology-graph-db --project=horology-dev --data-file=-
+.venv/bin/dotenv -f mcp-servers/document-graph/.env run -- sh -c 'printf %s "$DATABASE_URL_POOLED" | gcloud --configuration=horology-admin secrets versions add horology-graph-db --project=horology-dev --data-file=-'
 ```
 
 3. Enable the Sheets and Drive APIs the job uses:
