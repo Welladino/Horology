@@ -114,4 +114,97 @@ test('descriptions use indexed documents and current decision ID',()=>{
  assert(text.includes('Assessment: https://docs.google.com/document/d/example/edit'));
  assert(text.includes('Current decision ID: d1'));assert(!text.includes('obsolete'));
 });
+
+function captureRow(id,overrides={}) {
+ return {row:Number(id)+1,data:{ID:String(id),Title:'Item '+id,Domain:'welladino',Status:'Inbox',Stage:'Stage 0',
+  'Agent type':'Unassigned','Agent status':'No action','ClickUp Pipeline URL':'','Document count':'0',...overrides}};
+}
+function batchFixture(rows,{max=5,ids=[]}={}) {
+ const f=fixture();f.c.ids=ids;f.c.max=max;f.c.DOCUMENT_INDEX_SHEET_ID='documents';f.pt.rows=rows;
+ f.ctx.config=()=>f.c;
+ f.ctx.SpreadsheetApp={openById:id=>({id})};
+ f.ctx.readTable=book=>book.id==='sheet'?f.pt:f.dt;
+ f.ctx.readDocumentIndex=()=>({});
+ f.ctx.stateStore=()=>f.state;
+ f.ctx.LockService={getScriptLock:()=>({tryLock:()=>true,releaseLock:()=>{f.released=true;}})};
+ f.ctx.console={log:()=>{}};
+ f.attempted=[];
+ f.ctx.syncRow=(c,pt,dt,row)=>{f.attempted.push(row.data.ID);};
+ f.batch=live=>f.ctx.runSync(live);
+ return f;
+}
+test('blank legacy stages do not consume slots or receive writes',()=>{
+ const rows=Array.from({length:30},(_,i)=>captureRow(i+1,{Stage:''}));
+ rows.push(captureRow('31'));
+ const f=batchFixture(rows);f.ctx.put=()=>{throw Error('No document-count write expected');};
+ const out=f.batch(true);
+ assert.deepEqual(f.attempted,['31']);
+ assert.equal(out.filter(x=>x.status==='skipped').length,30);
+ assert.equal(out.at(-1).attempted,1);assert.equal(out.at(-1).succeeded,1);
+ assert.equal(f.records.cursor.lastPipelineId,'31');assert(f.released);
+});
+test('eligible batch includes Manual and No action items',()=>{
+ const f=batchFixture([captureRow('1',{'Agent type':'Manual'}),captureRow('2')]);f.batch(true);
+ assert.deepEqual(f.attempted,['1','2']);
+});
+test('missing title, unsupported status, unmapped domain and invalid stages are blocked',()=>{
+ const f=batchFixture([captureRow('1',{Title:''}),captureRow('2',{Status:'constructor'}),captureRow('3',{Domain:'unknown'}),captureRow('4',{Stage:'Stage 9'}),captureRow('5')]);
+ const out=f.batch(true);assert.deepEqual(f.attempted,['5']);assert.equal(out.at(-1).blocked,4);
+});
+test('invalid permanent IDs are blocked even with a blank stage',()=>{
+ const f=fixture();assert.equal(f.ctx.syncEligibility(f.c,f.dt,captureRow('bad',{Stage:''}),{}).status,'blocked');
+});
+test('published review requires the correct stage and exactly one proposal',()=>{
+ const f=fixture();f.row.data.Stage='Stage 1';assert.equal(f.ctx.syncEligibility(f.c,f.dt,f.row,{}).status,'blocked');
+ f.row.data.Stage='Stage 2';f.dt.rows.push({row:3,data:{...f.dr.data,'Decision ID':'d2'}});
+ assert.equal(f.ctx.syncEligibility(f.c,f.dt,f.row,{}).status,'blocked');
+});
+test('pending writes and linked task conflicts are blocked before batch writes',()=>{
+ const f=batchFixture([captureRow('1'),captureRow('2',{'ClickUp Pipeline URL':'https://app.clickup.com/t/other'}),captureRow('3')]);
+ f.records['task:1']={pending:'create task'};f.records['task:2']={taskId:'abc'};
+ const out=f.batch(true);assert.deepEqual(f.attempted,['3']);assert.equal(out.at(-1).blocked,2);
+});
+test('managed rows with cleared stages are blocked rather than skipped',()=>{
+ const f=fixture();const row=captureRow('1',{Stage:''});
+ assert.equal(f.ctx.syncEligibility(f.c,f.dt,row,{taskId:'abc'}).status,'blocked');
+});
+test('cursor follows permanent IDs through sorting, insertion and row removal',()=>{
+ const f=batchFixture([captureRow('10'),captureRow('2'),captureRow('1')],{max:1});
+ f.batch(true);assert.deepEqual(f.attempted,['1']);
+ f.pt.rows=[captureRow('10'),captureRow('3'),captureRow('2')];f.batch(true);
+ f.batch(true);f.batch(true);f.batch(true);
+ assert.deepEqual(f.attempted,['1','2','3','10','2']);
+});
+test('old positional cursor starts the new eligible sequence safely',()=>{
+ const f=batchFixture([captureRow('20'),captureRow('10')],{max:1});f.records.cursor={offset:99};f.batch(true);
+ assert.deepEqual(f.attempted,['10']);assert.equal(f.records.cursor.lastPipelineId,'10');
+});
+test('ID sorting does not round large decimal IDs',()=>{
+ const f=batchFixture([captureRow('9007199254740993'),captureRow('9007199254740992')],{max:1});f.batch(true);
+ assert.deepEqual(f.attempted,['9007199254740992']);f.batch(true);assert.equal(f.attempted[1],'9007199254740993');
+});
+test('remote failures consume bounded attempts and advance the identity cursor',()=>{
+ const f=batchFixture([captureRow('1'),captureRow('2'),captureRow('3')],{max:2});
+ f.ctx.syncRow=(c,pt,dt,row)=>{f.attempted.push(row.data.ID);throw Error('ClickUp failed');};
+ const out=f.batch(true);assert.deepEqual(f.attempted,['1','2']);assert.equal(out.at(-1).failed,2);
+ assert.equal(f.records.cursor.lastPipelineId,'2');f.batch(true);assert.equal(f.attempted[2],'3');
+});
+test('preview does not write document counts or advance cursor',()=>{
+ const f=batchFixture([captureRow('1',{'Document count':'99'})]);
+ f.ctx.put=()=>{throw Error('Preview cannot write Sheets');};const out=f.batch(false);
+ assert.equal(out.at(-1).attempted,1);assert.deepEqual(f.records,{});
+});
+test('pilot filter still scopes eligibility when explicitly configured',()=>{
+ const f=batchFixture([captureRow('1'),captureRow('2')],{ids:['2']});const out=f.batch(true);
+ assert.deepEqual(f.attempted,['2']);assert.equal(out.at(-1).selected,1);
+});
+test('empty eligible selection performs no writes and preserves cursor',()=>{
+ const f=batchFixture([captureRow('1',{Stage:''})]);f.records.cursor={lastPipelineId:'9'};
+ const out=f.batch(true);assert.equal(out.at(-1).attempted,0);assert.equal(f.records.cursor.lastPipelineId,'9');
+});
+test('duplicate Pipeline IDs stop the run before any row processing',()=>{
+ const f=batchFixture([captureRow('1'),captureRow('1')]);assert.throws(()=>f.batch(true),/Duplicate ID/);
+ assert.deepEqual(f.attempted,[]);assert.deepEqual(f.records,{});assert(f.released);
+});
+
 console.log(passed+' tests passed');

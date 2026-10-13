@@ -26,24 +26,9 @@ function description(c,pt,row) {
 
 function syncRow(c,pt,dt,row,st,cache,live,out) {
   const d=row.data,key='task:'+d.ID,s=st.get(key);
-  const domainKeys=Object.keys(c.lists).filter(k=>norm(k)===norm(d.Domain));
-  if(domainKeys.length!==1) throw Error('Missing or duplicate domain mapping: '+d.Domain);
-  const listId=c.lists[domainKeys[0]];
-  if(!/^\d+$/.test(String(listId||''))) throw Error('Configure list ID for domain '+d.Domain);
-  if(s.pending) throw Error('Uncertain previous write: inspect _ClickUp Sync and reconcile before retry.');
-  if(s.listId && String(s.listId)!==String(listId)) throw Error('Domain/list changed; reconcile task manually.');
-  if(!/^Stage [0-3]$/.test(d.Stage)) throw Error('Set Stage explicitly: Stage 0, Stage 1, Stage 2, Stage 3.');
-  const desired=STATUS_MAP[norm(d.Status)];if(!desired) throw Error('Unknown Pipeline status '+d.Status);
-  if(norm(d.Status)==='awaiting decision') {
-    if(d.Stage!=='Stage 2' || !['Stage 1','Stage 3'].includes(d['Review stage'])) throw Error('Set Stage 2 and the originating Review stage.');
-    const reviews=decisionRows(dt,d.ID).filter(r=>r.data['Decision ID']===d['Current decision ID']);
-    if(reviews.length!==1 || reviews[0].data['Review stage']!==d['Review stage']) throw Error('Current decision ID must identify this item and review stage.');
-    if(norm(reviews[0].data.Status)==='proposed') pendingDecision(dt,d.ID,d['Review stage']);
-    else if(!['accepted','rework','parked','rejected'].includes(norm(reviews[0].data.Status))) throw Error('Unsupported decision status.');
-  }
+  const listId=validateSyncRow(c,dt,row,s);
+  const desired=STATUS_MAP[norm(d.Status)];
   let id=s.taskId||taskId(d['ClickUp Pipeline URL']),task;
-  if(d['ClickUp Pipeline URL'] && !taskId(d['ClickUp Pipeline URL'])) throw Error('Invalid ClickUp Pipeline URL.');
-  if(s.taskId && taskId(d['ClickUp Pipeline URL']) && s.taskId!==taskId(d['ClickUp Pipeline URL'])) throw Error('Task link conflicts with sync state.');
   if(id) task=api(c,'task/'+id);
   else {
     if(!cache[listId]) cache[listId]=listTasks(c,listId);

@@ -103,3 +103,8 @@ The active gateway source uses one shared JSON access policy, OAuth client authe
 ### Gateway persistence (local source, verified 2026-10-13)
 
 Gateway Neon reads/writes now use Psycopg 3 async repositories under `mcp-servers/mcp-gateway/database/`: `connection.py` owns the pool/transaction lifecycle and `repositories/{quotas,cache,oauth}.py` own SQL. The HTTP lifespan opens the pool before serving MCP or OAuth routes and closes it on shutdown; at most four client connections exist per gateway process. The Neon transaction pool remains the database endpoint. Quota row locks and OAuth advisory transaction locks preserve atomic reservations, refresh rotation and revocation. Cache lifetime is one hour, isolated by OAuth client identity. Database failures still block provider execution; no fallback store exists. Supabase metadata, document-graph and migration drivers are unchanged. This structure is verified locally and is not yet deployed.
+
+
+### ClickUp eligible-item batching (2026-10-13)
+
+Apps Script preflights selected Pipeline records before its bounded batch. Unmanaged blank-stage captures are skipped; invalid/conflicting records are reported as blocked. Eligibility is independent of AI Ready/Manual selection. Only eligible attempts consume the batch limit; API failures still count. Eligible records rotate by permanent numeric Pipeline ID, with a lastPipelineId cursor in _ClickUp Sync rather than a row position. Preview does not persist changes. Shared Eligibility.js rules are used in selection and per-item sync, retaining existing review and duplicate-write guards.

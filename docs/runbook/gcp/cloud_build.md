@@ -24,7 +24,7 @@ Before enabling cleanup, tag each currently deployed digest `deployed-current`. 
 
 ```bash
 gcloud --configuration=horology artifacts docker tags add us-central1-docker.pkg.dev/horology-dev/mcp-servers/mcp-gateway@sha256:DEPLOYED_DIGEST us-central1-docker.pkg.dev/horology-dev/mcp-servers/mcp-gateway:deployed-current --project=horology-dev
-gcloud --configuration=horology-admin artifacts repositories set-cleanup-policies mcp-servers --project=horology-dev --location=us-central1 --policy=scripts/ci/artifact-cleanup.json --no-dry-run
+gcloud --configuration=horology-admin artifacts repositories set-cleanup-policies mcp-servers --project=horology-dev --location=us-central1 --policy=ops/gcp/artifact-cleanup.json --no-dry-run
 ```
 
 Protect document-graph's deployed digest in the same way before applying the repository policy. Retention keeps five recent versions **per image package**, plus deployed/rollback versions if older. Cleanup runs asynchronously, approximately daily; it is not an immediate hard cap of five. Container manifest references may preserve additional child versions.

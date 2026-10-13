@@ -193,7 +193,7 @@ Task PUT/comment PUT operations target stable IDs; comments have pending guards 
 
 Use `stopSync()` and ENABLE_WRITES: false in Config.js to pause. Keep source and a backup of
 state before changes. Task/comment creation can't be rolled back by disabling sync.
-The script uses a lock and paced requests, caps work per run and rotates its cursor.
+The script uses a lock and paced requests, caps eligible item attempts per run and rotates its permanent-ID cursor.
 No AI is invoked. Console output contains IDs/actions/errors, not tokens or bodies.
 
 ## Verification and limitations
@@ -242,3 +242,13 @@ until you have reviewed the original description: adoption overwrites it.
 Domain Horology maps to ClickUp list `901820246905` in DomainLists.js. Entity is blank. Verify its repository and branch from the Pipeline row; do not infer a Drive destination from the repo location.
 
 During the founder-authorised development cleanup on 10 October 2026, test/retired rows were removed and register IDs compacted with their references. Normal operation retains permanent IDs. No managed ClickUp sync-state tab was present during the reset; existing task URLs were preserved. Do not apply old cached IDs or descriptions without a fresh preview.
+
+## Eligible-row batching (13 October 2026)
+
+The sync selects configured Pipeline IDs (or all items when SYNC_ALL is true and the pilot array is empty), then performs local preflight before any row writes or ClickUp calls. An unlinked/unmanaged row with no Stage is skipped as incomplete. Invalid IDs/titles, unmapped domains, unsupported stages/statuses, inconsistent review links, pending task writes and conflicting task links/list changes are blocked with an explanation. Managed rows whose Stage is cleared are blocked rather than silently skipped. Duplicate register IDs, missing headers and invalid Document Index data remain run-level errors.
+
+Manual/Unassigned agents and No action rows can be mirrored; Ready is AI work selection, not a sync gate. Awaiting decision still requires Stage 2, originating Review stage and a correctly linked current decision, with exactly one proposal when proposed. The same validator runs again in per-item sync so rules do not drift.
+
+Eligible rows are ordered by permanent positive numeric ID. MAX_ITEMS_PER_RUN limits attempted eligible items, not spreadsheet positions; skipped/blocked rows do not consume those slots or receive document-count writes. Actual API failures do consume an attempt. The cursor stores lastPipelineId instead of a row offset, advances after attempts (including failures), and wraps around. Old positional cursors restart at the first eligible ID on upgrade. Preview never persists the cursor or writes document counts.
+
+Logs contain per-item skipped/blocked/failed reasons and a summary with selected, eligible, skipped, blocked, attempted, succeeded and failed counts. A new eligible row can still wait if more eligible rows exist than the run limit; incomplete legacy rows no longer cause that delay.

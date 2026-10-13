@@ -2,6 +2,10 @@
 
 ## Current state
 
+**13 October 2026 update:** Eligible-row batching was tested and pushed through clasp to the existing Welladino — ClickUp Sync project. A fresh clone verified all 15 live files match the local source. Browser-edited configuration was preserved: ENABLE_WRITES true, SYNC_ALL true, empty pilot selection, maximum five eligible attempts/run, and both review/adoption flags false. No sync function or trigger-management function was invoked during this release. Trigger state remains unverified. Configuration/list mappings should be edited in the live project and reconciled before subsequent pushes.
+
+### Original import
+
 Connected to the existing Welladino — ClickUp Sync project through clasp.
 The live project was downloaded on 10 October 2026 after refreshing clasp login.
 All 14 files, including founder-entered settings, the list-discovery utility and

@@ -7,15 +7,15 @@ const SYNC_CONFIG = {
   DOCUMENT_INDEX_SHEET_ID: '1kObhQNjsFhziS-wRzjaEIzr9j8jjbfvd-ZgvzuwQ-Jc',
   PIPELINE_SHEET_ID: '1aL678ACs97YpLIGrGU5LbpXHc7jQBxl64ED-sLyehvI',
   DECISIONS_SHEET_ID: '1_megp_hD4gwRuF4wmk4g2vQGAWbLl4uNUpho-oLoygE',
-  PILOT_PIPELINE_IDS: ['18'], // Fill e.g. ['18']; start with one or two rows.
+  PILOT_PIPELINE_IDS: [], // Fill e.g. ['18']; start with one or two rows.
   MAX_ITEMS_PER_RUN: 5,
-  ENABLE_WRITES: false, // Enable only after preview and schema setup.
+  ENABLE_WRITES: true, // Enable only after preview and schema setup.
   ALLOW_CLICKUP_REVIEW: false, // Enable only for lists with trusted editors.
   ALLOW_ADOPT_EXISTING: false,
-  SYNC_ALL: false // true + empty pilot IDs selects all rows.
+  SYNC_ALL: true // true + empty pilot IDs selects all rows.
 };
-const STATUS_MAP = {inbox:'backlog', park:'blocked', parked:'blocked', researching:'open',
-  'awaiting decision':'review', approved:'open', rework:'backlog',
+const STATUS_MAP = {inbox:'backlogs', park:'blocked', parked:'blocked', researching:'open',
+  'awaiting decision':'review', approved:'open', rework:'backlogs',
   'hand off':'closed', 'handed off':'closed', reject:'rejected', rejected:'rejected'};
 
 function config() {
