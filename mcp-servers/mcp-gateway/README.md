@@ -172,11 +172,10 @@ This refactor is local only. Cloud Build, deployment and production migrations h
 - `config/policy.example.json` is tracked runtime policy documentation/default setup input, also used by mocked tests. It is not a private credential.
 - `config/policy.local.json` is ignored operator configuration mounted by local Docker Compose at `/config/policy.json`. It is runtime configuration, not a test fixture.
 - `config/policy.cloud.json` is the tracked cloud policy. It holds no credentials and is copied into the image at `/config/policy.json`, where `GATEWAY_POLICY` points. Changing it needs a rebuild and deploy; there is no policy secret for new revisions.
-- `config/policy.cloud.secret-v4.local.json` is an ignored copy of the old Secret Manager policy (`horology-gateway-policy:4`) still served by revision `mcp-gateway-00008-kqw`; `policy.cloud.snapshot.local.json` records its version, revision and digest. Keep both until the new image is released, for rollback reference.
 - `tests/mcp_servers/gateway/fixtures/private/client.{local,cloud}.json` contain private manual-test bearer credentials. Git and Cloud Build source exclude this directory; runtime images do not package tests. OAuth clients manage their own tokens independently.
 
 Psycopg 3 handles everything: gateway Neon persistence, the Supabase metadata adapter (read-only session, `verify-full` TLS, no prepared statements for the pooler), document-graph, Alembic (`alembic/env.py` selects the `postgresql+psycopg` driver for any URL form), CI and tests. Psycopg 2 was removed on 2026-10-13.
 
 ### Policy drift and releases
 
-Local Compose uses `config/policy.local.json`, mounted over the baked file. Cloud uses the tracked `config/policy.cloud.json` inside the image, so the deployed policy is whatever the deployed image digest was built from. Review policy changes in Git like code. Until the next release, revision `mcp-gateway-00008-kqw` still serves the old policy secret; see the deployment runbook for the release steps.
+Local Compose uses `config/policy.local.json`, mounted over the baked file. Cloud uses the tracked `config/policy.cloud.json` inside the image, so the deployed policy is whatever the deployed image digest was built from. Review policy changes in Git like code.

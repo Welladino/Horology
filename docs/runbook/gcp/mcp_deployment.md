@@ -171,9 +171,9 @@ gcloud --configuration=horology run services update mcp-gateway --project=horolo
 `--clear-volumes` removes both policy secret volumes (versions 3 and 4); the policy now comes from the image. Removing `GATEWAY_TOKEN_HASHES` makes the cloud OAuth-only; local Compose and Hermes keep bearer tokens.
 
 5. Verify: unauthenticated `/mcp` returns 401, a test user can sign in from a client, `gateway_status` lists the tools in `policy.cloud.json` and none starting with `github_` or `drive_`, and a non-test-user Google account is refused at Google sign-in.
-6. After the release has run cleanly for a while, disable (do not delete) secret versions `horology-gateway-policy`, `horology-gateway-github` and `horology-gateway-token-hashes`, and the ignored local `policy.cloud.secret-v4.local.json` snapshot can go.
+6. Done 2026-10-13: secrets `horology-gateway-policy`, `horology-gateway-github` and `horology-gateway-token-hashes` deleted, and the local policy snapshots removed.
 
-Rollback: route traffic back to `mcp-gateway-00008-kqw`. The rename migration must be reverted first, because the old image expects the old column names; do not downgrade while the new revision serves traffic.
+Rollback to `mcp-gateway-00008-kqw` is no longer possible: it reads the deleted policy and GitHub secrets. Roll back to a later revision instead (`gcloud run revisions list --service=mcp-gateway`).
 
 ## Document graph sign-in and sheet sync release (deployed and verified 2026-10-13)
 
@@ -268,7 +268,7 @@ gcloud --configuration=horology-admin run services update document-graph --proje
 
 13. Verify: anonymous `/mcp` returns 401; `/.well-known/oauth-authorization-server` returns 200; a test user connects from Claude (Customize → Connectors → add custom connector with `https://document-graph-366292507424.us-central1.run.app/mcp`) or Codex (`codex mcp add document-graph --url https://document-graph-366292507424.us-central1.run.app/mcp --oauth-client-registration dcr`); `list_documents` shows only that workspace; `sync_graph` starts an execution and the sheet updates.
 
-Rollback: turn the invoker check back on first (`--invoker-iam-check`), then route traffic to `document-graph-00002-rks`. That old revision keeps its pinned `horology-graph-db:1` (owner login) and can still read, but its `write_document` fails because `workspace` is now required; treat it as read-only until the new revision is back.
+Rollback to `document-graph-00002-rks` is no longer possible: it pins `horology-graph-db:1`, destroyed on 2026-10-13. Roll back to a later revision instead.
 
 To add a workspace later: copy the workbook, share it and its output folder with the job identity (step 5), add it to `GRAPH_SYNC_WORKBOOKS` on the job and its email to `DOCUMENT_GRAPH_WORKSPACES` on the service.
 
