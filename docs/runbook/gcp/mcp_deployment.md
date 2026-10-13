@@ -180,7 +180,8 @@ Rollback: route traffic back to `mcp-gateway-00008-kqw`. The rename migration mu
 Progress 2026-10-13, from Cloud Build `d7ed4029-3498-4d0e-991d-f2bc3e6cce72` (gateway `sha256:e8747865707adfc13058d92c121ff01a84a7d12924c750922ba892482a532356`, document-graph `sha256:4a9bebc118984b02cfed82be4613e7f74a9abff5b723ce50685d33746b41f254`):
 
 - Done: steps 1–4, 6, 7, 9, 10 and 11. `horology-graph-db:2` added; Sheets and Drive APIs enabled; `document-graph-sync` identity created and allowed its two secrets; job `document-graph-sync` created; `document-graph` allowed to start it with overrides; `horology-graph-google-client-id`/`-secret` created by the operator; revision `document-graph-00003-7cv` serves with sign-in on, `horology-graph-db:2` and the map `saravanaraj.subramaniam@welladino.com` → `welladino`. It started cleanly; the invoker check is still on, so it could not be tested from outside.
-- Open: step 5 (Drive sharing, operator), the redirect URI in step 10 (operator, console), step 8 (manual job run, after sharing), step 12 (invoker check off, needs approval) and step 13.
+- Step 12 done after operator approval: invoker check turned off with `--configuration=horology-admin` (the deployer lacks `run.services.setIamPolicy`). Externally: discovery 200 (scope `graph`, registration on), anonymous `/mcp` 401, a token not issued by document-graph 401.
+- Open: step 5 (Drive sharing, operator), the redirect URI in step 10 (operator, console), step 8 (manual job run, after sharing) and step 13.
 - `horology-deployer` cannot create jobs (`run.jobs.create` denied); the job was created with `--configuration=horology-admin`. Check whether it may update the job's image on later releases.
 - The gateway's own release (section above) ran at the same time: revision `mcp-gateway-00009-8hr`, without `GATEWAY_OAUTH_ASSIGNMENTS`, `GITHUB_TOKEN`, `GATEWAY_TOKEN_HASHES` or policy volumes. Anonymous `/mcp` returns 401 and discovery 200.
 
