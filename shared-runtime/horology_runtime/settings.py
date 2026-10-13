@@ -72,6 +72,8 @@ class DatabasePolicy:
     gateway_pool_size: int = 4
     document_graph_pool_size: int = 4
     supabase_pool_size: int = 2
+    # Pooled connections idle longer than this are pinged before use.
+    idle_check_seconds: int = 30
 
 
 DATABASE = DatabasePolicy()

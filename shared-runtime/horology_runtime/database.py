@@ -3,13 +3,25 @@
 Statement and lock timeouts are defaults on the service logins (migration
 20261014_001), so each session gets them without extra round trips.
 """
+import time
 from contextlib import asynccontextmanager
 
 import certifi
 from psycopg.conninfo import conninfo_to_dict
 from psycopg_pool import AsyncConnectionPool
 
-from .settings import TIMEOUTS
+from .settings import DATABASE, TIMEOUTS
+
+
+async def _mark_returned(connection):
+    connection.horology_returned_at = time.monotonic()
+
+
+async def _check_if_idle(connection):
+    # Neon closes connections that sit idle, so ping one that has waited a while;
+    # a failed ping makes the pool discard it and hand out a fresh connection.
+    if time.monotonic() - getattr(connection, 'horology_returned_at', 0) > DATABASE.idle_check_seconds:
+        await AsyncConnectionPool.check_connection(connection)
 
 
 class Database:
@@ -22,7 +34,8 @@ class Database:
         if conninfo_to_dict(dsn).get('host', '').endswith('.neon.tech'):
             options['sslmode'] = 'verify-full'
         self.pool = AsyncConnectionPool(dsn, kwargs=options, min_size=0, max_size=pool_size,
-                                        timeout=TIMEOUTS.database_connect, open=False)
+                                        timeout=TIMEOUTS.database_connect, open=False,
+                                        configure=_mark_returned, check=_check_if_idle, reset=_mark_returned)
 
     async def __aenter__(self):
         await self.pool.open()
