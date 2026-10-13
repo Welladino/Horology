@@ -78,6 +78,11 @@ Ways to start the job:
 3. Remove `source = sheet` documents whose row is now FALSE or gone. Exclusion stops serving immediately.
 4. Access: the job's service account is shared as Viewer on the workbook and on the workspace's Drive output folder (folder share covers its files). Writing status back to `Graph Sync Status`, `Graph Document ID` and `Last Synced Revision` would need Editor on the workbook.
 
+### Code layout (decided 2026-10-13)
+- `jobs/document-graph-sync/graph_sync/` holds Sheets/Drive access and the sync steps; it imports `document_graph` for Neon, embeddings and linking, never the reverse.
+- Same image as the MCP: the Dockerfile copies both into `/app` and installs both requirements files. The service runs `python server.py`; the job runs `python -m graph_sync`.
+- Knock-on changes: allowlist the folder in `.dockerignore` and `.gcloudignore`, add tests under `tests/jobs/`, and check `graph_sync` imports in `scripts/ci/check_image.py`.
+
 ### Neon schema changes (proposal)
 - `documents`: add `workspace`, `source` (`agent` | `sheet`), `index_document_id`, `drive_file_id`, `drive_url`, `source_revision`, `synced_at`. Unique on (`workspace`, `index_document_id`) where `source = sheet`.
 - Existing rows: `workspace = welladino`, `source = agent`.
