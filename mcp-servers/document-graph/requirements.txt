@@ -2,5 +2,7 @@
 # import path moved) between versions during this project's own build —
 # verify server.py's imports against release notes before bumping.
 mcp==2.0.0
-psycopg2-binary==2.9.12
+psycopg[binary]==3.3.6
+psycopg-pool==3.3.3
+certifi==2026.7.22
 httpx==0.28.1

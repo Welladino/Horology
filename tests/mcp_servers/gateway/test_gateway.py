@@ -268,7 +268,7 @@ def test_runtime_role_cannot_reset_history_or_create_tables(ledger_dsn):
 
 def test_neon_tls_uses_public_trust_instead_of_supabase_ca(monkeypatch):
     monkeypatch.setenv('PGSSLROOTCERT','/certs/supabase-ca.crt')
-    with patch('database.connection.AsyncConnectionPool') as pool:
+    with patch('horology_runtime.database.AsyncConnectionPool') as pool:
         Database('host=example.neon.tech user=horology_gateway sslmode=require')
     options = pool.call_args.kwargs
     assert options['kwargs']['sslmode'] == 'verify-full'

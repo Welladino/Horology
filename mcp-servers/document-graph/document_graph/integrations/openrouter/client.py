@@ -10,7 +10,7 @@ OPENROUTER_EMBEDDINGS_URL = "https://openrouter.ai/api/v1/embeddings"
 EMBED_DIMENSIONS = 768
 
 @observe("openrouter")
-def _embed(text: str) -> list[float]:
+async def _embed(text: str) -> list[float]:
     """Embed text via OpenRouter's OpenAI-compatible /v1/embeddings endpoint.
     Raises if OPENROUTER_API_KEY is unset or the request fails - callers
     should let this propagate as a tool error rather than silently skip
@@ -23,11 +23,11 @@ def _embed(text: str) -> list[float]:
     not optional."""
     if not OPENROUTER_API_KEY:
         raise RuntimeError("OPENROUTER_API_KEY is not set in this server's environment.")
-    resp = httpx.post(
-        OPENROUTER_EMBEDDINGS_URL,
-        headers={"Authorization": f"Bearer {OPENROUTER_API_KEY}"},
-        json={"model": EMBED_MODEL, "input": text, "dimensions": EMBED_DIMENSIONS},
-        timeout=TIMEOUTS.openrouter_http,
-    )
+    async with httpx.AsyncClient(timeout=TIMEOUTS.openrouter_http) as http:
+        resp = await http.post(
+            OPENROUTER_EMBEDDINGS_URL,
+            headers={"Authorization": f"Bearer {OPENROUTER_API_KEY}"},
+            json={"model": EMBED_MODEL, "input": text, "dimensions": EMBED_DIMENSIONS},
+        )
     resp.raise_for_status()
     return resp.json()["data"][0]["embedding"]

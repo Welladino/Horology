@@ -62,6 +62,7 @@ OAUTH = OAuthPolicy()
 @dataclass(frozen=True)
 class DatabasePolicy:
     gateway_pool_size: int = 4
+    document_graph_pool_size: int = 4
 
 
 DATABASE = DatabasePolicy()

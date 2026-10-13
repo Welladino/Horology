@@ -1,0 +1,85 @@
+"""Document rows; every query names its workspace."""
+from psycopg.rows import dict_row
+
+SUMMARY_COLUMNS = "id, doc_type, title, created_by_agent, supersedes_id, source, drive_url, created_at"
+
+
+class DocumentRepository:
+    def __init__(self, database):
+        self.database = database
+
+    async def insert_agent_document(self, workspace, doc_type, title, content, created_by_agent, supersedes_id):
+        async with self.database.transaction() as conn, conn.cursor() as cur:
+            await cur.execute(
+                """
+                INSERT INTO documents (doc_type, title, content, created_by_agent, supersedes_id, workspace, source)
+                VALUES (%s, %s, %s, %s, %s, %s, 'agent')
+                RETURNING id, created_at
+                """,
+                (doc_type, title, content, created_by_agent, supersedes_id, workspace),
+            )
+            return await cur.fetchone()
+
+    async def count_existing(self, workspace, ids):
+        async with self.database.transaction() as conn, conn.cursor() as cur:
+            await cur.execute("SELECT count(*) FROM documents WHERE id = ANY(%s) AND workspace = %s", (list(ids), workspace))
+            return (await cur.fetchone())[0]
+
+    async def get(self, workspace, document_id):
+        async with self.database.transaction() as conn, conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(
+                """
+                SELECT id, doc_type, title, content, created_by_agent, supersedes_id, source, drive_url, created_at
+                FROM documents WHERE id = %s AND workspace = %s
+                """,
+                (document_id, workspace),
+            )
+            return await cur.fetchone()
+
+    async def content(self, workspace, document_id):
+        async with self.database.transaction() as conn, conn.cursor() as cur:
+            await cur.execute("SELECT content FROM documents WHERE id = %s AND workspace = %s", (document_id, workspace))
+            row = await cur.fetchone()
+            return row[0] if row else None
+
+    async def list(self, workspace, doc_type, limit):
+        async with self.database.transaction() as conn, conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(
+                f"""
+                SELECT {SUMMARY_COLUMNS} FROM documents
+                WHERE workspace = %s AND (%s::text IS NULL OR doc_type = %s)
+                ORDER BY created_at DESC LIMIT %s
+                """,
+                (workspace, doc_type, doc_type, limit),
+            )
+            return await cur.fetchall()
+
+    async def related(self, workspace, document_id):
+        async with self.database.transaction() as conn, conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(
+                """
+                SELECT d.id, d.title, d.doc_type, l.relation, 'outgoing' AS direction
+                FROM document_links l JOIN documents d ON d.id = l.to_doc_id
+                WHERE l.from_doc_id = %s AND d.workspace = %s
+                UNION ALL
+                SELECT d.id, d.title, d.doc_type, l.relation, 'incoming' AS direction
+                FROM document_links l JOIN documents d ON d.id = l.from_doc_id
+                WHERE l.to_doc_id = %s AND d.workspace = %s
+                """,
+                (document_id, workspace, document_id, workspace),
+            )
+            return await cur.fetchall()
+
+    async def unembedded(self, workspace):
+        async with self.database.transaction() as conn, conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(
+                """
+                SELECT d.id, d.title, d.doc_type, d.created_at
+                FROM documents d
+                LEFT JOIN document_embeddings e ON e.document_id = d.id
+                WHERE e.document_id IS NULL AND d.workspace = %s
+                ORDER BY d.created_at
+                """,
+                (workspace,),
+            )
+            return await cur.fetchall()

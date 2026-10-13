@@ -1,42 +1,14 @@
-"""Async Postgres pool and transaction policy; schema changes stay in Alembic."""
-from contextlib import asynccontextmanager
-
-import certifi
-from psycopg.conninfo import conninfo_to_dict
-from psycopg_pool import AsyncConnectionPool
-from horology_runtime.settings import TIMEOUTS, DATABASE
+"""Gateway use of the shared async Postgres pool; schema changes stay in Alembic."""
+from horology_runtime.database import Database as SharedDatabase
+from horology_runtime.settings import DATABASE
 from policy import Denied
 
 
-class Database:
+class Database(SharedDatabase):
     def __init__(self, dsn):
         if not dsn:
             raise Denied('GATEWAY_DATABASE_URL is not configured')
-        options = {'sslrootcert': certifi.where(), 'connect_timeout': TIMEOUTS.database_connect,
-                   'prepare_threshold': None}
-        # Do not inherit the Supabase-specific certificate used by its adapter.
-        if conninfo_to_dict(dsn).get('host', '').endswith('.neon.tech'):
-            options['sslmode'] = 'verify-full'
-        self.pool = AsyncConnectionPool(dsn, kwargs=options, min_size=0,
-                                       max_size=DATABASE.gateway_pool_size,
-                                       timeout=TIMEOUTS.database_connect, open=False)
-
-    async def __aenter__(self):
-        await self.pool.open()
-        return self
-
-    async def __aexit__(self, *exc):
-        await self.pool.close()
-
-    @asynccontextmanager
-    async def transaction(self):
-        # Pool connection contexts commit on success and roll back on failure,
-        # including cancellation. SET LOCAL is safe with Neon transaction pooling.
-        async with self.pool.connection() as db:
-            async with db.cursor() as cur:
-                await cur.execute("SELECT set_config('statement_timeout', %s, true)", (str(TIMEOUTS.neon_statement_ms),))
-                await cur.execute("SELECT set_config('lock_timeout', %s, true)", (str(TIMEOUTS.neon_lock_ms),))
-            yield db
+        super().__init__(dsn, DATABASE.gateway_pool_size)
 
     async def check_ready(self):
         async with self.transaction() as db, db.cursor() as cur:

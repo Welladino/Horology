@@ -1,13 +1,12 @@
 """Document graph MCP tool registration."""
-from .integrations.neon import client
+from . import graph
 from horology_runtime.operations import observe
+
+TOOLS = (graph.write_document, graph.link_documents, graph.get_document, graph.list_documents,
+         graph.search_documents, graph.get_related_documents, graph.list_unembedded_documents,
+         graph.auto_link_similar_documents)
 
 
 def register_tools(mcp):
-    mcp.tool()(observe("neon")(client.write_document))
-    mcp.tool()(observe("neon")(client.link_documents))
-    mcp.tool()(observe("neon")(client.get_document))
-    mcp.tool()(observe("neon")(client.list_documents))
-    mcp.tool()(observe("neon")(client.get_related_documents))
-    mcp.tool()(observe("neon")(client.list_unembedded_documents))
-    mcp.tool()(observe("neon")(client.auto_link_similar_documents))
+    for tool in TOOLS:
+        mcp.tool()(observe("neon")(tool))
