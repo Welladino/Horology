@@ -1,0 +1,25 @@
+# Log-based distribution metric: time spent inside each MCP tool call, from the
+# services' JSON "runtime_operation" log lines (shared-runtime observe()).
+description: Time inside each Horology MCP tool call (ms), by service, tool and outcome.
+filter: >-
+  resource.type="cloud_run_revision"
+  AND resource.labels.service_name=("mcp-gateway" OR "document-graph")
+  AND jsonPayload.event="runtime_operation"
+valueExtractor: EXTRACT(jsonPayload.duration_ms)
+labelExtractors:
+  service: EXTRACT(resource.labels.service_name)
+  tool: EXTRACT(jsonPayload.tool)
+  outcome: EXTRACT(jsonPayload.outcome)
+metricDescriptor:
+  metricKind: DELTA
+  valueType: DISTRIBUTION
+  unit: ms
+  labels:
+    - key: service
+    - key: tool
+    - key: outcome
+bucketOptions:
+  exponentialBuckets:
+    numFiniteBuckets: 20
+    growthFactor: 2
+    scale: 5

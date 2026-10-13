@@ -1,0 +1,20 @@
+# Log-based counter: one per MCP tool call, with the safe error category on failures.
+description: Horology MCP tool calls, by service, tool, outcome and error category.
+filter: >-
+  resource.type="cloud_run_revision"
+  AND resource.labels.service_name=("mcp-gateway" OR "document-graph")
+  AND jsonPayload.event="runtime_operation"
+labelExtractors:
+  service: EXTRACT(resource.labels.service_name)
+  tool: EXTRACT(jsonPayload.tool)
+  outcome: EXTRACT(jsonPayload.outcome)
+  error_category: EXTRACT(jsonPayload.error_category)
+metricDescriptor:
+  metricKind: DELTA
+  valueType: INT64
+  unit: "1"
+  labels:
+    - key: service
+    - key: tool
+    - key: outcome
+    - key: error_category

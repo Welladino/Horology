@@ -15,3 +15,7 @@ __pycache__/
 
 # Private leftovers from the removed GitHub/Drive adapters (retired credentials, policy snapshots).
 placeholders/
+
+# Live check: OAuth tokens and local reports (scripts/ops/live_check.py).
+.auth/
+reports/
