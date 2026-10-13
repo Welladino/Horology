@@ -61,7 +61,15 @@ class FileTokenStorage(TokenStorage):
         return OAuthToken.model_validate(data) if data else None
 
     async def set_tokens(self, tokens):
-        data = self._load(); data["tokens"] = tokens.model_dump(mode="json"); self._save(data)
+        data = self._load(); data["tokens"] = tokens.model_dump(mode="json"); data["saved_at"] = time.time()
+        self._save(data)
+
+    def expiry(self):
+        """When the saved access token expires. The SDK doesn't persist this, so without it
+        a new process sends an expired token, gets 401 and signs in again instead of refreshing."""
+        data = self._load()
+        lifetime = (data.get("tokens") or {}).get("expires_in")
+        return data["saved_at"] + lifetime if lifetime and "saved_at" in data else None
 
     async def get_client_info(self):
         data = self._load().get("client")
@@ -107,8 +115,12 @@ def auth_for(name):
         client_name="Horology live check", redirect_uris=[f"http://127.0.0.1:{CALLBACK_PORT}/callback"],
         grant_types=["authorization_code", "refresh_token"], response_types=["code"],
         token_endpoint_auth_method="none", scope=spec["scope"])
-    return OAuthClientProvider(spec["url"], metadata, FileTokenStorage(name),
-                               redirect_handler=open_browser, callback_handler=wait_for_callback)
+    storage = FileTokenStorage(name)
+    provider = OAuthClientProvider(spec["url"], metadata, storage,
+                                   redirect_handler=open_browser, callback_handler=wait_for_callback)
+    # Files saved before saved_at existed count as expired, so the refresh token is tried.
+    provider.context.token_expiry_time = storage.expiry() or 1
+    return provider
 
 
 async def timed_session(name, calls):
