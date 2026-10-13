@@ -71,7 +71,7 @@ As of 2026-10-11, gateway and document graph have separate authenticated Cloud R
 
 ### Gateway OAuth (verified source and private-cloud revision, 2026-10-11)
 
-The gateway has an optional Google-backed OAuth authorization provider under `mcp-servers/mcp-gateway/shared/oauth/`. Google OIDC verifies identity, then explicit client consent issues MCP credentials tied to an operator policy assignment. Trusted assignment claims feed the existing ToolAccess and Neon quota ledger. Refresh cannot reset limits or extend assignment expiry. Registration/login/grants persist in `gateway_auth.records` through Alembic 20261011_002; token rotation and revocation share an atomic database transaction lock. OAuth TTL settings live in shared-runtime.
+The gateway has an optional Google-backed OAuth authorization provider, now shared with the document graph under `shared-runtime/horology_runtime/oauth/`. Google OIDC verifies identity, then explicit client consent issues MCP credentials tied to an operator policy assignment. Trusted assignment claims feed the existing ToolAccess and Neon quota ledger. Refresh cannot reset limits or extend assignment expiry. Registration/login/grants persist in `gateway_auth.records` through Alembic 20261011_002; token rotation and revocation share an atomic database transaction lock. OAuth TTL settings live in shared-runtime.
 
 Cloud OAuth revision mcp-gateway-00004-25t now has public ingress through a service-level disabled invoker IAM check, explicitly approved by the operator. External discovery is verified and unauthenticated MCP calls return 401. Native browser login is pending. Document graph remains IAM-private. Google Drive authorization and scheduled-run assignment provisioning remain separate pending work. See the [deployment runbook](../runbook/gcp/mcp_deployment.md).
 
@@ -108,3 +108,11 @@ Gateway Neon reads/writes now use Psycopg 3 async repositories under `mcp-server
 ### ClickUp eligible-item batching (2026-10-13)
 
 Apps Script preflights selected Pipeline records before its bounded batch. Unmanaged blank-stage captures are skipped; invalid/conflicting records are reported as blocked. Eligibility is independent of AI Ready/Manual selection. Only eligible attempts consume the batch limit; API failures still count. Eligible records rotate by permanent numeric Pipeline ID, with a lastPipelineId cursor in _ClickUp Sync rather than a row position. Preview does not persist changes. Shared Eligibility.js rules are used in selection and per-item sync, retaining existing review and duplicate-write guards.
+
+## Document graph for subscription agents (source ready, not deployed, 2026-10-13)
+
+Claude, Codex and ChatGPT agents use the document graph as a second connector to find what has already been done (`search_documents`, `get_document`, `get_related_documents`). Every document belongs to one workspace; each signed-in email maps to exactly one workspace, and every query is filtered by it. Workspaces (Welladino, a full-time job) live in separate copied workbooks.
+
+The Document Index decides which Drive documents enter the graph: `Graph Inclusion` TRUE/FALSE. The `document-graph-sync` Cloud Run job (`jobs/document-graph-sync/`, same image) imports TRUE rows, re-embeds only changed files, removes FALSE rows and writes Graph Sync Status back. It runs on demand: agents start it with `sync_graph`, the operator with `gcloud run jobs execute`. Agents can still write documents directly (`source = agent`); the job only touches `source = sheet` rows.
+
+Sign-in reuses the gateway's Google OAuth and Audience test users, with its own token table (`graph_auth.records`) and tokens bound to the service. The service uses the `horology_graph` database login. Release steps: [deployment runbook](../runbook/gcp/mcp_deployment.md). Decisions: [plan](../planning/notes/2026-10-13_document-graph-sheet-controlled-access_note.md), [sign-in and sync](../planning/notes/2026-10-13_document-graph-signin-and-sheet-sync_note.md).

@@ -89,6 +89,8 @@ Ways to start the job:
 - Let `doc_type` accept the Index's `Document Type` values (for example `plan`), or map them; today it allows only `recommendation`, `content`, `analysis`, `report`.
 
 ## Recommendation
+Status 2026-10-13: steps 1–5 built and tested locally; step 6 is written up in the deployment runbook and not run.
+
 Build in this order, each step testable alone:
 1. Neon migration: workspace, source and sheet identity fields; backfill existing rows.
 2. Move OAuth into `shared-runtime`; add it to document-graph with an email → workspace map.

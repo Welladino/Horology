@@ -120,7 +120,7 @@ GATEWAY_PUBLIC_URL=https://mcp-gateway-366292507424.us-central1.run.app
 
 Who may sign in is managed in Google Auth Platform → Audience: the app is External with publishing status Testing, and only listed test users can complete Google sign-in. Keep it in Testing; publishing it would let any Google account sign in, because the gateway no longer keeps its own email list. Removing a test user blocks new sign-ins only; an already connected client keeps working until its gateway refresh token lapses (7 days without use) or its grant is revoked. These variables do not belong in Git. In Cloud Run, Google credentials use pinned Secret Manager versions. The schema is installed through Alembic, not server startup. Local Compose stays on its existing assignment-token configuration unless OAuth is explicitly enabled and a local callback is registered with Google.
 
-The OAuth modules live in `shared/oauth/`; token/state expiry policy lives in `shared-runtime/horology_runtime/settings.py`. OAuth refresh renews tokens while preserving client grant identity and shared daily/monthly spending history. Token and registration TTLs remain; there is no assignment expiry. Google sign-in does not provide Google Drive access.
+The OAuth modules live in `shared-runtime/horology_runtime/oauth/` (shared with the document graph; the gateway uses scope `gateway` and table `gateway_auth.records`); token/state expiry policy lives in `shared-runtime/horology_runtime/settings.py`. OAuth refresh renews tokens while preserving client grant identity and shared daily/monthly spending history. Token and registration TTLs remain; there is no assignment expiry. Google sign-in does not provide Google Drive access.
 
 Connect Codex with `codex mcp add horology --url https://mcp-gateway-366292507424.us-central1.run.app/mcp --oauth-client-registration dcr`, then complete the browser sign-in and gateway consent. If login needs restarting, use `codex mcp login horology --oauth-client-registration dcr`. Google credentials belong only to the gateway; do not provide them as the Codex client's credentials.
 
@@ -130,7 +130,7 @@ See [OAuth implementation note](../../docs/planning/notes/2026-10-11_gateway-oau
 
 Release source is submitted to the root `cloudbuild.yaml` pipeline; see [Cloud Build runbook](../../docs/runbook/gcp/cloud_build.md). Keep the local Compose image at `latest`; Cloud Build publishes unique build IDs and a convenience `latest` tag. Deploy immutable digests.
 
-Google consent presentation lives in `shared/oauth/consent_page.py` and `shared/oauth/consent.css`. The provider passes verified account identity and approved assignment permissions to the renderer. The stylesheet is protected by a CSP hash, and the SDK-validated callback origin remains allowed for consent redirects. Updating the page requires rebuilding and redeploying the gateway.
+Google consent presentation lives in `shared-runtime/horology_runtime/oauth/consent_page.py` and `consent.css`; the gateway's wording comes from `shared/consent.py`. The provider passes the verified account and the gateway's permission sections to the renderer. The stylesheet is protected by a CSP hash, and the SDK-validated callback origin remains allowed for consent redirects. Updating the page requires rebuilding and redeploying the gateway.
 
 ### Local Docker names
 

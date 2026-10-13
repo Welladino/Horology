@@ -175,6 +175,92 @@ gcloud --configuration=horology run services update mcp-gateway --project=horolo
 
 Rollback: route traffic back to `mcp-gateway-00008-kqw`. The rename migration must be reverted first, because the old image expects the old column names; do not downgrade while the new revision serves traffic.
 
+## Document graph sign-in and sheet sync release (prepared 2026-10-13, not yet run)
+
+Puts document-graph on Google sign-in (second connector), moves it to the `horology_graph` login, and adds the `document-graph-sync` job. Why: [document-graph plan](../../planning/notes/2026-10-13_document-graph-sheet-controlled-access_note.md), [sign-in and sync note](../../planning/notes/2026-10-13_document-graph-signin-and-sheet-sync_note.md). Run the steps in order; steps marked **approval** change access and need the operator's explicit go-ahead.
+
+1. Choose a password for the new login and apply the migration with the owner `DATABASE_URL` (see [Alembic workflow](../db/alembic_workflow.md)). Keep `GRAPH_DB_PASSWORD` private:
+
+```bash
+.venv/bin/alembic upgrade head
+```
+
+2. Add a new version of the document-graph database secret: the Neon **pooled** URL with user `horology_graph` and that password. Paste it when prompted; it is not echoed into history:
+
+```bash
+gcloud --configuration=horology-admin secrets versions add horology-graph-db --project=horology-dev --data-file=-
+```
+
+3. Enable the Sheets and Drive APIs the job uses:
+
+```bash
+gcloud --configuration=horology-admin services enable sheets.googleapis.com drive.googleapis.com --project=horology-dev
+```
+
+4. Create the job's own identity and let it read the two graph secrets:
+
+```bash
+gcloud --configuration=horology-admin iam service-accounts create document-graph-sync --project=horology-dev --display-name="Document graph sheet sync"
+```
+
+```bash
+for secret in horology-graph-db horology-graph-openrouter; do gcloud --configuration=horology-admin secrets add-iam-policy-binding "$secret" --project=horology-dev --member=serviceAccount:document-graph-sync@horology-dev.iam.gserviceaccount.com --role=roles/secretmanager.secretAccessor; done
+```
+
+5. **Approval.** In Google Drive, share with `document-graph-sync@horology-dev.iam.gserviceaccount.com`: the Document Index workbook as **Editor** (it writes Graph Sync Status, Graph Document ID and Last Synced Revision) and each folder holding indexed documents as **Viewer**. Do the same per workspace workbook later.
+
+6. Build through [Cloud Build](cloud_build.md) and note the document-graph image digest. The same image serves the MCP and the job.
+
+7. Create the job. Replace `DIGEST`; the workbook map is JSON, so the `^|^` prefix changes gcloud's list separator:
+
+```bash
+gcloud --configuration=horology run jobs create document-graph-sync --project=horology-dev --region=us-central1 --image=us-central1-docker.pkg.dev/horology-dev/mcp-servers/document-graph@sha256:DIGEST --command=python --args=-m,graph_sync --service-account=document-graph-sync@horology-dev.iam.gserviceaccount.com --set-secrets=DATABASE_URL_POOLED=horology-graph-db:2,OPENROUTER_API_KEY=horology-graph-openrouter:1 --set-env-vars='^|^GRAPH_SYNC_WORKBOOKS={"welladino":"1kObhQNjsFhziS-wRzjaEIzr9j8jjbfvd-ZgvzuwQ-Jc"}' --max-retries=0 --task-timeout=900s
+```
+
+8. Test the job by hand, then check the sheet's Graph Sync Status column and the execution log:
+
+```bash
+gcloud --configuration=horology run jobs execute document-graph-sync --project=horology-dev --region=us-central1 --wait
+```
+
+9. Let the document-graph service start that job, and only that job:
+
+```bash
+gcloud --configuration=horology-admin run jobs add-iam-policy-binding document-graph-sync --project=horology-dev --region=us-central1 --member=serviceAccount:document-graph@horology-dev.iam.gserviceaccount.com --role=roles/run.jobsExecutorWithOverrides
+```
+
+10. Sign-in credentials. Use the same Google OAuth client as the gateway, so one Audience test-user list covers both. In Google Auth Platform → Clients, add the redirect URI `https://document-graph-366292507424.us-central1.run.app/auth/google/callback`. Copy the client ID and secret into document-graph's own secrets (each identity reads only its own secrets), pasting each value when prompted:
+
+```bash
+gcloud --configuration=horology-admin secrets create horology-graph-google-client-id --project=horology-dev --replication-policy=automatic --data-file=-
+```
+
+```bash
+gcloud --configuration=horology-admin secrets create horology-graph-google-client-secret --project=horology-dev --replication-policy=automatic --data-file=-
+```
+
+```bash
+for secret in horology-graph-google-client-id horology-graph-google-client-secret; do gcloud --configuration=horology-admin secrets add-iam-policy-binding "$secret" --project=horology-dev --member=serviceAccount:document-graph@horology-dev.iam.gserviceaccount.com --role=roles/secretmanager.secretAccessor; done
+```
+
+11. Deploy the new image with sign-in on. Replace `DIGEST` and the email; each email maps to one workspace:
+
+```bash
+gcloud --configuration=horology run services update document-graph --project=horology-dev --region=us-central1 --image=us-central1-docker.pkg.dev/horology-dev/mcp-servers/document-graph@sha256:DIGEST --update-secrets=DATABASE_URL_POOLED=horology-graph-db:2,GOOGLE_OAUTH_CLIENT_ID=horology-graph-google-client-id:1,GOOGLE_OAUTH_CLIENT_SECRET=horology-graph-google-client-secret:1 --update-env-vars='^|^DOCUMENT_GRAPH_OAUTH_ENABLED=true|DOCUMENT_GRAPH_PUBLIC_URL=https://document-graph-366292507424.us-central1.run.app|DOCUMENT_GRAPH_WORKSPACES={"you@gmail.com":"welladino"}|GRAPH_SYNC_JOB=projects/horology-dev/locations/us-central1/jobs/document-graph-sync'
+```
+
+12. **Approval.** Sign-in now guards the service, so turn off Cloud Run's built-in invoker check (the same change made for the gateway on 2026-10-11):
+
+```bash
+gcloud --configuration=horology run services update document-graph --project=horology-dev --region=us-central1 --no-invoker-iam-check
+```
+
+13. Verify: anonymous `/mcp` returns 401; `/.well-known/oauth-authorization-server` returns 200; a test user connects from Claude (Customize → Connectors → add custom connector with `https://document-graph-366292507424.us-central1.run.app/mcp`) or Codex (`codex mcp add document-graph --url https://document-graph-366292507424.us-central1.run.app/mcp --oauth-client-registration dcr`); `list_documents` shows only that workspace; `sync_graph` starts an execution and the sheet updates.
+
+Rollback: turn the invoker check back on first (`--invoker-iam-check`), then route traffic to `document-graph-00002-rks`. That old revision keeps its pinned `horology-graph-db:1` (owner login) and can still read, but its `write_document` fails because `workspace` is now required; treat it as read-only until the new revision is back.
+
+To add a workspace later: copy the workbook, share it and its output folder with the job identity (step 5), add it to `GRAPH_SYNC_WORKBOOKS` on the job and its email to `DOCUMENT_GRAPH_WORKSPACES` on the service.
+
 ## Add or remove a person
 
 Add: Google Auth Platform → Audience (`horology-dev`) → Test users → **Add users**. Keep publishing status **Testing**.

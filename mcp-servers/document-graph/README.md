@@ -24,3 +24,27 @@ Document-graph runs in the `horology-document-graph-mcp` project, separately fro
 ## Local Codex connection
 
 Use `http://127.0.0.1:8765/mcp` for Codex on your laptop. `document-graph-mcp` is a Docker network hostname, so it is used by Hermes rather than host applications. The local document-graph endpoint has no application OAuth; its tools include document writes and paid embeddings. Keep the host binding at `127.0.0.1`. Cloud Run remains protected by IAM.
+
+## Sign-in and the Document Index sync
+
+With `DOCUMENT_GRAPH_OAUTH_ENABLED=true` the server uses the shared Google sign-in (`horology_runtime.oauth`) with its own `graph_auth.records` table, scope `graph`, and `DOCUMENT_GRAPH_WORKSPACES` mapping each approved email to one workspace. Local Compose leaves it off. Cloud steps: [deployment runbook](../../docs/runbook/gcp/mcp_deployment.md#document-graph-sign-in-and-sheet-sync-release-prepared-2026-10-13-not-yet-run).
+
+`sync_graph` starts the Cloud Run job named in `GRAPH_SYNC_JOB` for the caller's workspace. The job code lives in [`jobs/document-graph-sync/`](../../jobs/document-graph-sync/) and ships in this image (`python -m graph_sync`).
+
+Run the sync locally against Neon, as yourself. One-time Google login with the Sheets and Drive scopes (quota is charged to `horology-dev`, where both APIs must be enabled):
+
+```bash
+gcloud auth application-default login --scopes=openid,https://www.googleapis.com/auth/userinfo.email,https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/spreadsheets,https://www.googleapis.com/auth/drive.readonly
+```
+
+```bash
+gcloud auth application-default set-quota-project horology-dev
+```
+
+Then, from the repository root (uses this folder's `.env` for Neon and OpenRouter):
+
+```bash
+set -a; . mcp-servers/document-graph/.env; set +a; GRAPH_SYNC_WORKBOOKS='{"welladino":"1kObhQNjsFhziS-wRzjaEIzr9j8jjbfvd-ZgvzuwQ-Jc"}' PYTHONPATH=mcp-servers/document-graph:jobs/document-graph-sync .venv/bin/python -m graph_sync
+```
+
+It prints one summary line per workspace and writes status back to the sheet. Only rows with Graph Inclusion TRUE are imported; embeddings are made only for changed files.
