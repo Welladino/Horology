@@ -154,3 +154,31 @@ def test_restricted_login_can_write_and_search_agent_documents(database, monkeyp
                     await cur.execute("DELETE FROM documents WHERE workspace = 'test-ws'")
                 graph.configure(None)
     asyncio.run(run())
+
+
+def test_failed_embedding_stores_nothing_and_a_half_import_is_retried(database):
+    from horology_runtime.database import Database
+    files = {"fileAAAAAAAAAA": ("text/markdown", "3", "# Guide\nHow agents pick up work.")}
+    google = FakeGoogle([HEADER, row("1", "Guide", "fileAAAAAAAAAA", True, doc_type="guide")], files)
+
+    async def run():
+        async with Database(database, 2) as db:
+            graph.configure(db)
+            try:
+                async with db.transaction() as conn, conn.cursor() as cur:
+                    await cur.execute("DELETE FROM documents WHERE workspace = 'test-ws'")
+                with patch.object(openrouter, "_embed", AsyncMock(side_effect=RuntimeError("401"))):
+                    failed = await sync.sync_workspace(google, "test-ws", "sheet")
+                assert failed["errors"] == 1 and await graph.documents.sheet_revisions("test-ws") == {}
+
+                # A row stored by an older run without its embedding is not "unchanged".
+                doc_id = await graph.documents.upsert_sheet_document("test-ws", "1", "fileAAAAAAAAAA", "u", "guide", "Guide", "x", "3")
+                assert (await graph.documents.sheet_revisions("test-ws"))["1"] == (doc_id, None)
+                with patch.object(openrouter, "_embed", AsyncMock(return_value=[0.3] * 768)):
+                    fixed = await sync.sync_workspace(google, "test-ws", "sheet")
+                assert fixed["synced"] == 1 and (await graph.documents.sheet_revisions("test-ws"))["1"] == (doc_id, "3")
+            finally:
+                async with db.transaction() as conn, conn.cursor() as cur:
+                    await cur.execute("DELETE FROM documents WHERE workspace = 'test-ws'")
+                graph.configure(None)
+    asyncio.run(run())

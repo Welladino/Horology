@@ -87,10 +87,18 @@ class DocumentRepository:
     # Document Index sync. Sheet rows are keyed by workspace + Index Document ID.
 
     async def sheet_revisions(self, workspace):
-        """Return {index_document_id: (graph id, imported Drive revision)} for sheet rows."""
+        """Return {index_document_id: (graph id, imported Drive revision or None)} for sheet rows.
+
+        The revision is None when the document has no embedding yet, so a row
+        whose earlier import stopped before embedding is imported again."""
         async with self.database.transaction() as conn, conn.cursor() as cur:
             await cur.execute(
-                "SELECT index_document_id, id, source_revision FROM documents WHERE workspace = %s AND source = 'sheet'",
+                """
+                SELECT d.index_document_id, d.id,
+                       CASE WHEN e.embedding IS NOT NULL THEN d.source_revision END
+                FROM documents d LEFT JOIN document_embeddings e ON e.document_id = d.id
+                WHERE d.workspace = %s AND d.source = 'sheet'
+                """,
                 (workspace,),
             )
             return {index_id: (doc_id, revision) for index_id, doc_id, revision in await cur.fetchall()}

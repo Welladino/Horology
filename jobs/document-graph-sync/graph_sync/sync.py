@@ -86,10 +86,12 @@ async def _import(google, workspace, row, stored):
     if stored and stored[1] == revision:
         return ("unchanged", stored[0], revision)
     content = await google.file_text(meta)
+    # Embed before storing anything: if embedding fails, the graph is unchanged
+    # and the row shows error rather than a document search can never find.
+    embedding = await openrouter._embed(embedding_text(row.title, content))
     doc_id = await graph.documents.upsert_sheet_document(
         workspace, row.index_id, file_id, row.drive_url, row.doc_type, row.title, content, revision)
-    # Embed outside any transaction, then link within the workspace.
-    await graph.embeddings.save(doc_id, await openrouter._embed(embedding_text(row.title, content)))
+    await graph.embeddings.save(doc_id, embedding)
     await graph.link_similar(workspace, doc_id, 0.85)
     return ("synced", doc_id, revision)
 
