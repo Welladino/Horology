@@ -95,6 +95,31 @@ resource.labels.job_name="document-graph-sync"
 jsonPayload.request_id="REQUEST_ID"
 ```
 
+**Everything for one HTTP request (replace TRACE_ID, from a tool log's `trace_id`)**
+
+```
+trace="projects/horology-dev/traces/TRACE_ID" OR jsonPayload.trace_id="TRACE_ID"
+```
+
+## Latency table (Log Analytics)
+
+Two SQL queries join each tool log to its Cloud Run request log by trace id:
+
+- `ops/gcp/monitoring/latency_calls.sql`: one row per tool call over the last 24 hours, with total server time, time in our code, the remainder, and a rule-based reason.
+- `ops/gcp/monitoring/latency_summary.sql`: per tool over 7 days, with call and error counts, typical and slow totals, and typical time in our code.
+
+Paste one into **Logging → Log Analytics** (console.cloud.google.com/logs/analytics?project=horology-dev), run it, then **Save** it to keep it in the console. Queries are free. Times are measured at the server, so they leave out the network leg between the caller and Iowa; the live check below measures that. Tool calls made before the trace-id release have no match and say so.
+
+The `_Default` bucket must be upgraded to Log Analytics once (free; it can't be undone):
+
+```bash
+gcloud --configuration=horology-admin logging buckets update _Default --location=global --enable-analytics --project=horology-dev
+```
+
+## Error Reporting
+
+**Error Reporting** (console.cloud.google.com/errors?project=horology-dev) groups uncaught exceptions and Python tracebacks from the service logs automatically, with no setup or cost. Tool errors that are handled show up as `error_category` in tool logs, not here, so anything listed is an unexpected crash worth a look.
+
 ## Live end-to-end check
 
 `scripts/ops/live_check.py` signs in as a real MCP client and calls free tools twice, to show cold and warm timing. It then matches each call to the services' tool logs. The first run opens a browser sign-in for each service; tokens stay in the git-ignored `.auth/` folder (owner-only files) and refresh on later runs. Results append to the git-ignored `reports/live-checks.jsonl`.
