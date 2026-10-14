@@ -9,8 +9,8 @@ Local prototype based on [Agent Register → MCP](https://docs.google.com/spread
 | 14–15 Supabase metadata | `supabase_list_schema`, `supabase_describe_table` | Fixed parameterized catalog SQL; public columns, key/index structure; no data, defaults or function/view bodies |
 | Additional performance access | `supabase_performance_summary` | Database counters and public-table statistics; excludes auth tables and query text |
 | 16–17 Tavily search | `tavily_search` | Five results, fixed basic/advanced depth, no automatic upgrades; advanced denied unless approved in JSON policy |
-| 1–6 Alexandria reads | `firecrawl_discover_tools`, `firecrawl_shopify_search`, `firecrawl_shopify_product`, `firecrawl_alibaba_search`, `firecrawl_alibaba_product`, `firecrawl_trends` | Fixed read-only contracts; approved country scope; detail IDs/URLs from the same authenticated client’s search within one hour; 5 credits per execution, free metadata discovery |
-| 18 Tavily extraction | `tavily_extract_pages` | 1–5 exact approved URLs, basic depth, bounded content, 1-credit reservation; no automatic upgrade |
+| 1–6 Alexandria reads | `firecrawl_discover_tools`, `firecrawl_shopify_search`, `firecrawl_shopify_product`, `firecrawl_alibaba_search`, `firecrawl_alibaba_product`, `firecrawl_trends` | Fixed read-only contracts; any ISO 3166-1 alpha-2 country (trends also `WORLDWIDE`); detail IDs/URLs from the same authenticated client’s search within one hour; 5 credits per execution, free metadata discovery |
+| 18 Tavily extraction | `tavily_extract_pages` | 1–5 public HTTPS URLs (internal addresses denied), basic depth, bounded content, 1-credit reservation; no automatic upgrade |
 | 7 Firecrawl basic scrape | `firecrawl_scrape_page` | Any public HTTPS URL; shared public-address check; no crawl/actions/PDF parsing/premium options |
 | Policy inspection | `gateway_status` | Shared policy permissions, no credentials |
 

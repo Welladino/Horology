@@ -27,13 +27,7 @@
       "alibaba_product",
       "trends"
     ],
-    "countries": [
-      "SG",
-      "US"
-    ]
-  },
-  "tavily": {
-    "approved_urls": []
+    "countries": "any"
   },
   "access": {
     "tools": [
@@ -55,7 +49,6 @@
     "schemas": [
       "public"
     ],
-    "approved_urls": [],
     "alexandria_operations": [
       "shopify_search",
       "shopify_product",
@@ -63,9 +56,6 @@
       "alibaba_product",
       "trends"
     ],
-    "alexandria_countries": [
-      "SG",
-      "US"
-    ]
+    "alexandria_countries": "any"
   }
 }

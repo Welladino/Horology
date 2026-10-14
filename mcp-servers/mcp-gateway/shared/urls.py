@@ -9,9 +9,3 @@ def public_url(url):
     except UnsafeURL as error:
         raise Denied(str(error)) from None
 
-
-def approved_url(policy, config, url, provider='tavily'):
-    """Tavily extraction retains its separately approved exact-URL policy."""
-    if url not in policy.get(provider, {}).get('approved_urls', []) or url not in config.get('approved_urls', []):
-        raise Denied('URL must be explicitly approved by the operator')
-    public_url(url)

@@ -65,7 +65,7 @@ def register_tools(mcp, access):
     @mcp.tool()
     @observe("firecrawl", current_client_id)
     async def firecrawl_shopify_search(query: str, country: str, limit: int = 5) -> dict:
-        """Search the global public Shopify catalog in an approved market; 5 credits."""
+        """Search the global public Shopify catalog for one market (ISO country code such as SG, MY, US); 5 credits."""
         client_id, config = scope('firecrawl_shopify_search')
         client_alexandria.query_text(query)
         client_alexandria.country_check(policy, config, country)
@@ -112,13 +112,13 @@ def register_tools(mcp, access):
     @mcp.tool()
     @observe("firecrawl", current_client_id)
     async def firecrawl_trends(keywords: list[str], country: str, time_range: str = 'today 12-m') -> dict:
-        """Compare 1–5 approved-market search terms over a bounded time range; 5 credits."""
+        """Compare 1–5 search terms in one country (ISO code such as SG, MY, US) or WORLDWIDE over a bounded time range; 5 credits."""
         client_id, config = scope('firecrawl_trends')
-        client_alexandria.country_check(policy, config, country)
+        geo = client_alexandria.country_check(policy, config, country, worldwide=True)
         if not 1 <= len(keywords) <= 5 or len(set(keywords)) != len(keywords):
             raise Denied('Provide 1–5 distinct keywords')
         for keyword in keywords:
             client_alexandria.query_text(keyword)
         if time_range not in ('now 1-d', 'now 7-d', 'today 1-m', 'today 3-m', 'today 12-m'):
             raise Denied('Unsupported time range')
-        return await run_alexandria('firecrawl_trends', 'trends', {'keywords':keywords,'geo':country,'time':time_range,'property':'web','category':0}, client_id, config)
+        return await run_alexandria('firecrawl_trends', 'trends', {'keywords':keywords,'geo':geo,'time':time_range,'property':'web','category':0}, client_id, config)

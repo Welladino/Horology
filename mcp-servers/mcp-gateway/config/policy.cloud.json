@@ -27,16 +27,7 @@
       "alibaba_product",
       "trends"
     ],
-    "countries": [
-      "SG",
-      "US"
-    ]
-  },
-  "tavily": {
-    "approved_urls": [
-      "https://www.forbes.com/",
-      "https://example.com/"
-    ]
+    "countries": "any"
   },
   "access": {
     "tools": [
@@ -58,10 +49,6 @@
     "schemas": [
       "public"
     ],
-    "approved_urls": [
-      "https://www.forbes.com/",
-      "https://example.com/"
-    ],
     "alexandria_operations": [
       "shopify_search",
       "shopify_product",
@@ -69,9 +56,6 @@
       "alibaba_product",
       "trends"
     ],
-    "alexandria_countries": [
-      "SG",
-      "US"
-    ]
+    "alexandria_countries": "any"
   }
 }

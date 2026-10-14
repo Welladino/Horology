@@ -37,9 +37,31 @@ def query_text(query):
         raise Denied('Provide a query of 1–200 characters')
 
 
-def country_check(policy, config, country):
-    if not re.fullmatch('[A-Z]{2}', country) or country not in policy.get('alexandria', {}).get('countries', []) or country not in config.get('alexandria_countries', []):
+# ISO 3166-1 alpha-2 codes; an unknown code would spend credits on a failed call.
+ISO_COUNTRIES = frozenset("""
+AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ
+CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR
+GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO
+JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR
+MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO
+RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV
+TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW""".split())
+WORLDWIDE = 'WORLDWIDE'
+
+
+def allows(scope, country):
+    return scope == 'any' or country in (scope or [])
+
+
+def country_check(policy, config, country, worldwide=False):
+    """Return the provider geo value: an ISO code, or '' for worldwide where supported."""
+    if worldwide and country == WORLDWIDE:
+        return ''
+    if country not in ISO_COUNTRIES:
+        raise Denied('Use an ISO 3166-1 alpha-2 country code such as SG, MY or US' + (', or WORLDWIDE' if worldwide else ''))
+    if not allows(policy.get('alexandria', {}).get('countries'), country) or not allows(config.get('alexandria_countries'), country):
         raise Denied('Market is outside shared access scope')
+    return country
 
 
 def product_key(provider, value, country=''):

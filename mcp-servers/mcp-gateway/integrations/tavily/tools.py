@@ -36,15 +36,15 @@ def register_tools(mcp, access):
     @mcp.tool()
     @observe("tavily", current_client_id)
     async def tavily_extract_pages(urls: list[str]) -> dict:
-        """Basic extraction of 1–5 exact approved public URLs; reserves 1 credit."""
+        """Basic extraction of 1–5 public HTTPS URLs; reserves 1 credit."""
         import asyncio
-        from shared.urls import approved_url
+        from shared.urls import public_url
         from policy import credential
         client_id, config = scope('tavily_extract_pages')
         if not 1 <= len(urls) <= 5 or len(set(urls)) != len(urls):
-            raise Denied('Provide 1–5 distinct approved URLs')
+            raise Denied('Provide 1–5 distinct public HTTPS URLs')
         for url in urls:
-            await asyncio.to_thread(approved_url, policy, config, url, 'tavily')
+            await asyncio.to_thread(public_url, url)
         credential('TAVILY_API_KEY')
         key = hashlib.sha256(json.dumps(['tavily_extract', urls]).encode()).hexdigest()
         cached = await cache.cached(client_id, key)

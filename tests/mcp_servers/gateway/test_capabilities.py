@@ -78,7 +78,7 @@ def test_market_and_unseen_product_never_execute(setup,monkeypatch):
     policy,config,ledger,mcp = setup
     monkeypatch.setenv('FIRECRAWL_API_KEY','test-only')
     with patch.object(alexandria,'execute',new_callable=AsyncMock) as execute:
-        for name,args in [('firecrawl_shopify_search',('mugs','GB')),('firecrawl_shopify_product',('unseen','SG')),('firecrawl_alibaba_product',('https://www.alibaba.com/product-detail/mugs_123.html',)),('firecrawl_trends',(['mugs'],'SG','all'))]:
+        for name,args in [('firecrawl_shopify_search',('mugs','ZZ')),('firecrawl_shopify_search',('mugs','WORLDWIDE')),('firecrawl_shopify_product',('unseen','SG')),('firecrawl_alibaba_product',('https://www.alibaba.com/product-detail/mugs_123.html',)),('firecrawl_trends',(['mugs'],'SG','all'))]:
             with pytest.raises(SafeToolError):
                 asyncio.run(mcp.tools[name](*args))
         execute.assert_not_called()
@@ -104,18 +104,18 @@ def test_unknown_or_variable_prices_are_denied(price,per_record,monkeypatch):
             asyncio.run(alexandria.verify_price('shopify_search'))
 
 
-def test_tavily_extraction_denies_unapproved_urls_before_reservation(setup):
+@pytest.mark.parametrize('url',['http://example.com/','https://user:pass@example.com/','file:///etc/passwd'])
+def test_tavily_extraction_denies_non_public_https_before_reservation(setup,url):
     _,_,ledger,mcp = setup
     with patch.object(tavily,'extract',new_callable=AsyncMock) as extract:
         with pytest.raises(SafeToolError):
-            asyncio.run(mcp.tools['tavily_extract_pages'](['https://example.com/']))
+            asyncio.run(mcp.tools['tavily_extract_pages']([url]))
         extract.assert_not_called()
         assert not ledger.calls
 
 
 def test_tavily_extraction_reserves_one_and_never_upgrades(setup,monkeypatch):
     policy,config,ledger,mcp = setup
-    policy['tavily']['approved_urls'] = config['approved_urls'] = ['https://example.com/']
     monkeypatch.setenv('TAVILY_API_KEY','test-only')
     with patch('socket.getaddrinfo',return_value=[(2,1,6,'',('93.184.216.34',443))]), patch.object(tavily,'request',new_callable=AsyncMock,return_value={'results':[{'url':'https://example.com/','raw_content':'hello'},{'url':'https://unapproved.test/','raw_content':'unexpected'}]}) as request:
         result = asyncio.run(mcp.tools['tavily_extract_pages'](['https://example.com/']))
@@ -128,9 +128,36 @@ def test_tavily_extraction_reserves_one_and_never_upgrades(setup,monkeypatch):
 @pytest.mark.parametrize('address',['127.0.0.1','169.254.169.254','::1','fd00::1'])
 def test_extraction_rejects_internal_address(setup,address):
     policy,config,ledger,mcp = setup
-    policy['tavily']['approved_urls'] = config['approved_urls'] = ['https://example.com/']
     with patch('socket.getaddrinfo',return_value=[(2,1,6,'',(address,443))]), patch.object(tavily,'extract',new_callable=AsyncMock) as extract:
         with pytest.raises(SafeToolError):
             asyncio.run(mcp.tools['tavily_extract_pages'](['https://example.com/']))
         extract.assert_not_called()
         assert not ledger.calls
+
+
+@pytest.mark.parametrize('country,geo',[('MY','MY'),('GB','GB'),('WORLDWIDE','')])
+def test_trends_accepts_any_iso_country_or_worldwide(setup,monkeypatch,country,geo):
+    policy,config,ledger,mcp = setup
+    monkeypatch.setenv('FIRECRAWL_API_KEY','test-only')
+    with patch.object(alexandria,'verify_price',new_callable=AsyncMock), patch.object(alexandria,'execute',new_callable=AsyncMock,return_value={'series':[]}) as execute:
+        asyncio.run(mcp.tools['firecrawl_trends'](['mugs'],country))
+        assert execute.call_args.args[1]['geo'] == geo
+        assert ledger.calls[0][2:4] == ('firecrawl',5)
+
+
+@pytest.mark.parametrize('country',['sg','ZZ','SGP',''])
+def test_unknown_country_codes_never_spend(setup,monkeypatch,country):
+    policy,config,ledger,mcp = setup
+    monkeypatch.setenv('FIRECRAWL_API_KEY','test-only')
+    with patch.object(alexandria,'execute',new_callable=AsyncMock) as execute:
+        with pytest.raises(SafeToolError):
+            asyncio.run(mcp.tools['firecrawl_trends'](['mugs'],country))
+        execute.assert_not_called()
+        assert not ledger.calls
+
+
+def test_explicit_country_list_still_limits_scope():
+    policy = {'alexandria': {'countries': ['SG']}}
+    with pytest.raises(Denied, match='outside shared access scope'):
+        alexandria.country_check(policy, {'alexandria_countries': 'any'}, 'MY')
+    assert alexandria.country_check(policy, {'alexandria_countries': ['SG']}, 'SG') == 'SG'

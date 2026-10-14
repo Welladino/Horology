@@ -19,9 +19,12 @@ def load_policy(path):
         raise Denied('GitHub and Google document adapters are parked')
     if not set(config.get('schemas', [])).issubset(policy['supabase']['schemas']):
         raise Denied('Access schema exceeds global scope')
-    for field, global_field in (('alexandria_operations', 'operations'), ('alexandria_countries', 'countries')):
-        if not set(config.get(field, [])).issubset(policy.get('alexandria', {}).get(global_field, [])):
-            raise Denied('Access Alexandria scope exceeds global scope')
+    if not set(config.get('alexandria_operations', [])).issubset(policy.get('alexandria', {}).get('operations', [])):
+        raise Denied('Access Alexandria scope exceeds global scope')
+    # Countries are 'any' (every ISO code) or an explicit list.
+    countries, allowed = config.get('alexandria_countries', []), policy.get('alexandria', {}).get('countries', [])
+    if allowed != 'any' and (countries == 'any' or not set(countries).issubset(allowed)):
+        raise Denied('Access Alexandria scope exceeds global scope')
     return policy
 
 
