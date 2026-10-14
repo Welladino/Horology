@@ -57,9 +57,12 @@ def _compose(*args: str, timeout: int = 120) -> subprocess.CompletedProcess:
     )
 
 
+# The stack needs the real credentials in these (Git-ignored) files; CI runners have Docker but not them.
+ENV_FILES = (REPO_ROOT / ".env", REPO_ROOT / "mcp-servers" / "document-graph" / ".env")
+
 requires_docker = pytest.mark.skipif(
-    not _docker_available(),
-    reason="Docker is not running or not installed - this suite drives the real docker compose stack.",
+    not _docker_available() or not all(path.is_file() for path in ENV_FILES),
+    reason="Needs Docker running and the stack's .env files - this suite drives the real docker compose stack.",
 )
 
 

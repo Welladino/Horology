@@ -24,11 +24,13 @@ export DATABASE_URL="$GATEWAY_TEST_DATABASE_URL"  # alembic/env.py selects the P
 export GATEWAY_DB_PASSWORD=ci-runtime-only GRAPH_DB_PASSWORD=ci-graph-only CRON_SWEEP_RO_PASSWORD=ci-cron-only
 # The CI Postgres image has pgvector, so every migration runs from an empty database.
 python -m alembic upgrade head
-mkdir -p /workspace/reports
-python -m pytest tests/ -q -p no:cacheprovider --junitxml=/workspace/reports/tests.xml
-python - <<'CHECK_SKIPS'
+REPORTS="${CI_REPORTS:-/workspace/reports}"  # Cloud Build's workspace; GitHub Actions passes its own
+mkdir -p "$REPORTS"
+python -m pytest tests/ -q -p no:cacheprovider --junitxml="$REPORTS/tests.xml"
+REPORTS="$REPORTS" python - <<'CHECK_SKIPS'
+import os
 import xml.etree.ElementTree as ET
-for case in ET.parse('/workspace/reports/tests.xml').iter('testcase'):
+for case in ET.parse(os.environ['REPORTS'] + '/tests.xml').iter('testcase'):
     if case.find('skipped') is not None and not case.attrib.get('classname', '').startswith(('system.', 'tests.system.')):  # Docker isn't available in CI
         raise SystemExit('Unexpected skipped test: ' + case.attrib.get('classname', '') + '.' + case.attrib.get('name', ''))
 CHECK_SKIPS

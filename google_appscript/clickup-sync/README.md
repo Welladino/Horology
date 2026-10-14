@@ -30,7 +30,7 @@ npm install
 npm test
 ```
 
-The installed CLI is clasp 3.1.0. Credentials belong in clasp's user login store,
+`package.json` pins clasp 3.4.1 (3.1.0 had a path-traversal advisory, GHSA via Dependabot alert #27). Install the same version globally: `npm install -g @google/clasp@3.4.1`. Its `braces` dependency has an advisory with no fixed release (a denial of service from deeply nested glob patterns); clasp only reads our own config, so it's accepted. Credentials belong in clasp's user login store,
 not this repository. ClickUp's token remains in Apps Script Script Properties.
 
 The local .clasp.json already points to the verified existing project and uses

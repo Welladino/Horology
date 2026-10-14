@@ -81,6 +81,18 @@ It writes `reports/security/summary.md`, replaced on every run, with each tool's
 
 **If gitleaks finds a secret:** treat it as exposed. Rotate it first, then remove it from the history.
 
+## GitHub Actions
+
+`.github/workflows/ci.yml` runs on every push and pull request (and by hand from the Actions tab). It runs the same gates as Cloud Build in three parallel jobs:
+
+- **Tests, Bandit and pip-audit:** `scripts/ci/check.sh` against a Postgres service container. All migrations run from empty, and an unexpected skip fails the job.
+- **Source:** Trivy secrets and misconfigurations, plus gitleaks over the **whole Git history**, which Cloud Build can't scan.
+- **Images:** for each of the two images, a build, the image contract check, then Trivy for vulnerabilities, secrets and licences.
+
+The system (Docker stack) tests skip there: they need the stack's `.env` files. Nothing in the workflow deploys or uses a production credential; the token is read-only, scanners run as pinned Docker images, and GitHub's own actions are pinned to commits.
+
+The free plan has no branch protection for private organisation repositories, so a failing run marks the commit red and sends an email, but it doesn't block the push. Check the Actions tab before deploying.
+
 ## Test coverage: a separate report
 
 ```bash

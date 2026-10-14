@@ -1,6 +1,6 @@
 # clasp: Apps Script source management
 
-Use clasp to maintain the existing Welladino — ClickUp Sync project from Git. Commands below match the locally verified clasp 3.1.0 CLI. Run component commands from `google_appscript/clickup-sync/` unless stated otherwise.
+Use clasp to maintain the existing Welladino — ClickUp Sync project from Git. The project pins clasp 3.4.1 (`npm install -g @google/clasp@3.4.1`); the commands below were verified with 3.1.0, so re-check them after upgrading. Run component commands from `google_appscript/clickup-sync/` unless stated otherwise.
 
 ## Set up the local CLI
 

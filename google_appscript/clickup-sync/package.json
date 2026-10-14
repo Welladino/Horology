@@ -8,6 +8,6 @@
     "clasp:push": "clasp push"
   },
   "devDependencies": {
-    "@google/clasp": "3.1.0"
+    "@google/clasp": "3.4.1"
   }
 }
