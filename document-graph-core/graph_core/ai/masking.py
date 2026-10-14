@@ -9,8 +9,10 @@ import re
 
 IP_PLACEHOLDER = "[ip address]"
 _IPV4 = re.compile(r"(?<![\w.])(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.){3}(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?!\w|\.\d)")
-# Needs '::' or a hex letter, so clock times like 14:21:50 are left alone.
-_IPV6 = re.compile(r"(?<![\w:])(?=[0-9A-Fa-f:]*(?:::|[A-Fa-f]))(?:[0-9A-Fa-f]{0,4}:){2,7}[0-9A-Fa-f]{0,4}(?![\w:])")
+# Needs '::' or a hex letter, so clock times like 14:21:50 are left alone. It may be followed by a
+# punctuation colon ("fe80::1: refused"), but not by another address part.
+_IPV6 = re.compile(r"(?<![\w:])(?=[0-9A-Fa-f:]*(?:::|[A-Fa-f]))(?:[0-9A-Fa-f]{0,4}:){2,7}[0-9A-Fa-f]{0,4}"
+                   r"(?!\w|:[0-9A-Fa-f:])")
 
 
 def for_provider(text):

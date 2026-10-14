@@ -68,6 +68,7 @@ def database_app(mcp, database, **options):
     async def lifespan(app):
         async with database:
             graph_core.configure(database)
+            await graph_core.database.check_ready()  # an unmigrated database stops start-up, not a later call
             async with mcp_lifespan(app) as state:
                 yield state
 

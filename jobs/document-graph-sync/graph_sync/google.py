@@ -32,9 +32,23 @@ class GoogleClient:
         response.raise_for_status()
         return response
 
+    async def _download(self, url, params, limit=MAX_FILE_BYTES):
+        """A file's bytes, refused while it downloads once it passes limit (never held whole in memory)."""
+        headers = {"Authorization": f"Bearer {await self._token()}"}
+        async with httpx.AsyncClient(timeout=TIMEOUTS.gateway_http, follow_redirects=False, trust_env=False) as http:
+            async with http.stream("GET", url, headers=headers, params=params) as response:
+                response.raise_for_status()
+                chunks, size = [], 0
+                async for chunk in response.aiter_bytes():
+                    size += len(chunk)
+                    if size > limit:
+                        raise ValueError("File is too large to index")
+                    chunks.append(chunk)
+        return b"".join(chunks)
+
     async def sheet_rows(self, spreadsheet_id, tab):
         """All rows of a tab, raw values (booleans stay booleans)."""
-        url = f"https://sheets.googleapis.com/v4/spreadsheets/{spreadsheet_id}/values/{quote(repr_tab(tab))}"
+        url = f"https://sheets.googleapis.com/v4/spreadsheets/{spreadsheet_id}/values/{_path(repr_tab(tab))}"
         data = (await self._request("GET", url, params={"valueRenderOption": "UNFORMATTED_VALUE"})).json()
         return data.get("values", [])
 
@@ -58,30 +72,33 @@ class GoogleClient:
     async def replace_tab(self, spreadsheet_id, tab, rows):
         """Clear a tab's values, then write rows (header first) from A1, as typed."""
         base = f"https://sheets.googleapis.com/v4/spreadsheets/{spreadsheet_id}/values"
-        await self._request("POST", f"{base}/{quote(repr_tab(tab))}:clear", json={})
+        await self._request("POST", f"{base}/{_path(repr_tab(tab))}:clear", json={})
         await self.write_cells(spreadsheet_id, [(f"{repr_tab(tab)}!A1", rows)])
 
     async def file_metadata(self, file_id):
-        url = f"https://www.googleapis.com/drive/v3/files/{quote(file_id)}"
+        url = f"https://www.googleapis.com/drive/v3/files/{_path(file_id)}"
         params = {"fields": "id,mimeType,version,size,trashed", "supportsAllDrives": "true"}
         return (await self._request("GET", url, params=params)).json()
 
     async def file_text(self, meta):
         """Text of a Markdown/plain upload or a Google Doc; other types are refused."""
-        file_id = quote(meta["id"])
-        if meta["mimeType"] == GOOGLE_DOC:
-            url = f"https://www.googleapis.com/drive/v3/files/{file_id}/export"
-            response = await self._request("GET", url, params={"mimeType": "text/plain"})
+        file_id = _path(meta["id"])
+        if meta["mimeType"] == GOOGLE_DOC:  # Drive reports no size for Docs; the download is capped instead
+            content = await self._download(f"https://www.googleapis.com/drive/v3/files/{file_id}/export",
+                                           {"mimeType": "text/plain"})
         elif meta["mimeType"] in TEXT_TYPES:
             if int(meta.get("size") or 0) > MAX_FILE_BYTES:
                 raise ValueError("File is too large to index")
-            url = f"https://www.googleapis.com/drive/v3/files/{file_id}"
-            response = await self._request("GET", url, params={"alt": "media", "supportsAllDrives": "true"})
+            content = await self._download(f"https://www.googleapis.com/drive/v3/files/{file_id}",
+                                           {"alt": "media", "supportsAllDrives": "true"})
         else:
             raise ValueError(f"Unsupported file type {meta['mimeType']}")
-        if len(response.content) > MAX_FILE_BYTES:
-            raise ValueError("File is too large to index")
-        return response.content.decode("utf-8", errors="replace")
+        return content.decode("utf-8", errors="replace")
+
+
+def _path(value):
+    """One URL path segment: every reserved character escaped, '/' included."""
+    return quote(value, safe="")
 
 
 def repr_tab(tab):

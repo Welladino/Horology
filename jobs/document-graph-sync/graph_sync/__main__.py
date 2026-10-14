@@ -105,6 +105,7 @@ async def main():
     google = GoogleClient() if mode in ("sync", "entities") else None
     async with Database(os.environ.get("DATABASE_URL_POOLED"), DATABASE.document_graph_pool_size) as database:
         graph_core.configure(database)
+        await graph_core.database.check_ready()  # stop at once, with the reason, on an unmigrated database
         failed = False
         for workspace, spreadsheet_id in targets.items():
             try:

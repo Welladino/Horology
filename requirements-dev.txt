@@ -13,6 +13,7 @@ pytest==9.0.3
 pip-audit==2.10.1
 bandit==1.9.4  # Python security linter (scripts/security/run_checks.sh, CI)
 pytest-cov==7.1.0  # coverage report (scripts/testing/coverage.sh)
+hypothesis==6.168.3  # property-based tests (tests/unit/**/test_*_properties.py)
 psycopg[binary]==3.3.6
 psycopg-pool==3.3.3
 google-auth==2.61.0
