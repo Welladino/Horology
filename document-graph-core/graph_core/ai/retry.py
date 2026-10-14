@@ -30,7 +30,7 @@ def _wait(error, attempt):
             return min(float(error.response.headers.get("retry-after", "")), MAX_RETRY_AFTER)
         except ValueError:
             pass
-    return WAITS[attempt] + random.uniform(0, 0.5)
+    return WAITS[attempt] + random.uniform(0, 0.5)  # nosec B311: retry jitter, not security
 
 
 async def call(request):

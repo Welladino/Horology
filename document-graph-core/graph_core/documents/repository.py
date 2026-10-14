@@ -47,7 +47,7 @@ class DocumentRepository:
                 SELECT {SUMMARY_COLUMNS} FROM documents
                 WHERE workspace = %s AND (%s::text IS NULL OR doc_type = %s) AND (%s::text IS NULL OR domain = %s)
                 ORDER BY created_at DESC LIMIT %s
-                """,
+                """,  # nosec B608: SQL text is fixed in code; values are bound parameters
                 (workspace, doc_type, doc_type, domain, domain, limit),
             )
             return await cur.fetchall()

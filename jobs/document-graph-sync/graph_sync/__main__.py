@@ -90,7 +90,7 @@ async def run_workspace(google, workspace, spreadsheet_id, mode, chain, token=No
         result["follow_up"] = "failed to start; the rest wait for the next sync"
         try:
             await runs.release(workspace, mode)  # in case the hand-over itself failed
-        except Exception:
+        except Exception:  # nosec B110: best effort; the claim expires on its own
             pass  # the claim expires on its own
     return result
 

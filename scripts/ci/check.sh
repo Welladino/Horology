@@ -32,6 +32,8 @@ for case in ET.parse('/workspace/reports/tests.xml').iter('testcase'):
     if case.find('skipped') is not None and not case.attrib.get('classname', '').startswith(('system.', 'tests.system.')):  # Docker isn't available in CI
         raise SystemExit('Unexpected skipped test: ' + case.attrib.get('classname', '') + '.' + case.attrib.get('name', ''))
 CHECK_SKIPS
+# Python security lint; intended findings are marked "# nosec <check>: <reason>" in the code.
+python -m bandit -q -c .bandit.yaml -r mcp-servers document-graph-core shared-runtime jobs alembic scripts
 python -m pip_audit --disable-pip --no-deps -r mcp-servers/mcp-gateway/requirements.txt
 python -m pip_audit --disable-pip --no-deps -r mcp-servers/document-graph/requirements.txt
 python -m pip_audit --disable-pip --no-deps -r jobs/document-graph-sync/requirements.txt

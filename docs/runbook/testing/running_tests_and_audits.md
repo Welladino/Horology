@@ -2,43 +2,94 @@
 
 ## Test suite
 
-Two tiers, in `tests/`:
+Tests are grouped by kind: `tests/unit/`, `tests/integration/`, `tests/system/`. What each kind needs and where a new test goes: [`tests/README.md`](../../../tests/README.md).
 
-### Unit tests (`tests/mcp_servers/`) — mocked, no Docker required
-
-```bash
-source .venv/bin/activate
-python3 -m pytest tests/mcp_servers/ -v
-```
-
-**What's covered:** input validation (`doc_type` checks, limit clamping), response shaping (which fields get extracted from a raw API response), content truncation (the 40,000-char caps on `get_pull_request_diff`/`get_file_content`), repo-scoping (every GitHub call stays scoped to `GITHUB_REPO`, including a test that a query trying to inject a different `repo:` filter can't escape the configured repo), and a regression test for the real embedding-dimension bug (`_embed` must always send `dimensions: 768` — if that parameter is ever dropped, embeddings silently come back at 3072 dims again, which breaks the `document_embeddings` schema).
-
-**What's NOT covered, deliberately:** real integration with Neon, OpenRouter, or the GitHub API. Both real bugs found during this project (the embedding dimension mismatch, pgvector's HNSW dimension limit) were caught by testing live against the real API, not by unit tests — mocks wouldn't have caught either, since they encode assumptions about the response shape rather than discovering the real one. Verifying a new integration point hands-on (a real API call, checked directly) remains the standing practice for anything touching a system outside this repo's own logic — this suite protects against regressions in *our* code, not against the external world changing.
-
-#### Adding a test for a new tool
-
-Follow the existing pattern in `tests/mcp_servers/test_document_graph.py` / `test_github_monitor.py`: import `server.py` fresh via `importlib` (so each test file gets an isolated module, not a shared one polluted by another file's fake env vars), mock `_connect()`/`_get()`/`httpx.post` at the boundary, assert on what the function actually did (query params sent, response shape returned), not on internal implementation details.
-
-### Container/isolation tests (`tests/test_docker_stack.py`) — real Docker, no mocks
+Install the shared packages into the development environment first:
 
 ```bash
-source .venv/bin/activate
-python3 -m pytest tests/test_docker_stack.py -v
+.venv/bin/python -m pip install --no-deps -e shared-runtime -e document-graph-core
 ```
 
-Drives the real `docker compose` CLI: builds and starts the actual stack, then asserts on the isolation properties that were previously only checked by hand throughout this project — every container reaches a running state, none run `--privileged`, Hermes has exactly one host mount (scoped to `hermes-data/`), neither MCP server has any host mount, neither MCP server is reachable from the host, both ARE reachable from inside the `hermes` container (the internal network works), and the dashboard rejects unauthenticated requests. Automates the `docker inspect`/`curl` checks this project ran manually after every `docker-compose.yml` change.
-
-**Requires:** Docker running, and `.env` populated with real credentials (build/startup needs them). Automatically skipped (not failed) if Docker isn't available, so `pytest tests/` still runs cleanly on a machine without Docker running. Leaves the stack running afterward — doesn't tear down, since these containers are meant to stay up.
-
-**What's NOT covered:** real tool behavior through the containers (e.g. that `write_document` called through the real running stack actually writes to Neon). That's a further "real end-to-end integration test" tier — not yet built, would need its own test-scoped credentials.
-
-### Running everything
+### Unit tests: no database, network or Docker
 
 ```bash
-python3 -m pytest tests/ -v   # runs both tiers; Docker tier auto-skips if Docker isn't up
+.venv/bin/python -m pytest tests/unit -q
 ```
 
-## Dependency security audit (`pip-audit`)
+### Integration tests: a disposable migrated Postgres
+
+Start a throwaway pgvector database, migrate it, and point the tests at its logins. The passwords are test-only values for this throwaway container:
+
+```bash
+docker run -d --name horology-test-pg -e POSTGRES_PASSWORD=ci-admin-only -p 127.0.0.1:55432:5432 pgvector/pgvector:0.8.0-pg16
+```
+
+```bash
+DATABASE_URL=postgresql+psycopg://postgres:ci-admin-only@127.0.0.1:55432/postgres .venv/bin/python -m alembic upgrade head
+```
+
+```bash
+GATEWAY_TEST_DATABASE_URL=postgresql://postgres:ci-admin-only@127.0.0.1:55432/postgres GATEWAY_TEST_RUNTIME_URL=postgresql://horology_gateway:ci-runtime-only@127.0.0.1:55432/postgres GRAPH_TEST_RUNTIME_URL=postgresql://horology_graph:ci-graph-only@127.0.0.1:55432/postgres .venv/bin/python -m pytest tests/integration -q
+```
+
+Without those variables, integration tests are skipped, not failed.
+
+### System tests: the real Docker Compose stack
+
+```bash
+.venv/bin/python -m pytest tests/system -q
+```
+
+They need Docker running and `.env` populated, and are skipped when Docker isn't up. They build and start the stack and leave it running.
+
+### Everything
+
+```bash
+.venv/bin/python -m pytest tests/ -q
+```
+
+### Gateway HTTP smoke check (by hand)
+
+```bash
+.venv/bin/python tests/manual/gateway/smoke.py
+```
+
+It needs a disposable migrated `GATEWAY_DATABASE_URL` and makes no provider calls. Its private test clients are in `tests/manual/gateway/fixtures/private/`, which Git ignores.
+
+## Security checks: one local report
+
+```bash
+scripts/security/run_checks.sh
+```
+
+It writes `reports/security/summary.md`, replaced on every run, with each tool's raw output in `reports/security/raw/` (`reports/` is ignored by Git). It exits 1 if anything would fail Cloud Build. Add `--skip-images` to leave out the two image builds and scans (about 20 seconds instead of a few minutes).
+
+| Check | Tool | Fails on | Also in Cloud Build |
+|---|---|---|---|
+| Python dependency vulnerabilities (dev venv and each `requirements.txt`) | pip-audit | any known vulnerability | yes (`scripts/ci/check.sh`) |
+| Python security lint | Bandit (`.bandit.yaml`) | any finding not marked `# nosec <check>: <reason>` | yes |
+| Secrets and misconfigurations in the source | Trivy `fs` | HIGH/CRITICAL | yes |
+| Image vulnerabilities and secrets | Trivy `image` | fixable HIGH/CRITICAL | yes |
+| Image licences | Trivy `image --scanners license` | forbidden (CRITICAL, e.g. AGPL, SSPL) | yes |
+| Secrets in the Git history | gitleaks (values redacted) | any finding | no (Cloud Build receives no `.git`) |
+
+**What the source scan sees:** only the files Git tracks or would track, as Cloud Build does. Local secrets (`.env`, `.auth/`, the private test clients) are never read.
+
+**Tool versions:** Trivy and gitleaks run from pinned Docker images (`aquasec/trivy:0.75.0`, `zricethezav/gitleaks:v8.30.1`); keep Trivy in step with `cloudbuild.yaml`. Bandit and pip-audit come from the dev venv.
+
+**A new Bandit finding:** fix it. If it's intended (for example, SQL whose text is fixed in code), mark that line `# nosec <check>: <reason>`. Put the marker on a line of the statement outside any string, such as after the closing `"""`, never inside the SQL.
+
+**If gitleaks finds a secret:** treat it as exposed. Rotate it first, then remove it from the history.
+
+## Test coverage: a separate report
+
+```bash
+scripts/testing/coverage.sh
+```
+
+It writes `reports/coverage/summary.md` (the files below 100%, with missing lines) and `reports/coverage/html/index.html` (line by line), replaced on every run. Set the three test-database variables (above) to include integration tests; otherwise it measures unit tests only. It's a view, not a gate: there's no minimum percentage.
+
+## Dependency security audit (`pip-audit`), one tool at a time
 
 ```bash
 source .venv/bin/activate
@@ -55,6 +106,4 @@ Run all three whenever a dependency is added or bumped, and periodically (e.g. b
 
 Note: `pip-audit` only checks Python dependencies here — Hermes's own bundled dependency vulnerabilities (found via `hermes doctor` / `hermes security audit` inside the container, not this tool) are tracked separately, see [`docs/planning/notes/2026-08-06_hardening-config-audit_note.md`](../../planning/notes/2026-08-06_hardening-config-audit_note.md).
 
-For both MCP servers, install the shared runtime into the native development environment before tests: `.venv/bin/python -m pip install --no-deps -e shared-runtime`. Docker images install it from the shared build context automatically.
-
-Gateway tests and the local HTTP smoke helper live in `tests/mcp_servers/gateway/`. Run the helper with `.venv/bin/python tests/mcp_servers/gateway/smoke.py` and a disposable migrated `GATEWAY_DATABASE_URL`. The helper does not call external providers.
+Docker images install the shared runtime and `document-graph-core` from the shared build context automatically.

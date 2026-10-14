@@ -1,0 +1,9 @@
+# Bandit (Python security linter): run by scripts/security/run_checks.sh and Cloud Build (scripts/ci/check.sh).
+# Findings that are intended are marked in the code with "# nosec <check>: <reason>", not skipped here,
+# so a new instance of the same check still fails. Tests, and the image check (a test run inside the
+# built image), are excluded: asserts are how they work.
+exclude_dirs:
+  - .venv
+  - tests
+  - shared-runtime/build
+  - scripts/ci/check_image.py

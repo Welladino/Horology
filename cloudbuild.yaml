@@ -46,6 +46,14 @@ steps:
   - id: scan-document-graph
     name: aquasec/trivy:0.75.0
     args: [image, --scanners, 'vuln,secret', --ignore-unfixed, --severity, 'HIGH,CRITICAL', --exit-code, '1', --no-progress, --input, /workspace/document-graph.tar]
+  # Licences: only "forbidden" ones (CRITICAL, e.g. AGPL, SSPL) fail. The full list is in the local
+  # report (scripts/security/run_checks.sh); GPL in the Debian base image is expected.
+  - id: licences-gateway
+    name: aquasec/trivy:0.75.0
+    args: [image, --scanners, license, --severity, CRITICAL, --exit-code, '1', --no-progress, --input, /workspace/gateway.tar]
+  - id: licences-document-graph
+    name: aquasec/trivy:0.75.0
+    args: [image, --scanners, license, --severity, CRITICAL, --exit-code, '1', --no-progress, --input, /workspace/document-graph.tar]
 images:
   - '${_REGISTRY}/mcp-gateway:$BUILD_ID'
   - '${_REGISTRY}/mcp-gateway:latest'

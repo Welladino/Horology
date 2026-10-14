@@ -168,7 +168,7 @@ class GoogleOAuthProvider:
         common = {'client_id':grant.client_id,'subject':grant.subject,'email':grant.email,'scopes':scopes,'resource':self.url+'/mcp'}
         await records.put('access',access,{**common,'expires_at':access_expiry,'claims':{'grant_id':grant.grant_id,'email':grant.email},'grant_id':grant.grant_id},access_expiry)
         await records.put('refresh',refresh,{**common,'expires_at':refresh_expiry,'grant_id':grant.grant_id},refresh_expiry)
-        return OAuthToken(access_token=access,token_type='Bearer',expires_in=access_expiry-now,refresh_token=refresh,scope=' '.join(scopes))
+        return OAuthToken(access_token=access,token_type='Bearer',expires_in=access_expiry-now,refresh_token=refresh,scope=' '.join(scopes))  # nosec B106: not a password
 
     async def exchange_authorization_code(self, client, authorization_code):
         try:

@@ -24,7 +24,7 @@ class OAuthRepository:
         # written is left out of the clean-up, so the statement never touches one row twice.
         digest = self.digest(key)
         async with self.database.connection() as db, db.cursor() as cur:
-            await cur.execute(f'WITH expired AS (DELETE FROM {self.table} WHERE expires <= clock_timestamp() '
+            await cur.execute(f'WITH expired AS (DELETE FROM {self.table} WHERE expires <= clock_timestamp() '  # nosec B608: table name from the fixed TABLES list; values are bound parameters
                               f'AND NOT (kind = %s AND key_hash = %s)) '
                               f'INSERT INTO {self.table}(kind,key_hash,data,expires) VALUES(%s,%s,%s::jsonb,to_timestamp(%s)) ON CONFLICT(kind,key_hash) DO UPDATE SET data=EXCLUDED.data,expires=EXCLUDED.expires', (kind, digest, kind, digest, json.dumps(value), expires))
 
@@ -55,19 +55,19 @@ class TransactionRecords:
 
     async def get(self, kind, key, consume=False):
         if consume:
-            await self.cursor.execute(f'DELETE FROM {self.table} WHERE kind=%s AND key_hash=%s AND expires>clock_timestamp() RETURNING data', (kind, OAuthRepository.digest(key)))
+            await self.cursor.execute(f'DELETE FROM {self.table} WHERE kind=%s AND key_hash=%s AND expires>clock_timestamp() RETURNING data', (kind, OAuthRepository.digest(key)))  # nosec B608: table name from the fixed TABLES list; values are bound parameters
         else:
-            await self.cursor.execute(f'SELECT data FROM {self.table} WHERE kind=%s AND key_hash=%s AND expires>clock_timestamp()', (kind, OAuthRepository.digest(key)))
+            await self.cursor.execute(f'SELECT data FROM {self.table} WHERE kind=%s AND key_hash=%s AND expires>clock_timestamp()', (kind, OAuthRepository.digest(key)))  # nosec B608: table name from the fixed TABLES list; values are bound parameters
         row = await self.cursor.fetchone()
         return row[0] if row else None
 
     async def put(self, kind, key, value, expires):
-        await self.cursor.execute(f'INSERT INTO {self.table}(kind,key_hash,data,expires) VALUES(%s,%s,%s::jsonb,to_timestamp(%s))', (kind,OAuthRepository.digest(key),json.dumps(value),expires))
+        await self.cursor.execute(f'INSERT INTO {self.table}(kind,key_hash,data,expires) VALUES(%s,%s,%s::jsonb,to_timestamp(%s))', (kind,OAuthRepository.digest(key),json.dumps(value),expires))  # nosec B608: table name from the fixed TABLES list; values are bound parameters
 
     async def revoke(self, grant):
-        await self.cursor.execute(f"DELETE FROM {self.table} WHERE kind IN ('access','refresh') AND data->>'grant_id'=%s", (grant,))
+        await self.cursor.execute(f"DELETE FROM {self.table} WHERE kind IN ('access','refresh') AND data->>'grant_id'=%s", (grant,))  # nosec B608: table name from the fixed TABLES list; values are bound parameters
 
     async def revoke_email(self, email):
         # Grants issued before emails were stored have no email and are not matched.
-        await self.cursor.execute(f"DELETE FROM {self.table} WHERE kind IN ('access','refresh') AND data->>'email'=%s", (email.lower(),))
+        await self.cursor.execute(f"DELETE FROM {self.table} WHERE kind IN ('access','refresh') AND data->>'email'=%s", (email.lower(),))  # nosec B608: table name from the fixed TABLES list; values are bound parameters
         return self.cursor.rowcount

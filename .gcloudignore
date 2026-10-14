@@ -2,6 +2,7 @@
 **
 !cloudbuild.yaml
 !requirements-dev.txt
+!.bandit.yaml
 !alembic.ini
 !alembic/
 !alembic/**

@@ -84,7 +84,7 @@ def main():
         workspace.configure(json.loads(os.environ.get('DOCUMENT_GRAPH_WORKSPACES', '{}')))
         oauth_config = {'client_id': os.environ.get('GOOGLE_OAUTH_CLIENT_ID'),
                         'client_secret': os.environ.get('GOOGLE_OAUTH_CLIENT_SECRET')}
-    options = http_server_options(8765, "DOCUMENT_GRAPH_BIND", "0.0.0.0")
+    options = http_server_options(8765, "DOCUMENT_GRAPH_BIND", "0.0.0.0")  # nosec B104: Cloud Run serves on all interfaces
     port = options.pop("port")
     import uvicorn
     # OAuth callback queries contain short-lived codes; omit access logs when sign-in is on.

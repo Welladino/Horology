@@ -11,6 +11,8 @@ mcp==2.0.0
 httpx==0.28.1
 pytest==9.0.3
 pip-audit==2.10.1
+bandit==1.9.4  # Python security linter (scripts/security/run_checks.sh, CI)
+pytest-cov==7.1.0  # coverage report (scripts/testing/coverage.sh)
 psycopg[binary]==3.3.6
 psycopg-pool==3.3.3
 google-auth==2.61.0

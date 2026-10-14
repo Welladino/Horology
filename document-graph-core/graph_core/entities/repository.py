@@ -72,7 +72,7 @@ class EntityRepository:
     async def count_pending(self, workspace):
         """Pending documents not counting retries of failures (they wait for a later run, not a follow-up)."""
         async with self.database.connection() as conn, conn.cursor() as cur:
-            await cur.execute(f"SELECT count(*) FROM ({self._PENDING}) p WHERE NOT coalesce(p.retry, false)", (workspace,))
+            await cur.execute(f"SELECT count(*) FROM ({self._PENDING}) p WHERE NOT coalesce(p.retry, false)", (workspace,))  # nosec B608: SQL text is fixed in code; values are bound parameters
             return (await cur.fetchone())[0]
 
     async def mark_run(self, document_id, sections_hash, status):
@@ -207,7 +207,7 @@ class EntityRepository:
                 FROM chosen JOIN entities e ON e.id = chosen.id JOIN entity_types t ON t.id = e.type_id
                 WHERE e.workspace = %(workspace)s
                 ORDER BY chosen.rank
-                """,
+                """,  # nosec B608: SQL text is fixed in code; values are bound parameters
                 {**params, "mentions_limit": mentions_limit})
             return await cur.fetchall()
 

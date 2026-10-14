@@ -50,7 +50,7 @@ class RunRepository:
                 RETURNING 1
             )
             SELECT (SELECT mode FROM held), (SELECT seconds FROM wait), (SELECT count(*) FROM taken);
-            """,
+            """,  # nosec B608: SQL text is fixed in code; values are bound parameters
             {"workspace": workspace, "mode": mode, "cooldown": cooldown_seconds, "token": token})
         if held:
             return ("running", held)
@@ -79,7 +79,7 @@ class RunRepository:
                 RETURNING 1
             )
             SELECT (SELECT mode FROM held), (SELECT count(*) FROM taken);
-            """,
+            """,  # nosec B608: SQL text is fixed in code; values are bound parameters
             {"workspace": workspace, "mode": mode, "chain": chain, "token": token})
         return None if taken else held
 
@@ -95,6 +95,6 @@ class RunRepository:
             VALUES (%(workspace)s, %(to_mode)s, now(), %(token)s, false, %(chain)s)
             ON CONFLICT (workspace, mode) DO UPDATE SET running_since = now(), run_token = EXCLUDED.run_token,
                 confirmed = false, chain = EXCLUDED.chain;
-            """,
+            """,  # nosec B608: SQL text is fixed in code; values are bound parameters
             {"workspace": workspace, "from_mode": from_mode, "to_mode": to_mode, "chain": chain, "token": token},
             reply=False)

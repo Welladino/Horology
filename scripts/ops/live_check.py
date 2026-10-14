@@ -18,7 +18,7 @@ import argparse
 import asyncio
 import json
 import os
-import subprocess
+import subprocess  # nosec B404: fixed gcloud commands only
 import sys
 import time
 import webbrowser
@@ -117,7 +117,7 @@ def auth_for(name):
     metadata = OAuthClientMetadata(
         client_name="Horology live check", redirect_uris=[f"http://127.0.0.1:{CALLBACK_PORT}/callback"],
         grant_types=["authorization_code", "refresh_token"], response_types=["code"],
-        token_endpoint_auth_method="none", scope=spec["scope"])
+        token_endpoint_auth_method="none", scope=spec["scope"])  # nosec B106: not a password
     storage = FileTokenStorage(name)
     provider = OAuthClientProvider(spec["url"], metadata, storage,
                                    redirect_handler=open_browser, callback_handler=wait_for_callback)
@@ -160,7 +160,7 @@ def ts(value):
 
 def gcloud_logs(filter_, since):
     try:
-        out = subprocess.run(
+        out = subprocess.run(  # nosec B603 B607: fixed gcloud command as an argument list, no shell; gcloud is found on PATH by design
             ["gcloud", "--configuration=horology-view", "logging", "read", filter_, f"--project={PROJECT}",
              "--format=json", "--limit=200", "--freshness=1h"], capture_output=True, text=True)
     except FileNotFoundError:

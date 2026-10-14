@@ -25,7 +25,7 @@ def http_server_options(default_port, bind_variable, default_host):
     port = int(os.environ.get('PORT', str(default_port)))
     if not 1 <= port <= 65535:
         raise ValueError('PORT must be between 1 and 65535')
-    host = os.environ.get(bind_variable, '0.0.0.0' if os.environ.get('K_SERVICE') else default_host)
+    host = os.environ.get(bind_variable, '0.0.0.0' if os.environ.get('K_SERVICE') else default_host)  # nosec B104: Cloud Run serves on all interfaces
     return {'host': host, 'port': port, 'stateless_http': True, 'json_response': True}
 
 
@@ -48,7 +48,7 @@ def gateway_public_url():
 
 
 def document_graph_public_url():
-    return service_public_url('DOCUMENT_GRAPH_PUBLIC_URL', 8765, 'DOCUMENT_GRAPH_BIND', '0.0.0.0')
+    return service_public_url('DOCUMENT_GRAPH_PUBLIC_URL', 8765, 'DOCUMENT_GRAPH_BIND', '0.0.0.0')  # nosec B104: Cloud Run serves on all interfaces
 
 
 @dataclass(frozen=True)

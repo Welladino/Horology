@@ -61,7 +61,7 @@ def upgrade() -> None:
             END IF;
         END
         $$;
-        """
+        """  # nosec B608: DDL takes no bind parameters; role name is a constant and the password a validated operator setting
     )
     bind = op.get_bind()
     db_name = bind.engine.url.database

@@ -41,8 +41,8 @@ class SectionRepository:
             await cur.execute(
                 "INSERT INTO document_embeddings (document_id, embedding) VALUES (%s, %s::vector) "
                 "ON CONFLICT (document_id) DO UPDATE SET embedding = EXCLUDED.embedding; "
-                "DELETE FROM document_chunks WHERE document_id = %s; "
-                + (f"INSERT INTO document_chunks (document_id, chunk_index, content, embedding) VALUES {values};" if rows else ""),
+                "DELETE FROM document_chunks WHERE document_id = %s; "  # nosec B608: SQL text is fixed in code; values are bound parameters
+                + (f"INSERT INTO document_chunks (document_id, chunk_index, content, embedding) VALUES {values};" if rows else ""),  # nosec B608: SQL text is fixed in code; values are bound parameters
                 [document_id, vector_text(document_vector), document_id]
                 + [value for index, text, vector in rows for value in (document_id, index, text, vector)],
             )
