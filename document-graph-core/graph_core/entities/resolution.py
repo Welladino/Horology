@@ -5,7 +5,7 @@
 3. Judge: the LLM picks one of the shortlist, or none. No shortlist means new.
 Every decision is logged for review and later tuning.
 """
-from ..providers import embeddings, llm
+from ..ai import chat, embeddings
 from . import prompts
 
 SHORTLIST = 5
@@ -65,7 +65,8 @@ async def _judge(batch, passages):
             for c in mention["candidates"])
         blocks.append(f"Mention {position}: {mention['name']} [{mention['bucket']}] — {mention['description']}\n"
                       f"  Passage: {passage}\n  Candidates:\n{candidates}")
-    reply = await llm.complete_json(prompts.JUDGE_SYSTEM, "\n\n".join(blocks), "entity_matches", prompts.JUDGE_SCHEMA)
+    reply = await chat.complete_json(prompts.JUDGE_SYSTEM, "\n\n".join(blocks), "entity_matches", prompts.JUDGE_SCHEMA,
+                                    model=chat.JUDGE_MODEL)
     answers = {}
     for item in (reply or {}).get("decisions", []):  # a cut-off reply leaves every mention new
         position = int(item.get("mention", -1))
@@ -87,4 +88,5 @@ def _row(workspace, document_id, mention, decision, entity_id, confidence=None, 
             "description": mention["description"], "decision": decision, "entity_id": entity_id,
             "candidates": [{"id": c["id"], "name": c["name"], "similarity": round(float(c["similarity"]), 4)}
                            for c in mention.get("candidates", [])],
-            "confidence": confidence, "reason": reason, "model": llm.LLM_MODEL if decision != "exact" else None}
+            "confidence": confidence, "reason": reason,
+            "model": None if decision == "exact" else chat.JUDGE_MODEL if mention.get("candidates") else None}

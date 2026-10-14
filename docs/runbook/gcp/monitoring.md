@@ -107,6 +107,7 @@ Two SQL queries join each tool log to its Cloud Run request log by trace id:
 
 - `ops/gcp/monitoring/latency_calls.sql`: one row per tool call over the last 24 hours, with total server time, time in our code, the remainder, and a rule-based reason.
 - `ops/gcp/monitoring/latency_summary.sql`: per tool over 7 days, with call and error counts, typical and slow totals, and typical time in our code.
+- `ops/gcp/monitoring/graph_warnings.sql`: document-graph warnings and errors over 7 days, from the service and the sync job: failed rows and documents, topic placement, AI retries (`AI request retry 1 of 2 after timeout`), each with its safe error category. Only logs written after the 2026-10-15 JSON logging change appear.
 
 Paste one into **Logging → Log Analytics** (console.cloud.google.com/logs/analytics?project=horology-dev), run it, then **Save** it to keep it in the console. Queries are free. Times are measured at the server, so they leave out the network leg between the caller and Iowa; the live check below measures that. Tool calls made before the trace-id release have no match and say so.
 

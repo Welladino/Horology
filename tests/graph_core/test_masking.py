@@ -1,7 +1,7 @@
 """IP addresses are masked before text goes to an outside provider."""
 import pytest
 
-from graph_core.providers.masking import for_provider
+from graph_core.ai.masking import for_provider
 
 
 @pytest.mark.parametrize("text,expected", [

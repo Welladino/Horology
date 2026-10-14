@@ -5,6 +5,7 @@ All failures are injected; no provider, DB or paid requests are made.
 import asyncio
 import inspect
 import json
+import sys
 from unittest.mock import patch
 
 import httpx
@@ -39,7 +40,7 @@ def test_async_errors_are_sanitized_and_correlated(error, expected):
 
 
 def test_sync_success_does_not_log_document_content():
-    @observe('neon')
+    @observe('document_graph')
     def read_document(document_id: int) -> dict:
         return {'content': 'private document content'}
     with patch('horology_runtime.operations.logger.info') as log:
@@ -48,3 +49,16 @@ def test_sync_success_does_not_log_document_content():
     assert event['outcome'] == 'success'
     assert event['duration_ms'] >= 0
     assert 'private document content' not in str(event)
+
+
+def test_json_lines_carry_severity_and_leave_tracebacks_out():
+    import logging
+    from horology_runtime.logging import JsonLines
+    try:
+        raise RuntimeError('private document content')
+    except RuntimeError:
+        record = logging.LogRecord('graph_core.entities', logging.WARNING, __file__, 1,
+                                   'entities for document %s failed: %s', (41, 'timeout'), sys.exc_info())
+    line = json.loads(JsonLines().format(record))
+    assert line == {'severity': 'WARNING', 'logger': 'graph_core.entities',
+                    'message': 'entities for document 41 failed: timeout'}

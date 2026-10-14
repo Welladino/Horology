@@ -57,7 +57,7 @@ def test_topics_are_built_named_kept_and_extended(database):
                 newsletter = [await add(0, i, f"Newsletter {i}", domain="Newsletter") for i in range(3)]
                 pricing = [await add(1, 10 + i, f"Pricing {i}", doc_type="decision" if i == 0 else "research")
                            for i in range(3)]
-                with patch.object(naming.llm, "complete_json", fake):
+                with patch.object(naming.chat, "complete_json", fake):
                     first = await topics.rebuild(WS)
                     assert first["topics"] == 2 and first["new"] == 2 and first["named"] == 2
                     listed = await topics.list_topics(WS)
@@ -105,13 +105,13 @@ def test_a_failed_name_is_retried_on_the_next_rebuild(database):
                 for i in range(3):
                     await add(0, i, f"Newsletter {i}")
                     await add(1, 10 + i, f"Pricing {i}")
-                with patch.object(naming.llm, "complete_json", AsyncMock(side_effect=RuntimeError("down"))):
+                with patch.object(naming.chat, "complete_json", AsyncMock(side_effect=RuntimeError("down"))):
                     assert (await topics.rebuild(WS))["named"] == 0
                 unnamed = await topics.list_topics(WS)
                 assert unnamed and all(t["name"] == "(not named yet)" for t in unnamed)
                 count = iter(range(100))
                 namer = AsyncMock(side_effect=lambda *a, **k: {"name": f"Docs {next(count)}", "summary": "s"})
-                with patch.object(naming.llm, "complete_json", namer):
+                with patch.object(naming.chat, "complete_json", namer):
                     assert (await topics.rebuild(WS))["named"] == len(unnamed)
                 assert all(t["name"].startswith("Docs") for t in await topics.list_topics(WS))
             finally:

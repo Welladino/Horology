@@ -17,6 +17,8 @@ import os
 import sys
 
 from horology_runtime.database import Database
+from horology_runtime.error_handling import category
+from horology_runtime.logging import use_json_lines
 from horology_runtime.settings import DATABASE
 import graph_core
 
@@ -63,10 +65,10 @@ async def main():
                 print(json.dumps(result, default=str))
             except Exception as error:
                 failed = True
-                logging.getLogger("graph_sync").error("workspace %s failed: %s", workspace, type(error).__name__)
+                logging.getLogger("graph_sync").error("workspace %s failed: %s", workspace, category(error))
     return 1 if failed else 0
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s %(message)s")
+    use_json_lines(logging.INFO)
     sys.exit(asyncio.run(main()))

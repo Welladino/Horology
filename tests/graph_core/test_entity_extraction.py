@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 from graph_core.entities import extraction
 from graph_core.entities.buckets import normalize
-from graph_core.providers import llm
+from graph_core.ai import chat
 
 BUCKETS = ["company", "platform or tool", "other"]
 RELATIONS = ["competes with", "uses"]
@@ -32,7 +32,7 @@ def test_a_cut_off_reply_is_retried_in_halves_and_a_hopeless_section_skipped():
             return None
         return {"mentions": [{"name": f"Thing {shown[0]}", "bucket": "company", "suggested_bucket": "",
                               "description": "d", "sections": shown}], "relations": []}
-    with patch.object(llm, "complete_json", fake):
+    with patch.object(chat, "complete_json", fake):
         mentions, _ = run(extraction.extract("T", [(i, "text") for i in range(4)], BUCKETS, RELATIONS))
     assert sorted(m["name"] for m in mentions) == ["Thing 0", "Thing 1", "Thing 2"]
     assert calls[0] == [0, 1, 2, 3] and [3] in calls
@@ -50,7 +50,7 @@ def test_buckets_relations_and_duplicates_are_cleaned():
                 {"from": "Shopify", "relation": "loves", "to": "Webinars", "section": 1},
                 {"from": "Shopify", "relation": "uses", "to": "Nobody", "section": 1},
                 {"from": "shopify", "relation": "uses", "to": "Shopify", "section": 1}]}
-    with patch.object(llm, "complete_json", fake):
+    with patch.object(chat, "complete_json", fake):
         mentions, relations = run(extraction.extract("T", [(0, "a"), (1, "b")], BUCKETS, RELATIONS))
     by_key = {m["key"]: m for m in mentions}
     assert set(by_key) == {"shopify", "webinars"}

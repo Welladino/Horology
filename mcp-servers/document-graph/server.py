@@ -5,12 +5,14 @@ With DOCUMENT_GRAPH_OAUTH_ENABLED=true it uses the shared Google sign-in,
 its own token table and an email -> workspace map.
 """
 import json
+import logging
 import os
 from contextlib import asynccontextmanager
 
 from mcp.server.auth.settings import AuthSettings, ClientRegistrationOptions, RevocationOptions
 from mcp.server.mcpserver import MCPServer
 from horology_runtime.database import Database
+from horology_runtime.logging import use_json_lines
 from horology_runtime.operations import TraceMiddleware
 from horology_runtime.oauth.store import OAuthRepository
 from horology_runtime.settings import DATABASE, document_graph_public_url, http_server_options
@@ -74,6 +76,8 @@ def database_app(mcp, database, **options):
 
 
 def main():
+    # Warnings and errors only, as before; uvicorn keeps its own request log.
+    use_json_lines(logging.WARNING)
     database = Database(os.environ.get("DATABASE_URL_POOLED"), DATABASE.document_graph_pool_size)
     oauth_config = None
     if os.environ.get('DOCUMENT_GRAPH_OAUTH_ENABLED', '').lower() == 'true':

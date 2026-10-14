@@ -8,6 +8,7 @@ columns. Agent-written documents are never touched.
 import logging
 
 import httpx
+from horology_runtime.error_handling import category
 
 from graph_core.documents import fields, service as documents
 from graph_core.sections import service as sections
@@ -51,7 +52,7 @@ async def sync_workspace(google, workspace, spreadsheet_id):
             results[row.index_id] = ("not_shared", "", "")
         except Exception as error:
             # One bad row never stops the rest; details stay in the job log.
-            log.warning("row %s failed: %s", row.row_number, type(error).__name__)
+            log.warning("row %s failed: %s", row.row_number, category(error))
             results[row.index_id] = ("error", "", "")
 
     # Domain/Entity/Pipeline ID edits don't change the Drive revision: refresh them for unchanged rows.
@@ -109,7 +110,7 @@ async def _import(google, workspace, row, stored):
         await topics.place_document(workspace, doc_id)
     except Exception as error:
         # Topics never block a sync: the document is stored and searchable.
-        log.warning("row %s: topic placement failed: %s", row.row_number, type(error).__name__)
+        log.warning("row %s: topic placement failed: %s", row.row_number, category(error))
     return ("synced", doc_id, revision)
 
 

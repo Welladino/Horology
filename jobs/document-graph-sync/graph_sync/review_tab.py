@@ -11,6 +11,8 @@ Rows removed from the tab are kept; types aren't deleted.
 import logging
 from datetime import datetime, timedelta, timezone
 
+from horology_runtime.error_handling import category
+
 from graph_core.entities import service as entities
 
 from .index import text
@@ -96,6 +98,6 @@ async def run(google, spreadsheet_id, workspace):
         try:
             summary[name] = await step()
         except Exception as error:
-            log.warning("entities %s failed for %s: %s", name, workspace, type(error).__name__)
+            log.warning("entities %s failed for %s: %s", name, workspace, category(error))
             summary[name] = "failed"
     return summary

@@ -14,7 +14,7 @@ import pytest
 import graph_core
 from graph_core.documents import service as documents
 from graph_core.entities import service as entities
-from graph_core.providers import embeddings, llm
+from graph_core.ai import chat, embeddings
 from graph_core.sections import service as sections
 
 WS = "entities-test"
@@ -57,7 +57,7 @@ SAME = {"Kit": "ConvertKit", "SG": "Singapore"}  # what the judge decides
 
 
 def fake_llm(title_by_call):
-    async def complete(system, user, schema_name, schema):
+    async def complete(system, user, schema_name, schema, max_tokens=4096, model=None):
         if schema_name == "entities":
             title = next(t for t in EXTRACTIONS if f"Document title: {t}" in user)
             return EXTRACTIONS[title]
@@ -111,12 +111,13 @@ def test_entities_are_extracted_resolved_and_looked_up(database):
             graph_core.configure(db)
             try:
                 await clean(db)
-                with patch.object(llm, "complete_json", fake_llm(calls)), \
+                with patch.object(chat, "complete_json", fake_llm(calls)), \
                         patch.object(embeddings, "embed_many", AsyncMock(side_effect=fake_embed_many)), \
                         patch.object(embeddings, "embed", AsyncMock(side_effect=lambda t: fake_embed_many([t])[0])):
                     first = await add_document("Platforms", ["Beehiiv vs Substack.", "ConvertKit in Singapore. Webinars."])
                     one = await entities.process_pending(WS)
-                    assert one == {"workspace": WS, "documents": 1, "failed": 0, "new": 5, "matched": 0, "relations": 1}
+                    assert one == {"workspace": WS, "documents": 1, "failed": 0, "new": 5, "matched": 0, "relations": 1,
+                                   "stopped_early": False}
                     # Mentions are also checked against entities created earlier from the same document.
                     assert calls == ["entity_matches"]
 
@@ -178,11 +179,38 @@ def test_a_failed_extraction_is_retried(database):
             try:
                 await clean(db)
                 await add_document("Platforms", ["Beehiiv vs Substack.", "ConvertKit in Singapore."])
-                with patch.object(llm, "complete_json", AsyncMock(side_effect=RuntimeError("down"))):
+                with patch.object(chat, "complete_json", AsyncMock(side_effect=RuntimeError("down"))):
                     assert (await entities.process_pending(WS))["failed"] == 1
-                with patch.object(llm, "complete_json", fake_llm([])), \
+                with patch.object(chat, "complete_json", fake_llm([])), \
                         patch.object(embeddings, "embed_many", AsyncMock(side_effect=fake_embed_many)):
                     assert (await entities.process_pending(WS))["documents"] == 1
+            finally:
+                await clean(db)
+                graph_core.configure(None)
+    asyncio.run(run())
+
+
+def test_a_run_stops_after_failures_in_a_row(database, caplog):
+    from horology_runtime.database import Database
+    from horology_runtime.error_handling import SafeToolError
+
+    async def run():
+        async with Database(database, 2) as db:
+            graph_core.configure(db)
+            try:
+                await clean(db)
+                for number in range(entities.STOP_AFTER_FAILURES + 2):
+                    await add_document(f"Doc {number}", [f"Text {number}."])
+                # What observe raises when an OpenRouter call times out after its retries
+                timeout = SafeToolError("timeout", "test-request")
+                with patch.object(chat, "complete_json", AsyncMock(side_effect=timeout)):
+                    summary = await entities.process_pending(WS)
+                assert summary["failed"] == entities.STOP_AFTER_FAILURES and summary["stopped_early"] is True
+                assert "failed: timeout" in caplog.text and "SafeToolError" not in caplog.text
+                async with db.transaction() as conn, conn.cursor() as cur:
+                    await cur.execute("SELECT count(*) FROM entity_runs r JOIN documents d ON d.id = r.document_id "
+                                      "WHERE d.workspace = %s", (WS,))
+                    assert (await cur.fetchone())[0] == entities.STOP_AFTER_FAILURES  # the other two wait
             finally:
                 await clean(db)
                 graph_core.configure(None)

@@ -2,6 +2,8 @@
 import logging
 from collections import defaultdict
 
+from horology_runtime.error_handling import category
+
 from .. import database
 from ..documents import fields
 from ..sections import service as sections
@@ -54,7 +56,7 @@ async def _name_unnamed(workspace, plans_by_id):
         try:
             name, summary = await naming.name_topic([passages[key] for key in plan["central"] if key in passages], taken)
         except Exception as error:
-            log.warning("topic %s not named: %s", topic["id"], type(error).__name__)
+            log.warning("topic %s not named: %s", topic["id"], category(error))
             continue
         await repository.name(workspace, topic["id"], name, summary)
         taken.add(name)

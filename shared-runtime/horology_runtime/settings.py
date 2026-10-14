@@ -5,7 +5,8 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class TimeoutPolicy:
     gateway_http: int = 25
-    openrouter_http: int = 30
+    openrouter_http: int = 30  # embeddings
+    openrouter_chat_http: int = 90  # thinking models (2.5 Flash judge) can pass 30 s
     database_connect: int = 5
     supabase_statement_ms: int = 3000
     # Neon statement (10 s) and lock (3 s) timeouts are login defaults: alembic 20261014_001.

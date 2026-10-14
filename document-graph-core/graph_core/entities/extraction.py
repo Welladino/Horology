@@ -1,5 +1,5 @@
 """Find named things and their relationships in a document's sections with the LLM."""
-from ..providers import llm
+from ..ai import chat
 from . import prompts
 from .buckets import OTHER, normalize
 
@@ -66,7 +66,7 @@ async def _ask(title, group, buckets, relation_types):
     shown = "\n\n".join(f"Section {index}:\n{text}" for index, text in group)
     user = (f"Buckets: {', '.join(buckets)}\nRelationship types: {', '.join(relation_types)}\n\n"
             f"Document title: {title}\n\n{shown}")
-    reply = await llm.complete_json(prompts.EXTRACT_SYSTEM, user, "entities", prompts.EXTRACT_SCHEMA)
+    reply = await chat.complete_json(prompts.EXTRACT_SYSTEM, user, "entities", prompts.EXTRACT_SCHEMA)
     if reply is not None:
         return [(group, reply)]
     if len(group) == 1:

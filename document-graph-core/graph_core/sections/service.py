@@ -3,7 +3,7 @@ import math
 
 from .. import database
 from ..documents import fields
-from ..providers import embeddings
+from ..ai import embeddings
 from . import chunking
 from .repository import SectionRepository
 

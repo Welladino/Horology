@@ -20,7 +20,7 @@ from graph_sync import index, sync  # noqa: E402
 import graph_core  # noqa: E402
 from graph_core.documents import service as documents  # noqa: E402
 from graph_core.sections import service as sections  # noqa: E402
-from graph_core.providers import embeddings  # noqa: E402
+from graph_core.ai import embeddings  # noqa: E402
 from graph_core.documents.repository import DocumentRepository  # noqa: E402
 
 HEADER = ["Document ID", "Pipeline item", "Sequence", "Title", "Drive URL", "Workspace", "Domain", "Entity",

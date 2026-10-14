@@ -32,7 +32,7 @@ else:
     os.environ["DATABASE_URL_POOLED"] = "postgresql://test@127.0.0.1:1/test"
     importlib.import_module("document_graph.tools")
     # Shared graph logic is an installed package, not part of /app.
-    for module in ("graph_core.documents.service", "graph_core.sections.service", "graph_core.providers.embeddings"):
+    for module in ("graph_core.documents.service", "graph_core.sections.service", "graph_core.ai.embeddings", "graph_core.ai.chat"):
         importlib.import_module(module)
     # The sync job ships in the same image.
     importlib.import_module("graph_sync.sync")

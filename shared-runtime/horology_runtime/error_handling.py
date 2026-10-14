@@ -12,6 +12,10 @@ except ImportError:
     psycopg = None
     PoolTimeout = None
 
+class ProviderResponseError(RuntimeError):
+    """A provider answered, but not with what was asked for (wrong shape, cut off, empty)."""
+
+
 class SafeToolError(RuntimeError):
     """Only a category and correlation ID may reach an MCP client."""
     def __init__(self, category, request_id):
@@ -39,7 +43,7 @@ def category(error):
         if any(word in message for word in ('budget', 'limit exhausted')):
             return 'quota_denied'
         return 'permission_denied'
-    if isinstance(error, (json.JSONDecodeError, KeyError, IndexError)):
+    if isinstance(error, (ProviderResponseError, json.JSONDecodeError, KeyError, IndexError)):
         return 'invalid_provider_response'
     if isinstance(error, ValueError):
         return 'invalid_input'

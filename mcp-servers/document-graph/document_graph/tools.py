@@ -11,4 +11,4 @@ TOOLS = (graph.write_document, graph.link_documents, graph.get_document, graph.l
 
 def register_tools(mcp):
     for tool in TOOLS:
-        mcp.tool()(observe("neon")(tool))
+        mcp.tool()(observe("document_graph")(tool))

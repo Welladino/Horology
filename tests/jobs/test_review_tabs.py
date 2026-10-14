@@ -11,7 +11,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent / "jobs" / "document-gra
 sys.path.append(str(Path(__file__).parent.parent / "graph_core"))
 
 import graph_core  # noqa: E402
-from graph_core.providers import embeddings, llm  # noqa: E402
+from graph_core.ai import chat, embeddings  # noqa: E402
 from graph_sync import review_tab  # noqa: E402
 import test_entities_postgres as fixtures  # noqa: E402
 
@@ -49,7 +49,7 @@ def test_tabs_are_created_edited_and_rewritten(database):
             try:
                 await fixtures.clean(db)
                 await fixtures.add_document("Platforms", ["Beehiiv vs Substack.", "ConvertKit in Singapore. Webinars."])
-                with patch.object(llm, "complete_json", fixtures.fake_llm([])), \
+                with patch.object(chat, "complete_json", fixtures.fake_llm([])), \
                         patch.object(embeddings, "embed_many", AsyncMock(side_effect=fixtures.fake_embed_many)):
                     first = await review_tab.run(sheet, "sheet", WS)
                 assert first["extraction"]["documents"] == 1 and first["tab_rows"] == 5

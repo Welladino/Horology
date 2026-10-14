@@ -23,7 +23,8 @@ sys.path.append(str(GRAPH_ROOT))  # append: the gateway also has a top-level ser
 from document_graph import graph  # noqa: E402
 import graph_core  # noqa: E402
 from graph_core.documents import service as documents  # noqa: E402
-from graph_core.providers import embeddings  # noqa: E402
+from graph_core.ai import embeddings  # noqa: E402
+from graph_core.ai.openrouter import embeddings as openrouter_embeddings  # noqa: E402
 
 NOW = datetime(2026, 10, 13, tzinfo=timezone.utc)
 
@@ -179,10 +180,10 @@ class TestEmbed:
         """Regression test for the real bug: the model's un-truncated output
         is 3072 dims (exceeds pgvector's 2000-dim HNSW limit), fixed by
         explicitly requesting 768 via `dimensions`."""
-        monkeypatch.setattr(embeddings, "OPENROUTER_API_KEY", "sk-or-fake-key")
+        monkeypatch.setattr(openrouter_embeddings, "OPENROUTER_API_KEY", "sk-or-fake-key")
         response = MagicMock()
         response.json.return_value = {"data": [{"index": 0, "embedding": [0.1] * 768}]}
-        with patch.object(embeddings.httpx.AsyncClient, "post", AsyncMock(return_value=response)) as post:
+        with patch.object(openrouter_embeddings.httpx.AsyncClient, "post", AsyncMock(return_value=response)) as post:
             result = run(embeddings.embed("some document text"))
         assert len(result) == 768
         _, kwargs = post.call_args
@@ -192,7 +193,7 @@ class TestEmbed:
         assert kwargs["headers"]["Authorization"] == "Bearer sk-or-fake-key"
 
     def test_batches_sections_and_keeps_input_order(self, monkeypatch):
-        monkeypatch.setattr(embeddings, "OPENROUTER_API_KEY", "sk-or-fake-key")
+        monkeypatch.setattr(openrouter_embeddings, "OPENROUTER_API_KEY", "sk-or-fake-key")
         def reply(*args, json, **kwargs):
             response = MagicMock()
             # Answer out of order, as the API may; vectors carry their input text's length.
@@ -200,13 +201,13 @@ class TestEmbed:
                                                    for i in reversed(range(len(json["input"])))]}
             return response
         texts = ["x" * n for n in range(1, 41)]
-        with patch.object(embeddings.httpx.AsyncClient, "post", AsyncMock(side_effect=reply)) as post:
+        with patch.object(openrouter_embeddings.httpx.AsyncClient, "post", AsyncMock(side_effect=reply)) as post:
             vectors = run(embeddings.embed_many(texts))
         assert post.await_count == 2  # 32 + 8
         assert [v[0] for v in vectors] == [float(n) for n in range(1, 41)]
 
     def test_raises_without_api_key(self, monkeypatch):
-        monkeypatch.setattr(embeddings, "OPENROUTER_API_KEY", None)
+        monkeypatch.setattr(openrouter_embeddings, "OPENROUTER_API_KEY", None)
         with pytest.raises(RuntimeError, match="operation_failed; request_id="):
             run(embeddings.embed("text"))
 

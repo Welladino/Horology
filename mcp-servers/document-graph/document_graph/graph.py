@@ -9,6 +9,7 @@ from graph_core.documents.service import VALID_DOC_TYPES  # noqa: F401  (re-expo
 from graph_core.sections import service as sections
 from graph_core.topics import service as topics
 import logging
+from horology_runtime.error_handling import category
 
 from .integrations.cloud_run import client as cloud_run
 from .shared.workspace import current_workspace
@@ -137,7 +138,7 @@ async def auto_link_similar_documents(document_id: int, threshold: float = 0.85)
         result["sections_placed_in_topics"] = await topics.place_document(workspace, document_id)
     except Exception as error:
         # Topics never block search: the document is already embedded and linked.
-        log.warning("topic placement failed for %s: %s", document_id, type(error).__name__)
+        log.warning("topic placement failed for %s: %s", document_id, category(error))
         result["sections_placed_in_topics"] = 0
     return result
 

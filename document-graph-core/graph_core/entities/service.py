@@ -2,10 +2,12 @@
 import asyncio
 import logging
 
+from horology_runtime.error_handling import category
+
 from .. import database
 from ..documents import fields
 from ..documents import service as documents
-from ..providers import embeddings
+from ..ai import embeddings
 from ..sections import service as sections
 from . import buckets, extraction, resolution
 from .repository import EntityRepository
@@ -13,6 +15,7 @@ from .repository import EntityRepository
 log = logging.getLogger("graph_core.entities")
 RUN_LIMIT = 200  # documents per run; the rest wait for the next one
 EXTRACT_CONCURRENCY = 4  # documents extracted at once; resolution stays one document at a time
+STOP_AFTER_FAILURES = 5  # this many failed documents in a row means the provider is down: stop the run
 
 
 def _repository():
@@ -76,11 +79,14 @@ async def process_pending(workspace, limit=RUN_LIMIT):
     """Process every document whose sections changed since its last run (agent and sheet documents).
 
     Extraction runs EXTRACT_CONCURRENCY documents at a time; resolution follows one by one.
-    A failure marks that document 'failed' to retry next run; it stays searchable."""
+    A failure marks that document 'failed' to retry next run; it stays searchable. After
+    STOP_AFTER_FAILURES failures in a row the run stops; the rest stay pending for the next run."""
     repository = _repository()
     known = await types(workspace)
     pending = await repository.pending_documents(workspace, limit)
-    summary = {"workspace": workspace, "documents": 0, "failed": 0, "new": 0, "matched": 0, "relations": 0}
+    summary = {"workspace": workspace, "documents": 0, "failed": 0, "new": 0, "matched": 0, "relations": 0,
+               "stopped_early": False}
+    failures_in_a_row = 0
     gate = asyncio.Semaphore(EXTRACT_CONCURRENCY)
 
     async def extract_one(document_id):
@@ -92,6 +98,8 @@ async def process_pending(workspace, limit=RUN_LIMIT):
 
     step = EXTRACT_CONCURRENCY * 2  # extract a few ahead, then resolve them in order
     for start in range(0, len(pending), step):
+        if summary["stopped_early"]:
+            break
         chunk = pending[start:start + step]
         extracted = await asyncio.gather(*(extract_one(document_id) for document_id, _ in chunk))
         for (document_id, sections_hash), result in zip(chunk, extracted):
@@ -100,10 +108,16 @@ async def process_pending(workspace, limit=RUN_LIMIT):
                     raise result
                 counts = await _store(workspace, document_id, known, result)
             except Exception as error:
-                log.warning("entities for document %s failed: %s", document_id, type(error).__name__)
+                log.warning("entities for document %s failed: %s", document_id, category(error))
                 await repository.mark_run(document_id, sections_hash, "failed")
                 summary["failed"] += 1
+                failures_in_a_row += 1
+                if failures_in_a_row >= STOP_AFTER_FAILURES:
+                    log.warning("entities run stopped after %s failures in a row", failures_in_a_row)
+                    summary["stopped_early"] = True
+                    break
                 continue
+            failures_in_a_row = 0
             await repository.mark_run(document_id, sections_hash, "done")
             summary["documents"] += 1
             for key in ("new", "matched", "relations"):
