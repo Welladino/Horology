@@ -62,7 +62,7 @@ Graph mappings: DATABASE_URL_POOLED=horology-graph-db:1, OPENROUTER_API_KEY=horo
 - Cloud Run also advertises legacy hashed service URL aliases. Gateway auth metadata uses the verified endpoint above.
 - Both services have no service-level invoker bindings; callers need inherited project permission or an explicit later invoker grant. Neither has allUsers access.
 
-The historical private cloud test client file is now tests/mcp_servers/gateway/fixtures/private/client.cloud.json, ignored by Git and excluded from source uploads. It contains the assignment bearer only; a compatible test client must obtain a fresh Cloud Run identity token separately. The initial cloud assignment expires 24 hours after provisioning. Do not extend or reuse run IDs to reset counters. Generate a fresh operator-approved assignment for each future run, update versioned policy/token mappings and retain shared quota history.
+The historical private cloud test client file is now tests/manual/gateway/fixtures/private/client.cloud.json, ignored by Git and excluded from source uploads. It contains the assignment bearer only; a compatible test client must obtain a fresh Cloud Run identity token separately. The initial cloud assignment expires 24 hours after provisioning. Do not extend or reuse run IDs to reset counters. Generate a fresh operator-approved assignment for each future run, update versioned policy/token mappings and retain shared quota history.
 
 ## Inspect and roll back
 

@@ -29,7 +29,7 @@ python -m pytest tests/ -q -p no:cacheprovider --junitxml=/workspace/reports/tes
 python - <<'CHECK_SKIPS'
 import xml.etree.ElementTree as ET
 for case in ET.parse('/workspace/reports/tests.xml').iter('testcase'):
-    if case.find('skipped') is not None and not case.attrib.get('classname', '').startswith(('test_docker_stack.', 'tests.test_docker_stack.')):
+    if case.find('skipped') is not None and not case.attrib.get('classname', '').startswith(('system.', 'tests.system.')):  # Docker isn't available in CI
         raise SystemExit('Unexpected skipped test: ' + case.attrib.get('classname', '') + '.' + case.attrib.get('name', ''))
 CHECK_SKIPS
 python -m pip_audit --disable-pip --no-deps -r mcp-servers/mcp-gateway/requirements.txt

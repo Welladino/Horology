@@ -12,12 +12,11 @@ import asyncio
 import sys
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
-from pathlib import Path
 from unittest.mock import ANY, AsyncMock, MagicMock, patch
 
 import pytest
 
-GRAPH_ROOT = Path(__file__).parent.parent.parent / "mcp-servers" / "document-graph"
+from support.paths import DOCUMENT_GRAPH as GRAPH_ROOT  # noqa: E402
 sys.path.append(str(GRAPH_ROOT))  # append: the gateway also has a top-level server.py
 
 from document_graph import graph  # noqa: E402

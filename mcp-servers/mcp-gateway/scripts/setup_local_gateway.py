@@ -6,7 +6,7 @@ import secrets
 
 root = Path(__file__).resolve().parents[1]
 (root / 'config').mkdir(exist_ok=True)
-client_path = root.parents[1] / 'tests/mcp_servers/gateway/fixtures/private/client.local.json'
+client_path = root.parents[1] / 'tests/manual/gateway/fixtures/private/client.local.json'
 client_path.parent.mkdir(parents=True, exist_ok=True)
 if client_path.exists():
     raise SystemExit('Private local test client already exists; refusing to overwrite it')

@@ -2,13 +2,12 @@
 import asyncio
 import sys
 import time
-from pathlib import Path
 from unittest.mock import MagicMock
 
 import httpx
 import pytest
 
-GRAPH_ROOT = Path(__file__).parent.parent.parent / "mcp-servers" / "document-graph"
+from support.paths import DOCUMENT_GRAPH as GRAPH_ROOT  # noqa: E402
 sys.path.append(str(GRAPH_ROOT))  # append: the gateway also has a top-level server.py
 
 from document_graph.shared import workspace  # noqa: E402

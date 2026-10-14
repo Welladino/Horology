@@ -5,7 +5,6 @@ spread so sections differ. The LLM is faked.
 """
 import asyncio
 import math
-import os
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -31,14 +30,6 @@ async def add(theme, spread, title, doc_type="research", domain=None):
     vectors = [vector(theme, spread), vector(theme, spread + 1)]
     await sections.store(doc_id, ([title + " part 1", title + " part 2"], vectors, sections.mean(vectors)))
     return doc_id
-
-
-@pytest.fixture
-def database():
-    dsn = os.environ.get("GRAPH_TEST_RUNTIME_URL")
-    if not dsn:
-        pytest.skip("Disposable migrated Postgres with the horology_graph login is required")
-    return dsn
 
 
 def test_topics_are_built_named_kept_and_extended(database):

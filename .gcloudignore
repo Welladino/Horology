@@ -34,8 +34,8 @@
 !mcp-servers/mcp-gateway/integrations/**
 !mcp-servers/mcp-gateway/shared/
 !mcp-servers/mcp-gateway/shared/**
-!tests/mcp_servers/gateway/
-!tests/mcp_servers/gateway/**
+!tests/manual/gateway/
+!tests/manual/gateway/**
 !mcp-servers/mcp-gateway/config/
 !mcp-servers/mcp-gateway/config/policy.example.json
 !mcp-servers/mcp-gateway/config/policy.cloud.json

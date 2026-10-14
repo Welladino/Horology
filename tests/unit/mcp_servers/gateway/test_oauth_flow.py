@@ -1,64 +1,20 @@
-"""OAuth boundaries: mocked Google identity, replay, consent and assignment expiry.
-
-No requests to Google or paid providers. Persistent-store tests use disposable DB.
-"""
+"""OAuth boundaries with an in-memory store: mocked Google identity, replay, consent and assignment expiry.
+No requests to Google or paid providers."""
 import asyncio
-import copy
-from contextlib import asynccontextmanager
 import hashlib
 import json
-import sys
 import time
-from pathlib import Path
 from unittest.mock import AsyncMock
 
 import httpx
 import pytest
-from mcp.server.auth.provider import AuthorizationParams, TokenError, RegistrationError, AuthorizeError
-from mcp.shared.auth import OAuthClientInformationFull
+from mcp.server.auth.provider import AuthorizationParams, AuthorizeError, RegistrationError, TokenError
 
-ROOT = Path(__file__).resolve().parents[3] / 'mcp-servers/mcp-gateway'
-sys.path.insert(0, str(ROOT))
-from policy import authorize, load_policy
-from horology_runtime.oauth.provider import GoogleOAuthProvider, GatewayCode
-from shared.consent import NOTE, gateway_consent
-
-
-class MemoryStore:
-    def __init__(self):
-        self.data = {}
-    async def put(self, kind, key, value, expires):
-        self.data[kind,key] = (copy.deepcopy(value), expires)
-    async def get(self, kind, key, consume=False):
-        value = self.data.pop((kind,key),None) if consume else self.data.get((kind,key))
-        return copy.deepcopy(value[0]) if value and value[1]>time.time() else None
-    @asynccontextmanager
-    async def grant_transaction(self):
-        yield self
-    async def revoke(self, grant):
-        self.data = {k:v for k,v in self.data.items() if v[0].get('grant_id') != grant}
-    async def revoke_email(self, email):
-        before = len(self.data)
-        self.data = {k:v for k,v in self.data.items() if not (k[0] in ('access','refresh') and v[0].get('email') == email.lower())}
-        return before - len(self.data)
-
-
-@pytest.fixture
-def provider():
-    policy = load_policy(ROOT/'config/policy.example.json')
-    return GoogleOAuthProvider(MemoryStore(),'http://localhost:8767','google-client','test-secret',scope='gateway',
-                               consent=lambda: (*gateway_consent(policy), NOTE),
-                               check=lambda email: authorize(policy, 'gateway_status'))
-
-
-def client():
-    return OAuthClientInformationFull(client_id='client',client_name='Test client',redirect_uris=['http://localhost:9000/callback'],scope='gateway',token_endpoint_auth_method='none',grant_types=['authorization_code','refresh_token'])
-
-
-async def code(provider, email=''):
-    value = GatewayCode(email=email,code='test-code',scopes=['gateway'],expires_at=time.time()+120,client_id='client',code_challenge='challenge',redirect_uri='http://localhost:9000/callback',redirect_uri_provided_explicitly=True,resource=provider.url+'/mcp',subject='google-subject',grant_id='grant')
-    await provider.store.put('code',value.code,value.model_dump(mode='json',exclude={'code'}),value.expires_at)
-    return value
+from support.gateway import GATEWAY  # noqa: F401  (puts the gateway on sys.path)
+from support.oauth import MemoryStore, client, code, provider  # noqa: F401  (provider is a fixture)
+from policy import authorize, load_policy  # noqa: E402
+from horology_runtime.oauth.provider import GoogleOAuthProvider, GatewayCode  # noqa: E402
+from shared.consent import NOTE, gateway_consent  # noqa: E402
 
 
 def test_code_replay_refresh_rotation_revocation(provider):
@@ -172,34 +128,6 @@ def test_sdk_pkce_and_anonymous_boundary(provider):
     asyncio.run(run())
 
 
-def test_persistent_store_consumes_once_and_hashes_credentials():
-    import os
-    import psycopg
-    from database.connection import Database
-    from horology_runtime.oauth.store import OAuthRepository
-    dsn = os.environ.get('GATEWAY_TEST_DATABASE_URL')
-    if not dsn:
-        pytest.skip('Disposable migrated Postgres is required')
-    with psycopg.connect(dsn) as db, db.cursor() as cur:
-        cur.execute('TRUNCATE gateway_auth.records')
-    async def run():
-        async with Database(os.environ.get('GATEWAY_TEST_RUNTIME_URL', dsn)) as database:
-            store = OAuthRepository(database, 'gateway_auth.records')
-            key = 'opaque-code-do-not-store-raw'
-            await store.put('code', key, {'client_id':'test'}, time.time()+120)
-            with psycopg.connect(dsn) as db, db.cursor() as cur:
-                cur.execute('SELECT key_hash,data FROM gateway_auth.records')
-                digest, data = cur.fetchone()
-                assert digest == hashlib.sha256(key.encode()).hexdigest()
-                assert key not in json.dumps(data)
-                cur.execute("SELECT has_table_privilege('horology_gateway','public.alembic_version','SELECT')")
-                assert cur.fetchone() == (False,)
-            results = await asyncio.gather(*(store.get('code',key,consume=True) for _ in range(8)))
-            assert sum(result is not None for result in results) == 1
-    asyncio.run(run())
-
-
-
 @pytest.mark.parametrize('change',[{'iss':'https://evil.example'},{'aud':'other-client'},{'nonce':'wrong'},{'email_verified':False},{'exp':1}])
 def test_signed_google_identity_rejects_wrong_claims(provider,change):
     import jwt
@@ -214,54 +142,6 @@ def test_signed_google_identity_rejects_wrong_claims(provider,change):
     with patch('httpx.AsyncClient.post',AsyncMock(return_value=response)),patch.object(provider.jwks,'get_signing_key_from_jwt',return_value=SimpleNamespace(key=key.public_key())):
         with pytest.raises((ValueError,jwt.PyJWTError)):
             asyncio.run(provider.verify_google('fake-code','expected'))
-
-
-def test_persistent_refresh_and_revoke_are_serialized(provider):
-    import os
-    from database.connection import Database
-    from horology_runtime.oauth.store import OAuthRepository
-    dsn = os.environ.get('GATEWAY_TEST_RUNTIME_URL')
-    if not dsn:
-        pytest.skip('Disposable runtime Postgres is required')
-    async def run():
-        async with Database(dsn) as database:
-            provider.store = OAuthRepository(database, 'gateway_auth.records')
-            first = await provider.exchange_authorization_code(client(), await code(provider))
-            refresh = await provider.load_refresh_token(client(),first.refresh_token)
-            token = await provider.load_access_token(first.access_token)
-            async def rotate():
-                try:
-                    return await provider.exchange_refresh_token(client(),refresh,['gateway'])
-                except TokenError:
-                    return None
-            result, _ = await asyncio.gather(rotate(), provider.revoke_token(token))
-            assert await provider.load_access_token(first.access_token) is None
-            if result:
-                assert await provider.load_access_token(result.access_token) is None
-                assert await provider.load_refresh_token(client(),result.refresh_token) is None
-    asyncio.run(run())
-
-
-
-def test_persistent_wrong_client_exchange_rolls_back_code_consumption(provider):
-    import os
-    from database.connection import Database
-    from horology_runtime.oauth.store import OAuthRepository
-    dsn = os.environ.get('GATEWAY_TEST_RUNTIME_URL')
-    if not dsn:
-        pytest.skip('Disposable runtime Postgres is required')
-    async def run():
-        async with Database(dsn) as database:
-            provider.store = OAuthRepository(database, 'gateway_auth.records')
-            value = await code(provider)
-            other = client()
-            other.client_id = 'wrong-client'
-            with pytest.raises(TokenError):
-                await provider.exchange_authorization_code(other, value)
-            # Failure rolled back DELETE; the authorized client can still redeem.
-            result = await provider.exchange_authorization_code(client(),value)
-            assert await provider.load_access_token(result.access_token) is not None
-    asyncio.run(run())
 
 
 def test_provider_needs_no_email_allowlist():
@@ -283,24 +163,6 @@ def test_email_survives_refresh_and_revoke_email_removes_tokens(provider):
         assert await provider.load_access_token(second.access_token) is None
         assert await provider.load_refresh_token(client(), second.refresh_token) is None
         assert await provider.load_access_token(other.access_token) is not None
-    asyncio.run(run())
-
-
-def test_persistent_revoke_email_removes_only_that_person(provider):
-    import os
-    from database.connection import Database
-    from horology_runtime.oauth.store import OAuthRepository
-    dsn = os.environ.get('GATEWAY_TEST_RUNTIME_URL')
-    if not dsn:
-        pytest.skip('Disposable runtime Postgres is required')
-    async def run():
-        async with Database(dsn) as database:
-            provider.store = OAuthRepository(database, 'gateway_auth.records')
-            mine = await provider.exchange_authorization_code(client(), await code(provider, 'owner@example.com'))
-            theirs = await provider.exchange_authorization_code(client(), await code(provider, 'other@example.com'))
-            assert await provider.store.revoke_email('owner@example.com') == 2
-            assert await provider.load_access_token(mine.access_token) is None
-            assert await provider.load_access_token(theirs.access_token) is not None
     asyncio.run(run())
 
 

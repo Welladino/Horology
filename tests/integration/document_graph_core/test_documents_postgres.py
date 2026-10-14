@@ -1,6 +1,5 @@
 """Document links against a disposable migrated Postgres, as the horology_graph login."""
 import asyncio
-import os
 
 import pytest
 
@@ -8,14 +7,6 @@ import graph_core
 from graph_core.documents import service as documents
 
 WS = "documents-test"
-
-
-@pytest.fixture
-def database():
-    dsn = os.environ.get("GRAPH_TEST_RUNTIME_URL")
-    if not dsn:
-        pytest.skip("Disposable migrated Postgres with the horology_graph login is required")
-    return dsn
 
 
 def test_a_link_is_checked_and_added_in_one_statement(database):

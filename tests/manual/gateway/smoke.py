@@ -41,7 +41,7 @@ async def run(url, token):
 def main():
     root = Path(__file__).resolve().parents[3] / 'mcp-servers/mcp-gateway'
     if '--existing' in sys.argv:
-        client = json.loads((root.parents[1] / 'tests/mcp_servers/gateway/fixtures/private/client.local.json').read_text())
+        client = json.loads((root.parents[1] / 'tests/manual/gateway/fixtures/private/client.local.json').read_text())
         asyncio.run(run(client['url'], client['headers']['Authorization'].removeprefix('Bearer ')))
         return
     token = secrets.token_urlsafe(32)

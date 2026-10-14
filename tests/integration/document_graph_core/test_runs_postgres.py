@@ -1,7 +1,6 @@
 """Run claims, cooldown and follow-ups against a disposable migrated Postgres, as the horology_graph login.
 Starting the Cloud Run job is faked; the fake records the token each run is given."""
 import asyncio
-import os
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -10,14 +9,6 @@ import graph_core
 from graph_core.runs import cloud_run, service as runs
 
 WS = "runs-test"
-
-
-@pytest.fixture
-def database():
-    dsn = os.environ.get("GRAPH_TEST_RUNTIME_URL")
-    if not dsn:
-        pytest.skip("Disposable migrated Postgres with the horology_graph login is required")
-    return dsn
 
 
 def with_database(dsn, body):

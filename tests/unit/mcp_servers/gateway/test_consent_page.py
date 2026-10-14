@@ -3,8 +3,7 @@ import base64
 import hashlib
 import re
 import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 'mcp-servers/mcp-gateway'))
+from support.gateway import GATEWAY  # noqa: E402,F401  (puts the gateway on sys.path)
 from horology_runtime.oauth.consent_page import render_consent
 from shared.consent import NOTE, gateway_consent
 

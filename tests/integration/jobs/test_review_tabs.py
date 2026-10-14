@@ -1,21 +1,16 @@
 """Entities and Entity types tabs: created, edits applied, rewritten. Real Postgres, fake spreadsheet."""
 import asyncio
-import os
 import sys
-from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
-import pytest
+import graph_core
+from graph_core.ai import chat, embeddings
 
-sys.path.append(str(Path(__file__).parent.parent.parent / "jobs" / "document-graph-sync"))
-sys.path.append(str(Path(__file__).parent.parent / "graph_core"))
+from support.entities import WS, add_document, clean, fake_embed_many, fake_llm
+from support.paths import SYNC_JOB
 
-import graph_core  # noqa: E402
-from graph_core.ai import chat, embeddings  # noqa: E402
+sys.path.append(str(SYNC_JOB))
 from graph_sync import review_tab  # noqa: E402
-import test_entities_postgres as fixtures  # noqa: E402
-
-WS = fixtures.WS
 
 
 class FakeSheet:
@@ -31,14 +26,6 @@ class FakeSheet:
         self.tabs[tab] = [list(row) for row in rows]
 
 
-@pytest.fixture
-def database():
-    dsn = os.environ.get("GRAPH_TEST_RUNTIME_URL")
-    if not dsn:
-        pytest.skip("Disposable migrated Postgres with the horology_graph login is required")
-    return dsn
-
-
 def test_tabs_are_created_edited_and_rewritten(database):
     from horology_runtime.database import Database
     sheet = FakeSheet()
@@ -47,10 +34,10 @@ def test_tabs_are_created_edited_and_rewritten(database):
         async with Database(database, 2) as db:
             graph_core.configure(db)
             try:
-                await fixtures.clean(db)
-                await fixtures.add_document("Platforms", ["Beehiiv vs Substack.", "ConvertKit in Singapore. Webinars."])
-                with patch.object(chat, "complete_json", fixtures.fake_llm([])), \
-                        patch.object(embeddings, "embed_many", AsyncMock(side_effect=fixtures.fake_embed_many)):
+                await clean(db)
+                await add_document("Platforms", ["Beehiiv vs Substack.", "ConvertKit in Singapore. Webinars."])
+                with patch.object(chat, "complete_json", fake_llm([])), \
+                        patch.object(embeddings, "embed_many", AsyncMock(side_effect=fake_embed_many)):
                     first = await review_tab.run(sheet, "sheet", WS)
                 assert first["extraction"]["documents"] == 1 and first["tab_rows"] == 5
                 entities_tab = sheet.tabs[review_tab.ENTITIES_TAB]
@@ -75,10 +62,6 @@ def test_tabs_are_created_edited_and_rewritten(database):
                 assert all(row[6] == "" and row[7] == "" for row in rewritten.values())  # edits cleared
                 assert "rivals" in [row[2] for row in sheet.tabs[review_tab.TYPES_TAB]]
             finally:
-                await fixtures.clean(db)
+                await clean(db)
                 graph_core.configure(None)
     asyncio.run(run())
-
-
-def test_a_tab_with_a_different_header_is_left_alone():
-    assert review_tab._rows([["Something else"], ["1", "x"]], review_tab.ENTITY_HEADER) == []

@@ -32,7 +32,7 @@ The initializer creates three ignored, private files. It refuses to overwrite ex
 
 - `config/policy.local.json`: one shared JSON tool/resource policy with no assignment or access-expiry field.
 - `.env.local`: hashed gateway credential and initially blank provider credentials.
-- `tests/mcp_servers/gateway/fixtures/private/client.local.json`: localhost URL and raw bearer credential for the local MCP client. Keep this private.
+- `tests/manual/gateway/fixtures/private/client.local.json`: localhost URL and raw bearer credential for the local MCP client. Keep this private.
 
 Provider setup, performed by the operator in `.env.local`:
 
@@ -49,7 +49,7 @@ Never use the Supabase service-role key or a `postgres` login. Catalog queries i
 
 The example exposes only the Agent Register MCP range. Add specific guide/template IDs and bounded register ranges after verifying them. Do not replace the allowlist with unrestricted folder or account access. `auth` is always prohibited. No tool accepts SQL, an API endpoint, arbitrary provider capability, or credentials.
 
-Connect a local MCP client using the URL and Authorization header in `tests/mcp_servers/gateway/fixtures/private/client.local.json`. Local clients use configured bearer credentials. Cloud client OAuth is described below; native browser verification and external ingress approval remain pending.
+Connect a local MCP client using the URL and Authorization header in `tests/manual/gateway/fixtures/private/client.local.json`. Local clients use configured bearer credentials. Cloud client OAuth is described below; native browser verification and external ingress approval remain pending.
 
 ## Budget semantics
 
@@ -78,9 +78,9 @@ Run from the repository root:
 ```sh
 .venv/bin/python -m pytest tests/ -v
 # The HTTP smoke helper requires a disposable migrated GATEWAY_DATABASE_URL.
-.venv/bin/python tests/mcp_servers/gateway/smoke.py
-# Verify an existing local gateway using tests/mcp_servers/gateway/fixtures/private/client.local.json.
-.venv/bin/python tests/mcp_servers/gateway/smoke.py --existing
+.venv/bin/python tests/manual/gateway/smoke.py
+# Verify an existing local gateway using tests/manual/gateway/fixtures/private/client.local.json.
+.venv/bin/python tests/manual/gateway/smoke.py --existing
 ```
 
 Provider calls are mocked. Quota/OAuth persistence checks require disposable PostgreSQL and automatically skip without its explicit test DSNs. Native HTTP smoke makes no paid-provider requests. Scheduled-runtime verification remains pending; spending caps reset by UTC day/calendar month; no schedule is configured by these files.
@@ -89,7 +89,7 @@ Provider calls are mocked. Quota/OAuth persistence checks require disposable Pos
 
 `server.py` assembles the authenticated MCP server. Each integration registers its tools through `tools.py`; `shared/access.py` applies shared JSON authorization through `policy.py` and awaits the quota repository. Fixed provider operations and provider-specific scope checks live in each integration’s `client.py`. Package `__init__.py` files contain only package descriptions. `shared/http.py` bounds transport responses and disables redirects and environment proxies; `shared/text.py` sanitizes bounded output. The three active provider integrations ship in one Docker image and use one MCP endpoint. GitHub/Google adapters are parked outside this runtime.
 
-Runtime policy examples and private local/cloud policy candidates live under `config/`; private manual-test clients live under `tests/mcp_servers/gateway/fixtures/private/`; the initializer lives under `scripts/`; unit checks and the MCP smoke client live under the repository’s `tests/mcp_servers/gateway/`. Docker files and `.env.local` remain at the gateway root.
+Runtime policy examples and private local/cloud policy candidates live under `config/`; private manual-test clients live under `tests/manual/gateway/fixtures/private/`; the initializer lives under `scripts/`; tests live under the repository’s `tests/unit/mcp_servers/gateway/` and `tests/integration/mcp_servers/gateway/`, and the MCP smoke client under `tests/manual/gateway/`. Docker files and `.env.local` remain at the gateway root.
 
 
 ## Neon quota schema setup
@@ -142,7 +142,7 @@ GitHub and Google Drive/Docs/Sheets adapters were removed on 2026-10-13 in favou
 
 The active gateway exposes 13 tools: status, Supabase metadata/performance, capped Tavily search/extraction and fixed Firecrawl scrape/Alexandria reads. Google-backed MCP identity OAuth remains active; it grants no Google document access. Retired provider credentials remain only in the ignored, untracked `placeholders/connectors/.env.local` until the operator revokes them; the cloud `GITHUB_TOKEN` binding is removed by the next gateway release.
 
-Tests and the local MCP smoke helper live at `tests/mcp_servers/gateway/` in the repository root. No Cloud Build or deployment was run for this extraction.
+Tests live at `tests/unit/mcp_servers/gateway/` and `tests/integration/mcp_servers/gateway/` in the repository root, and the local MCP smoke helper at `tests/manual/gateway/`. No Cloud Build or deployment was run for this extraction.
 
 ## Assignment removal release dependency
 
@@ -163,7 +163,7 @@ database/
 
 Repositories own SQL: quotas reserve shared daily/monthly credits under the coordinator row lock; cache reads/writes client-scoped JSON with a one-hour TTL; OAuth stores hashed opaque credentials and preserves advisory-lock transactions for code redemption, refresh rotation and grant revocation. These are SQL connections through the Neon pooled host, not REST CRUD. The separate Supabase metadata adapter, document-graph server and Alembic migrations retain their existing drivers.
 
-`setup_local_gateway.py` generates the local bearer token with `secrets.token_urlsafe(32)`, puts its SHA-256 hash in `.env.local`, and saves the raw token in ignored mode-0600 `tests/mcp_servers/gateway/fixtures/private/client.local.json` for manual tests. `tests/mcp_servers/gateway/fixtures/private/client.cloud.json` is an earlier private cloud-test client configuration; it is not a provider credential or the OAuth connection managed by Codex/ChatGPT. Neither private JSON file is packaged or uploaded.
+`setup_local_gateway.py` generates the local bearer token with `secrets.token_urlsafe(32)`, puts its SHA-256 hash in `.env.local`, and saves the raw token in ignored mode-0600 `tests/manual/gateway/fixtures/private/client.local.json` for manual tests. `tests/manual/gateway/fixtures/private/client.cloud.json` is an earlier private cloud-test client configuration; it is not a provider credential or the OAuth connection managed by Codex/ChatGPT. Neither private JSON file is packaged or uploaded.
 
 This refactor is local only. Cloud Build, deployment and production migrations have not run.
 
@@ -172,7 +172,7 @@ This refactor is local only. Cloud Build, deployment and production migrations h
 - `config/policy.example.json` is tracked runtime policy documentation/default setup input, also used by mocked tests. It is not a private credential.
 - `config/policy.local.json` is ignored operator configuration mounted by local Docker Compose at `/config/policy.json`. It is runtime configuration, not a test fixture.
 - `config/policy.cloud.json` is the tracked cloud policy. It holds no credentials and is copied into the image at `/config/policy.json`, where `GATEWAY_POLICY` points. Changing it needs a rebuild and deploy; there is no policy secret for new revisions.
-- `tests/mcp_servers/gateway/fixtures/private/client.{local,cloud}.json` contain private manual-test bearer credentials. Git and Cloud Build source exclude this directory; runtime images do not package tests. OAuth clients manage their own tokens independently.
+- `tests/manual/gateway/fixtures/private/client.{local,cloud}.json` contain private manual-test bearer credentials. Git and Cloud Build source exclude this directory; runtime images do not package tests. OAuth clients manage their own tokens independently.
 
 Psycopg 3 handles everything: gateway Neon persistence, the Supabase metadata adapter (read-only session, `verify-full` TLS, no prepared statements for the pooler), document-graph, Alembic (`alembic/env.py` selects the `postgresql+psycopg` driver for any URL form), CI and tests. Psycopg 2 was removed on 2026-10-13.
 

@@ -12,7 +12,7 @@ Covers:
 - The Hermes dashboard requires auth (a bare request gets redirected,
   not served)
 
-Unlike tests/mcp_servers/ (mocked, no Docker required), THIS suite
+Unlike tests/unit/ (mocked, no Docker required), THIS suite
 requires Docker Desktop running and `.env` populated with real
 credentials - it drives the real `docker compose` CLI, same commands
 used by hand throughout this project's development. Skipped
@@ -31,12 +31,11 @@ Source under test: docker-compose.yml and mcp-servers/document-graph/compose*.ya
 import json
 import subprocess
 import time
-from pathlib import Path
 
 import httpx
 import pytest
 
-REPO_ROOT = Path(__file__).parent.parent
+from support.paths import REPO as REPO_ROOT  # noqa: E402
 COMPOSE_FILE = REPO_ROOT / "docker-compose.yml"
 
 

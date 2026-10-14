@@ -1,8 +1,7 @@
 """Shared public HTTPS boundaries; DNS and Firecrawl calls are mocked."""
 import asyncio
 import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "mcp-servers/mcp-gateway"))
+from support.gateway import GATEWAY  # noqa: E402,F401  (puts the gateway on sys.path)
 from unittest.mock import AsyncMock, patch
 import pytest
 from horology_runtime.urls import UnsafeURL, validate_public_https_url

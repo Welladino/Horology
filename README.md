@@ -51,7 +51,7 @@ Full setup detail (persona syncing, cron scripts, troubleshooting): [`docs/runbo
 | `mcp-servers/` | The two purpose-built MCP servers (`document-graph`, `github-monitor`) — each its own Dockerfile, `requirements.txt`, and credential. |
 | `alembic/` | Postgres migrations for the document graph (Neon). Workflow: [`docs/runbook/db/alembic_workflow.md`](docs/runbook/db/alembic_workflow.md). |
 | `scripts/` | Cron `--script` files, synced into the container the same way as personas. |
-| `tests/` | `tests/mcp_servers/` (mocked, no Docker) and `tests/test_docker_stack.py` (real Compose stack, auto-skips if Docker isn't up). Run before shipping any change to an MCP server or `docker-compose.yml`: `python3 -m pytest tests/ -v`. See [`docs/runbook/testing/running_tests_and_audits.md`](docs/runbook/testing/running_tests_and_audits.md). |
+| `tests/` | By kind: `tests/unit/` (no database or Docker), `tests/integration/` (a disposable migrated Postgres; skipped without it) and `tests/system/` (the real Compose stack; skipped without Docker). See [`tests/README.md`](tests/README.md). Run before shipping any change to an MCP server or `docker-compose.yml`: `python3 -m pytest tests/ -v`. See [`docs/runbook/testing/running_tests_and_audits.md`](docs/runbook/testing/running_tests_and_audits.md). |
 | `docs/architecture/` | Standing reference, current state, no history — start here (see above). |
 | `docs/planning/notes/` & `docs/planning/research/` | Dated trail of *why* the system looks the way it does — check here before assuming something is arbitrary. |
 | `docs/runbook/` | Copy-paste-ready commands for everything operational. |

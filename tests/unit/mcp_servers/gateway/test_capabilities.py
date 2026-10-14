@@ -4,12 +4,10 @@ All external provider calls are mocked; real Postgres accounting is tested elsew
 """
 import asyncio
 import sys
-from pathlib import Path
 from unittest.mock import AsyncMock, patch
 import pytest
 
-ROOT = Path(__file__).resolve().parents[3] / 'mcp-servers/mcp-gateway'
-sys.path.insert(0, str(ROOT))
+from support.gateway import GATEWAY as ROOT  # noqa: E402  (puts the gateway on sys.path)
 from integrations.firecrawl import client_alexandria as alexandria, tools as firecrawl_tools
 from integrations.tavily import tools as tavily_tools, client as tavily
 from policy import Denied, load_policy
