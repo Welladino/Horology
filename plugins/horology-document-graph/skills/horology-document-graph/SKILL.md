@@ -21,6 +21,8 @@ Search first, so work builds on what exists instead of repeating it:
 3. Use `get_related_documents` on a key document to find its links: `supersedes` (newer version), `related_to` (similar content), and named links such as `informed_by` or `contradicts`.
 4. `list_documents` (optionally by `doc_type`) shows the newest documents when no search term fits.
 
+Results carry each document's `domain`, `business_entity` (the Document Index "Entity", e.g. a named newsletter or store) and `pipeline_id`. Pass `domain` to `search_documents` or `list_documents` to stay within one domain (any spelling: `Newsletter` or `newsletter`). Use `pipeline_id` to go from a result to its Pipeline item, decisions and other documents.
+
 Prefer the newest version: if a document is superseded, follow the link and use the newer one, noting the older only for history. A document's `doc_type` is one of: research, direction, plan, decision, report, brand_guide, guide, template, pipeline, content, analysis, recommendation.
 
 Search reaches only documents in the graph. A missing result does not prove nothing exists: the work may be in Drive with Graph Inclusion FALSE, or not indexed yet. Say what you searched and what remains unchecked.
@@ -30,6 +32,7 @@ Search reaches only documents in the graph. A missing result does not prove noth
 Drive plus a Document Index row stays the main record for finished deliverables, under the Welladino workflow skills. Use `write_document` for agent output that should be findable but has no Drive document, such as an analysis note or a summary of findings:
 
 - Write the full content so it reads standalone. Set `created_by_agent` to your agent or skill name, and choose the closest `doc_type`.
+- Pass `domain` and the permanent `pipeline_id` of the item you're working on, when there is one.
 - Set `supersedes_id` when it replaces an earlier document's conclusion.
 - Then call `auto_link_similar_documents` with the new id. It splits the document into searchable sections, embeds them and links similar documents; until it runs, search can't find the document. Use `link_documents` for a specific known relationship.
 - In your summary, report the new document id and any links created. A similarity of 0.90 or more usually means a near-duplicate; say so instead of presenting it as new work.

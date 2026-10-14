@@ -23,6 +23,8 @@ async def write_document(
     content: str,
     created_by_agent: str,
     supersedes_id: int | None = None,
+    domain: str | None = None,
+    pipeline_id: int | None = None,
 ) -> dict:
     """Write a new document to the document graph in your workspace.
 
@@ -30,10 +32,12 @@ async def write_document(
     brand_guide, guide, template, pipeline, content, analysis, recommendation.
     Use supersedes_id to link this document as replacing an earlier one
     (creates a version chain rather than an orphaned duplicate).
+    Pass domain (e.g. Welladino, Newsletter) and the permanent Pipeline ID
+    of the item you are working on when there is one.
     Returns the new document's id.
     """
     new_id, created_at = await documents.write_agent_document(
-        current_workspace(), doc_type, title, content, created_by_agent, supersedes_id)
+        current_workspace(), doc_type, title, content, created_by_agent, supersedes_id, domain, pipeline_id)
     return {"id": new_id, "created_at": created_at.isoformat()}
 
 
@@ -58,16 +62,16 @@ async def get_document(id: int) -> dict:
     return _iso([row])[0]
 
 
-async def list_documents(doc_type: str | None = None, limit: int = 20) -> list[dict]:
-    """List documents, most recent first, optionally filtered by doc_type.
+async def list_documents(doc_type: str | None = None, limit: int = 20, domain: str | None = None) -> list[dict]:
+    """List documents, most recent first, optionally filtered by doc_type and domain.
 
-    Returns title/metadata only, not full content — use get_document for
-    the full text of a specific one.
+    Returns title/metadata only (including domain, business_entity and
+    pipeline_id), not full content — use get_document for the full text.
     """
-    return _iso(await documents.list_recent(current_workspace(), doc_type, max(1, min(limit, 100))))
+    return _iso(await documents.list_recent(current_workspace(), doc_type, max(1, min(limit, 100)), domain))
 
 
-async def search_documents(query: str, limit: int = 5, passages: int = 2) -> list[dict]:
+async def search_documents(query: str, limit: int = 5, passages: int = 2, domain: str | None = None) -> list[dict]:
     """Find documents by meaning: "what have we done on pricing?".
 
     Searches every section of every document in your workspace and returns
@@ -75,11 +79,12 @@ async def search_documents(query: str, limit: int = 5, passages: int = 2) -> lis
     similarity score (0-1, from its best section) and up to `passages`
     (1-3) matching sections of about 2,000 characters each, with their
     section number. Read the passages first; use get_document only when you
-    need the whole text.
+    need the whole text. Pass domain (e.g. Newsletter) to search one domain;
+    results include each document's domain, business_entity and pipeline_id.
     """
     if not query.strip():
         raise ValueError("query must not be empty")
-    return await sections.search_passages(current_workspace(), query, max(1, min(limit, 20)), max(1, min(passages, 3)))
+    return await sections.search_passages(current_workspace(), query, max(1, min(limit, 20)), max(1, min(passages, 3)), domain)
 
 
 async def get_related_documents(document_id: int) -> list[dict]:

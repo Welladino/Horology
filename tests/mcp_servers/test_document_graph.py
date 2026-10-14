@@ -84,7 +84,18 @@ class TestWriteDocument:
         db.one.append((7, NOW))
         run(graph.write_document(doc_type="plan", title="t", content="c", created_by_agent="a"))
         sql, params = db.executed[-1]
-        assert "'agent'" in sql and params[-1] == "welladino"
+        assert "'agent'" in sql and params[5] == "welladino" and params[-2:] == (None, None)
+
+    def test_stores_domain_and_pipeline_id_in_normal_form(self, db):
+        db.one.append((7, NOW))
+        run(graph.write_document(doc_type="plan", title="t", content="c", created_by_agent="a",
+                                 domain="Article Aggregator", pipeline_id=12.0))
+        assert db.executed[-1][1][-2:] == ("article-aggregator", "12")
+
+    def test_rejects_a_non_numeric_pipeline_id_before_writing(self, db):
+        with pytest.raises(ValueError, match="Pipeline ID must be a number"):
+            run(graph.write_document(doc_type="plan", title="t", content="c", created_by_agent="a", pipeline_id="PL-7"))
+        assert db.executed == []
 
     def test_supersedes_must_be_in_workspace(self, db):
         db.one.append((0,))
@@ -111,6 +122,15 @@ class TestWorkspaceScoping:
         db.one.append((1,))
         with pytest.raises(ValueError, match="Both documents must exist"):
             run(graph.link_documents(1, 2, "informed_by"))
+
+
+class TestDomainFilter:
+    def test_list_and_search_filter_by_normalised_domain(self, db):
+        run(graph.list_documents(domain="Newsletter"))
+        assert db.executed[-1][1][3:5] == ("newsletter", "newsletter")
+        with patch.object(embeddings, "embed", AsyncMock(return_value=[0.5] * 768)):
+            run(graph.search_documents("growth", domain="newsletter"))
+        assert db.executed[-1][1][2:4] == ("newsletter", "newsletter")
 
 
 class TestListDocuments:

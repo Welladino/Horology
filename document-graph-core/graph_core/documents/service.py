@@ -1,5 +1,6 @@
 """Document rows, document-to-document links and Document Index bookkeeping."""
 from .. import database
+from . import fields
 from ..sections import service as sections
 from .repository import DocumentRepository, LinkRepository
 
@@ -27,22 +28,25 @@ async def all_exist(workspace, ids):
     return await _documents().count_existing(workspace, ids) == len(ids)
 
 
-async def write_agent_document(workspace, doc_type, title, content, created_by_agent, supersedes_id=None):
+async def write_agent_document(workspace, doc_type, title, content, created_by_agent, supersedes_id=None,
+                               domain=None, pipeline_id=None):
     """Store an agent document; returns (id, created_at). Not searchable until embedded."""
     check_doc_type(doc_type)
+    pipeline_id = fields.pipeline_id(pipeline_id)  # raises before anything is stored
     if supersedes_id is not None and not await all_exist(workspace, [supersedes_id]):
         raise ValueError(f"No document with id {supersedes_id}")
-    return await _documents().insert_agent_document(workspace, doc_type, title, content, created_by_agent, supersedes_id)
+    return await _documents().insert_agent_document(workspace, doc_type, title, content, created_by_agent, supersedes_id,
+                                                    fields.domain(domain), pipeline_id)
 
 
 async def get(workspace, document_id):
     return await _documents().get(workspace, document_id)
 
 
-async def list_recent(workspace, doc_type, limit):
+async def list_recent(workspace, doc_type, limit, domain=None):
     if doc_type is not None:
         check_doc_type(doc_type)
-    return await _documents().list(workspace, doc_type, limit)
+    return await _documents().list(workspace, doc_type, limit, fields.domain(domain))
 
 
 async def related(workspace, document_id):
@@ -93,12 +97,23 @@ async def sheet_revisions(workspace):
     return {key: (doc_id, revision if doc_id in embedded else None) for key, (doc_id, revision) in stored.items()}
 
 
-async def store_sheet_document(workspace, index_document_id, drive_file_id, drive_url, doc_type, title, content, revision, embedded):
+async def store_sheet_document(workspace, index_document_id, drive_file_id, drive_url, doc_type, title, content, revision,
+                               embedded, domain=None, business_entity=None, pipeline_id=None):
     """Insert or replace one sheet document with its already-computed embeddings; returns its graph id."""
     doc_id = await _documents().upsert_sheet_document(
-        workspace, index_document_id, drive_file_id, drive_url, doc_type, title, content, revision)
+        workspace, index_document_id, drive_file_id, drive_url, doc_type, title, content, revision,
+        fields.domain(domain), fields.business_entity(business_entity), fields.pipeline_id(pipeline_id))
     await sections.store(doc_id, embedded)
     return doc_id
+
+
+async def update_sheet_fields(workspace, rows):
+    """Refresh Domain/Entity/Pipeline ID for already-imported rows without re-embedding.
+
+    rows: [(index_document_id, domain, business_entity, pipeline_id)] as read from
+    the sheet. Returns the index ids whose fields changed."""
+    normal = [(index_id, fields.domain(d), fields.business_entity(e), fields.pipeline_id(p)) for index_id, d, e, p in rows]
+    return await _documents().update_sheet_fields(workspace, normal)
 
 
 async def set_supersedes(workspace, newer_id, older_id):

@@ -35,19 +35,20 @@ class SectionRepository:
                 [(document_id, i, text, vector_text(vector)) for i, (text, vector) in enumerate(zip(sections, section_vectors))],
             )
 
-    async def nearest_sections(self, workspace, embedding, limit):
-        """The closest sections in the workspace, best first, with their documents."""
+    async def nearest_sections(self, workspace, embedding, limit, domain=None):
+        """The closest sections in the workspace (optionally one domain), best first, with their documents."""
         vector = vector_text(embedding)
         async with self.database.transaction() as conn, conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(
                 """
                 SELECT d.id, d.doc_type, d.title, d.created_by_agent, d.supersedes_id, d.source, d.drive_url, d.created_at,
+                       d.domain, d.business_entity, d.pipeline_id,
                        c.chunk_index, c.content AS passage, 1 - (c.embedding <=> %s::vector) AS similarity
                 FROM document_chunks c JOIN documents d ON d.id = c.document_id
-                WHERE d.workspace = %s
+                WHERE d.workspace = %s AND (%s::text IS NULL OR d.domain = %s)
                 ORDER BY c.embedding <=> %s::vector LIMIT %s
                 """,
-                (vector, workspace, vector, limit),
+                (vector, workspace, domain, domain, vector, limit),
             )
             return await cur.fetchall()
 

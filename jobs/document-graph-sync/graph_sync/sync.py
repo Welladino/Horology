@@ -9,13 +9,23 @@ import logging
 
 import httpx
 
-from graph_core.documents import service as documents
+from graph_core.documents import fields, service as documents
 from graph_core.sections import service as sections
 
 from . import index
 from .google import INDEXABLE_TYPES
 
 log = logging.getLogger("graph_sync")
+
+
+def _fields(row):
+    """(domain, business_entity, pipeline_id) for a row; a malformed Pipeline ID is dropped, not fatal."""
+    try:
+        pipeline_id = fields.pipeline_id(row.pipeline_id)
+    except ValueError:
+        log.warning("row %s: Pipeline ID %r is not a number; stored without one", row.row_number, row.pipeline_id)
+        pipeline_id = None
+    return row.domain, row.business_entity, pipeline_id
 
 
 class NotShared(Exception):
@@ -43,6 +53,10 @@ async def sync_workspace(google, workspace, spreadsheet_id):
             log.warning("row %s failed: %s", row.row_number, type(error).__name__)
             results[row.index_id] = ("error", "", "")
 
+    # Domain/Entity/Pipeline ID edits don't change the Drive revision: refresh them for unchanged rows.
+    unchanged = [(row.index_id, *_fields(row)) for row in rows if results.get(row.index_id, ("",))[0] == "unchanged"]
+    refreshed = await documents.update_sheet_fields(workspace, unchanged)
+
     # results holds only rows marked TRUE. Anything else imported earlier (now
     # FALSE or gone from the sheet) is removed; a row that errored keeps its old copy.
     removed = await documents.delete_sheet_documents(workspace, [key for key in stored if key not in results])
@@ -56,7 +70,8 @@ async def sync_workspace(google, workspace, spreadsheet_id):
                "unchanged": sum(1 for r in results.values() if r[0] == "unchanged"),
                "errors": sum(1 for r in results.values() if r[0] == "error"),
                "not_shared": sum(1 for r in results.values() if r[0] == "not_shared"),
-               "removed": len(removed)}
+               "removed": len(removed),
+               "fields_updated": len(refreshed)}
     log.info("sync finished %s", summary)
     return summary
 
@@ -84,8 +99,10 @@ async def _import(google, workspace, row, stored):
     # Embed before storing anything: if embedding fails, the graph is unchanged
     # and the row shows error rather than a document search can never find.
     embedded = await sections.embed_document(row.title, content)
+    domain, business_entity, pipeline_id = _fields(row)
     doc_id = await documents.store_sheet_document(
-        workspace, row.index_id, file_id, row.drive_url, row.doc_type, row.title, content, revision, embedded)
+        workspace, row.index_id, file_id, row.drive_url, row.doc_type, row.title, content, revision, embedded,
+        domain, business_entity, pipeline_id)
     await documents.link_similar(workspace, doc_id)
     return ("synced", doc_id, revision)
 

@@ -2,6 +2,7 @@
 import math
 
 from .. import database
+from ..documents import fields
 from ..providers import embeddings
 from . import chunking
 from .repository import SectionRepository
@@ -50,11 +51,11 @@ async def similar_documents(workspace, document_id):
     return await _repository().similar_to(workspace, document_id)
 
 
-async def search_passages(workspace, query, limit, passages):
+async def search_passages(workspace, query, limit, passages, domain=None):
     """Closest documents to the query, best section first, each with its top passages."""
     vector = await embeddings.embed(query)
     # Sections are ranked across documents; fetch enough to fill `limit` documents.
-    sections = await _repository().nearest_sections(workspace, vector, min(limit * 8, 200))
+    sections = await _repository().nearest_sections(workspace, vector, min(limit * 8, 200), fields.domain(domain))
     results = {}
     for row in sections:
         similarity = round(float(row.pop("similarity")), 4)

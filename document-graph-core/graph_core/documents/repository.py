@@ -1,22 +1,25 @@
 """Document rows and document-to-document links; every document query names its workspace."""
 from psycopg.rows import dict_row
 
-SUMMARY_COLUMNS = "id, doc_type, title, created_by_agent, supersedes_id, source, drive_url, created_at"
+SUMMARY_COLUMNS = ("id, doc_type, title, created_by_agent, supersedes_id, source, drive_url, created_at, "
+                   "domain, business_entity, pipeline_id")
 
 
 class DocumentRepository:
     def __init__(self, database):
         self.database = database
 
-    async def insert_agent_document(self, workspace, doc_type, title, content, created_by_agent, supersedes_id):
+    async def insert_agent_document(self, workspace, doc_type, title, content, created_by_agent, supersedes_id,
+                                    domain=None, pipeline_id=None):
         async with self.database.transaction() as conn, conn.cursor() as cur:
             await cur.execute(
                 """
-                INSERT INTO documents (doc_type, title, content, created_by_agent, supersedes_id, workspace, source)
-                VALUES (%s, %s, %s, %s, %s, %s, 'agent')
+                INSERT INTO documents (doc_type, title, content, created_by_agent, supersedes_id, workspace, source,
+                                       domain, pipeline_id)
+                VALUES (%s, %s, %s, %s, %s, %s, 'agent', %s, %s)
                 RETURNING id, created_at
                 """,
-                (doc_type, title, content, created_by_agent, supersedes_id, workspace),
+                (doc_type, title, content, created_by_agent, supersedes_id, workspace, domain, pipeline_id),
             )
             return await cur.fetchone()
 
@@ -29,22 +32,23 @@ class DocumentRepository:
         async with self.database.transaction() as conn, conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(
                 """
-                SELECT id, doc_type, title, content, created_by_agent, supersedes_id, source, drive_url, created_at
+                SELECT id, doc_type, title, content, created_by_agent, supersedes_id, source, drive_url, created_at,
+                       domain, business_entity, pipeline_id
                 FROM documents WHERE id = %s AND workspace = %s
                 """,
                 (document_id, workspace),
             )
             return await cur.fetchone()
 
-    async def list(self, workspace, doc_type, limit):
+    async def list(self, workspace, doc_type, limit, domain=None):
         async with self.database.transaction() as conn, conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(
                 f"""
                 SELECT {SUMMARY_COLUMNS} FROM documents
-                WHERE workspace = %s AND (%s::text IS NULL OR doc_type = %s)
+                WHERE workspace = %s AND (%s::text IS NULL OR doc_type = %s) AND (%s::text IS NULL OR domain = %s)
                 ORDER BY created_at DESC LIMIT %s
                 """,
-                (workspace, doc_type, doc_type, limit),
+                (workspace, doc_type, doc_type, domain, domain, limit),
             )
             return await cur.fetchall()
 
@@ -75,23 +79,50 @@ class DocumentRepository:
             )
             return {index_id: (doc_id, revision) for index_id, doc_id, revision in await cur.fetchall()}
 
-    async def upsert_sheet_document(self, workspace, index_document_id, drive_file_id, drive_url, doc_type, title, content, revision):
+    async def upsert_sheet_document(self, workspace, index_document_id, drive_file_id, drive_url, doc_type, title, content,
+                                    revision, domain=None, business_entity=None, pipeline_id=None):
         """Insert or replace one sheet document; returns its graph id."""
         async with self.database.transaction() as conn, conn.cursor() as cur:
             await cur.execute(
                 """
                 INSERT INTO documents (doc_type, title, content, created_by_agent, workspace, source,
-                                       index_document_id, drive_file_id, drive_url, source_revision, synced_at)
-                VALUES (%s, %s, %s, 'document-index-sync', %s, 'sheet', %s, %s, %s, %s, now())
+                                       index_document_id, drive_file_id, drive_url, source_revision, synced_at,
+                                       domain, business_entity, pipeline_id)
+                VALUES (%s, %s, %s, 'document-index-sync', %s, 'sheet', %s, %s, %s, %s, now(), %s, %s, %s)
                 ON CONFLICT (workspace, index_document_id) WHERE source = 'sheet' DO UPDATE SET
                     doc_type = EXCLUDED.doc_type, title = EXCLUDED.title, content = EXCLUDED.content,
                     drive_file_id = EXCLUDED.drive_file_id, drive_url = EXCLUDED.drive_url,
-                    source_revision = EXCLUDED.source_revision, synced_at = now()
+                    source_revision = EXCLUDED.source_revision, synced_at = now(),
+                    domain = EXCLUDED.domain, business_entity = EXCLUDED.business_entity,
+                    pipeline_id = EXCLUDED.pipeline_id
                 RETURNING id
                 """,
-                (doc_type, title, content, workspace, index_document_id, drive_file_id, drive_url, revision),
+                (doc_type, title, content, workspace, index_document_id, drive_file_id, drive_url, revision,
+                 domain, business_entity, pipeline_id),
             )
             return (await cur.fetchone())[0]
+
+    async def update_sheet_fields(self, workspace, rows):
+        """Copy changed Domain/Entity/Pipeline ID onto sheet documents in one statement.
+
+        rows: [(index_document_id, domain, business_entity, pipeline_id)]. Returns the
+        index ids that actually changed; unchanged rows aren't touched."""
+        if not rows:
+            return []
+        columns = [list(column) for column in zip(*rows)]
+        async with self.database.transaction() as conn, conn.cursor() as cur:
+            await cur.execute(
+                """
+                UPDATE documents d
+                SET domain = v.domain, business_entity = v.business_entity, pipeline_id = v.pipeline_id
+                FROM unnest(%s::text[], %s::text[], %s::text[], %s::text[]) AS v(index_id, domain, business_entity, pipeline_id)
+                WHERE d.workspace = %s AND d.source = 'sheet' AND d.index_document_id = v.index_id
+                  AND (d.domain, d.business_entity, d.pipeline_id) IS DISTINCT FROM (v.domain, v.business_entity, v.pipeline_id)
+                RETURNING d.index_document_id
+                """,
+                (*columns, workspace),
+            )
+            return [row[0] for row in await cur.fetchall()]
 
     async def set_supersedes(self, workspace, document_id, supersedes_id):
         async with self.database.transaction() as conn, conn.cursor() as cur:

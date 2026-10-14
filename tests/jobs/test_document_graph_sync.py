@@ -109,7 +109,8 @@ def test_sync_imports_skips_unchanged_removes_and_writes_status(database):
                     await cur.execute("DELETE FROM documents WHERE workspace IN ('test-ws', 'other-ws')")
                 with patch.object(embeddings, "embed_many", embed):
                     first = await sync.sync_workspace(google, "test-ws", "sheet")
-                    assert first == {"workspace": "test-ws", "synced": 2, "unchanged": 0, "errors": 1, "not_shared": 1, "removed": 0}
+                    assert first == {"workspace": "test-ws", "synced": 2, "unchanged": 0, "errors": 1, "not_shared": 1, "removed": 0,
+                                     "fields_updated": 0}
                     status = {r: v[0] for r, v in google.writes}
                     assert status["'Document Index'!M2:O2"][0] == "synced" and status["'Document Index'!M2:O2"][2] == "1"
                     assert status["'Document Index'!M4:O4"] == ["error", "", ""]  # spreadsheets aren't indexed
@@ -212,6 +213,56 @@ def test_long_document_is_searchable_past_the_old_cutoff(database):
                 with patch.object(embeddings, "embed", AsyncMock(return_value=fake_vector("per seat"))):
                     found = await sections.search_passages("test-ws", "how will we price it?", 5, 1)
                 assert found[0]["title"] == "Long plan" and "charge per seat" in found[0]["passages"][0]["text"]
+            finally:
+                async with db.transaction() as conn, conn.cursor() as cur:
+                    await cur.execute("DELETE FROM documents WHERE workspace = 'test-ws'")
+                graph_core.configure(None)
+    asyncio.run(run())
+
+
+FIELD_HEADER = HEADER + ["Domain", "Entity", "Pipeline ID"]
+
+
+def field_row(doc_id, file_id, domain, entity, pipeline):
+    return row(doc_id, "Plan " + doc_id, file_id, True) + [domain, entity, pipeline]
+
+
+class TestFieldParsing:
+    def test_optional_columns_are_read_when_present(self):
+        rows, _ = index.parse([FIELD_HEADER, field_row("1", "fileAAAAAAAAAA", "Newsletter", "Daily Brief", 12.0)])
+        assert (rows[0].domain, rows[0].business_entity, rows[0].pipeline_id) == ("Newsletter", "Daily Brief", "12")
+
+    def test_a_workbook_without_them_still_parses(self):
+        rows, _ = index.parse([HEADER, row("1", "A", "fileAAAAAAAAAA", True)])
+        assert (rows[0].domain, rows[0].pipeline_id) == ("", "")
+
+
+def test_fields_are_stamped_and_refreshed_without_re_embedding(database):
+    from horology_runtime.database import Database
+    files = {"fileAAAAAAAAAA": ("text/markdown", "1", "# Launch plan\nGrow to 500 subscribers.")}
+    google = FakeGoogle([FIELD_HEADER, field_row("1", "fileAAAAAAAAAA", "Newsletter", "Daily Brief", 12)], files)
+    embed = AsyncMock(side_effect=lambda texts: [[0.4] * 768 for _ in texts])
+
+    async def run():
+        async with Database(database, 2) as db:
+            graph_core.configure(db)
+            try:
+                async with db.transaction() as conn, conn.cursor() as cur:
+                    await cur.execute("DELETE FROM documents WHERE workspace = 'test-ws'")
+                with patch.object(embeddings, "embed_many", embed):
+                    await sync.sync_workspace(google, "test-ws", "sheet")
+                    doc_id = (await documents.sheet_revisions("test-ws"))["1"][0]
+                    stored = await documents.get("test-ws", doc_id)
+                    assert (stored["domain"], stored["business_entity"], stored["pipeline_id"]) == ("newsletter", "Daily Brief", "12")
+
+                    # A sheet-only edit (no new Drive revision) reaches the graph without embedding again.
+                    google.values[1][-3:] = ["Ecommerce", "", "PL-x"]
+                    second = await sync.sync_workspace(google, "test-ws", "sheet")
+                    assert second["unchanged"] == 1 and second["fields_updated"] == 1 and embed.await_count == 1
+                    stored = await documents.get("test-ws", doc_id)
+                    assert (stored["domain"], stored["business_entity"], stored["pipeline_id"]) == ("ecommerce", None, None)
+                    assert (await sync.sync_workspace(google, "test-ws", "sheet"))["fields_updated"] == 0
+                    assert [r["id"] for r in await documents.list_recent("test-ws", None, 10, "ECOMMERCE")] == [doc_id]
             finally:
                 async with db.transaction() as conn, conn.cursor() as cur:
                     await cur.execute("DELETE FROM documents WHERE workspace = 'test-ws'")
