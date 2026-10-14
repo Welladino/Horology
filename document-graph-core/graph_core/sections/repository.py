@@ -88,3 +88,41 @@ class SectionRepository:
             )
             return await cur.fetchall()
 
+    async def neighbour_links(self, workspace, k, floor, document_id=None):
+        """Each section's k nearest sections in other documents of the workspace, at or above floor.
+
+        Returns (document_id, chunk_index, neighbour document_id, neighbour chunk_index, similarity).
+        With document_id, only that document's sections are the starting points."""
+        async with self.database.transaction() as conn, conn.cursor() as cur:
+            await cur.execute(
+                """
+                SELECT c.document_id, c.chunk_index, n.document_id, n.chunk_index, n.similarity
+                FROM document_chunks c JOIN documents d ON d.id = c.document_id
+                CROSS JOIN LATERAL (
+                    SELECT c2.document_id, c2.chunk_index, 1 - (c2.embedding <=> c.embedding) AS similarity
+                    FROM document_chunks c2 JOIN documents d2 ON d2.id = c2.document_id
+                    WHERE d2.workspace = d.workspace AND c2.document_id <> c.document_id
+                    ORDER BY c2.embedding <=> c.embedding LIMIT %s
+                ) n
+                WHERE d.workspace = %s AND (%s::bigint IS NULL OR c.document_id = %s) AND n.similarity >= %s
+                """,
+                (k, workspace, document_id, document_id, floor),
+            )
+            return await cur.fetchall()
+
+    async def texts(self, keys):
+        """{(document_id, chunk_index): section text} for the given sections."""
+        if not keys:
+            return {}
+        documents, indexes = zip(*keys)
+        async with self.database.transaction() as conn, conn.cursor() as cur:
+            await cur.execute(
+                """
+                SELECT c.document_id, c.chunk_index, c.content
+                FROM document_chunks c JOIN unnest(%s::bigint[], %s::int[]) AS k(document_id, chunk_index)
+                  ON k.document_id = c.document_id AND k.chunk_index = c.chunk_index
+                """,
+                (list(documents), list(indexes)),
+            )
+            return {(doc, idx): text for doc, idx, text in await cur.fetchall()}
+

@@ -8,7 +8,8 @@ Organised by domain. Each domain has a `service.py` (logic) and a `repository.py
 |---|---|
 | `documents/` | document rows, document-to-document links, sheet bookkeeping |
 | `sections/` | chunking, section and document embeddings, passage search, nearest documents |
-| `providers/` | outside APIs wrapped once (OpenRouter embeddings) |
+| `topics/` | the section-similarity graph, Louvain clustering, topic names, placement of new sections, topic lookups |
+| `providers/` | outside APIs wrapped once: OpenRouter embeddings and the JSON chat model (`GRAPH_LLM_MODEL`, default `google/gemini-3.1-flash-lite`). IP addresses are masked before any text leaves (`masking.py`); stored text is unchanged. |
 
 Rules:
 - Entry points (MCP tools, the job) call services.

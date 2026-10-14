@@ -23,6 +23,14 @@ Search first, so work builds on what exists instead of repeating it:
 
 Results carry each document's `domain`, `business_entity` (the Document Index "Entity", e.g. a named newsletter or store) and `pipeline_id`. Pass `domain` to `search_documents` or `list_documents` to stay within one domain (any spelling: `Newsletter` or `newsletter`). Use `pipeline_id` to go from a result to its Pipeline item, decisions and other documents.
 
+## Topics
+
+Topics are themes found automatically by grouping similar passages from different documents. Use them for an overview, or to spot gaps:
+
+- `list_topics` (optionally by `domain`) lists themes, largest first, with how many documents each covers and their mix of document types. A topic with research but no `decision` may be awaiting a decision.
+- `get_topic` shows a topic's documents (with the share of each in the topic) and its strongest passages.
+- `rebuild_topics` re-groups everything in the background. New documents join existing topics automatically, so only run it when asked, or after many new documents. Topic names are generated; treat them as labels, not conclusions.
+
 Prefer the newest version: if a document is superseded, follow the link and use the newer one, noting the older only for history. A document's `doc_type` is one of: research, direction, plan, decision, report, brand_guide, guide, template, pipeline, content, analysis, recommendation.
 
 Search reaches only documents in the graph. A missing result does not prove nothing exists: the work may be in Drive with Graph Inclusion FALSE, or not indexed yet. Say what you searched and what remains unchecked.

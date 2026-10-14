@@ -274,8 +274,25 @@ class TestSyncGraph:
         url = post.call_args.args[0]
         body = post.call_args.kwargs["json"]
         assert url == "https://run.googleapis.com/v2/projects/horology-dev/locations/us-central1/jobs/document-graph-sync:run"
-        assert body["overrides"]["containerOverrides"][0]["env"] == [{"name": "GRAPH_SYNC_WORKSPACE", "value": "job"}]
+        assert body["overrides"]["containerOverrides"][0]["env"] == [{"name": "GRAPH_SYNC_WORKSPACE", "value": "job"},
+                                                                     {"name": "GRAPH_SYNC_MODE", "value": "sync"}]
         assert result == {"started": True, "workspace": "job", "operation": "operations/123"}
+
+    def test_rebuild_topics_starts_the_job_in_topics_mode(self, db, monkeypatch):
+        from document_graph.integrations.cloud_run import client as cloud_run
+        monkeypatch.setenv("GRAPH_SYNC_JOB", "projects/horology-dev/locations/us-central1/jobs/document-graph-sync")
+        response = MagicMock()
+        response.json.return_value = {"name": "operations/456"}
+        with patch.object(cloud_run, "_token", AsyncMock(return_value="token")), \
+                patch.object(cloud_run.httpx.AsyncClient, "post", AsyncMock(return_value=response)) as post:
+            result = run(graph.rebuild_topics())
+        env = post.call_args.kwargs["json"]["overrides"]["containerOverrides"][0]["env"]
+        assert {"name": "GRAPH_SYNC_MODE", "value": "topics"} in env and result["started"] is True
+
+    def test_unknown_mode_is_refused(self, db, monkeypatch):
+        from document_graph.integrations.cloud_run import client as cloud_run
+        with pytest.raises(ValueError, match="mode must be one of"):
+            run(cloud_run.start_sync("welladino", "delete-everything"))
 
     def test_rejects_a_malformed_job_name(self, db, monkeypatch):
         monkeypatch.setenv("GRAPH_SYNC_JOB", "https://evil.example/jobs/x")

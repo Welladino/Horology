@@ -4,6 +4,8 @@ from horology_runtime.settings import TIMEOUTS
 import httpx
 from horology_runtime.operations import observe
 
+from .masking import for_provider
+
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
 EMBED_MODEL = os.environ.get("EMBED_MODEL", "google/gemini-embedding-001")
 OPENROUTER_EMBEDDINGS_URL = "https://openrouter.ai/api/v1/embeddings"
@@ -35,7 +37,7 @@ async def embed_many(texts: list[str]) -> list[list[float]]:
     vectors = []
     async with httpx.AsyncClient(timeout=TIMEOUTS.openrouter_http) as http:
         for start in range(0, len(texts), BATCH):
-            batch = texts[start:start + BATCH]
+            batch = [for_provider(text) for text in texts[start:start + BATCH]]
             resp = await http.post(
                 OPENROUTER_EMBEDDINGS_URL,
                 headers={"Authorization": f"Bearer {OPENROUTER_API_KEY}"},

@@ -1,4 +1,4 @@
-"""Start one sync job execution for one workspace; nothing else in Cloud Run is reachable."""
+"""Start one sync job execution for one workspace, in one mode; nothing else in Cloud Run is reachable."""
 import asyncio
 import os
 import re
@@ -21,11 +21,18 @@ async def _token():
     return _credentials.token
 
 
-async def start_sync(workspace):
+MODES = ("sync", "topics")
+
+
+async def start_sync(workspace, mode="sync"):
+    """mode: "sync" imports the Document Index; "topics" re-clusters the workspace's topics."""
+    if mode not in MODES:
+        raise ValueError(f"mode must be one of {MODES}")
     job = os.environ.get("GRAPH_SYNC_JOB", "")
     if not JOB_NAME.fullmatch(job):
         raise ValueError("The sheet sync job is not configured for this server")
-    body = {"overrides": {"containerOverrides": [{"env": [{"name": "GRAPH_SYNC_WORKSPACE", "value": workspace}]}]}}
+    env = [{"name": "GRAPH_SYNC_WORKSPACE", "value": workspace}, {"name": "GRAPH_SYNC_MODE", "value": mode}]
+    body = {"overrides": {"containerOverrides": [{"env": env}]}}
     async with httpx.AsyncClient(timeout=TIMEOUTS.gateway_http, follow_redirects=False, trust_env=False) as http:
         response = await http.post(f"https://run.googleapis.com/v2/{job}:run", json=body,
                                    headers={"Authorization": f"Bearer {await _token()}"})

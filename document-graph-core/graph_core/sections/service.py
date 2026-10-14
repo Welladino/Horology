@@ -67,3 +67,13 @@ async def search_passages(workspace, query, limit, passages, domain=None):
         if len(results[row["id"]]["passages"]) < passages:
             results[row["id"]]["passages"].append(passage)
     return list(results.values())
+
+
+async def neighbour_links(workspace, k, floor, document_id=None):
+    """Similarity links between sections of different documents (the topic graph's edges)."""
+    return await _repository().neighbour_links(workspace, k, floor, document_id)
+
+
+async def texts(keys):
+    return await _repository().texts(keys)
+

@@ -11,6 +11,7 @@ import httpx
 
 from graph_core.documents import fields, service as documents
 from graph_core.sections import service as sections
+from graph_core.topics import service as topics
 
 from . import index
 from .google import INDEXABLE_TYPES
@@ -104,6 +105,11 @@ async def _import(google, workspace, row, stored):
         workspace, row.index_id, file_id, row.drive_url, row.doc_type, row.title, content, revision, embedded,
         domain, business_entity, pipeline_id)
     await documents.link_similar(workspace, doc_id)
+    try:
+        await topics.place_document(workspace, doc_id)
+    except Exception as error:
+        # Topics never block a sync: the document is stored and searchable.
+        log.warning("row %s: topic placement failed: %s", row.row_number, type(error).__name__)
     return ("synced", doc_id, revision)
 
 

@@ -6,9 +6,13 @@ module only turns tool calls into service calls.
 from graph_core.documents import service as documents
 from graph_core.documents.service import VALID_DOC_TYPES  # noqa: F401  (re-exported for callers and tests)
 from graph_core.sections import service as sections
+from graph_core.topics import service as topics
+import logging
 
 from .integrations.cloud_run import client as cloud_run
 from .shared.workspace import current_workspace
+
+log = logging.getLogger("document_graph")
 
 
 def _iso(rows):
@@ -127,7 +131,14 @@ async def auto_link_similar_documents(document_id: int, threshold: float = 0.85)
     """
     workspace = current_workspace()
     await documents.embed_if_needed(workspace, document_id)
-    return await documents.link_similar(workspace, document_id, threshold)
+    result = await documents.link_similar(workspace, document_id, threshold)
+    try:
+        result["sections_placed_in_topics"] = await topics.place_document(workspace, document_id)
+    except Exception as error:
+        # Topics never block search: the document is already embedded and linked.
+        log.warning("topic placement failed for %s: %s", document_id, type(error).__name__)
+        result["sections_placed_in_topics"] = 0
+    return result
 
 
 async def sync_graph() -> dict:
@@ -142,3 +153,37 @@ async def sync_graph() -> dict:
     workspace = current_workspace()
     operation = await cloud_run.start_sync(workspace)
     return {"started": True, "workspace": workspace, "operation": operation}
+
+
+async def list_topics(domain: str | None = None) -> list[dict]:
+    """List the themes in your workspace's documents, largest first.
+
+    Topics are found automatically by grouping similar passages from
+    different documents. Each has a name, a one-sentence summary, how many
+    documents and sections it covers, and its mix of document types (for
+    example research but no decision yet). Pass domain (e.g. Newsletter) to
+    count only that domain's documents. Use get_topic for documents and
+    passages.
+    """
+    return await topics.list_topics(current_workspace(), domain)
+
+
+async def get_topic(topic_id: int, passages: int = 3) -> dict:
+    """Show one topic: its documents (with the share of each that falls in
+    the topic, document type and Pipeline ID) and its strongest passages
+    (up to 5)."""
+    return await topics.get_topic(current_workspace(), topic_id, max(1, min(passages, 5)))
+
+
+async def rebuild_topics() -> dict:
+    """Start re-grouping your workspace's passages into topics.
+
+    New documents join existing topics automatically; run this after many
+    new documents, or when topics look stale. Topics that mostly continue
+    keep their names; new ones are named automatically. It runs in the
+    background and returns as soon as it has started.
+    """
+    workspace = current_workspace()
+    operation = await cloud_run.start_sync(workspace, "topics")
+    return {"started": True, "workspace": workspace, "operation": operation}
+
