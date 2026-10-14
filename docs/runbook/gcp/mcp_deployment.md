@@ -272,22 +272,39 @@ Rollback to `document-graph-00002-rks` is no longer possible: it pins `horology-
 
 To add a workspace later: copy the workbook, share it and its output folder with the job identity (step 5), add it to `GRAPH_SYNC_WORKBOOKS` on the job and its email to `DOCUMENT_GRAPH_WORKSPACES` on the service.
 
-## Document graph passage search release (prepared 2026-10-14, not deployed)
+## Document graph release: passages, fields, topics and entities (prepared 2026-10-14, not deployed)
 
-Search ranks ~2,000-character sections instead of one vector per document. Why: [note](../../planning/notes/2026-10-14_document-graph-passage-search_note.md). Steps, in order:
+One release covers passage search, Domain/Entity/Pipeline ID fields, topics and entities (migrations `20261014_002` to `20261014_005`) and the gateway's country and extraction changes. Why: [passage search](../../planning/notes/2026-10-14_document-graph-passage-search_note.md), [topics and entities](../../planning/research/2026-10-14_document-graph-topics-and-entities_research.md). Steps, in order:
 
-1. Migrate Neon (adds `document_chunks` and its grants; harmless to the running revision):
+1. Migrate Neon. This is harmless to the running revisions, which don't read the new tables or columns:
 
 ```bash
 .venv/bin/dotenv -f .env run -- .venv/bin/python -m alembic upgrade head
 ```
 
-2. Build, then deploy the new document-graph image to the service **and** the sync job (`horology-admin` for the job), as in the sign-in release above.
-3. Re-embed sheet documents: start a sync (`sync_graph` from an agent, or `gcloud --configuration=horology-admin run jobs execute document-graph-sync --region=us-central1 --project=horology-dev`). Documents without sections count as changed, so every included row is re-imported.
-4. Re-embed agent documents: `list_unembedded_documents`, then `auto_link_similar_documents` for each id.
-5. Verify: `list_unembedded_documents` is empty, and `search_documents` returns `passages` for a known question.
+2. Build (global endpoint, as in [Cloud Build](cloud_build.md)). Then deploy the gateway image to `mcp-gateway`, and the document-graph image to the `document-graph` service and the `document-graph-sync` job (`horology-admin` for the job), as in the releases above. The service and the job already have `OPENROUTER_API_KEY`. `GRAPH_LLM_MODEL` is optional (default `google/gemini-2.5-flash-lite`).
+3. Re-embed and extract sheet documents: start a sync (`sync_graph` from an agent, or `gcloud --configuration=horology-admin run jobs execute document-graph-sync --region=us-central1 --project=horology-dev`). Documents without sections count as changed, so every included row is re-imported. The sync then extracts entities and creates the **Entities** and **Entity types** tabs in the Document Index workbook.
+4. Re-embed agent documents: `list_unembedded_documents`, then `auto_link_similar_documents` for each id. Their entities come with the next sync, or run the entity step alone:
 
-Until steps 3–4 run, documents without sections don't appear in search.
+```bash
+gcloud --configuration=horology-admin run jobs execute document-graph-sync --region=us-central1 --project=horology-dev --update-env-vars=GRAPH_SYNC_MODE=entities
+```
+
+5. Build the first topics with `rebuild_topics`, or with the job in topics mode:
+
+```bash
+gcloud --configuration=horology-admin run jobs execute document-graph-sync --region=us-central1 --project=horology-dev --update-env-vars=GRAPH_SYNC_MODE=topics
+```
+
+6. Verify:
+   - `list_unembedded_documents` is empty, and `search_documents` returns `passages`;
+   - `list_topics` lists named topics;
+   - `list_entities` with `bucket` "platform or tool" lists platforms;
+   - the Entities tab has rows.
+
+Until steps 3–5 run, documents without sections don't appear in search, and topics and entities are empty.
+
+Review afterwards in the Entities tab: "Rename to" or "Merge into (Entity ID)", applied on the next sync. Use the Entity types tab to add buckets or relationship types, or to rename them.
 
 ## Add or remove a person
 

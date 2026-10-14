@@ -4,6 +4,7 @@ The logic lives in document-graph-core (shared with the sync job); this
 module only turns tool calls into service calls.
 """
 from graph_core.documents import service as documents
+from graph_core.entities import service as entities
 from graph_core.documents.service import VALID_DOC_TYPES  # noqa: F401  (re-exported for callers and tests)
 from graph_core.sections import service as sections
 from graph_core.topics import service as topics
@@ -186,4 +187,35 @@ async def rebuild_topics() -> dict:
     workspace = current_workspace()
     operation = await cloud_run.start_sync(workspace, "topics")
     return {"started": True, "workspace": workspace, "operation": operation}
+
+
+async def list_entities(bucket: str | None = None, domain: str | None = None, limit: int = 50) -> list[dict]:
+    """List the named things found in your workspace's documents, most documents first.
+
+    Entities are companies, products, platforms and tools, our own system
+    components, markets, audience segments, channels, people, features and
+    metrics (and "other"). Filter by bucket (e.g. "platform or tool") for a
+    complete list such as every platform we have looked at, and by domain.
+    """
+    return await entities.list_entities(current_workspace(), bucket, domain, max(1, min(limit, 200)))
+
+
+async def find_entity(name: str, bucket: str | None = None) -> dict:
+    """Look up a named thing by any of its names ("Kit" finds ConvertKit).
+
+    Returns match "exact" (a known name or alias) or "closest" (nearest by
+    meaning) with up to 5 entities: bucket, aliases, how many documents
+    mention it, and its relationships (competes with, uses, targets, ...)
+    with how many passages support each. Use entity_documents for passages.
+    """
+    if not name.strip():
+        raise ValueError("name must not be empty")
+    return await entities.find_entity(current_workspace(), name, bucket)
+
+
+async def entity_documents(entity_id: int, limit: int = 10) -> dict:
+    """Everything about one entity: its details, relationships and the
+    passages that name it (newest documents first, up to 50), with each
+    document's type, domain and Pipeline ID."""
+    return await entities.entity_documents(current_workspace(), entity_id, max(1, min(limit, 50)))
 

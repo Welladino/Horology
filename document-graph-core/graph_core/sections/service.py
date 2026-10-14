@@ -77,3 +77,7 @@ async def neighbour_links(workspace, k, floor, document_id=None):
 async def texts(keys):
     return await _repository().texts(keys)
 
+
+async def of_document(document_id):
+    return await _repository().of_document(document_id)
+

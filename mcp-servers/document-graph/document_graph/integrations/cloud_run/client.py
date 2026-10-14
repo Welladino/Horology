@@ -21,11 +21,12 @@ async def _token():
     return _credentials.token
 
 
-MODES = ("sync", "topics")
+MODES = ("sync", "entities", "topics")
 
 
 async def start_sync(workspace, mode="sync"):
-    """mode: "sync" imports the Document Index; "topics" re-clusters the workspace's topics."""
+    """mode: "sync" imports the Document Index (then entities); "entities" runs the entity step only;
+    "topics" re-clusters the workspace's topics."""
     if mode not in MODES:
         raise ValueError(f"mode must be one of {MODES}")
     job = os.environ.get("GRAPH_SYNC_JOB", "")

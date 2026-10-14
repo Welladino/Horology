@@ -35,6 +35,16 @@ Prefer the newest version: if a document is superseded, follow the link and use 
 
 Search reaches only documents in the graph. A missing result does not prove nothing exists: the work may be in Drive with Graph Inclusion FALSE, or not indexed yet. Say what you searched and what remains unchecked.
 
+## Entities
+
+Entities are the named things found in documents: companies, products, platforms and tools, our own system components, markets, audience segments, channels, people, features and metrics (anything else is in `other`). Each has one name, its aliases (`Kit` for ConvertKit) and relationships to other entities (`competes with`, `uses`, `targets`, `supplies`, `part of`, `replaces`, `integrates with`, `owns`).
+
+- `find_entity` looks a thing up by any of its names. `match: "closest"` means no exact name matched; check it's the thing you meant.
+- `entity_documents` gives everything about one entity: its relationships and the passages that name it, with each document's type, domain and Pipeline ID.
+- `list_entities` with a `bucket` gives complete lists, e.g. every `platform or tool` we've looked at. Search returns only the closest passages; use this when the question is "which ... have we ...".
+
+Entities and relationships are extracted automatically. They come from the documents, not from verified facts: cite the passages, and say when a relationship rests on a single passage. New documents get entities on the next sync.
+
 ## Writing documents
 
 Drive plus a Document Index row stays the main record for finished deliverables, under the Welladino workflow skills. Use `write_document` for agent output that should be findable but has no Drive document, such as an analysis note or a summary of findings:

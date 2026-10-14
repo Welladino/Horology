@@ -46,6 +46,21 @@ class GoogleClient:
         body = {"valueInputOption": "RAW", "data": [{"range": r, "values": v} for r, v in updates]}
         await self._request("POST", url, json=body)
 
+    async def tab_titles(self, spreadsheet_id):
+        url = f"https://sheets.googleapis.com/v4/spreadsheets/{spreadsheet_id}"
+        data = (await self._request("GET", url, params={"fields": "sheets.properties.title"})).json()
+        return [sheet["properties"]["title"] for sheet in data.get("sheets", [])]
+
+    async def add_tab(self, spreadsheet_id, title):
+        url = f"https://sheets.googleapis.com/v4/spreadsheets/{spreadsheet_id}:batchUpdate"
+        await self._request("POST", url, json={"requests": [{"addSheet": {"properties": {"title": title}}}]})
+
+    async def replace_tab(self, spreadsheet_id, tab, rows):
+        """Clear a tab's values, then write rows (header first) from A1, as typed."""
+        base = f"https://sheets.googleapis.com/v4/spreadsheets/{spreadsheet_id}/values"
+        await self._request("POST", f"{base}/{quote(repr_tab(tab))}:clear", json={})
+        await self.write_cells(spreadsheet_id, [(f"{repr_tab(tab)}!A1", rows)])
+
     async def file_metadata(self, file_id):
         url = f"https://www.googleapis.com/drive/v3/files/{quote(file_id)}"
         params = {"fields": "id,mimeType,version,size,trashed", "supportsAllDrives": "true"}

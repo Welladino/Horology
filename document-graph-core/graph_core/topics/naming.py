@@ -20,7 +20,9 @@ async def name_topic(passages, existing_names):
     """Return (name, summary) for a topic described by its passages."""
     shown = "\n\n".join(f"Passage {i + 1}:\n{text[:PASSAGE_CHARS]}" for i, text in enumerate(passages))
     taken = ", ".join(sorted(existing_names)) or "none"
-    reply = await llm.complete_json(SYSTEM, f"Existing topic names: {taken}\n\n{shown}", "topic_name", SCHEMA)
+    reply = await llm.complete_json(SYSTEM, f"Existing topic names: {taken}\n\n{shown}", "topic_name", SCHEMA, max_tokens=300)
+    if reply is None:
+        raise ValueError("Topic name reply was cut off")
     name, summary = reply["name"].strip().strip('"')[:80], reply["summary"].strip()[:300]
     if not name:
         raise ValueError("Model returned an empty topic name")

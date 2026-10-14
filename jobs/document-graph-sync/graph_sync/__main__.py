@@ -1,7 +1,10 @@
 """python -m graph_sync: sync one workspace (GRAPH_SYNC_WORKSPACE) or every configured workbook.
 
-GRAPH_SYNC_MODE: "sync" (default) imports the Document Index; "topics"
-re-clusters topics without reading the sheet.
+GRAPH_SYNC_MODE:
+- "sync" (default): import the Document Index, then entities (tab edits,
+  extraction for new or changed documents, fresh Entities tabs);
+- "entities": the entity step only (also picks up agent documents);
+- "topics": re-cluster topics without reading the sheet.
 
 GRAPH_SYNC_WORKBOOKS maps workspace -> Document Index spreadsheet id, e.g.
 {"welladino": "1kOb..."}. DATABASE_URL_POOLED and OPENROUTER_API_KEY as for
@@ -19,6 +22,7 @@ import graph_core
 
 from graph_core.topics import service as topics
 
+from . import review_tab
 from .google import GoogleClient
 from .sync import sync_workspace
 
@@ -35,7 +39,7 @@ def workbooks():
     return mapping
 
 
-MODES = ("sync", "topics")
+MODES = ("sync", "entities", "topics")
 
 
 async def main():
@@ -43,16 +47,20 @@ async def main():
     mode = os.environ.get("GRAPH_SYNC_MODE", "sync").strip() or "sync"
     if mode not in MODES:
         raise SystemExit(f"GRAPH_SYNC_MODE must be one of {MODES}")
-    google = GoogleClient() if mode == "sync" else None
+    google = GoogleClient() if mode in ("sync", "entities") else None
     async with Database(os.environ.get("DATABASE_URL_POOLED"), DATABASE.document_graph_pool_size) as database:
         graph_core.configure(database)
         failed = False
         for workspace, spreadsheet_id in targets.items():
             try:
                 if mode == "topics":
-                    print(json.dumps(await topics.rebuild(workspace)))
+                    result = await topics.rebuild(workspace)
+                elif mode == "entities":
+                    result = await review_tab.run(google, spreadsheet_id, workspace)
                 else:
-                    print(json.dumps(await sync_workspace(google, workspace, spreadsheet_id)))
+                    result = await sync_workspace(google, workspace, spreadsheet_id)
+                    result["entities"] = await review_tab.run(google, spreadsheet_id, workspace)
+                print(json.dumps(result, default=str))
             except Exception as error:
                 failed = True
                 logging.getLogger("graph_sync").error("workspace %s failed: %s", workspace, type(error).__name__)

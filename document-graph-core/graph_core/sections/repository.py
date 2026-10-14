@@ -126,3 +126,10 @@ class SectionRepository:
             )
             return {(doc, idx): text for doc, idx, text in await cur.fetchall()}
 
+    async def of_document(self, document_id):
+        """[(chunk_index, text)] for one document, in order."""
+        async with self.database.transaction() as conn, conn.cursor() as cur:
+            await cur.execute("SELECT chunk_index, content FROM document_chunks WHERE document_id = %s ORDER BY chunk_index",
+                              (document_id,))
+            return await cur.fetchall()
+
