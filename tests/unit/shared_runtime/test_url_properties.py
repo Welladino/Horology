@@ -47,8 +47,7 @@ def test_only_https_is_allowed(address, scheme):
         validate_public_https_url(f"{scheme}://{address}/x")
 
 
-@given(st.text(alphabet="abc:@", min_size=1, max_size=10))
+@given(st.text(alphabet="abc:", min_size=1, max_size=10))  # user[:password], never containing "@"
 def test_credentials_in_the_url_are_refused(userinfo):
-    assume("@" not in userinfo)
     with pytest.raises(UnsafeURL):
         validate_public_https_url(f"https://{userinfo}@93.184.216.34/x")
