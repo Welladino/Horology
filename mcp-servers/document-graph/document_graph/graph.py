@@ -3,6 +3,9 @@
 SQL lives in database/repositories; this module holds validation, workspace
 scoping and the embed-then-link steps.
 """
+import math
+
+from . import chunking
 from .database.repositories.documents import DocumentRepository
 from .database.repositories.embeddings import EmbeddingRepository
 from .database.repositories.links import LinkRepository
@@ -94,20 +97,33 @@ async def list_documents(doc_type: str | None = None, limit: int = 20) -> list[d
     return _iso(await documents.list(current_workspace(), doc_type, max(1, min(limit, 100))))
 
 
-async def search_documents(query: str, limit: int = 5) -> list[dict]:
+async def search_documents(query: str, limit: int = 5, passages: int = 2) -> list[dict]:
     """Find documents by meaning: "what have we done on pricing?".
 
-    Embeds the query and returns the closest documents in your workspace,
-    with a similarity score (0-1). Returns titles/metadata only — use
-    get_document for the full text.
+    Searches every section of every document in your workspace and returns
+    the closest documents (up to limit), best first. Each result has a
+    similarity score (0-1, from its best section) and up to `passages`
+    (1-3) matching sections of about 2,000 characters each, with their
+    section number. Read the passages first; use get_document only when you
+    need the whole text.
     """
     if not query.strip():
         raise ValueError("query must not be empty")
+    limit, passages = max(1, min(limit, 20)), max(1, min(passages, 3))
     vector = await openrouter._embed(query)
-    rows = _iso(await embeddings.nearest(current_workspace(), vector, max(1, min(limit, 20))))
-    for row in rows:
-        row["similarity"] = round(float(row["similarity"]), 4)
-    return rows
+    # Sections are ranked across documents; fetch enough to fill `limit` documents.
+    sections = await embeddings.nearest_sections(current_workspace(), vector, min(limit * 8, 200))
+    results = {}
+    for row in sections:
+        similarity = round(float(row.pop("similarity")), 4)
+        passage = {"section": row.pop("chunk_index"), "similarity": similarity, "text": row.pop("passage")}
+        if row["id"] not in results:
+            if len(results) == limit:
+                continue
+            results[row["id"]] = {**row, "created_at": row["created_at"].isoformat(), "similarity": similarity, "passages": []}
+        if len(results[row["id"]]["passages"]) < passages:
+            results[row["id"]]["passages"].append(passage)
+    return list(results.values())
 
 
 async def get_related_documents(document_id: int) -> list[dict]:
@@ -125,8 +141,8 @@ async def get_related_documents(document_id: int) -> list[dict]:
 
 
 async def list_unembedded_documents() -> list[dict]:
-    """Return every document in your workspace that has no stored embedding
-    yet - written before auto-linking existed, or where a prior
+    """Return every document in your workspace that has no searchable
+    sections yet - written before passage search existed, or where a prior
     auto_link_similar_documents call was skipped or failed before completing.
 
     Each returned id can be passed directly into auto_link_similar_documents
@@ -141,8 +157,9 @@ async def auto_link_similar_documents(document_id: int, threshold: float = 0.85)
     workspace, creating a 'related_to' link for any pair scoring above the
     cosine-similarity threshold (0-1, default 0.85).
 
-    Call this once after writing a new document, passing its id. Backfills
-    the document's own embedding first if it doesn't have one yet.
+    Call this once after writing a new document, passing its id. It first
+    splits the document into searchable sections and embeds them if that
+    hasn't happened yet; until then the document can't be found by search.
     Idempotent - re-running for the same document just re-checks and
     re-creates any missing links; existing links are never duplicated.
     Returns which document ids (if any) were newly linked.
@@ -151,10 +168,28 @@ async def auto_link_similar_documents(document_id: int, threshold: float = 0.85)
     content = await documents.content(workspace, document_id)
     if content is None:
         raise ValueError(f"No document with id {document_id}")
-    if not await embeddings.exists(document_id):
-        # Outside any transaction; the HTTP call can take seconds.
-        await embeddings.save(document_id, await openrouter._embed(content))
+    if not await embeddings.has_sections(document_id):
+        title = (await documents.get(workspace, document_id))["title"]
+        # Outside any transaction; the HTTP calls can take seconds.
+        await embeddings.save(document_id, *await embed_document(title, content))
     return await link_similar(workspace, document_id, threshold)
+
+
+async def embed_document(title, content):
+    """Split a document into sections and embed each one, titled for context.
+
+    Returns (sections, section vectors, document vector); the document vector
+    is the normalised mean of its sections, used for auto-linking. Shared
+    with the sheet sync job."""
+    sections = chunking.split(content) or [title]
+    vectors = await openrouter._embed_many([f"{title}\n\n{section}" for section in sections])
+    return sections, vectors, _mean(vectors)
+
+
+def _mean(vectors):
+    total = [sum(values) for values in zip(*vectors)]
+    norm = math.sqrt(sum(x * x for x in total)) or 1.0
+    return [x / norm for x in total]
 
 
 async def link_similar(workspace, document_id, threshold):

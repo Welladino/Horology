@@ -272,6 +272,23 @@ Rollback to `document-graph-00002-rks` is no longer possible: it pins `horology-
 
 To add a workspace later: copy the workbook, share it and its output folder with the job identity (step 5), add it to `GRAPH_SYNC_WORKBOOKS` on the job and its email to `DOCUMENT_GRAPH_WORKSPACES` on the service.
 
+## Document graph passage search release (prepared 2026-10-14, not deployed)
+
+Search ranks ~2,000-character sections instead of one vector per document. Why: [note](../../planning/notes/2026-10-14_document-graph-passage-search_note.md). Steps, in order:
+
+1. Migrate Neon (adds `document_chunks` and its grants; harmless to the running revision):
+
+```bash
+.venv/bin/dotenv -f .env run -- .venv/bin/python -m alembic upgrade head
+```
+
+2. Build, then deploy the new document-graph image to the service **and** the sync job (`horology-admin` for the job), as in the sign-in release above.
+3. Re-embed sheet documents: start a sync (`sync_graph` from an agent, or `gcloud --configuration=horology-admin run jobs execute document-graph-sync --region=us-central1 --project=horology-dev`). Documents without sections count as changed, so every included row is re-imported.
+4. Re-embed agent documents: `list_unembedded_documents`, then `auto_link_similar_documents` for each id.
+5. Verify: `list_unembedded_documents` is empty, and `search_documents` returns `passages` for a known question.
+
+Until steps 3–4 run, documents without sections don't appear in search.
+
 ## Add or remove a person
 
 Add: Google Auth Platform → Audience (`horology-dev`) → Test users → **Add users**. Keep publishing status **Testing**.

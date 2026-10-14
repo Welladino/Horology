@@ -76,8 +76,7 @@ class DocumentRepository:
                 """
                 SELECT d.id, d.title, d.doc_type, d.created_at
                 FROM documents d
-                LEFT JOIN document_embeddings e ON e.document_id = d.id
-                WHERE e.document_id IS NULL AND d.workspace = %s
+                WHERE d.workspace = %s AND NOT EXISTS (SELECT 1 FROM document_chunks c WHERE c.document_id = d.id)
                 ORDER BY d.created_at
                 """,
                 (workspace,),
@@ -89,14 +88,16 @@ class DocumentRepository:
     async def sheet_revisions(self, workspace):
         """Return {index_document_id: (graph id, imported Drive revision or None)} for sheet rows.
 
-        The revision is None when the document has no embedding yet, so a row
-        whose earlier import stopped before embedding is imported again."""
+        The revision is None when the document has no sections yet, so a row
+        imported before passage search, or whose import stopped before
+        embedding, is imported again."""
         async with self.database.transaction() as conn, conn.cursor() as cur:
             await cur.execute(
                 """
                 SELECT d.index_document_id, d.id,
-                       CASE WHEN e.embedding IS NOT NULL THEN d.source_revision END
-                FROM documents d LEFT JOIN document_embeddings e ON e.document_id = d.id
+                       CASE WHEN EXISTS (SELECT 1 FROM document_chunks c WHERE c.document_id = d.id)
+                            THEN d.source_revision END
+                FROM documents d
                 WHERE d.workspace = %s AND d.source = 'sheet'
                 """,
                 (workspace,),

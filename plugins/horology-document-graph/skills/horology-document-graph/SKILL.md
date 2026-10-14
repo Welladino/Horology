@@ -16,8 +16,8 @@ Documents come from two sources, shown in each result's `source` field:
 
 Search first, so work builds on what exists instead of repeating it:
 
-1. Call `search_documents` with the question in plain words ("what have we done on pricing?"). It returns the closest documents with a similarity score from 0 to 1. Scores are relative; read the top results rather than trusting a threshold.
-2. Open promising results with `get_document` for the full text. For `sheet` documents, cite the `drive_url`, which is the record people use.
+1. Call `search_documents` with the question in plain words ("what have we done on pricing?"). Every document is searched section by section, so a detail deep inside a long document is found too. Each result has a similarity score from 0 to 1 and up to `passages` (default 2, max 3) matching sections of about 2,000 characters, with their section number. Scores are relative; read the top results rather than trusting a threshold.
+2. Read the passages first: they often answer the question. Open a document with `get_document` only when you need the surrounding text or the whole document. For `sheet` documents, cite the `drive_url`, which is the record people use.
 3. Use `get_related_documents` on a key document to find its links: `supersedes` (newer version), `related_to` (similar content), and named links such as `informed_by` or `contradicts`.
 4. `list_documents` (optionally by `doc_type`) shows the newest documents when no search term fits.
 
@@ -31,7 +31,7 @@ Drive plus a Document Index row stays the main record for finished deliverables,
 
 - Write the full content so it reads standalone. Set `created_by_agent` to your agent or skill name, and choose the closest `doc_type`.
 - Set `supersedes_id` when it replaces an earlier document's conclusion.
-- Then call `auto_link_similar_documents` with the new id to embed it and link similar documents. Use `link_documents` for a specific known relationship.
+- Then call `auto_link_similar_documents` with the new id. It splits the document into searchable sections, embeds them and links similar documents; until it runs, search can't find the document. Use `link_documents` for a specific known relationship.
 - In your summary, report the new document id and any links created. A similarity of 0.90 or more usually means a near-duplicate; say so instead of presenting it as new work.
 
 Agent documents are recorded with `source = agent`. The sync never edits or removes them.
@@ -55,7 +55,7 @@ Start a sync only when asked, or after the operator changed Graph Inclusion. Don
 
 ## Limits and failures
 
-Search, `write_document` and `auto_link_similar_documents` make paid embedding calls; listing, reading and linking do not. Don't repeat identical searches to retry.
+Search and `auto_link_similar_documents` make paid embedding calls (a few hundredths of a cent); writing, listing, reading and linking do not. Don't repeat identical searches to retry.
 
 "No document with id" means the document doesn't exist in your workspace, which can also mean it belongs to another workspace. An authentication error means the connector needs signing in again with an approved account. Report the error category and request id; don't switch accounts or connectors to get around workspace limits.
 

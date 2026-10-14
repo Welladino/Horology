@@ -2,7 +2,7 @@
 
 Rows with Graph Inclusion TRUE are imported or refreshed when their Drive
 revision changed; everything else that came from the sheet is removed.
-Only changed text is embedded. Status goes back to the sheet's three graph
+Only changed text is embedded, section by section, for passage search. Status goes back to the sheet's three graph
 columns. Agent-written documents are never touched.
 """
 import logging
@@ -10,21 +10,15 @@ import logging
 import httpx
 
 from document_graph import graph
-from document_graph.integrations.openrouter import client as openrouter
 
 from . import index
 from .google import INDEXABLE_TYPES
 
 log = logging.getLogger("graph_sync")
-EMBED_CHARS = 8000  # keeps one request inside the embedding model's input limit
 
 
 class NotShared(Exception):
     """Drive answers 403/404 for files not shared with the job's identity."""
-
-
-def embedding_text(title, content):
-    return (title + "\n\n" + content)[:EMBED_CHARS]
 
 
 async def sync_workspace(google, workspace, spreadsheet_id):
@@ -88,10 +82,10 @@ async def _import(google, workspace, row, stored):
     content = await google.file_text(meta)
     # Embed before storing anything: if embedding fails, the graph is unchanged
     # and the row shows error rather than a document search can never find.
-    embedding = await openrouter._embed(embedding_text(row.title, content))
+    embedded = await graph.embed_document(row.title, content)
     doc_id = await graph.documents.upsert_sheet_document(
         workspace, row.index_id, file_id, row.drive_url, row.doc_type, row.title, content, revision)
-    await graph.embeddings.save(doc_id, embedding)
+    await graph.embeddings.save(doc_id, *embedded)
     await graph.link_similar(workspace, doc_id, 0.85)
     return ("synced", doc_id, revision)
 

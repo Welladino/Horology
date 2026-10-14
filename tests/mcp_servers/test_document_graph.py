@@ -35,6 +35,8 @@ class FakeCursor:
         return False
     async def execute(self, sql, params=()):
         self.db.executed.append((" ".join(sql.split()), params))
+    async def executemany(self, sql, rows):
+        self.db.executed.append((" ".join(sql.split()), list(rows)))
     async def fetchone(self):
         return self.db.one.pop(0) if self.db.one else None
     async def fetchall(self):
@@ -119,16 +121,31 @@ class TestListDocuments:
         assert db.executed[-1][1][-1] == 100
 
 
+def section(doc_id, index, similarity, title="Pricing"):
+    return {"id": doc_id, "doc_type": "research", "title": title, "created_by_agent": "a", "supersedes_id": None,
+            "source": "sheet", "drive_url": None, "created_at": NOW, "chunk_index": index,
+            "passage": f"passage {doc_id}.{index}", "similarity": similarity}
+
+
 class TestSearchDocuments:
-    def test_embeds_query_and_orders_by_distance_in_workspace(self, db):
-        db.all.append([{"id": 4, "title": "Pricing", "created_at": NOW, "similarity": 0.91234}])
+    def test_searches_sections_in_workspace_and_groups_by_document(self, db):
+        db.all.append([section(4, 2, 0.91234), section(7, 0, 0.88), section(4, 5, 0.85), section(4, 1, 0.80), section(9, 3, 0.70)])
         with patch.object(openrouter, "_embed", AsyncMock(return_value=[0.5] * 768)) as embed:
-            result = run(graph.search_documents("what have we done on pricing?", limit=50))
+            result = run(graph.search_documents("what have we done on pricing?", limit=2))
         embed.assert_awaited_once_with("what have we done on pricing?")
         sql, params = db.executed[-1]
-        assert "<=> %s::vector" in sql and "d.workspace = %s" in sql
-        assert params[1] == "welladino" and params[-1] == 20
-        assert params[0].startswith("[0.5,") and result[0]["similarity"] == 0.9123
+        assert "FROM document_chunks c JOIN documents d" in sql and "d.workspace = %s" in sql
+        assert params[1] == "welladino" and params[-1] == 16
+        assert [r["id"] for r in result] == [4, 7]  # best section decides the order; doc 9 is past the limit
+        assert result[0]["similarity"] == 0.9123 and result[0]["created_at"] == NOW.isoformat()
+        assert result[0]["passages"] == [{"section": 2, "similarity": 0.9123, "text": "passage 4.2"},
+                                         {"section": 5, "similarity": 0.85, "text": "passage 4.5"}]
+
+    def test_clamps_limit_and_passages(self, db):
+        db.all.append([section(4, i, 0.9 - i / 100) for i in range(5)])
+        with patch.object(openrouter, "_embed", AsyncMock(return_value=[0.5] * 768)):
+            result = run(graph.search_documents("pricing", limit=50, passages=9))
+        assert db.executed[-1][1][-1] == 160 and len(result[0]["passages"]) == 3
 
     def test_rejects_empty_query(self, db):
         with pytest.raises(ValueError, match="query must not be empty"):
@@ -142,14 +159,29 @@ class TestEmbed:
         explicitly requesting 768 via `dimensions`."""
         monkeypatch.setattr(openrouter, "OPENROUTER_API_KEY", "sk-or-fake-key")
         response = MagicMock()
-        response.json.return_value = {"data": [{"embedding": [0.1] * 768}]}
+        response.json.return_value = {"data": [{"index": 0, "embedding": [0.1] * 768}]}
         with patch.object(openrouter.httpx.AsyncClient, "post", AsyncMock(return_value=response)) as post:
             result = run(openrouter._embed("some document text"))
         assert len(result) == 768
         _, kwargs = post.call_args
+        assert kwargs["json"]["input"] == ["some document text"]
         assert kwargs["json"]["dimensions"] == 768
         assert kwargs["json"]["model"] == "google/gemini-embedding-001"
         assert kwargs["headers"]["Authorization"] == "Bearer sk-or-fake-key"
+
+    def test_batches_sections_and_keeps_input_order(self, monkeypatch):
+        monkeypatch.setattr(openrouter, "OPENROUTER_API_KEY", "sk-or-fake-key")
+        def reply(*args, json, **kwargs):
+            response = MagicMock()
+            # Answer out of order, as the API may; vectors carry their input text's length.
+            response.json.return_value = {"data": [{"index": i, "embedding": [float(len(json["input"][i]))]}
+                                                   for i in reversed(range(len(json["input"])))]}
+            return response
+        texts = ["x" * n for n in range(1, 41)]
+        with patch.object(openrouter.httpx.AsyncClient, "post", AsyncMock(side_effect=reply)) as post:
+            vectors = run(openrouter._embed_many(texts))
+        assert post.await_count == 2  # 32 + 8
+        assert [v[0] for v in vectors] == [float(n) for n in range(1, 41)]
 
     def test_raises_without_api_key(self, monkeypatch):
         monkeypatch.setattr(openrouter, "OPENROUTER_API_KEY", None)
@@ -185,19 +217,21 @@ class TestAutoLinkSimilarDocuments:
     def test_links_only_candidates_above_threshold(self, db):
         db.one += [("some document content",), (True,), (10,)]
         db.all.append([(101, 0.90), (102, 0.50)])
-        with patch.object(openrouter, "_embed", AsyncMock()) as embed:
+        with patch.object(openrouter, "_embed_many", AsyncMock()) as embed:
             result = run(graph.auto_link_similar_documents(document_id=1, threshold=0.85))
         embed.assert_not_awaited()
         assert result["candidates_checked"] == 2
         assert result["newly_linked"] == [{"document_id": 101, "similarity": 0.9}]
         assert any("d.workspace = %s" in sql for sql, _ in db.executed)
 
-    def test_embeds_when_missing(self, db):
-        db.one += [("content",), None]
-        with patch.object(openrouter, "_embed", AsyncMock(return_value=[0.1] * 768)) as embed:
+    def test_embeds_sections_when_missing(self, db):
+        db.one += [("content",), (False,), {"title": "A plan"}]
+        with patch.object(openrouter, "_embed_many", AsyncMock(return_value=[[0.1] * 768])) as embed:
             run(graph.auto_link_similar_documents(document_id=1))
-        embed.assert_awaited_once_with("content")
+        embed.assert_awaited_once_with(["A plan\n\ncontent"])
         assert any("INSERT INTO document_embeddings" in sql for sql, _ in db.executed)
+        sql, rows = next((sql, rows) for sql, rows in db.executed if "INSERT INTO document_chunks" in sql)
+        assert [(r[0], r[1], r[2]) for r in rows] == [(1, 0, "content")]
 
 
 class TestSyncGraph:

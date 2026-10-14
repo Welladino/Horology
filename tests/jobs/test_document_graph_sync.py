@@ -97,7 +97,7 @@ def test_sync_imports_skips_unchanged_removes_and_writes_status(database):
                          row("3", "A register", "fileCCCCCCCCCC", True, doc_type="guide"),
                          row("4", "Other workspace", "fileAAAAAAAAAA", True, workspace="other-ws"),
                          row("5", "Not shared", "fileZZZZZZZZZZ", True)], files)
-    embed = AsyncMock(return_value=[0.1] * 768)
+    embed = AsyncMock(side_effect=lambda texts: [[0.1] * 768 for _ in texts])
 
     async def run():
         async with Database(database, 2) as db:
@@ -105,7 +105,7 @@ def test_sync_imports_skips_unchanged_removes_and_writes_status(database):
             try:
                 async with db.transaction() as conn, conn.cursor() as cur:
                     await cur.execute("DELETE FROM documents WHERE workspace IN ('test-ws', 'other-ws')")
-                with patch.object(openrouter, "_embed", embed):
+                with patch.object(openrouter, "_embed_many", embed):
                     first = await sync.sync_workspace(google, "test-ws", "sheet")
                     assert first == {"workspace": "test-ws", "synced": 2, "unchanged": 0, "errors": 1, "not_shared": 1, "removed": 0}
                     status = {r: v[0] for r, v in google.writes}
@@ -141,11 +141,13 @@ def test_restricted_login_can_write_and_search_agent_documents(database, monkeyp
         async with Database(database, 2) as db:
             graph.configure(db)
             try:
-                with patch.object(openrouter, "_embed", AsyncMock(return_value=[0.2] * 768)):
+                with patch.object(openrouter, "_embed", AsyncMock(return_value=[0.2] * 768)), \
+                        patch.object(openrouter, "_embed_many", AsyncMock(side_effect=lambda texts: [[0.2] * 768 for _ in texts])):
                     doc = await graph.write_document("research", "Seat pricing research", "Seats beat usage.", "test-agent")
                     await graph.auto_link_similar_documents(doc["id"])
                     found = await graph.search_documents("pricing")
                 assert found[0]["id"] == doc["id"] and found[0]["source"] == "agent"
+                assert found[0]["passages"][0]["text"] == "Seats beat usage."
                 monkeypatch.setenv("DOCUMENT_GRAPH_WORKSPACE", "other-ws")
                 with pytest.raises(ValueError):
                     await graph.get_document(doc["id"])
@@ -167,17 +169,52 @@ def test_failed_embedding_stores_nothing_and_a_half_import_is_retried(database):
             try:
                 async with db.transaction() as conn, conn.cursor() as cur:
                     await cur.execute("DELETE FROM documents WHERE workspace = 'test-ws'")
-                with patch.object(openrouter, "_embed", AsyncMock(side_effect=RuntimeError("401"))):
+                with patch.object(openrouter, "_embed_many", AsyncMock(side_effect=RuntimeError("401"))):
                     failed = await sync.sync_workspace(google, "test-ws", "sheet")
                 assert failed["errors"] == 1 and await graph.documents.sheet_revisions("test-ws") == {}
 
                 # A row stored by an older run without its embedding is not "unchanged".
                 doc_id = await graph.documents.upsert_sheet_document("test-ws", "1", "fileAAAAAAAAAA", "u", "guide", "Guide", "x", "3")
                 assert (await graph.documents.sheet_revisions("test-ws"))["1"] == (doc_id, None)
-                with patch.object(openrouter, "_embed", AsyncMock(return_value=[0.3] * 768)):
+                with patch.object(openrouter, "_embed_many", AsyncMock(side_effect=lambda texts: [[0.3] * 768 for _ in texts])):
                     fixed = await sync.sync_workspace(google, "test-ws", "sheet")
                 assert fixed["synced"] == 1 and (await graph.documents.sheet_revisions("test-ws"))["1"] == (doc_id, "3")
             finally:
+                async with db.transaction() as conn, conn.cursor() as cur:
+                    await cur.execute("DELETE FROM documents WHERE workspace = 'test-ws'")
+                graph.configure(None)
+    asyncio.run(run())
+
+
+def test_long_document_is_searchable_past_the_old_cutoff(database):
+    """A detail far down a long document is found, and returned as the passage."""
+    from horology_runtime.database import Database
+    filler = "\n\n".join("Background paragraph about the market and our customers." * 5 for _ in range(60))
+    text = "# Long plan\n\n" + filler + "\n\n## Pricing\n\nWe will charge per seat, billed yearly."
+    assert text.index("charge per seat") > 8000
+    google = FakeGoogle([HEADER, row("1", "Long plan", "fileAAAAAAAAAA", True)], {"fileAAAAAAAAAA": ("text/markdown", "1", text)})
+
+    def fake_vector(text):  # sections about seat pricing point one way, everything else another
+        return [1.0, 0.0] + [0.0] * 766 if "per seat" in text else [0.0, 1.0] + [0.0] * 766
+
+    async def run():
+        async with Database(database, 2) as db:
+            graph.configure(db)
+            try:
+                async with db.transaction() as conn, conn.cursor() as cur:
+                    await cur.execute("DELETE FROM documents WHERE workspace = 'test-ws'")
+                with patch.object(openrouter, "_embed_many", AsyncMock(side_effect=lambda texts: [fake_vector(t) for t in texts])):
+                    assert (await sync.sync_workspace(google, "test-ws", "sheet"))["synced"] == 1
+                async with db.transaction() as conn, conn.cursor() as cur:
+                    await cur.execute("SELECT count(*), max(length(c.content)) FROM document_chunks c JOIN documents d ON d.id = c.document_id WHERE d.workspace = 'test-ws'")
+                    count, longest = await cur.fetchone()
+                assert count > 5 and longest <= 2000
+                os.environ["DOCUMENT_GRAPH_WORKSPACE"] = "test-ws"
+                with patch.object(openrouter, "_embed", AsyncMock(return_value=fake_vector("per seat"))):
+                    found = await graph.search_documents("how will we price it?", passages=1)
+                assert found[0]["title"] == "Long plan" and "charge per seat" in found[0]["passages"][0]["text"]
+            finally:
+                os.environ.pop("DOCUMENT_GRAPH_WORKSPACE", None)
                 async with db.transaction() as conn, conn.cursor() as cur:
                     await cur.execute("DELETE FROM documents WHERE workspace = 'test-ws'")
                 graph.configure(None)
