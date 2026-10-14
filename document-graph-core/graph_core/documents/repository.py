@@ -11,7 +11,7 @@ class DocumentRepository:
 
     async def insert_agent_document(self, workspace, doc_type, title, content, created_by_agent, supersedes_id,
                                     domain=None, pipeline_id=None):
-        async with self.database.transaction() as conn, conn.cursor() as cur:
+        async with self.database.connection() as conn, conn.cursor() as cur:
             await cur.execute(
                 """
                 INSERT INTO documents (doc_type, title, content, created_by_agent, supersedes_id, workspace, source,
@@ -24,12 +24,12 @@ class DocumentRepository:
             return await cur.fetchone()
 
     async def count_existing(self, workspace, ids):
-        async with self.database.transaction() as conn, conn.cursor() as cur:
+        async with self.database.connection() as conn, conn.cursor() as cur:
             await cur.execute("SELECT count(*) FROM documents WHERE id = ANY(%s) AND workspace = %s", (list(ids), workspace))
             return (await cur.fetchone())[0]
 
     async def get(self, workspace, document_id):
-        async with self.database.transaction() as conn, conn.cursor(row_factory=dict_row) as cur:
+        async with self.database.connection() as conn, conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(
                 """
                 SELECT id, doc_type, title, content, created_by_agent, supersedes_id, source, drive_url, created_at,
@@ -41,7 +41,7 @@ class DocumentRepository:
             return await cur.fetchone()
 
     async def list(self, workspace, doc_type, limit, domain=None):
-        async with self.database.transaction() as conn, conn.cursor(row_factory=dict_row) as cur:
+        async with self.database.connection() as conn, conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(
                 f"""
                 SELECT {SUMMARY_COLUMNS} FROM documents
@@ -53,7 +53,7 @@ class DocumentRepository:
             return await cur.fetchall()
 
     async def related(self, workspace, document_id):
-        async with self.database.transaction() as conn, conn.cursor(row_factory=dict_row) as cur:
+        async with self.database.connection() as conn, conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(
                 """
                 SELECT d.id, d.title, d.doc_type, l.relation, 'outgoing' AS direction
@@ -72,7 +72,7 @@ class DocumentRepository:
 
     async def sheet_documents(self, workspace):
         """Return {index_document_id: (graph id, imported Drive revision)} for sheet rows."""
-        async with self.database.transaction() as conn, conn.cursor() as cur:
+        async with self.database.connection() as conn, conn.cursor() as cur:
             await cur.execute(
                 "SELECT index_document_id, id, source_revision FROM documents WHERE workspace = %s AND source = 'sheet'",
                 (workspace,),
@@ -82,7 +82,7 @@ class DocumentRepository:
     async def upsert_sheet_document(self, workspace, index_document_id, drive_file_id, drive_url, doc_type, title, content,
                                     revision, domain=None, business_entity=None, pipeline_id=None):
         """Insert or replace one sheet document; returns its graph id."""
-        async with self.database.transaction() as conn, conn.cursor() as cur:
+        async with self.database.connection() as conn, conn.cursor() as cur:
             await cur.execute(
                 """
                 INSERT INTO documents (doc_type, title, content, created_by_agent, workspace, source,
@@ -110,7 +110,7 @@ class DocumentRepository:
         if not rows:
             return []
         columns = [list(column) for column in zip(*rows)]
-        async with self.database.transaction() as conn, conn.cursor() as cur:
+        async with self.database.connection() as conn, conn.cursor() as cur:
             await cur.execute(
                 """
                 UPDATE documents d
@@ -125,7 +125,7 @@ class DocumentRepository:
             return [row[0] for row in await cur.fetchall()]
 
     async def set_supersedes(self, workspace, document_id, supersedes_id):
-        async with self.database.transaction() as conn, conn.cursor() as cur:
+        async with self.database.connection() as conn, conn.cursor() as cur:
             await cur.execute("UPDATE documents SET supersedes_id = %s WHERE id = %s AND workspace = %s",
                               (supersedes_id, document_id, workspace))
 
@@ -133,7 +133,7 @@ class DocumentRepository:
         """Remove sheet documents (their sections, vectors and links cascade); returns the ids removed."""
         if not index_document_ids:
             return []
-        async with self.database.transaction() as conn, conn.cursor() as cur:
+        async with self.database.connection() as conn, conn.cursor() as cur:
             await cur.execute(
                 "DELETE FROM documents WHERE workspace = %s AND source = 'sheet' AND index_document_id = ANY(%s) RETURNING index_document_id",
                 (workspace, list(index_document_ids)),
@@ -145,9 +145,46 @@ class LinkRepository:
     def __init__(self, database):
         self.database = database
 
+    async def add_checked(self, workspace, from_doc_id, to_doc_id, relation):
+        """Add a link only if both documents are in the workspace, in one statement.
+        Returns (both exist, new link id or None when the edge already exists)."""
+        async with self.database.connection() as conn, conn.cursor() as cur:
+            await cur.execute(
+                """
+                WITH ok AS (
+                    SELECT count(*) = cardinality(ARRAY(SELECT DISTINCT unnest(ARRAY[%s, %s]::bigint[]))) AS both_exist
+                    FROM documents WHERE workspace = %s AND id IN (%s, %s)
+                ), added AS (
+                    INSERT INTO document_links (from_doc_id, to_doc_id, relation)
+                    SELECT %s, %s, %s FROM ok WHERE ok.both_exist
+                    ON CONFLICT (from_doc_id, to_doc_id, relation) DO NOTHING
+                    RETURNING id
+                )
+                SELECT (SELECT both_exist FROM ok), (SELECT id FROM added)
+                """,
+                (from_doc_id, to_doc_id, workspace, from_doc_id, to_doc_id, from_doc_id, to_doc_id, relation),
+            )
+            return await cur.fetchone()
+
+    async def add_many(self, from_doc_id, to_doc_ids, relation):
+        """Add links from one document to several in one statement; returns the ids newly linked to."""
+        if not to_doc_ids:
+            return set()
+        async with self.database.connection() as conn, conn.cursor() as cur:
+            await cur.execute(
+                """
+                INSERT INTO document_links (from_doc_id, to_doc_id, relation)
+                SELECT %s, to_doc_id, %s FROM unnest(%s::bigint[]) AS t(to_doc_id)
+                ON CONFLICT (from_doc_id, to_doc_id, relation) DO NOTHING
+                RETURNING to_doc_id
+                """,
+                (from_doc_id, relation, list(to_doc_ids)),
+            )
+            return {row[0] for row in await cur.fetchall()}
+
     async def add(self, from_doc_id, to_doc_id, relation):
         """Return the new link id, or None when the edge already exists."""
-        async with self.database.transaction() as conn, conn.cursor() as cur:
+        async with self.database.connection() as conn, conn.cursor() as cur:
             await cur.execute(
                 """
                 INSERT INTO document_links (from_doc_id, to_doc_id, relation)

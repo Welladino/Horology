@@ -114,3 +114,19 @@ def test_a_failed_start_frees_the_claim(database):
                 await runs.finish(WS, "topics", "entities", 1)
         assert await runs.claim(WS, "sync") is None  # neither topics nor the failed follow-up holds it
     with_database(database, body)
+
+
+def test_concurrent_requests_start_exactly_one_run(database):
+    """The lock and the check-and-claim go in one round trip; ten requests at once still claim once."""
+    from horology_runtime.database import Database
+
+    async def body(db):
+        started, start = fake_start()
+        async with Database(database, 5) as wide:  # five connections, so the requests really overlap
+            graph_core.configure(wide)
+            with patch.object(cloud_run, "start", start):
+                replies = await asyncio.gather(*(runs.request(WS, mode) for mode in ("sync", "entities", "topics") * 3 + ("sync",)))
+            graph_core.configure(db)
+        assert sum(r["started"] for r in replies) == 1 and len(started) == 1
+        assert {r["reason"] for r in replies if not r["started"]} <= {"already_running", "cooldown"}
+    with_database(database, body)

@@ -2,6 +2,11 @@
 
 Statement and lock timeouts are defaults on the service logins (migration
 20261014_001), so each session gets them without extra round trips.
+
+Connections are in autocommit mode. connection() runs single statements with
+no BEGIN/COMMIT (Postgres makes each one atomic on its own): one round trip
+instead of three. transaction() is for statements that must succeed or fail
+together; it sends BEGIN and COMMIT.
 """
 import time
 from contextlib import asynccontextmanager
@@ -29,7 +34,7 @@ class Database:
         if not dsn:
             raise ValueError('Database URL is not configured')
         options = {'sslrootcert': certifi.where(), 'connect_timeout': TIMEOUTS.database_connect,
-                   'prepare_threshold': None}
+                   'prepare_threshold': None, 'autocommit': True}
         # Do not inherit the Supabase-specific certificate used by the gateway's adapter.
         if conninfo_to_dict(dsn).get('host', '').endswith('.neon.tech'):
             options['sslmode'] = 'verify-full'
@@ -45,8 +50,14 @@ class Database:
         await self.pool.close()
 
     @asynccontextmanager
-    async def transaction(self):
-        # Pool connection contexts commit on success and roll back on failure,
-        # including cancellation.
+    async def connection(self):
+        """For one statement: it commits on its own when it succeeds."""
         async with self.pool.connection() as db:
+            yield db
+
+    @asynccontextmanager
+    async def transaction(self):
+        """For several statements that must succeed or fail together: commits on success,
+        rolls back on failure, including cancellation."""
+        async with self.pool.connection() as db, db.transaction():
             yield db

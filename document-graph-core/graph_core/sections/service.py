@@ -44,6 +44,11 @@ async def store(document_id, embedded):
     await _repository().save(document_id, *embedded)
 
 
+async def to_embed(workspace, document_id):
+    """(title, content, has sections) for a document in the workspace; None if there's none."""
+    return await _repository().to_embed(workspace, document_id)
+
+
 async def has_sections(document_id):
     return await _repository().has_sections(document_id)
 

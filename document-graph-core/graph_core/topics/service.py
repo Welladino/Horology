@@ -94,18 +94,11 @@ async def list_topics(workspace, domain=None):
 
 async def get_topic(workspace, topic_id, passages=3):
     """A topic with its documents (and how much of each falls in it) and its strongest passages."""
-    repository = _repository()
-    topic = await repository.get(workspace, topic_id)
+    topic = await _repository().detail(workspace, topic_id, passages)
     if topic is None:
         raise ValueError(f"No topic with id {topic_id}")
-    documents = await repository.documents(topic_id)
-    strongest = await repository.strongest_sections(topic_id, passages)
-    texts = await sections.texts([(doc, idx) for doc, idx, _ in strongest])
-    titles = {row["id"]: row["title"] for row in documents}
-    for row in documents:
-        row["share"] = float(row["share"])
-    return {"id": topic["id"], "name": topic["name"] or "(not named yet)", "summary": topic["summary"],
-            "documents": documents,
-            "passages": [{"document_id": doc, "title": titles.get(doc), "section": idx,
-                          "confidence": round(float(confidence), 4), "text": texts.get((doc, idx), "")}
-                         for doc, idx, confidence in strongest]}
+    for row in topic["documents"]:
+        row["share"] = float(row["share"])  # JSON drops the decimal point of 1.0
+    for row in topic["passages"]:
+        row["confidence"] = float(row["confidence"])
+    return {**topic, "name": topic["name"] or "(not named yet)"}

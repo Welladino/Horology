@@ -44,6 +44,8 @@ class FakeCursor:
         return self.db.one.pop(0) if self.db.one else None
     async def fetchall(self):
         return self.db.all.pop(0) if self.db.all else []
+    def nextset(self):
+        return True
 
 
 class FakeDatabase:
@@ -54,6 +56,8 @@ class FakeDatabase:
         conn = MagicMock()
         conn.cursor = lambda **kwargs: FakeCursor(self)
         yield conn
+
+    connection = transaction
 
 
 @pytest.fixture
@@ -126,7 +130,7 @@ class TestWorkspaceScoping:
             run(graph.get_document(9))
 
     def test_link_requires_both_documents_in_workspace(self, db):
-        db.one.append((1,))
+        db.one.append((False, None))  # (both exist, new link id)
         with pytest.raises(ValueError, match="Both documents must exist"):
             run(graph.link_documents(1, 2, "informed_by"))
 
@@ -244,8 +248,8 @@ class TestAutoLinkSimilarDocuments:
             run(graph.auto_link_similar_documents(document_id=999))
 
     def test_links_only_candidates_above_threshold(self, db):
-        db.one += [("some document content",), (True,), (10,)]
-        db.all.append([(101, 0.90), (102, 0.50)])
+        db.one.append(("A plan", "some document content", True))  # (title, content, has sections)
+        db.all += [[(101, 0.90), (102, 0.50)], [(101,)]]  # similar documents; the links newly added
         with patch.object(embeddings, "embed_many", AsyncMock()) as embed:
             result = run(graph.auto_link_similar_documents(document_id=1, threshold=0.85))
         embed.assert_not_awaited()
@@ -254,17 +258,28 @@ class TestAutoLinkSimilarDocuments:
         assert any("d.workspace = %s" in sql for sql, _ in db.executed)
 
     def test_embeds_sections_when_missing(self, db):
-        db.one += [{"title": "A plan", "content": "content"}, (False,)]
-        with patch.object(embeddings, "embed_many", AsyncMock(return_value=[[0.1] * 768])) as embed:
+        from graph_core.sections import repository as section_repository
+        db.one.append(("A plan", "content", False))
+        with patch.object(embeddings, "embed_many", AsyncMock(return_value=[[0.1] * 768])) as embed, \
+                patch.object(section_repository, "AsyncClientCursor", lambda conn: FakeCursor(db)):
             run(graph.auto_link_similar_documents(document_id=1))
         embed.assert_awaited_once_with(["A plan\n\ncontent"])
-        assert any("INSERT INTO document_embeddings" in sql for sql, _ in db.executed)
-        sql, rows = next((sql, rows) for sql, rows in db.executed if "INSERT INTO document_chunks" in sql)
-        assert [(r[0], r[1], r[2]) for r in rows] == [(1, 0, "content")]
+        sql, params = next((sql, params) for sql, params in db.executed if "INSERT INTO document_chunks" in sql)
+        # One round trip: the document vector, the old sections' removal and the new sections together
+        assert "INSERT INTO document_embeddings" in sql and "DELETE FROM document_chunks" in sql
+        assert params[3:6] == [1, 0, "content"]
 
 
 class TestSyncGraph:
+    @pytest.fixture(autouse=True)
+    def client_cursor(self, db):
+        """Run requests use a client-side cursor (one round trip); the fake stands in for it."""
+        from graph_core.runs import repository
+        with patch.object(repository, "AsyncClientCursor", lambda conn: FakeCursor(db)):
+            yield
+
     def test_refuses_without_a_configured_job(self, db, monkeypatch):
+        db.one.append((None, None, 1))  # (running mode, cooldown seconds, claimed)
         monkeypatch.delenv("GRAPH_SYNC_JOB", raising=False)
         with pytest.raises(ValueError, match="not configured"):
             run(graph.sync_graph())
@@ -273,6 +288,7 @@ class TestSyncGraph:
         from graph_core.runs import cloud_run
         monkeypatch.setenv("GRAPH_SYNC_JOB", "projects/horology-dev/locations/us-central1/jobs/document-graph-sync")
         monkeypatch.setenv("DOCUMENT_GRAPH_WORKSPACE", "job")
+        db.one.append((None, None, 1))
         response = MagicMock()
         response.json.return_value = {"name": "operations/123"}
         with patch.object(cloud_run, "_token", AsyncMock(return_value="token")), \
@@ -290,6 +306,7 @@ class TestSyncGraph:
     def test_rebuild_topics_starts_the_job_in_topics_mode(self, db, monkeypatch):
         from graph_core.runs import cloud_run
         monkeypatch.setenv("GRAPH_SYNC_JOB", "projects/horology-dev/locations/us-central1/jobs/document-graph-sync")
+        db.one.append((None, None, 1))
         response = MagicMock()
         response.json.return_value = {"name": "operations/456"}
         with patch.object(cloud_run, "_token", AsyncMock(return_value="token")), \
@@ -305,7 +322,7 @@ class TestSyncGraph:
 
     def test_not_started_while_a_run_is_in_progress(self, db, monkeypatch):
         from graph_core.runs import cloud_run
-        db.one.append(("sync",))  # a sync run holds the workspace
+        db.one.append(("sync", None, 0))  # a sync run holds the workspace
         with patch.object(cloud_run, "start", AsyncMock()) as start:
             result = run(graph.rebuild_topics())
         assert result["started"] is False and result["reason"] == "already_running" and result["running"] == "sync"
@@ -313,7 +330,7 @@ class TestSyncGraph:
 
     def test_not_started_within_the_cooldown(self, db, monkeypatch):
         from graph_core.runs import cloud_run
-        db.one.extend([None, (120,)])  # nothing running; asked 3 minutes ago
+        db.one.append((None, 120, 0))  # nothing running; asked 3 minutes ago
         with patch.object(cloud_run, "start", AsyncMock()) as start:
             result = run(graph.sync_graph())
         assert result == {"workspace": "welladino", "started": False, "reason": "cooldown", "retry_after_seconds": 120}
@@ -321,12 +338,13 @@ class TestSyncGraph:
 
     def test_a_failed_start_clears_the_request_so_the_agent_can_retry(self, db, monkeypatch):
         monkeypatch.delenv("GRAPH_SYNC_JOB", raising=False)
+        db.one.append((None, None, 1))
         with pytest.raises(ValueError):
             run(graph.sync_graph())
-        assert "UPDATE graph_runs SET requested_at = NULL" in db.executed[-1][0]
-        assert "running_since = NULL" in db.executed[-2][0]  # the claim is freed too
+        assert "running_since = NULL" in db.executed[-1][0] and "requested_at = NULL" in db.executed[-1][0]
 
     def test_rejects_a_malformed_job_name(self, db, monkeypatch):
         monkeypatch.setenv("GRAPH_SYNC_JOB", "https://evil.example/jobs/x")
+        db.one.append((None, None, 1))
         with pytest.raises(ValueError, match="not configured"):
             run(graph.sync_graph())

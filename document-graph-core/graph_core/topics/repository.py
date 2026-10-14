@@ -8,7 +8,7 @@ class TopicRepository:
 
     async def assignments(self, workspace):
         """{(document_id, chunk_index): topic id} for the workspace."""
-        async with self.database.transaction() as conn, conn.cursor() as cur:
+        async with self.database.connection() as conn, conn.cursor() as cur:
             await cur.execute(
                 """
                 SELECT st.document_id, st.chunk_index, st.topic_id
@@ -24,7 +24,7 @@ class TopicRepository:
         if not keys:
             return {}
         documents, indexes = zip(*keys)
-        async with self.database.transaction() as conn, conn.cursor() as cur:
+        async with self.database.connection() as conn, conn.cursor() as cur:
             await cur.execute(
                 """
                 SELECT st.document_id, st.chunk_index, st.topic_id
@@ -36,7 +36,7 @@ class TopicRepository:
             return {(doc, idx): topic for doc, idx, topic in await cur.fetchall()}
 
     async def topics(self, workspace):
-        async with self.database.transaction() as conn, conn.cursor(row_factory=dict_row) as cur:
+        async with self.database.connection() as conn, conn.cursor(row_factory=dict_row) as cur:
             await cur.execute("SELECT id, name, summary, pinned FROM topics WHERE workspace = %s ORDER BY id", (workspace,))
             return await cur.fetchall()
 
@@ -77,25 +77,30 @@ class TopicRepository:
             return ids
 
     async def name(self, workspace, topic_id, name, summary):
-        async with self.database.transaction() as conn, conn.cursor() as cur:
+        async with self.database.connection() as conn, conn.cursor() as cur:
             await cur.execute("UPDATE topics SET name = %s, summary = %s, updated_at = now() WHERE id = %s AND workspace = %s",
                               (name, summary, topic_id, workspace))
 
     async def place(self, placements):
-        """Assign sections to topics: [(doc, idx, topic id, confidence)]; replaces any earlier placement."""
-        async with self.database.transaction() as conn, conn.cursor() as cur:
-            await cur.executemany(
+        """Assign sections to topics: [(doc, idx, topic id, confidence)]; replaces any earlier placement.
+        One statement; nothing is sent when there's nothing to place."""
+        if not placements:
+            return
+        documents, indexes, topic_ids, confidences = zip(*placements)
+        async with self.database.connection() as conn, conn.cursor() as cur:
+            await cur.execute(
                 """
                 INSERT INTO section_topics (document_id, chunk_index, topic_id, confidence, assigned_by)
-                VALUES (%s, %s, %s, %s, 'placement')
+                SELECT document_id, chunk_index, topic_id, confidence, 'placement'
+                FROM unnest(%s::bigint[], %s::int[], %s::bigint[], %s::real[]) AS p(document_id, chunk_index, topic_id, confidence)
                 ON CONFLICT (document_id, chunk_index) DO UPDATE SET
                     topic_id = EXCLUDED.topic_id, confidence = EXCLUDED.confidence, assigned_by = 'placement'
                 """,
-                placements)
+                (list(documents), list(indexes), list(topic_ids), list(confidences)))
 
     async def summaries(self, workspace, domain=None):
         """Each named topic with its section and document counts and the mix of document types."""
-        async with self.database.transaction() as conn, conn.cursor(row_factory=dict_row) as cur:
+        async with self.database.connection() as conn, conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(
                 """
                 SELECT t.id, t.name, t.summary,
@@ -116,34 +121,33 @@ class TopicRepository:
             )
             return await cur.fetchall()
 
-    async def get(self, workspace, topic_id):
-        async with self.database.transaction() as conn, conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute("SELECT id, name, summary, pinned FROM topics WHERE id = %s AND workspace = %s", (topic_id, workspace))
-            return await cur.fetchone()
-
-    async def documents(self, topic_id):
-        """Documents in a topic with the share of their sections that fall in it."""
-        async with self.database.transaction() as conn, conn.cursor(row_factory=dict_row) as cur:
+    async def detail(self, workspace, topic_id, passages):
+        """One topic with its documents (share of their sections in it) and its highest-confidence
+        passages, in one statement. None if there's no such topic in the workspace."""
+        async with self.database.connection() as conn, conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(
                 """
-                SELECT d.id, d.title, d.doc_type, d.source, d.drive_url, d.domain, d.pipeline_id,
-                       count(*) AS sections_in_topic,
-                       round(count(*)::numeric / (SELECT count(*) FROM document_chunks c WHERE c.document_id = d.id), 2) AS share
-                FROM section_topics st JOIN documents d ON d.id = st.document_id
-                WHERE st.topic_id = %s
-                GROUP BY d.id
-                ORDER BY count(*) DESC, d.id
+                SELECT t.id, t.name, t.summary,
+                       coalesce((SELECT jsonb_agg(to_jsonb(x) - 'sort' ORDER BY x.sort DESC, x.id) FROM (
+                           SELECT d.id, d.title, d.doc_type, d.source, d.drive_url, d.domain, d.pipeline_id,
+                                  count(*) AS sections_in_topic, count(*) AS sort,
+                                  round(count(*)::numeric / (SELECT count(*) FROM document_chunks c
+                                                             WHERE c.document_id = d.id), 2)::float AS share
+                           FROM section_topics st JOIN documents d ON d.id = st.document_id
+                           WHERE st.topic_id = t.id
+                           GROUP BY d.id) x), '[]') AS documents,
+                       coalesce((SELECT jsonb_agg(jsonb_build_object(
+                                     'document_id', p.document_id, 'title', d.title, 'section', p.chunk_index,
+                                     'confidence', round(p.confidence::numeric, 4)::float, 'text', c.content)
+                                     ORDER BY p.confidence DESC, p.document_id, p.chunk_index)
+                                 FROM (SELECT document_id, chunk_index, confidence FROM section_topics
+                                       WHERE topic_id = t.id
+                                       ORDER BY confidence DESC, document_id, chunk_index LIMIT %s) p
+                                 JOIN documents d ON d.id = p.document_id
+                                 JOIN document_chunks c ON c.document_id = p.document_id AND c.chunk_index = p.chunk_index),
+                                '[]') AS passages
+                FROM topics t WHERE t.id = %s AND t.workspace = %s
                 """,
-                (topic_id,),
+                (passages, topic_id, workspace),
             )
-            return await cur.fetchall()
-
-    async def strongest_sections(self, topic_id, limit):
-        """The topic's highest-confidence sections, as (document_id, chunk_index, confidence)."""
-        async with self.database.transaction() as conn, conn.cursor() as cur:
-            await cur.execute(
-                "SELECT document_id, chunk_index, confidence FROM section_topics WHERE topic_id = %s "
-                "ORDER BY confidence DESC, document_id, chunk_index LIMIT %s",
-                (topic_id, limit),
-            )
-            return await cur.fetchall()
+            return await cur.fetchone()

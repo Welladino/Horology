@@ -20,12 +20,16 @@ class OAuthRepository:
         return hashlib.sha256(key.encode()).hexdigest()
 
     async def put(self, kind, key, value, expires):
-        async with self.database.transaction() as db, db.cursor() as cur:
-            await cur.execute(f'DELETE FROM {self.table} WHERE expires <= clock_timestamp()')
-            await cur.execute(f'INSERT INTO {self.table}(kind,key_hash,data,expires) VALUES(%s,%s,%s::jsonb,to_timestamp(%s)) ON CONFLICT(kind,key_hash) DO UPDATE SET data=EXCLUDED.data,expires=EXCLUDED.expires', (kind, self.digest(key), json.dumps(value), expires))
+        # One statement: expired records go in the same round trip as the write. The record being
+        # written is left out of the clean-up, so the statement never touches one row twice.
+        digest = self.digest(key)
+        async with self.database.connection() as db, db.cursor() as cur:
+            await cur.execute(f'WITH expired AS (DELETE FROM {self.table} WHERE expires <= clock_timestamp() '
+                              f'AND NOT (kind = %s AND key_hash = %s)) '
+                              f'INSERT INTO {self.table}(kind,key_hash,data,expires) VALUES(%s,%s,%s::jsonb,to_timestamp(%s)) ON CONFLICT(kind,key_hash) DO UPDATE SET data=EXCLUDED.data,expires=EXCLUDED.expires', (kind, digest, kind, digest, json.dumps(value), expires))
 
     async def get(self, kind, key, consume=False):
-        async with self.database.transaction() as db, db.cursor() as cur:
+        async with self.database.connection() as db, db.cursor() as cur:
             return await TransactionRecords(cur, self.table).get(kind, key, consume)
 
     async def revoke(self, grant):

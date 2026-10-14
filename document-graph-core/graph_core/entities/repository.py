@@ -17,7 +17,7 @@ class EntityRepository:
     # Buckets and relationship types
 
     async def types(self, workspace):
-        async with self.database.transaction() as conn, conn.cursor(row_factory=dict_row) as cur:
+        async with self.database.connection() as conn, conn.cursor(row_factory=dict_row) as cur:
             await cur.execute("SELECT id, kind, name, description, position FROM entity_types WHERE workspace = %s "
                               "ORDER BY kind, position, id", (workspace,))
             return await cur.fetchall()
@@ -33,12 +33,12 @@ class EntityRepository:
                 [(workspace, kind, name, description, position) for position, (name, description) in enumerate(rows)])
 
     async def rename_type(self, workspace, type_id, name):
-        async with self.database.transaction() as conn, conn.cursor() as cur:
+        async with self.database.connection() as conn, conn.cursor() as cur:
             await cur.execute("UPDATE entity_types SET name = %s WHERE id = %s AND workspace = %s", (name, type_id, workspace))
 
     async def move_bucket(self, workspace, from_type_id, to_type_id, suggested):
         """Move entities waiting in `other` whose suggested bucket now exists; returns how many moved."""
-        async with self.database.transaction() as conn, conn.cursor() as cur:
+        async with self.database.connection() as conn, conn.cursor() as cur:
             await cur.execute(
                 "UPDATE entities SET type_id = %s, suggested_type = NULL, updated_at = now() "
                 "WHERE workspace = %s AND type_id = %s AND lower(suggested_type) = %s AND status = 'active'",
@@ -65,18 +65,18 @@ class EntityRepository:
         new and changed ones before retries of failures.
 
         Returns (document_id, sections_hash) with the hash to record once done."""
-        async with self.database.transaction() as conn, conn.cursor() as cur:
+        async with self.database.connection() as conn, conn.cursor() as cur:
             await cur.execute(self._PENDING + " ORDER BY retry NULLS FIRST, current.document_id LIMIT %s", (workspace, limit))
             return [(document_id, sections_hash) for document_id, sections_hash, _ in await cur.fetchall()]
 
     async def count_pending(self, workspace):
         """Pending documents not counting retries of failures (they wait for a later run, not a follow-up)."""
-        async with self.database.transaction() as conn, conn.cursor() as cur:
+        async with self.database.connection() as conn, conn.cursor() as cur:
             await cur.execute(f"SELECT count(*) FROM ({self._PENDING}) p WHERE NOT coalesce(p.retry, false)", (workspace,))
             return (await cur.fetchone())[0]
 
     async def mark_run(self, document_id, sections_hash, status):
-        async with self.database.transaction() as conn, conn.cursor() as cur:
+        async with self.database.connection() as conn, conn.cursor() as cur:
             await cur.execute(
                 """
                 INSERT INTO entity_runs (document_id, sections_hash, status) VALUES (%s, %s, %s)
@@ -89,7 +89,7 @@ class EntityRepository:
 
     async def exact(self, workspace, type_id, normalized):
         """An active entity in this bucket whose name or alias normalises to `normalized`."""
-        async with self.database.transaction() as conn, conn.cursor() as cur:
+        async with self.database.connection() as conn, conn.cursor() as cur:
             await cur.execute(
                 """
                 SELECT e.id FROM entity_aliases a JOIN entities e ON e.id = a.entity_id
@@ -103,7 +103,7 @@ class EntityRepository:
     async def shortlist(self, workspace, type_id, embedding, limit):
         """The closest active entities in this bucket, with their aliases."""
         vector = vector_text(embedding)
-        async with self.database.transaction() as conn, conn.cursor(row_factory=dict_row) as cur:
+        async with self.database.connection() as conn, conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(
                 """
                 SELECT e.id, e.name, e.description, 1 - (e.embedding <=> %s::vector) AS similarity,
@@ -128,7 +128,7 @@ class EntityRepository:
             return entity_id
 
     async def add_alias(self, entity_id, alias, normalized):
-        async with self.database.transaction() as conn, conn.cursor() as cur:
+        async with self.database.connection() as conn, conn.cursor() as cur:
             await cur.execute("INSERT INTO entity_aliases (entity_id, alias, normalized) VALUES (%s, %s, %s) "
                               "ON CONFLICT DO NOTHING", (entity_id, alias, normalized))
 
@@ -172,40 +172,29 @@ class EntityRepository:
 
     # Lookups
 
-    async def find_by_name(self, workspace, normalized, type_id=None):
-        async with self.database.transaction() as conn, conn.cursor() as cur:
+    async def _cards(self, chosen, params, mentions_limit=None):
+        """Entity cards for the ids a `chosen (id, rank)` CTE picks, in rank order, in one statement.
+        With mentions_limit, each card also lists where the entity appears."""
+        mentions = ""
+        if mentions_limit is not None:
+            mentions = """,
+                coalesce((SELECT jsonb_agg(to_jsonb(x) - 'sort' ORDER BY x.sort) FROM (
+                    SELECT d.id AS document_id, d.title, d.doc_type, d.drive_url, d.domain, d.pipeline_id,
+                           m.chunk_index AS section, c.content AS text, array_agg(DISTINCT m.surface) AS named_as,
+                           row_number() OVER (ORDER BY d.created_at DESC, m.chunk_index) AS sort
+                    FROM entity_mentions m JOIN documents d ON d.id = m.document_id
+                    JOIN document_chunks c ON c.document_id = m.document_id AND c.chunk_index = m.chunk_index
+                    WHERE m.entity_id = e.id
+                    GROUP BY d.id, m.chunk_index, c.content
+                    ORDER BY d.created_at DESC, m.chunk_index
+                    LIMIT %(mentions_limit)s) x), '[]') AS mentions"""
+        async with self.database.connection() as conn, conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(
-                """
-                SELECT DISTINCT e.id FROM entity_aliases a JOIN entities e ON e.id = a.entity_id
-                WHERE e.workspace = %s AND e.status = 'active' AND a.normalized = %s AND (%s::bigint IS NULL OR e.type_id = %s)
-                """,
-                (workspace, normalized, type_id, type_id))
-            return [row[0] for row in await cur.fetchall()]
-
-    async def nearest(self, workspace, embedding, limit, type_id=None):
-        vector = vector_text(embedding)
-        async with self.database.transaction() as conn, conn.cursor() as cur:
-            await cur.execute(
-                """
-                SELECT e.id FROM entities e
-                WHERE e.workspace = %s AND e.status = 'active' AND e.embedding IS NOT NULL
-                  AND (%s::bigint IS NULL OR e.type_id = %s)
-                  AND EXISTS (SELECT 1 FROM entity_mentions m WHERE m.entity_id = e.id)
-                ORDER BY e.embedding <=> %s::vector LIMIT %s
-                """,
-                (workspace, type_id, type_id, vector, limit))
-            return [row[0] for row in await cur.fetchall()]
-
-    async def cards(self, workspace, entity_ids):
-        """Entities with bucket, aliases, document count and relationships, in the given order."""
-        if not entity_ids:
-            return []
-        async with self.database.transaction() as conn, conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(
-                """
+                f"""
+                WITH chosen AS ({chosen})
                 SELECT e.id, e.name, t.name AS bucket, e.description, e.suggested_type,
                        coalesce((SELECT array_agg(a.alias ORDER BY a.alias) FROM entity_aliases a
-                                 WHERE a.entity_id = e.id AND a.normalized <> lower(e.name)), '{}') AS aliases,
+                                 WHERE a.entity_id = e.id AND a.normalized <> lower(e.name)), '{{}}') AS aliases,
                        (SELECT count(DISTINCT m.document_id) FROM entity_mentions m WHERE m.entity_id = e.id) AS documents,
                        coalesce((SELECT jsonb_agg(jsonb_build_object(
                                      'relation', rt.name, 'direction', CASE WHEN r.from_entity = e.id THEN 'outgoing' ELSE 'incoming' END,
@@ -214,17 +203,46 @@ class EntityRepository:
                                      ORDER BY rt.name, o.name)
                                  FROM entity_relations r JOIN entity_types rt ON rt.id = r.type_id
                                  JOIN entities o ON o.id = CASE WHEN r.from_entity = e.id THEN r.to_entity ELSE r.from_entity END
-                                 WHERE r.from_entity = e.id OR r.to_entity = e.id), '[]') AS relationships
-                FROM entities e JOIN entity_types t ON t.id = e.type_id
-                WHERE e.workspace = %s AND e.id = ANY(%s)
+                                 WHERE r.from_entity = e.id OR r.to_entity = e.id), '[]') AS relationships{mentions}
+                FROM chosen JOIN entities e ON e.id = chosen.id JOIN entity_types t ON t.id = e.type_id
+                WHERE e.workspace = %(workspace)s
+                ORDER BY chosen.rank
                 """,
-                (workspace, list(entity_ids)))
-            rows = {row["id"]: row for row in await cur.fetchall()}
-            return [rows[i] for i in entity_ids if i in rows]
+                {**params, "mentions_limit": mentions_limit})
+            return await cur.fetchall()
+
+    async def cards_by_name(self, workspace, normalized, type_id, limit):
+        """Active entities with this name or alias (after normalising), as cards."""
+        return await self._cards(
+            """
+            SELECT DISTINCT e.id, e.id AS rank FROM entity_aliases a JOIN entities e ON e.id = a.entity_id
+            WHERE e.workspace = %(workspace)s AND e.status = 'active' AND a.normalized = %(normalized)s
+              AND (%(type_id)s::bigint IS NULL OR e.type_id = %(type_id)s)
+            ORDER BY e.id LIMIT %(limit)s
+            """,
+            {"workspace": workspace, "normalized": normalized, "type_id": type_id, "limit": limit})
+
+    async def cards_nearest(self, workspace, embedding, type_id, limit):
+        """The active, mentioned entities closest in meaning to embedding, as cards."""
+        return await self._cards(
+            """
+            SELECT e.id, row_number() OVER (ORDER BY e.embedding <=> %(vector)s::vector) AS rank FROM entities e
+            WHERE e.workspace = %(workspace)s AND e.status = 'active' AND e.embedding IS NOT NULL
+              AND (%(type_id)s::bigint IS NULL OR e.type_id = %(type_id)s)
+              AND EXISTS (SELECT 1 FROM entity_mentions m WHERE m.entity_id = e.id)
+            ORDER BY e.embedding <=> %(vector)s::vector LIMIT %(limit)s
+            """,
+            {"workspace": workspace, "vector": vector_text(embedding), "type_id": type_id, "limit": limit})
+
+    async def card_with_mentions(self, workspace, entity_id, limit):
+        """One entity's card plus the passages that name it (newest documents first); None if unknown."""
+        rows = await self._cards("SELECT %(entity_id)s::bigint AS id, 1 AS rank",
+                                 {"workspace": workspace, "entity_id": entity_id}, mentions_limit=limit)
+        return rows[0] if rows else None
 
     async def listing(self, workspace, type_id, domain, limit):
         """Active entities with at least one mention, most documents first."""
-        async with self.database.transaction() as conn, conn.cursor(row_factory=dict_row) as cur:
+        async with self.database.connection() as conn, conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(
                 """
                 SELECT e.id, e.name, t.name AS bucket, e.description, count(DISTINCT m.document_id) AS documents
@@ -239,28 +257,10 @@ class EntityRepository:
                 (workspace, type_id, type_id, domain, domain, limit))
             return await cur.fetchall()
 
-    async def mentions(self, workspace, entity_id, limit):
-        """Where an entity appears: documents with the sections naming it."""
-        async with self.database.transaction() as conn, conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute(
-                """
-                SELECT d.id AS document_id, d.title, d.doc_type, d.drive_url, d.domain, d.pipeline_id,
-                       m.chunk_index AS section, c.content AS text, array_agg(DISTINCT m.surface) AS named_as
-                FROM entity_mentions m JOIN entities e ON e.id = m.entity_id
-                JOIN documents d ON d.id = m.document_id
-                JOIN document_chunks c ON c.document_id = m.document_id AND c.chunk_index = m.chunk_index
-                WHERE e.workspace = %s AND m.entity_id = %s
-                GROUP BY d.id, m.chunk_index, c.content
-                ORDER BY d.created_at DESC, m.chunk_index
-                LIMIT %s
-                """,
-                (workspace, entity_id, limit))
-            return await cur.fetchall()
-
     # Review tab edits
 
     async def review_rows(self, workspace):
-        async with self.database.transaction() as conn, conn.cursor(row_factory=dict_row) as cur:
+        async with self.database.connection() as conn, conn.cursor(row_factory=dict_row) as cur:
             await cur.execute(
                 """
                 SELECT e.id, e.name, t.name AS bucket, e.suggested_type, e.created_at,

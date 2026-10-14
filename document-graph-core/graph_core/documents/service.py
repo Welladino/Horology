@@ -56,9 +56,10 @@ async def related(workspace, document_id):
 
 async def link(workspace, from_doc_id, to_doc_id, relation):
     """Return the new link id, or None when the edge already exists."""
-    if not await all_exist(workspace, [from_doc_id, to_doc_id]):
+    both_exist, link_id = await _links().add_checked(workspace, from_doc_id, to_doc_id, relation)
+    if not both_exist:
         raise ValueError("Both documents must exist in your workspace")
-    return await _links().add(from_doc_id, to_doc_id, relation)
+    return link_id
 
 
 async def unembedded(workspace):
@@ -67,21 +68,22 @@ async def unembedded(workspace):
 
 async def embed_if_needed(workspace, document_id):
     """Split and embed a document that has no sections yet. Raises if it doesn't exist."""
-    row = await get(workspace, document_id)
+    row = await sections.to_embed(workspace, document_id)
     if row is None:
         raise ValueError(f"No document with id {document_id}")
-    if not await sections.has_sections(document_id):
+    title, content, embedded = row
+    if not embedded:
         # Outside any transaction; the HTTP calls can take seconds.
-        await sections.store(document_id, await sections.embed_document(row["title"], row["content"]))
+        await sections.store(document_id, await sections.embed_document(title, content))
 
 
 async def link_similar(workspace, document_id, threshold=AUTO_LINK_THRESHOLD):
     """Add related_to links above threshold; shared with the sheet sync job."""
     candidates = await sections.similar_documents(workspace, document_id)
-    linked = []
-    for other_id, similarity in candidates:
-        if similarity >= threshold and await _links().add(document_id, other_id, "related_to") is not None:
-            linked.append({"document_id": other_id, "similarity": round(float(similarity), 4)})
+    above = [(other_id, similarity) for other_id, similarity in candidates if similarity >= threshold]
+    added = await _links().add_many(document_id, [other_id for other_id, _ in above], "related_to")
+    linked = [{"document_id": other_id, "similarity": round(float(similarity), 4)}
+              for other_id, similarity in above if other_id in added]
     return {"document_id": document_id, "newly_linked": linked, "candidates_checked": len(candidates)}
 
 

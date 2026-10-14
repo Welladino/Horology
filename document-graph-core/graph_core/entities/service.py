@@ -149,21 +149,19 @@ async def find_entity(workspace, name, bucket=None, limit=5):
     """Entities matching a name: exact name or alias first, otherwise the closest by meaning."""
     repository = _repository()
     type_id = await _type_id(workspace, bucket)
-    ids = await repository.find_by_name(workspace, buckets.normalize(name), type_id)
-    match = "exact"
-    if not ids:
-        ids = await repository.nearest(workspace, await embeddings.embed(name), limit, type_id)
-        match = "closest"
-    return {"match": match, "entities": await repository.cards(workspace, ids[:limit])}
+    cards = await repository.cards_by_name(workspace, buckets.normalize(name), type_id, limit)
+    if cards:
+        return {"match": "exact", "entities": cards}
+    return {"match": "closest",
+            "entities": await repository.cards_nearest(workspace, await embeddings.embed(name), type_id, limit)}
 
 
 async def entity_documents(workspace, entity_id, limit=10):
     """An entity's card plus the passages that name it, newest documents first."""
-    repository = _repository()
-    card = await repository.cards(workspace, [entity_id])
-    if not card:
+    card = await _repository().card_with_mentions(workspace, entity_id, limit)
+    if card is None:
         raise ValueError(f"No entity with id {entity_id}")
-    return {**card[0], "mentions": await repository.mentions(workspace, entity_id, limit)}
+    return card
 
 
 # Review tab edits
