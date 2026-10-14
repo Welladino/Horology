@@ -1,4 +1,7 @@
-"""768-dimension pgvector embeddings for documents and their sections, passed as pgvector text with an explicit cast."""
+"""Section rows (document_chunks) and document vectors (document_embeddings).
+
+768-dimension pgvector embeddings, passed as pgvector text with an explicit
+cast. Joins documents only to scope by workspace and to show titles."""
 from psycopg.rows import dict_row
 
 
@@ -7,7 +10,7 @@ def vector_text(embedding):
     return "[" + ",".join(repr(float(x)) for x in embedding) + "]"
 
 
-class EmbeddingRepository:
+class SectionRepository:
     def __init__(self, database):
         self.database = database
 
@@ -45,6 +48,27 @@ class EmbeddingRepository:
                 ORDER BY c.embedding <=> %s::vector LIMIT %s
                 """,
                 (vector, workspace, vector, limit),
+            )
+            return await cur.fetchall()
+
+    async def with_sections(self, document_ids):
+        """The subset of document_ids that have at least one section."""
+        if not document_ids:
+            return set()
+        async with self.database.transaction() as conn, conn.cursor() as cur:
+            await cur.execute("SELECT DISTINCT document_id FROM document_chunks WHERE document_id = ANY(%s)", (list(document_ids),))
+            return {row[0] for row in await cur.fetchall()}
+
+    async def documents_without_sections(self, workspace):
+        async with self.database.transaction() as conn, conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(
+                """
+                SELECT d.id, d.title, d.doc_type, d.created_at
+                FROM documents d
+                WHERE d.workspace = %s AND NOT EXISTS (SELECT 1 FROM document_chunks c WHERE c.document_id = d.id)
+                ORDER BY d.created_at
+                """,
+                (workspace,),
             )
             return await cur.fetchall()
 

@@ -31,6 +31,9 @@ else:
     # Import-time configuration only; no connection or provider call is made.
     os.environ["DATABASE_URL_POOLED"] = "postgresql://test@127.0.0.1:1/test"
     importlib.import_module("document_graph.tools")
+    # Shared graph logic is an installed package, not part of /app.
+    for module in ("graph_core.documents.service", "graph_core.sections.service", "graph_core.providers.embeddings"):
+        importlib.import_module(module)
     # The sync job ships in the same image.
     importlib.import_module("graph_sync.sync")
     importlib.import_module("graph_sync.google")

@@ -6,6 +6,13 @@
 !shared-runtime/horology_runtime/oauth/
 !shared-runtime/horology_runtime/oauth/*.py
 !shared-runtime/horology_runtime/oauth/*.css
+# Graph logic shared by the document-graph service and its sync job.
+!document-graph-core/
+!document-graph-core/pyproject.toml
+!document-graph-core/graph_core/
+!document-graph-core/graph_core/**/
+!document-graph-core/graph_core/**/*.py
+!document-graph-core/graph_core/*.py
 !mcp-servers/
 !mcp-servers/mcp-gateway/
 !mcp-servers/mcp-gateway/requirements.txt

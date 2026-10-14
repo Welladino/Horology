@@ -1,1 +1,1 @@
-"""Document Index -> document graph sync job; imports document_graph, never the reverse."""
+"""Document Index -> document graph sync job; graph logic comes from graph_core."""

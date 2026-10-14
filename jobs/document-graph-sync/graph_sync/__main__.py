@@ -12,7 +12,7 @@ import sys
 
 from horology_runtime.database import Database
 from horology_runtime.settings import DATABASE
-from document_graph import graph
+import graph_core
 
 from .google import GoogleClient
 from .sync import sync_workspace
@@ -34,7 +34,7 @@ async def main():
     targets = workbooks()
     google = GoogleClient()
     async with Database(os.environ.get("DATABASE_URL_POOLED"), DATABASE.document_graph_pool_size) as database:
-        graph.configure(database)
+        graph_core.configure(database)
         failed = False
         for workspace, spreadsheet_id in targets.items():
             try:

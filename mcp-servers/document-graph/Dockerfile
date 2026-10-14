@@ -6,10 +6,11 @@ FROM python:3.14-slim
 WORKDIR /app
 
 COPY shared-runtime /opt/shared-runtime
+COPY document-graph-core /opt/document-graph-core
 COPY mcp-servers/document-graph/requirements.txt .
 COPY jobs/document-graph-sync/requirements.txt sync-requirements.txt
 RUN pip install --no-cache-dir --upgrade pip==26.2.1 \
-    && pip install --no-cache-dir -r requirements.txt -r sync-requirements.txt /opt/shared-runtime \
+    && pip install --no-cache-dir -r requirements.txt -r sync-requirements.txt /opt/shared-runtime /opt/document-graph-core \
     && pip uninstall -y pip setuptools wheel \
     && useradd --uid 10001 --create-home --shell /usr/sbin/nologin horology
 

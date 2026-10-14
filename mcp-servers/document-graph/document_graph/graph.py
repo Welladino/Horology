@@ -1,35 +1,14 @@
-"""Document graph operations exposed as MCP tools, scoped to the caller's workspace.
+"""Document graph MCP tools: validate input, scope to the caller's workspace, call graph_core.
 
-SQL lives in database/repositories; this module holds validation, workspace
-scoping and the embed-then-link steps.
+The logic lives in document-graph-core (shared with the sync job); this
+module only turns tool calls into service calls.
 """
-import math
+from graph_core.documents import service as documents
+from graph_core.documents.service import VALID_DOC_TYPES  # noqa: F401  (re-exported for callers and tests)
+from graph_core.sections import service as sections
 
-from . import chunking
-from .database.repositories.documents import DocumentRepository
-from .database.repositories.embeddings import EmbeddingRepository
-from .database.repositories.links import LinkRepository
 from .integrations.cloud_run import client as cloud_run
-from .integrations.openrouter import client as openrouter
 from .shared.workspace import current_workspace
-
-# Document Index Document Type values (Read Me tab), also used by agents.
-VALID_DOC_TYPES = ("research", "direction", "plan", "decision", "report", "brand_guide", "guide",
-                   "template", "pipeline", "content", "analysis", "recommendation")
-
-documents = embeddings = links = None
-
-
-def configure(database):
-    """Bind the repositories to the shared pool; the server lifespan calls this."""
-    global documents, embeddings, links
-    documents, embeddings, links = (None, None, None) if database is None else (
-        DocumentRepository(database), EmbeddingRepository(database), LinkRepository(database))
-
-
-def _check_doc_type(doc_type):
-    if doc_type not in VALID_DOC_TYPES:
-        raise ValueError(f"doc_type must be one of {VALID_DOC_TYPES}, got {doc_type!r}")
 
 
 def _iso(rows):
@@ -53,12 +32,8 @@ async def write_document(
     (creates a version chain rather than an orphaned duplicate).
     Returns the new document's id.
     """
-    _check_doc_type(doc_type)
-    workspace = current_workspace()
-    if supersedes_id is not None and await documents.count_existing(workspace, [supersedes_id]) != 1:
-        raise ValueError(f"No document with id {supersedes_id}")
-    new_id, created_at = await documents.insert_agent_document(
-        workspace, doc_type, title, content, created_by_agent, supersedes_id)
+    new_id, created_at = await documents.write_agent_document(
+        current_workspace(), doc_type, title, content, created_by_agent, supersedes_id)
     return {"id": new_id, "created_at": created_at.isoformat()}
 
 
@@ -69,10 +44,7 @@ async def link_documents(from_doc_id: int, to_doc_id: int, relation: str) -> dic
     supersedes, contradicts, references). Duplicate edges (same
     from/to/relation triple) are ignored rather than erroring.
     """
-    ids = {from_doc_id, to_doc_id}
-    if await documents.count_existing(current_workspace(), ids) != len(ids):
-        raise ValueError("Both documents must exist in your workspace")
-    link_id = await links.add(from_doc_id, to_doc_id, relation)
+    link_id = await documents.link(current_workspace(), from_doc_id, to_doc_id, relation)
     if link_id is None:
         return {"created": False, "reason": "link already exists"}
     return {"created": True, "id": link_id}
@@ -92,9 +64,7 @@ async def list_documents(doc_type: str | None = None, limit: int = 20) -> list[d
     Returns title/metadata only, not full content — use get_document for
     the full text of a specific one.
     """
-    if doc_type is not None:
-        _check_doc_type(doc_type)
-    return _iso(await documents.list(current_workspace(), doc_type, max(1, min(limit, 100))))
+    return _iso(await documents.list_recent(current_workspace(), doc_type, max(1, min(limit, 100))))
 
 
 async def search_documents(query: str, limit: int = 5, passages: int = 2) -> list[dict]:
@@ -109,21 +79,7 @@ async def search_documents(query: str, limit: int = 5, passages: int = 2) -> lis
     """
     if not query.strip():
         raise ValueError("query must not be empty")
-    limit, passages = max(1, min(limit, 20)), max(1, min(passages, 3))
-    vector = await openrouter._embed(query)
-    # Sections are ranked across documents; fetch enough to fill `limit` documents.
-    sections = await embeddings.nearest_sections(current_workspace(), vector, min(limit * 8, 200))
-    results = {}
-    for row in sections:
-        similarity = round(float(row.pop("similarity")), 4)
-        passage = {"section": row.pop("chunk_index"), "similarity": similarity, "text": row.pop("passage")}
-        if row["id"] not in results:
-            if len(results) == limit:
-                continue
-            results[row["id"]] = {**row, "created_at": row["created_at"].isoformat(), "similarity": similarity, "passages": []}
-        if len(results[row["id"]]["passages"]) < passages:
-            results[row["id"]]["passages"].append(passage)
-    return list(results.values())
+    return await sections.search_passages(current_workspace(), query, max(1, min(limit, 20)), max(1, min(passages, 3)))
 
 
 async def get_related_documents(document_id: int) -> list[dict]:
@@ -165,41 +121,8 @@ async def auto_link_similar_documents(document_id: int, threshold: float = 0.85)
     Returns which document ids (if any) were newly linked.
     """
     workspace = current_workspace()
-    content = await documents.content(workspace, document_id)
-    if content is None:
-        raise ValueError(f"No document with id {document_id}")
-    if not await embeddings.has_sections(document_id):
-        title = (await documents.get(workspace, document_id))["title"]
-        # Outside any transaction; the HTTP calls can take seconds.
-        await embeddings.save(document_id, *await embed_document(title, content))
-    return await link_similar(workspace, document_id, threshold)
-
-
-async def embed_document(title, content):
-    """Split a document into sections and embed each one, titled for context.
-
-    Returns (sections, section vectors, document vector); the document vector
-    is the normalised mean of its sections, used for auto-linking. Shared
-    with the sheet sync job."""
-    sections = chunking.split(content) or [title]
-    vectors = await openrouter._embed_many([f"{title}\n\n{section}" for section in sections])
-    return sections, vectors, _mean(vectors)
-
-
-def _mean(vectors):
-    total = [sum(values) for values in zip(*vectors)]
-    norm = math.sqrt(sum(x * x for x in total)) or 1.0
-    return [x / norm for x in total]
-
-
-async def link_similar(workspace, document_id, threshold):
-    """Add related_to links above threshold; shared with the sheet sync job."""
-    candidates = await embeddings.similar_to(workspace, document_id)
-    linked = []
-    for other_id, similarity in candidates:
-        if similarity >= threshold and await links.add(document_id, other_id, "related_to") is not None:
-            linked.append({"document_id": other_id, "similarity": round(float(similarity), 4)})
-    return {"document_id": document_id, "newly_linked": linked, "candidates_checked": len(candidates)}
+    await documents.embed_if_needed(workspace, document_id)
+    return await documents.link_similar(workspace, document_id, threshold)
 
 
 async def sync_graph() -> dict:

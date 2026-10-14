@@ -9,7 +9,8 @@ import logging
 
 import httpx
 
-from document_graph import graph
+from graph_core.documents import service as documents
+from graph_core.sections import service as sections
 
 from . import index
 from .google import INDEXABLE_TYPES
@@ -25,7 +26,7 @@ async def sync_workspace(google, workspace, spreadsheet_id):
     values = await google.sheet_rows(spreadsheet_id, index.TAB)
     rows, headers = index.parse(values)
     rows = [row for row in rows if row.workspace == workspace]
-    stored = await graph.documents.sheet_revisions(workspace)
+    stored = await documents.sheet_revisions(workspace)
     results, graph_ids = {}, {key: value[0] for key, value in stored.items()}
 
     for row in rows:
@@ -44,7 +45,7 @@ async def sync_workspace(google, workspace, spreadsheet_id):
 
     # results holds only rows marked TRUE. Anything else imported earlier (now
     # FALSE or gone from the sheet) is removed; a row that errored keeps its old copy.
-    removed = await graph.documents.delete_sheet_documents(workspace, [key for key in stored if key not in results])
+    removed = await documents.delete_sheet_documents(workspace, [key for key in stored if key not in results])
     for key in removed:
         graph_ids.pop(key, None)
 
@@ -61,7 +62,7 @@ async def sync_workspace(google, workspace, spreadsheet_id):
 
 
 async def _import(google, workspace, row, stored):
-    if row.doc_type not in graph.VALID_DOC_TYPES:
+    if row.doc_type not in documents.VALID_DOC_TYPES:
         raise ValueError("Unknown Document Type")
     file_id = index.drive_file_id(row.drive_url)
     if not file_id:
@@ -82,11 +83,10 @@ async def _import(google, workspace, row, stored):
     content = await google.file_text(meta)
     # Embed before storing anything: if embedding fails, the graph is unchanged
     # and the row shows error rather than a document search can never find.
-    embedded = await graph.embed_document(row.title, content)
-    doc_id = await graph.documents.upsert_sheet_document(
-        workspace, row.index_id, file_id, row.drive_url, row.doc_type, row.title, content, revision)
-    await graph.embeddings.save(doc_id, *embedded)
-    await graph.link_similar(workspace, doc_id, 0.85)
+    embedded = await sections.embed_document(row.title, content)
+    doc_id = await documents.store_sheet_document(
+        workspace, row.index_id, file_id, row.drive_url, row.doc_type, row.title, content, revision, embedded)
+    await documents.link_similar(workspace, doc_id)
     return ("synced", doc_id, revision)
 
 
@@ -98,8 +98,7 @@ async def _link_supersedes(workspace, rows, results, graph_ids):
         if older is None:
             continue  # the superseded document isn't in the graph
         newer = graph_ids[row.index_id]
-        await graph.documents.set_supersedes(workspace, newer, older)
-        await graph.links.add(newer, older, "supersedes")
+        await documents.set_supersedes(workspace, newer, older)
 
 
 def _status_updates(headers, rows, results):

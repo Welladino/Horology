@@ -21,7 +21,9 @@ GRAPH_ROOT = Path(__file__).parent.parent.parent / "mcp-servers" / "document-gra
 sys.path.append(str(GRAPH_ROOT))  # append: the gateway also has a top-level server.py
 
 from document_graph import graph  # noqa: E402
-from document_graph.integrations.openrouter import client as openrouter  # noqa: E402
+import graph_core  # noqa: E402
+from graph_core.documents import service as documents  # noqa: E402
+from graph_core.providers import embeddings  # noqa: E402
 
 NOW = datetime(2026, 10, 13, tzinfo=timezone.utc)
 
@@ -57,9 +59,9 @@ class FakeDatabase:
 def db(monkeypatch):
     monkeypatch.setenv("DOCUMENT_GRAPH_WORKSPACE", "welladino")
     fake = FakeDatabase()
-    graph.configure(fake)
+    graph_core.configure(fake)
     yield fake
-    graph.configure(None)
+    graph_core.configure(None)
 
 
 def run(coro):
@@ -130,7 +132,7 @@ def section(doc_id, index, similarity, title="Pricing"):
 class TestSearchDocuments:
     def test_searches_sections_in_workspace_and_groups_by_document(self, db):
         db.all.append([section(4, 2, 0.91234), section(7, 0, 0.88), section(4, 5, 0.85), section(4, 1, 0.80), section(9, 3, 0.70)])
-        with patch.object(openrouter, "_embed", AsyncMock(return_value=[0.5] * 768)) as embed:
+        with patch.object(embeddings, "embed", AsyncMock(return_value=[0.5] * 768)) as embed:
             result = run(graph.search_documents("what have we done on pricing?", limit=2))
         embed.assert_awaited_once_with("what have we done on pricing?")
         sql, params = db.executed[-1]
@@ -143,7 +145,7 @@ class TestSearchDocuments:
 
     def test_clamps_limit_and_passages(self, db):
         db.all.append([section(4, i, 0.9 - i / 100) for i in range(5)])
-        with patch.object(openrouter, "_embed", AsyncMock(return_value=[0.5] * 768)):
+        with patch.object(embeddings, "embed", AsyncMock(return_value=[0.5] * 768)):
             result = run(graph.search_documents("pricing", limit=50, passages=9))
         assert db.executed[-1][1][-1] == 160 and len(result[0]["passages"]) == 3
 
@@ -157,11 +159,11 @@ class TestEmbed:
         """Regression test for the real bug: the model's un-truncated output
         is 3072 dims (exceeds pgvector's 2000-dim HNSW limit), fixed by
         explicitly requesting 768 via `dimensions`."""
-        monkeypatch.setattr(openrouter, "OPENROUTER_API_KEY", "sk-or-fake-key")
+        monkeypatch.setattr(embeddings, "OPENROUTER_API_KEY", "sk-or-fake-key")
         response = MagicMock()
         response.json.return_value = {"data": [{"index": 0, "embedding": [0.1] * 768}]}
-        with patch.object(openrouter.httpx.AsyncClient, "post", AsyncMock(return_value=response)) as post:
-            result = run(openrouter._embed("some document text"))
+        with patch.object(embeddings.httpx.AsyncClient, "post", AsyncMock(return_value=response)) as post:
+            result = run(embeddings.embed("some document text"))
         assert len(result) == 768
         _, kwargs = post.call_args
         assert kwargs["json"]["input"] == ["some document text"]
@@ -170,7 +172,7 @@ class TestEmbed:
         assert kwargs["headers"]["Authorization"] == "Bearer sk-or-fake-key"
 
     def test_batches_sections_and_keeps_input_order(self, monkeypatch):
-        monkeypatch.setattr(openrouter, "OPENROUTER_API_KEY", "sk-or-fake-key")
+        monkeypatch.setattr(embeddings, "OPENROUTER_API_KEY", "sk-or-fake-key")
         def reply(*args, json, **kwargs):
             response = MagicMock()
             # Answer out of order, as the API may; vectors carry their input text's length.
@@ -178,15 +180,15 @@ class TestEmbed:
                                                    for i in reversed(range(len(json["input"])))]}
             return response
         texts = ["x" * n for n in range(1, 41)]
-        with patch.object(openrouter.httpx.AsyncClient, "post", AsyncMock(side_effect=reply)) as post:
-            vectors = run(openrouter._embed_many(texts))
+        with patch.object(embeddings.httpx.AsyncClient, "post", AsyncMock(side_effect=reply)) as post:
+            vectors = run(embeddings.embed_many(texts))
         assert post.await_count == 2  # 32 + 8
         assert [v[0] for v in vectors] == [float(n) for n in range(1, 41)]
 
     def test_raises_without_api_key(self, monkeypatch):
-        monkeypatch.setattr(openrouter, "OPENROUTER_API_KEY", None)
+        monkeypatch.setattr(embeddings, "OPENROUTER_API_KEY", None)
         with pytest.raises(RuntimeError, match="operation_failed; request_id="):
-            run(openrouter._embed("text"))
+            run(embeddings.embed("text"))
 
 
 class TestGetRelatedDocuments:
@@ -217,7 +219,7 @@ class TestAutoLinkSimilarDocuments:
     def test_links_only_candidates_above_threshold(self, db):
         db.one += [("some document content",), (True,), (10,)]
         db.all.append([(101, 0.90), (102, 0.50)])
-        with patch.object(openrouter, "_embed_many", AsyncMock()) as embed:
+        with patch.object(embeddings, "embed_many", AsyncMock()) as embed:
             result = run(graph.auto_link_similar_documents(document_id=1, threshold=0.85))
         embed.assert_not_awaited()
         assert result["candidates_checked"] == 2
@@ -225,8 +227,8 @@ class TestAutoLinkSimilarDocuments:
         assert any("d.workspace = %s" in sql for sql, _ in db.executed)
 
     def test_embeds_sections_when_missing(self, db):
-        db.one += [("content",), (False,), {"title": "A plan"}]
-        with patch.object(openrouter, "_embed_many", AsyncMock(return_value=[[0.1] * 768])) as embed:
+        db.one += [{"title": "A plan", "content": "content"}, (False,)]
+        with patch.object(embeddings, "embed_many", AsyncMock(return_value=[[0.1] * 768])) as embed:
             run(graph.auto_link_similar_documents(document_id=1))
         embed.assert_awaited_once_with(["A plan\n\ncontent"])
         assert any("INSERT INTO document_embeddings" in sql for sql, _ in db.executed)

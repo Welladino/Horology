@@ -1,4 +1,4 @@
-"""OpenRouter embedding requests; no database access."""
+"""OpenRouter embeddings (768 dimensions); no database access."""
 import os
 from horology_runtime.settings import TIMEOUTS
 import httpx
@@ -12,13 +12,13 @@ EMBED_DIMENSIONS = 768
 BATCH = 32  # sections per request; OpenRouter returns one embedding per input, by index
 
 
-async def _embed(text: str) -> list[float]:
+async def embed(text: str) -> list[float]:
     """Embed one text (a search query or a single section)."""
-    return (await _embed_many([text]))[0]
+    return (await embed_many([text]))[0]
 
 
 @observe("openrouter")
-async def _embed_many(texts: list[str]) -> list[list[float]]:
+async def embed_many(texts: list[str]) -> list[list[float]]:
     """Embed texts via OpenRouter's OpenAI-compatible /v1/embeddings endpoint,
     BATCH inputs per request, returned in input order.
     Raises if OPENROUTER_API_KEY is unset or a request fails - callers

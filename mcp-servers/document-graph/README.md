@@ -3,11 +3,12 @@
 Separate Neon document graph and OpenRouter embeddings service.
 
 - `server.py`: MCP entrypoint.
-- `document_graph/tools.py`: registers the eight fixed document tools, including `search_documents` (search by meaning). Every tool is scoped to one workspace (`document_graph/shared/workspace.py`).
-- `document_graph/graph.py`: tool operations, validation and workspace scoping.
-- `document_graph/database/repositories/{documents,embeddings,links}.py`: fixed parameterized Neon SQL, one repository per table group. The async pool is `horology_runtime.database`.
-- `document_graph/integrations/openrouter/client.py`: embedding requests; no database access.
-- `requirements.txt`: service-specific pinned dependencies.
+- `document_graph/tools.py`: registers the fixed document tools, including `search_documents` (passage search by meaning). Every tool is scoped to one workspace (`document_graph/shared/workspace.py`).
+- `document_graph/graph.py`: the tools themselves. Each validates input, takes the caller's workspace and calls a [`graph_core`](../../document-graph-core/README.md) service; there's no graph logic or SQL here.
+- `document_graph/integrations/cloud_run/client.py`: starts the sync job; only this service needs it.
+- `requirements.txt`: pinned dependencies for this service, `graph_core` and the job.
+
+Graph logic (documents, sections, embeddings, linking, search) lives in `document-graph-core/`, shared with the sync job. Neither this service nor the job imports the other.
 
 Copy `.env.example` to `.env` for a new setup. Required: DATABASE_URL_POOLED (Neon pooled connection) and OPENROUTER_API_KEY (embeddings). Optional: EMBED_MODEL, default google/gemini-embedding-001, DOCUMENT_GRAPH_BIND, default 0.0.0.0, and DOCUMENT_GRAPH_WORKSPACE, default welladino (the one workspace local, unauthenticated clients see). Embeddings remain 768-dimensional to match the database. DATABASE_URL is not an environment input; no duplicate connection string is needed. The document-graph Compose project loads the service-specific .env; Python does not load it itself. Keep .env excluded from Git and images. Root credentials still required by other components should remain there.
 

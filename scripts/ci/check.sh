@@ -3,7 +3,7 @@ set -euo pipefail
 : "${GATEWAY_TEST_DATABASE_URL:?disposable CI database required}"
 : "${GATEWAY_TEST_RUNTIME_URL:?restricted CI database role required}"
 python -m pip install --upgrade pip==26.2.1
-python -m pip install -r requirements-dev.txt -r mcp-servers/mcp-gateway/requirements.txt -r mcp-servers/document-graph/requirements.txt -r jobs/document-graph-sync/requirements.txt ./shared-runtime
+python -m pip install -r requirements-dev.txt -r mcp-servers/mcp-gateway/requirements.txt -r mcp-servers/document-graph/requirements.txt -r jobs/document-graph-sync/requirements.txt ./shared-runtime ./document-graph-core
 python - <<'CHECK'
 import os, time
 import psycopg

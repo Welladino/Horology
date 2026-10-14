@@ -1,10 +1,6 @@
 """Section splitting for passage search."""
-import sys
-from pathlib import Path
-
-sys.path.append(str(Path(__file__).parent.parent.parent / "mcp-servers" / "document-graph"))
-from document_graph import chunking  # noqa: E402
-from document_graph.graph import _mean  # noqa: E402
+from graph_core.sections import chunking
+from graph_core.sections.service import mean as _mean
 
 
 def paragraphs(count, size=300, word="alpha"):

@@ -14,7 +14,7 @@ from horology_runtime.database import Database
 from horology_runtime.operations import TraceMiddleware
 from horology_runtime.oauth.store import OAuthRepository
 from horology_runtime.settings import DATABASE, document_graph_public_url, http_server_options
-from document_graph import graph
+import graph_core
 from document_graph.shared import workspace
 from document_graph.tools import TOOLS, register_tools
 
@@ -65,7 +65,7 @@ def database_app(mcp, database, **options):
     @asynccontextmanager
     async def lifespan(app):
         async with database:
-            graph.configure(database)
+            graph_core.configure(database)
             async with mcp_lifespan(app) as state:
                 yield state
 
