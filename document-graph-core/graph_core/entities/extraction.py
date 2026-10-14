@@ -1,4 +1,6 @@
 """Find named things and their relationships in a document's sections with the LLM."""
+import asyncio
+
 from ..ai import chat
 from . import prompts
 from .buckets import OTHER, normalize
@@ -29,7 +31,8 @@ async def extract(title, sections, buckets, relation_types):
     bucket_names = {normalize(b): b for b in buckets}
     relation_names = {normalize(r): r for r in relation_types}
     found, relations = {}, []
-    for group, reply in [item for batch in batches(sections) for item in await _ask(title, batch, buckets, relation_types)]:
+    asked = await asyncio.gather(*(_ask(title, batch, buckets, relation_types) for batch in batches(sections)))
+    for group, reply in [item for replies in asked for item in replies]:  # in section order, as before
         valid = {index for index, _ in group}
         names = {}
         for item in reply.get("mentions", []):
@@ -72,5 +75,7 @@ async def _ask(title, group, buckets, relation_types):
     if len(group) == 1:
         return []
     middle = len(group) // 2
-    return await _ask(title, group[:middle], buckets, relation_types) + await _ask(title, group[middle:], buckets, relation_types)
+    first, second = await asyncio.gather(_ask(title, group[:middle], buckets, relation_types),
+                                         _ask(title, group[middle:], buckets, relation_types))
+    return first + second
 

@@ -52,6 +52,7 @@ Drive plus a Document Index row stays the main record for finished deliverables,
 - Write the full content so it reads standalone. Set `created_by_agent` to your agent or skill name, and choose the closest `doc_type`.
 - Pass `domain` and the permanent `pipeline_id` of the item you're working on, when there is one.
 - Set `supersedes_id` when it replaces an earlier document's conclusion.
+- Keep each document to about 20 pages (30 sections of up to 2,000 characters). A longer one isn't saved: `write_document` replies `saved: false` with `reason: too_long` and the section count. Split it into parts, write each, and link them with `link_documents`.
 - Then call `auto_link_similar_documents` with the new id. It splits the document into searchable sections, embeds them and links similar documents; until it runs, search can't find the document. Use `link_documents` for a specific known relationship.
 - In your summary, report the new document id and any links created. A similarity of 0.90 or more usually means a near-duplicate; say so instead of presenting it as new work.
 
@@ -59,7 +60,7 @@ Agent documents are recorded with `source = agent`. The sync never edits or remo
 
 ## Document Index sync
 
-`sync_graph` starts a background job for your workspace and returns immediately. The job:
+`sync_graph` starts a background job for your workspace and returns immediately. It isn't started (`started: false`) when a run is already in progress for the workspace (`already_running`), or when it was asked for in the last 5 minutes (`cooldown`, with `retry_after_seconds`); don't retry sooner. The same applies to `rebuild_topics`. Each run handles up to 30 changed documents and starts the next run itself for the rest. The job:
 
 - imports or refreshes Document Index rows with Graph Inclusion TRUE, embedding only files whose Drive revision changed;
 - removes previously imported rows that are now FALSE or gone from the sheet;
@@ -69,6 +70,7 @@ Results appear in the sheet, not in the tool response. Graph Sync Status values:
 
 - `synced`: imported; Graph Document ID is the graph id.
 - `not_shared`: the file's folder isn't shared with `document-graph-sync@horology-dev.iam.gserviceaccount.com`. Ask the operator to share it as Viewer, then sync again.
+- `too_long`: the file has more than 30 sections (about 20 pages), so nothing of it was imported. Ask the operator to split it; a shortened file is imported on the next sync. A row that was imported before keeps its previous graph copy.
 - `error`: anything else, such as a file type that can't be indexed (only Markdown, plain text and Google Docs are) or a failed embedding. A row that errors keeps its previous graph copy.
 - `not_applicable`: Graph Inclusion is FALSE.
 

@@ -2,6 +2,7 @@
 IP addresses are masked before text leaves."""
 import os
 
+from .gate import gate
 from .masking import for_provider
 from .openrouter import chat as openrouter
 
@@ -23,5 +24,6 @@ async def complete_json(system: str, user: str, schema_name: str, schema: dict, 
 
     Returns None when the reply was cut off at max_tokens (the model can loop
     on long lists), so the caller can retry with less input."""
-    return await BACKENDS[BACKEND].complete_json(system, for_provider(user), schema_name, schema, max_tokens,
-                                                 model or MODEL)
+    async with gate():
+        return await BACKENDS[BACKEND].complete_json(system, for_provider(user), schema_name, schema, max_tokens,
+                                                     model or MODEL)

@@ -225,7 +225,7 @@ for secret in horology-graph-db horology-graph-openrouter; do gcloud --configura
 7. Create the job. Replace `DIGEST`; the workbook map is JSON, so the `^|^` prefix changes gcloud's list separator:
 
 ```bash
-gcloud --configuration=horology-admin run jobs create document-graph-sync --project=horology-dev --region=us-central1 --image=us-central1-docker.pkg.dev/horology-dev/mcp-servers/document-graph@sha256:DIGEST --command=python --args=-m,graph_sync --service-account=document-graph-sync@horology-dev.iam.gserviceaccount.com --set-secrets=DATABASE_URL_POOLED=horology-graph-db:2,OPENROUTER_API_KEY=horology-graph-openrouter:1 --set-env-vars='^|^GRAPH_SYNC_WORKBOOKS={"welladino":"1kObhQNjsFhziS-wRzjaEIzr9j8jjbfvd-ZgvzuwQ-Jc"}' --max-retries=0 --task-timeout=900s
+gcloud --configuration=horology-admin run jobs create document-graph-sync --project=horology-dev --region=us-central1 --image=us-central1-docker.pkg.dev/horology-dev/mcp-servers/document-graph@sha256:DIGEST --command=python --args=-m,graph_sync --service-account=document-graph-sync@horology-dev.iam.gserviceaccount.com --set-secrets=DATABASE_URL_POOLED=horology-graph-db:2,OPENROUTER_API_KEY=horology-graph-openrouter:1 --set-env-vars='^|^GRAPH_SYNC_WORKBOOKS={"welladino":"1kObhQNjsFhziS-wRzjaEIzr9j8jjbfvd-ZgvzuwQ-Jc"}' --max-retries=0 --task-timeout=3600s
 ```
 
 8. Test the job by hand, then check the sheet's Graph Sync Status column and the execution log:
@@ -274,7 +274,7 @@ To add a workspace later: copy the workbook, share it and its output folder with
 
 ## Document graph release: passages, fields, topics and entities (prepared 2026-10-14, not deployed)
 
-One release covers passage search, Domain/Entity/Pipeline ID fields, topics and entities (migrations `20261014_002` to `20261014_005`) and the gateway's country and extraction changes. Why: [passage search](../../planning/notes/2026-10-14_document-graph-passage-search_note.md), [topics and entities](../../planning/research/2026-10-14_document-graph-topics-and-entities_research.md). Steps, in order:
+One release covers passage search, Domain/Entity/Pipeline ID fields, topics and entities, and run caps with follow-up runs (migrations `20261014_002` to `20261015_006`) and the gateway's country and extraction changes. Why: [passage search](../../planning/notes/2026-10-14_document-graph-passage-search_note.md), [topics and entities](../../planning/research/2026-10-14_document-graph-topics-and-entities_research.md). Steps, in order:
 
 1. Migrate Neon. This is harmless to the running revisions, which don't read the new tables or columns:
 
@@ -283,7 +283,18 @@ One release covers passage search, Domain/Entity/Pipeline ID fields, topics and 
 ```
 
 2. Build (global endpoint, as in [Cloud Build](cloud_build.md)). Then deploy the gateway image to `mcp-gateway`, and the document-graph image to the `document-graph` service and the `document-graph-sync` job (`horology-admin` for the job), as in the releases above. The service and the job already have `OPENROUTER_API_KEY`. `GRAPH_LLM_MODEL` is optional (default `google/gemini-2.5-flash-lite`).
-3. Re-embed and extract sheet documents: start a sync (`sync_graph` from an agent, or `gcloud --configuration=horology-admin run jobs execute document-graph-sync --region=us-central1 --project=horology-dev`). Documents without sections count as changed, so every included row is re-imported. The sync then extracts entities and creates the **Entities** and **Entity types** tabs in the Document Index workbook.
+   Raise the job's time limit from 15 to 60 minutes (entity extraction runs longer than embedding), and give the job its own name so it can start follow-up runs (each run handles up to 30 documents):
+
+```bash
+gcloud --configuration=horology-admin run jobs update document-graph-sync --region=us-central1 --project=horology-dev --task-timeout=3600s --update-env-vars=GRAPH_SYNC_JOB=projects/horology-dev/locations/us-central1/jobs/document-graph-sync
+```
+
+   Allow the job's identity to start the job, as the service's identity already can:
+
+```bash
+gcloud --configuration=horology-admin run jobs add-iam-policy-binding document-graph-sync --project=horology-dev --region=us-central1 --member=serviceAccount:document-graph-sync@horology-dev.iam.gserviceaccount.com --role=roles/run.jobsExecutorWithOverrides
+```
+3. Re-embed and extract sheet documents: start a sync (`sync_graph` from an agent, or `gcloud --configuration=horology-admin run jobs execute document-graph-sync --region=us-central1 --project=horology-dev`). Documents without sections count as changed, so every included row is re-imported, 30 per run; each run starts the next until all are done (at most 10 in a row; check the job's executions). The sync then extracts entities and creates the **Entities** and **Entity types** tabs in the Document Index workbook.
 4. Re-embed agent documents: `list_unembedded_documents`, then `auto_link_similar_documents` for each id. Their entities come with the next sync, or run the entity step alone:
 
 ```bash

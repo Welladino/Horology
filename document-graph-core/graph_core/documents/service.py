@@ -33,6 +33,7 @@ async def write_agent_document(workspace, doc_type, title, content, created_by_a
     """Store an agent document; returns (id, created_at). Not searchable until embedded."""
     check_doc_type(doc_type)
     pipeline_id = fields.pipeline_id(pipeline_id)  # raises before anything is stored
+    sections.check_length(content)  # so does a document over the section limit
     if supersedes_id is not None and not await all_exist(workspace, [supersedes_id]):
         raise ValueError(f"No document with id {supersedes_id}")
     return await _documents().insert_agent_document(workspace, doc_type, title, content, created_by_agent, supersedes_id,

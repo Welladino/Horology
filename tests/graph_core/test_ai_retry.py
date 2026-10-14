@@ -104,3 +104,24 @@ def test_a_reply_in_the_wrong_shape_is_a_provider_response_error(waits, monkeypa
         with pytest.raises(SafeToolError) as raised:
             run(chat.complete_json("s", "u", "n", {}))
     assert raised.value.category == "invalid_provider_response"
+
+
+def test_at_most_three_ai_calls_run_at_once():
+    from graph_core.ai import embeddings, gate
+    in_flight, peak = 0, 0
+
+    async def slow(*args):
+        nonlocal in_flight, peak
+        in_flight += 1
+        peak = max(peak, in_flight)
+        await asyncio.sleep(0.01)
+        in_flight -= 1
+        return {"name": "x"} if len(args) > 3 else [[0.0]]
+
+    async def many():
+        with patch.object(chat.BACKENDS[chat.BACKEND], "complete_json", slow), \
+                patch.object(embeddings.BACKENDS[embeddings.BACKEND], "embed_many", slow):
+            await asyncio.gather(*[chat.complete_json("s", "u", "n", {}) for _ in range(6)],
+                                 *[embeddings.embed_many(["t"]) for _ in range(6)])
+    run(many())
+    assert peak == gate.MAX_CALLS == 3

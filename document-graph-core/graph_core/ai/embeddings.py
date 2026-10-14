@@ -2,6 +2,7 @@
 (GRAPH_AI_BACKEND, default openrouter); IP addresses are masked before text leaves."""
 import os
 
+from .gate import gate
 from .masking import for_provider
 from .openrouter import embeddings as openrouter
 
@@ -22,4 +23,5 @@ async def embed(text: str) -> list[float]:
 async def embed_many(texts: list[str]) -> list[list[float]]:
     """Embeddings in input order. Raises if a request still fails after retries; callers let
     that propagate as a tool error rather than silently skip auto-linking."""
-    return await BACKENDS[BACKEND].embed_many([for_provider(text) for text in texts], EMBED_MODEL, EMBED_DIMENSIONS)
+    async with gate():
+        return await BACKENDS[BACKEND].embed_many([for_provider(text) for text in texts], EMBED_MODEL, EMBED_DIMENSIONS)

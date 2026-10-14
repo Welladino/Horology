@@ -42,8 +42,18 @@ def test_a_huge_paragraph_is_cut_at_sentence_ends():
     assert all(s.endswith(".") for s in sections[:-1])
 
 
-def test_section_count_is_capped():
-    assert len(chunking.split("\n\n".join(paragraphs(3000)))) == chunking.MAX_SECTIONS
+def test_a_document_over_the_section_limit_is_rejected_whole():
+    import asyncio
+    import pytest
+    from graph_core.sections import service
+    long = "\n\n".join(paragraphs(400))
+    assert len(chunking.split(long)) > chunking.MAX_SECTIONS  # all sections are returned, none dropped
+    with pytest.raises(chunking.TooLong) as raised:
+        service.check_length(long)
+    assert raised.value.sections == len(chunking.split(long))
+    with pytest.raises(chunking.TooLong):  # raised before any embedding call
+        asyncio.run(service.embed_document("Long", long))
+    service.check_length("\n\n".join(paragraphs(40)))  # within the limit: no error
 
 
 def test_document_vector_is_the_normalised_mean():

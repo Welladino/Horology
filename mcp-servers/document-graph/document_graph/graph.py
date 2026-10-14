@@ -6,12 +6,12 @@ module only turns tool calls into service calls.
 from graph_core.documents import service as documents
 from graph_core.entities import service as entities
 from graph_core.documents.service import VALID_DOC_TYPES  # noqa: F401  (re-exported for callers and tests)
+from graph_core.runs import service as runs
 from graph_core.sections import service as sections
 from graph_core.topics import service as topics
 import logging
 from horology_runtime.error_handling import category
 
-from .integrations.cloud_run import client as cloud_run
 from .shared.workspace import current_workspace
 
 log = logging.getLogger("document_graph")
@@ -40,10 +40,16 @@ async def write_document(
     (creates a version chain rather than an orphaned duplicate).
     Pass domain (e.g. Welladino, Newsletter) and the permanent Pipeline ID
     of the item you are working on when there is one.
-    Returns the new document's id.
+    Returns the new document's id. A document over 30 sections (about 20
+    pages) is not saved: the reply says so; split it into parts and write each.
     """
-    new_id, created_at = await documents.write_agent_document(
-        current_workspace(), doc_type, title, content, created_by_agent, supersedes_id, domain, pipeline_id)
+    try:
+        new_id, created_at = await documents.write_agent_document(
+            current_workspace(), doc_type, title, content, created_by_agent, supersedes_id, domain, pipeline_id)
+    except sections.TooLong as error:
+        # Returned, not raised: tool errors reach the agent as a category only.
+        return {"saved": False, "reason": "too_long", "sections": error.sections, "limit": sections.MAX_SECTIONS,
+                "next_step": "Split it into parts of about 20 pages, write each part, and link them with link_documents."}
     return {"id": new_id, "created_at": created_at.isoformat()}
 
 
@@ -150,11 +156,13 @@ async def sync_graph() -> dict:
     changed documents), removes rows set to FALSE, and writes Graph Sync
     Status back to the sheet. It runs in the background; this returns as
     soon as it has started. Check the sheet's Graph Sync Status column for
-    results.
+    results. A run handles up to 30 changed documents and starts the next
+    run itself for the rest. Not started (started: false) when a run is
+    already in progress, or the same request was made in the last 5
+    minutes (retry_after_seconds says when to ask again).
     """
     workspace = current_workspace()
-    operation = await cloud_run.start_sync(workspace)
-    return {"started": True, "workspace": workspace, "operation": operation}
+    return {"workspace": workspace, **await runs.request(workspace, "sync")}
 
 
 async def list_topics(domain: str | None = None) -> list[dict]:
@@ -183,11 +191,11 @@ async def rebuild_topics() -> dict:
     New documents join existing topics automatically; run this after many
     new documents, or when topics look stale. Topics that mostly continue
     keep their names; new ones are named automatically. It runs in the
-    background and returns as soon as it has started.
+    background and returns as soon as it has started. Not started when a run
+    is in progress or this was asked for in the last 5 minutes.
     """
     workspace = current_workspace()
-    operation = await cloud_run.start_sync(workspace, "topics")
-    return {"started": True, "workspace": workspace, "operation": operation}
+    return {"workspace": workspace, **await runs.request(workspace, "topics")}
 
 
 async def list_entities(bucket: str | None = None, domain: str | None = None, limit: int = 50) -> list[dict]:

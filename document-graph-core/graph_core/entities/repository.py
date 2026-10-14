@@ -47,27 +47,33 @@ class EntityRepository:
 
     # Documents waiting for extraction
 
+    _PENDING = """
+        WITH current AS (
+            SELECT c.document_id, md5(string_agg(c.content, E'\\x1f' ORDER BY c.chunk_index)) AS sections_hash
+            FROM document_chunks c JOIN documents d ON d.id = c.document_id
+            WHERE d.workspace = %s
+            GROUP BY c.document_id
+        )
+        SELECT current.document_id, current.sections_hash,
+               r.status = 'failed' AND r.sections_hash = current.sections_hash AS retry
+        FROM current LEFT JOIN entity_runs r ON r.document_id = current.document_id
+        WHERE r.document_id IS NULL OR r.status = 'failed' OR r.sections_hash <> current.sections_hash
+    """
+
     async def pending_documents(self, workspace, limit):
-        """Documents whose sections changed since their last successful run (or never ran, or failed).
+        """Documents whose sections changed since their last successful run (or never ran, or failed),
+        new and changed ones before retries of failures.
 
         Returns (document_id, sections_hash) with the hash to record once done."""
         async with self.database.transaction() as conn, conn.cursor() as cur:
-            await cur.execute(
-                """
-                WITH current AS (
-                    SELECT c.document_id, md5(string_agg(c.content, E'\\x1f' ORDER BY c.chunk_index)) AS sections_hash
-                    FROM document_chunks c JOIN documents d ON d.id = c.document_id
-                    WHERE d.workspace = %s
-                    GROUP BY c.document_id
-                )
-                SELECT current.document_id, current.sections_hash
-                FROM current LEFT JOIN entity_runs r ON r.document_id = current.document_id
-                WHERE r.document_id IS NULL OR r.status = 'failed' OR r.sections_hash <> current.sections_hash
-                ORDER BY current.document_id
-                LIMIT %s
-                """,
-                (workspace, limit))
-            return await cur.fetchall()
+            await cur.execute(self._PENDING + " ORDER BY retry NULLS FIRST, current.document_id LIMIT %s", (workspace, limit))
+            return [(document_id, sections_hash) for document_id, sections_hash, _ in await cur.fetchall()]
+
+    async def count_pending(self, workspace):
+        """Pending documents not counting retries of failures (they wait for a later run, not a follow-up)."""
+        async with self.database.transaction() as conn, conn.cursor() as cur:
+            await cur.execute(f"SELECT count(*) FROM ({self._PENDING}) p WHERE NOT coalesce(p.retry, false)", (workspace,))
+            return (await cur.fetchone())[0]
 
     async def mark_run(self, document_id, sections_hash, status):
         async with self.database.transaction() as conn, conn.cursor() as cur:

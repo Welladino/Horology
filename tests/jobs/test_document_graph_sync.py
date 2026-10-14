@@ -63,11 +63,12 @@ class TestParse:
 
 class FakeGoogle:
     def __init__(self, values, files):
-        self.values, self.files, self.writes, self.downloads = values, files, [], []
+        self.values, self.files, self.writes, self.downloads, self.calls = values, files, [], [], []
     async def sheet_rows(self, spreadsheet_id, tab):
         return self.values
     async def write_cells(self, spreadsheet_id, updates):
-        self.writes = updates
+        self.calls.append(list(updates))
+        self.writes += updates  # every write, in order; dict(self.writes) gives the latest per range
     async def file_metadata(self, file_id):
         if file_id not in self.files:  # Drive hides unshared files as 404
             import httpx
@@ -92,13 +93,15 @@ def test_sync_imports_skips_unchanged_removes_and_writes_status(database):
     from horology_runtime.database import Database
     files = {"fileAAAAAAAAAA": ("text/markdown", "1", "# Pricing plan\nCharge per seat."),
              "fileBBBBBBBBBB": ("text/markdown", "4", "# Pricing v2\nCharge per workspace."),
-             "fileCCCCCCCCCC": ("application/vnd.google-apps.spreadsheet", "1", "")}
+             "fileCCCCCCCCCC": ("application/vnd.google-apps.spreadsheet", "1", ""),
+             "fileDDDDDDDDDD": ("text/markdown", "1", "\n\n".join(("Market background. " * 100) for _ in range(40)))}
     google = FakeGoogle([HEADER,
                          row("1", "Pricing plan", "fileAAAAAAAAAA", True),
                          row("2", "Pricing v2", "fileBBBBBBBBBB", True, supersedes="1"),
                          row("3", "A register", "fileCCCCCCCCCC", True, doc_type="guide"),
                          row("4", "Other workspace", "fileAAAAAAAAAA", True, workspace="other-ws"),
-                         row("5", "Not shared", "fileZZZZZZZZZZ", True)], files)
+                         row("5", "Not shared", "fileZZZZZZZZZZ", True),
+                         row("6", "Too long", "fileDDDDDDDDDD", True)], files)
     embed = AsyncMock(side_effect=lambda texts: [[0.1] * 768 for _ in texts])
 
     async def run():
@@ -109,13 +112,17 @@ def test_sync_imports_skips_unchanged_removes_and_writes_status(database):
                     await cur.execute("DELETE FROM documents WHERE workspace IN ('test-ws', 'other-ws')")
                 with patch.object(embeddings, "embed_many", embed):
                     first = await sync.sync_workspace(google, "test-ws", "sheet")
-                    assert first == {"workspace": "test-ws", "synced": 2, "unchanged": 0, "errors": 1, "not_shared": 1, "removed": 0,
-                                     "fields_updated": 0}
+                    assert first == {"workspace": "test-ws", "synced": 2, "unchanged": 0, "errors": 1, "not_shared": 1, "too_long": 1,
+                                     "removed": 0, "fields_updated": 0, "deferred": 0}
                     status = {r: v[0] for r, v in google.writes}
                     assert status["'Document Index'!M2:O2"][0] == "synced" and status["'Document Index'!M2:O2"][2] == "1"
                     assert status["'Document Index'!M4:O4"] == ["error", "", ""]  # spreadsheets aren't indexed
                     assert not any("M5" in r for r, _ in google.writes)  # other workspace untouched
                     assert status["'Document Index'!M6:O6"] == ["not_shared", "", ""]
+                    assert status["'Document Index'!M7:O7"] == ["too_long", "", ""]
+                    assert "6" not in await documents.sheet_revisions("test-ws")  # nothing stored
+                    assert all(len(texts) <= 32 and "Market background" not in texts[0] for texts in
+                               (call.args[0] for call in embed.await_args_list))  # nor embedded
                     stored = await documents.sheet_revisions("test-ws")
                     newer, older = stored["2"][0], stored["1"][0]
                     related = await documents.related("test-ws", newer)
@@ -124,7 +131,8 @@ def test_sync_imports_skips_unchanged_removes_and_writes_status(database):
 
                     google.downloads.clear()
                     second = await sync.sync_workspace(google, "test-ws", "sheet")
-                    assert second["unchanged"] == 2 and google.downloads == [] and embed.await_count == 2
+                    # A too-long file is re-read each sync (free, no AI calls) so a shortened version is picked up.
+                    assert second["unchanged"] == 2 and google.downloads == ["fileDDDDDDDDDD"] and embed.await_count == 2
 
                     google.values[1][11] = False  # untick row 1
                     third = await sync.sync_workspace(google, "test-ws", "sheet")
@@ -268,3 +276,127 @@ def test_fields_are_stamped_and_refreshed_without_re_embedding(database):
                     await cur.execute("DELETE FROM documents WHERE workspace = 'test-ws'")
                 graph_core.configure(None)
     asyncio.run(run())
+
+
+def test_statuses_are_written_in_batches_as_rows_finish(database):
+    """A crash mid-run loses at most the last batch of statuses; the work itself is already saved."""
+    from horology_runtime.database import Database
+    files = {f"file{n:010d}": ("text/markdown", "1", f"# Plan {n}\nDetail {n}.") for n in range(23)}
+    google = FakeGoogle([HEADER] + [row(str(n), f"Plan {n}", f"file{n:010d}", True) for n in range(23)]
+                        + [row("99", "Left out", "file0000000000", False)], files)
+
+    async def run():
+        async with Database(database, 2) as db:
+            graph_core.configure(db)
+            try:
+                async with db.transaction() as conn, conn.cursor() as cur:
+                    await cur.execute("DELETE FROM documents WHERE workspace = 'test-ws'")
+                with patch.object(embeddings, "embed_many", AsyncMock(side_effect=lambda texts: [[0.1] * 768 for _ in texts])):
+                    assert (await sync.sync_workspace(google, "test-ws", "sheet"))["synced"] == 23
+                # 10 + 10 during the run; the last 3 plus the excluded row at the end
+                assert [len(call) for call in google.calls] == [10, 10, 4]
+                assert google.calls[-1][-1][1] == [["not_applicable", "", ""]]
+
+                google.calls.clear()
+                ticks = iter(range(0, 10_000, 31))  # every row "takes" 31 s: a write after each row
+                with patch.object(sync, "clock", lambda: next(ticks)):
+                    await sync.sync_workspace(google, "test-ws", "sheet")
+                assert [len(call) for call in google.calls] == [1] * 23 + [1]  # then the excluded row
+            finally:
+                async with db.transaction() as conn, conn.cursor() as cur:
+                    await cur.execute("DELETE FROM documents WHERE workspace = 'test-ws'")
+                graph_core.configure(None)
+    asyncio.run(run())
+
+
+def test_a_failed_mid_run_status_write_is_kept_for_the_next_one():
+    from types import SimpleNamespace
+
+    class FlakyGoogle:
+        def __init__(self):
+            self.calls, self.fail = [], True
+
+        async def write_cells(self, spreadsheet_id, updates):
+            if self.fail:
+                self.fail = False
+                raise RuntimeError("quota")
+            self.calls.append(list(updates))
+
+    async def run():
+        google = FlakyGoogle()
+        headers = {name: i for i, name in enumerate(HEADER)}
+        writer = sync._StatusWriter(google, "sheet", headers)
+        for n in range(sync.STATUS_BATCH + 1):
+            await writer.add(SimpleNamespace(row_number=n + 2), ("unchanged", n, "1"))
+        await writer.finish([])
+        assert [len(call) for call in google.calls] == [sync.STATUS_BATCH + 1]  # nothing lost
+    asyncio.run(run())
+
+
+def test_a_run_stops_at_its_cap_and_leaves_the_rest_untouched(database):
+    """Only rows that needed work count; deferred rows keep their copy and their sheet status."""
+    from horology_runtime.database import Database
+    files = {f"file{n:010d}": ("text/markdown", "1", f"# Plan {n}\nDetail {n}.") for n in range(7)}
+    google = FakeGoogle([HEADER] + [row(str(n), f"Plan {n}", f"file{n:010d}", True) for n in range(7)], files)
+
+    async def run():
+        async with Database(database, 2) as db:
+            graph_core.configure(db)
+            try:
+                async with db.transaction() as conn, conn.cursor() as cur:
+                    await cur.execute("DELETE FROM documents WHERE workspace = 'test-ws'")
+                with patch.object(embeddings, "embed_many", AsyncMock(side_effect=lambda texts: [[0.1] * 768 for _ in texts])):
+                    assert (await sync.sync_workspace(google, "test-ws", "sheet"))["synced"] == 7
+                    for n in range(7):  # every file edited
+                        files[f"file{n:010d}"] = ("text/markdown", "2", f"# Plan {n}\nDetail {n}, revised.")
+                    google.writes.clear()
+                    capped = await sync.sync_workspace(google, "test-ws", "sheet", limit=3)
+                    assert (capped["synced"], capped["deferred"], capped["removed"]) == (3, 4, 0)
+                    assert len(await documents.sheet_revisions("test-ws")) == 7  # deferred rows kept
+                    assert sorted(r for r, _ in google.writes) == [f"'Document Index'!M{n}:O{n}" for n in (2, 3, 4)]
+                    rest = await sync.sync_workspace(google, "test-ws", "sheet", limit=3)
+                    assert (rest["unchanged"], rest["synced"], rest["deferred"]) == (3, 3, 1)  # unchanged rows don't count
+            finally:
+                async with db.transaction() as conn, conn.cursor() as cur:
+                    await cur.execute("DELETE FROM documents WHERE workspace = 'test-ws'")
+                graph_core.configure(None)
+    asyncio.run(run())
+
+
+class TestFollowUps:
+    def test_which_run_comes_next(self):
+        from graph_sync.__main__ import follow_up_mode
+        assert follow_up_mode("sync", {"deferred": 4, "entities": {"extraction": {"remaining": 0}}}) == "sync"
+        assert follow_up_mode("sync", {"deferred": 0, "entities": {"extraction": {"remaining": 9}}}) == "entities"
+        assert follow_up_mode("sync", {"deferred": 0, "entities": {"extraction": "failed"}}) is None
+        assert follow_up_mode("entities", {"extraction": {"remaining": 1}}) == "entities"
+        assert follow_up_mode("entities", {"extraction": {"remaining": 0}}) is None
+        assert follow_up_mode("topics", {"topics": 12}) is None
+
+    def test_the_claim_is_confirmed_then_handed_to_the_follow_up(self):
+        from graph_sync import __main__ as job
+        with patch.object(job.runs, "claim", AsyncMock(return_value=None)) as claim, \
+                patch.object(job.runs, "finish", AsyncMock(return_value="op")) as finish, \
+                patch.object(job, "sync_workspace", AsyncMock(return_value={"deferred": 2})), \
+                patch.object(job.review_tab, "run", AsyncMock(return_value={"extraction": {"remaining": 0}})):
+            result = asyncio.run(job.run_workspace(None, "test-ws", "sheet", "sync", 2, "tok"))
+        claim.assert_awaited_once_with("test-ws", "sync", 2, "tok")
+        finish.assert_awaited_once_with("test-ws", "sync", "sync", 2)
+        assert result["follow_up"] == "started sync run 3"
+
+    def test_a_workspace_already_running_is_skipped(self):
+        from graph_sync import __main__ as job
+        with patch.object(job.runs, "claim", AsyncMock(return_value="entities")), \
+                patch.object(job, "sync_workspace", AsyncMock()) as work:
+            result = asyncio.run(job.run_workspace(None, "test-ws", "sheet", "sync", 1))
+        assert result == {"workspace": "test-ws", "skipped": "entities run in progress"}
+        work.assert_not_awaited()
+
+    def test_released_even_when_the_run_fails(self):
+        from graph_sync import __main__ as job
+        with patch.object(job.runs, "claim", AsyncMock(return_value=None)), \
+                patch.object(job.runs, "release", AsyncMock()) as release, \
+                patch.object(job.topics, "rebuild", AsyncMock(side_effect=RuntimeError("down"))):
+            with pytest.raises(RuntimeError):
+                asyncio.run(job.run_workspace(None, "test-ws", "sheet", "topics", 1))
+        release.assert_awaited_once_with("test-ws", "topics")

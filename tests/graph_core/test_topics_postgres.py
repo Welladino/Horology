@@ -120,3 +120,27 @@ def test_a_failed_name_is_retried_on_the_next_rebuild(database):
                     await cur.execute("DELETE FROM documents WHERE workspace = %s", (WS,))
                 graph_core.configure(None)
     asyncio.run(run())
+
+
+def test_neighbour_links_in_chunks_match_one_query(database):
+    """The rebuild queries a few documents at a time (each statement well under the 10 s limit)."""
+    from horology_runtime.database import Database
+
+    async def run():
+        async with Database(database, 2) as db:
+            graph_core.configure(db)
+            try:
+                async with db.transaction() as conn, conn.cursor() as cur:
+                    await cur.execute("DELETE FROM documents WHERE workspace = %s", (WS,))
+                for i in range(7):
+                    await add(i % 2, i, f"Doc {i}")
+                with patch.object(sections, "LINK_BATCH_DOCUMENTS", 1000):
+                    whole = sorted(await sections.neighbour_links(WS, 10, 0.6))
+                with patch.object(sections, "LINK_BATCH_DOCUMENTS", 2):
+                    chunked = sorted(await sections.neighbour_links(WS, 10, 0.6))
+                assert whole and chunked == whole
+            finally:
+                async with db.transaction() as conn, conn.cursor() as cur:
+                    await cur.execute("DELETE FROM documents WHERE workspace = %s", (WS,))
+                graph_core.configure(None)
+    asyncio.run(run())

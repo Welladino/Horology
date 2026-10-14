@@ -88,11 +88,19 @@ class SectionRepository:
             )
             return await cur.fetchall()
 
-    async def neighbour_links(self, workspace, k, floor, document_id=None):
-        """Each section's k nearest sections in other documents of the workspace, at or above floor.
+    async def document_ids(self, workspace):
+        """Ids of the workspace's documents that have sections, in order."""
+        async with self.database.transaction() as conn, conn.cursor() as cur:
+            await cur.execute(
+                "SELECT DISTINCT c.document_id FROM document_chunks c JOIN documents d ON d.id = c.document_id "
+                "WHERE d.workspace = %s ORDER BY c.document_id", (workspace,))
+            return [row[0] for row in await cur.fetchall()]
 
-        Returns (document_id, chunk_index, neighbour document_id, neighbour chunk_index, similarity).
-        With document_id, only that document's sections are the starting points."""
+    async def neighbour_links(self, workspace, k, floor, document_ids):
+        """Each section's k nearest sections in other documents of the workspace, at or above floor,
+        starting from the sections of document_ids only.
+
+        Returns (document_id, chunk_index, neighbour document_id, neighbour chunk_index, similarity)."""
         async with self.database.transaction() as conn, conn.cursor() as cur:
             await cur.execute(
                 """
@@ -104,9 +112,9 @@ class SectionRepository:
                     WHERE d2.workspace = d.workspace AND c2.document_id <> c.document_id
                     ORDER BY c2.embedding <=> c.embedding LIMIT %s
                 ) n
-                WHERE d.workspace = %s AND (%s::bigint IS NULL OR c.document_id = %s) AND n.similarity >= %s
+                WHERE d.workspace = %s AND c.document_id = ANY(%s) AND n.similarity >= %s
                 """,
-                (k, workspace, document_id, document_id, floor),
+                (k, workspace, list(document_ids), floor),
             )
             return await cur.fetchall()
 

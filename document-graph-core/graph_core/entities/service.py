@@ -13,8 +13,8 @@ from . import buckets, extraction, resolution
 from .repository import EntityRepository
 
 log = logging.getLogger("graph_core.entities")
-RUN_LIMIT = 200  # documents per run; the rest wait for the next one
-EXTRACT_CONCURRENCY = 4  # documents extracted at once; resolution stays one document at a time
+RUN_LIMIT = 30  # documents per run; the rest wait for the next one
+EXTRACT_CONCURRENCY = 3  # documents extracted at once; resolution stays one document at a time
 STOP_AFTER_FAILURES = 5  # this many failed documents in a row means the provider is down: stop the run
 
 
@@ -122,6 +122,9 @@ async def process_pending(workspace, limit=RUN_LIMIT):
             summary["documents"] += 1
             for key in ("new", "matched", "relations"):
                 summary[key] += counts[key]
+    # Left for a follow-up run; failures are retried by a later run, not counted here, so a
+    # document that always fails can't keep a chain of runs going.
+    summary["remaining"] = await repository.count_pending(workspace)
     log.info("entities processed %s", summary)
     return summary
 

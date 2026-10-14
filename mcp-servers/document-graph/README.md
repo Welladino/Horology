@@ -5,7 +5,7 @@ Separate Neon document graph and OpenRouter embeddings service.
 - `server.py`: MCP entrypoint.
 - `document_graph/tools.py`: registers the fixed document tools, including `search_documents` (passage search by meaning). Every tool is scoped to one workspace (`document_graph/shared/workspace.py`).
 - `document_graph/graph.py`: the tools themselves. Each validates input, takes the caller's workspace and calls a [`graph_core`](../../document-graph-core/README.md) service; there's no graph logic or SQL here.
-- `document_graph/integrations/cloud_run/client.py`: starts the sync job; only this service needs it.
+- `sync_graph` and `rebuild_topics` start the sync job through `graph_core.runs` (shared with the job, which starts its own follow-up runs). They refuse while a run is in progress for the workspace, or when the same run was asked for in the last 5 minutes.
 - `requirements.txt`: pinned dependencies for this service, `graph_core` and the job.
 
 Graph logic (documents, sections, embeddings, linking, search) lives in `document-graph-core/`, shared with the sync job. Neither this service nor the job imports the other.

@@ -5,6 +5,7 @@ from .. import database
 from ..documents import fields
 from ..ai import embeddings
 from . import chunking
+from .chunking import MAX_SECTIONS, TooLong  # noqa: F401  (for callers that report the limit)
 from .repository import SectionRepository
 
 
@@ -12,13 +13,22 @@ def _repository():
     return SectionRepository(database.get())
 
 
+def check_length(content):
+    """Raise TooLong if the document has more than MAX_SECTIONS sections. Local; costs nothing."""
+    count = len(chunking.split(content))
+    if count > MAX_SECTIONS:
+        raise TooLong(count)
+
+
 async def embed_document(title, content):
     """Split a document into sections and embed each one, titled for context.
 
     Returns (sections, section vectors, document vector); the document vector
     is the normalised mean of its sections, used for auto-linking. Makes the
-    embedding calls only; nothing is stored."""
+    embedding calls only; nothing is stored. Raises TooLong before any call."""
     sections = chunking.split(content) or [title]
+    if len(sections) > MAX_SECTIONS:
+        raise TooLong(len(sections))
     vectors = await embeddings.embed_many([f"{title}\n\n{section}" for section in sections])
     return sections, vectors, mean(vectors)
 
@@ -69,9 +79,17 @@ async def search_passages(workspace, query, limit, passages, domain=None):
     return list(results.values())
 
 
+LINK_BATCH_DOCUMENTS = 15  # up to 450 sections per neighbour query, well inside the 10-second statement limit
+
+
 async def neighbour_links(workspace, k, floor, document_id=None):
     """Similarity links between sections of different documents (the topic graph's edges)."""
-    return await _repository().neighbour_links(workspace, k, floor, document_id)
+    repository = _repository()
+    ids = [document_id] if document_id is not None else await repository.document_ids(workspace)
+    links = []
+    for start in range(0, len(ids), LINK_BATCH_DOCUMENTS):
+        links += await repository.neighbour_links(workspace, k, floor, ids[start:start + LINK_BATCH_DOCUMENTS])
+    return links
 
 
 async def texts(keys):

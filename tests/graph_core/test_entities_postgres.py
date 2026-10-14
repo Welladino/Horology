@@ -117,7 +117,7 @@ def test_entities_are_extracted_resolved_and_looked_up(database):
                     first = await add_document("Platforms", ["Beehiiv vs Substack.", "ConvertKit in Singapore. Webinars."])
                     one = await entities.process_pending(WS)
                     assert one == {"workspace": WS, "documents": 1, "failed": 0, "new": 5, "matched": 0, "relations": 1,
-                                   "stopped_early": False}
+                                   "stopped_early": False, "remaining": 0}
                     # Mentions are also checked against entities created earlier from the same document.
                     assert calls == ["entity_matches"]
 
@@ -206,6 +206,7 @@ def test_a_run_stops_after_failures_in_a_row(database, caplog):
                 with patch.object(chat, "complete_json", AsyncMock(side_effect=timeout)):
                     summary = await entities.process_pending(WS)
                 assert summary["failed"] == entities.STOP_AFTER_FAILURES and summary["stopped_early"] is True
+                assert summary["remaining"] == 2  # the 5 failures wait for a later run, not a follow-up
                 assert "failed: timeout" in caplog.text and "SafeToolError" not in caplog.text
                 async with db.transaction() as conn, conn.cursor() as cur:
                     await cur.execute("SELECT count(*) FROM entity_runs r JOIN documents d ON d.id = r.document_id "

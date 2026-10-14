@@ -13,7 +13,7 @@ import sys
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import ANY, AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -80,6 +80,12 @@ class TestWriteDocument:
         for doc_type in graph.VALID_DOC_TYPES:
             db.one.append((1, NOW))
             assert run(graph.write_document(doc_type=doc_type, title="t", content="c", created_by_agent="a"))["id"] == 1
+
+    def test_a_document_over_the_section_limit_is_not_saved(self, db):
+        long = "\n\n".join(("Paragraph about the market. " * 70) for _ in range(40))
+        reply = run(graph.write_document(doc_type="plan", title="t", content=long, created_by_agent="a"))
+        assert reply["saved"] is False and reply["reason"] == "too_long" and reply["sections"] > reply["limit"] == 30
+        assert db.executed == []
 
     def test_tags_agent_source_and_workspace(self, db):
         db.one.append((7, NOW))
@@ -264,7 +270,7 @@ class TestSyncGraph:
             run(graph.sync_graph())
 
     def test_starts_the_job_for_the_callers_workspace_only(self, db, monkeypatch):
-        from document_graph.integrations.cloud_run import client as cloud_run
+        from graph_core.runs import cloud_run
         monkeypatch.setenv("GRAPH_SYNC_JOB", "projects/horology-dev/locations/us-central1/jobs/document-graph-sync")
         monkeypatch.setenv("DOCUMENT_GRAPH_WORKSPACE", "job")
         response = MagicMock()
@@ -276,11 +282,13 @@ class TestSyncGraph:
         body = post.call_args.kwargs["json"]
         assert url == "https://run.googleapis.com/v2/projects/horology-dev/locations/us-central1/jobs/document-graph-sync:run"
         assert body["overrides"]["containerOverrides"][0]["env"] == [{"name": "GRAPH_SYNC_WORKSPACE", "value": "job"},
-                                                                     {"name": "GRAPH_SYNC_MODE", "value": "sync"}]
+                                                                     {"name": "GRAPH_SYNC_MODE", "value": "sync"},
+                                                                     {"name": "GRAPH_SYNC_CHAIN", "value": "1"},
+                                                                     {"name": "GRAPH_RUN_TOKEN", "value": ANY}]
         assert result == {"started": True, "workspace": "job", "operation": "operations/123"}
 
     def test_rebuild_topics_starts_the_job_in_topics_mode(self, db, monkeypatch):
-        from document_graph.integrations.cloud_run import client as cloud_run
+        from graph_core.runs import cloud_run
         monkeypatch.setenv("GRAPH_SYNC_JOB", "projects/horology-dev/locations/us-central1/jobs/document-graph-sync")
         response = MagicMock()
         response.json.return_value = {"name": "operations/456"}
@@ -291,9 +299,32 @@ class TestSyncGraph:
         assert {"name": "GRAPH_SYNC_MODE", "value": "topics"} in env and result["started"] is True
 
     def test_unknown_mode_is_refused(self, db, monkeypatch):
-        from document_graph.integrations.cloud_run import client as cloud_run
+        from graph_core.runs import cloud_run
         with pytest.raises(ValueError, match="mode must be one of"):
-            run(cloud_run.start_sync("welladino", "delete-everything"))
+            run(cloud_run.start("welladino", "delete-everything"))
+
+    def test_not_started_while_a_run_is_in_progress(self, db, monkeypatch):
+        from graph_core.runs import cloud_run
+        db.one.append(("sync",))  # a sync run holds the workspace
+        with patch.object(cloud_run, "start", AsyncMock()) as start:
+            result = run(graph.rebuild_topics())
+        assert result["started"] is False and result["reason"] == "already_running" and result["running"] == "sync"
+        start.assert_not_awaited()
+
+    def test_not_started_within_the_cooldown(self, db, monkeypatch):
+        from graph_core.runs import cloud_run
+        db.one.extend([None, (120,)])  # nothing running; asked 3 minutes ago
+        with patch.object(cloud_run, "start", AsyncMock()) as start:
+            result = run(graph.sync_graph())
+        assert result == {"workspace": "welladino", "started": False, "reason": "cooldown", "retry_after_seconds": 120}
+        start.assert_not_awaited()
+
+    def test_a_failed_start_clears_the_request_so_the_agent_can_retry(self, db, monkeypatch):
+        monkeypatch.delenv("GRAPH_SYNC_JOB", raising=False)
+        with pytest.raises(ValueError):
+            run(graph.sync_graph())
+        assert "UPDATE graph_runs SET requested_at = NULL" in db.executed[-1][0]
+        assert "running_since = NULL" in db.executed[-2][0]  # the claim is freed too
 
     def test_rejects_a_malformed_job_name(self, db, monkeypatch):
         monkeypatch.setenv("GRAPH_SYNC_JOB", "https://evil.example/jobs/x")
