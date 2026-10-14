@@ -1,21 +1,41 @@
-.DS_Store
+# One ignore file for the whole repository. The only other tracked one is
+# tests/manual/gateway/fixtures/private/.gitignore ("*"), kept beside the private test clients
+# as a second guard. Tool caches (.hypothesis/, .pytest_cache/, coverage HTML) add their own.
 
-# Hermes container state — API keys, sessions, memories. Never commit.
-hermes-data/
+# Secrets and local settings, at any depth: .env, .env.local, .env.cloud, ...
 .env
+.env.*
+!.env.example
 
-# Python virtualenv for Alembic/DB tooling
-.venv/
-__pycache__/
-*.pyc
+# Hermes container state: API keys, sessions, memories. Never commit.
+hermes-data/
 
-
-# Generated Python packaging metadata
-*.egg-info/
+# Live check: OAuth tokens and local reports (scripts/ops/live_check.py, scripts/security, scripts/testing).
+.auth/
+reports/
 
 # Private leftovers from the removed GitHub/Drive adapters (retired credentials, policy snapshots).
 placeholders/
 
-# Live check: OAuth tokens and local reports (scripts/ops/live_check.py).
-.auth/
-reports/
+# Python: virtualenv, caches and packaging output.
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+
+# Gateway: local state, and local or cloud client and policy files with bearer credentials.
+mcp-servers/mcp-gateway/**/state/
+mcp-servers/mcp-gateway/config/*.local.json
+mcp-servers/mcp-gateway/config/client.cloud.json
+
+# Apps Script (clasp): installed packages and login and project files; the example file stays tracked.
+node_modules/
+.clasp.json
+.clasprc.json
+.clasprc.*.json
+
+# macOS
+.DS_Store
