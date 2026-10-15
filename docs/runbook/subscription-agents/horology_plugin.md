@@ -4,7 +4,7 @@
 
 - `personas/subscriptions/research.md`: Agent Register Master ID 1, Research prompt.
 - `personas/subscriptions/technical-assessment.md`: Master ID 2, Technical Assessment prompt.
-- `plugins/horology/`: Horology App-backed plugin manifests, preserved `.app.json` binding and the `horology-mcp-access` operating skill.
+- `plugins/horology-tools/`: Horology App-backed plugin manifests, preserved `.app.json` binding and the `horology-mcp-access` operating skill.
 
 The two personas are subscription-agent prompts, not provisioned Hermes profiles. Their original Instructions / Prompt text is preserved under that heading. Keep the Research and Technical Assessment workflow skills installed separately; the gateway skill does not replace them.
 
@@ -17,7 +17,7 @@ Master `H1:H3` now uses header `Prompt source / link` and the two repository pat
 The existing private personal plugin is [Horology](https://chatgpt.com/plugins/plugin_asdk_app_6acc6833d128819185f9cf4241d60942), backend ID `plugin_asdk_app_6acc6833d128819185f9cf4241d60942`. This update is version 1.0.1, release `pluginrel_6accb189d62c819193ed45f45f6ab880`.
 
 1. Read its latest source and current release through Plugin Creator before editing.
-2. Edit the scoped skill under `plugins/horology/skills/`. Preserve App identity, `.app.json`, OAuth/MCP connection, presentation and default prompts.
+2. Edit the scoped skill under `plugins/horology-tools/skills/`. Preserve App identity, `.app.json`, OAuth/MCP connection, presentation and default prompts.
 3. Bump versions consistently in `plugin.json` and `.codex-plugin/plugin.json`.
 4. Validate skill frontmatter and the portable manifest. Compare App/presentation/configuration with the previous release.
 5. Zip the plugin folder under its manifest name, preserving hidden files, outside the source folder. Include only plugin package files, not the server credentials or repo.

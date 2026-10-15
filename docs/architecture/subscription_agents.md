@@ -12,7 +12,7 @@ Subscription agents are Horology's secondary, document-driven workflow. Users us
 | Document Index | Document associations, revision sequence and supersedes history | Sheets in `01_Registers` |
 | Templates | Native document structure and visual assets | Drive `02_Templates` |
 | Domain outputs | Research, direction and plans | Domain/entity folders resolved from the Location Directory |
-| Shared skills | Versioned agent instructions | `plugins/welladino-workflows/skills/` |
+| Shared skills | Versioned agent instructions | `plugins/horology-workflows/skills/` |
 | ClickUp sync | Sheets/ClickUp tasks, statuses and decision comments | `google_appscript/clickup-sync/` → Google Apps Script |
 
 The workflow is driven by documents and structured records. Sheets is the operational record; Drive holds the detailed deliverables. ClickUp is a review UI. The repository versions skills and integration code; it is not a full mirror of Drive or Sheets.
@@ -83,7 +83,7 @@ The consent page permits form submissions to its own origin and the SDK-validate
 
 ## Agent Register prompt sources
 
-Research and Technical Assessment prompts from Agent Register Master IDs 1 and 2 live in `personas/subscriptions/research.md` and `personas/subscriptions/technical-assessment.md`. The Master prompt-source column records repository paths; clickable GitHub links are pending publication. These are subscription-agent personas, separate from the provisioned Hermes profiles in `personas/subagents/`. The Horology App plugin instruction source is versioned under `plugins/horology/`; its gateway operating skill does not replace the Welladino workflow skills.
+Research and Technical Assessment prompts from Agent Register Master IDs 1 and 2 live in `personas/subscriptions/research.md` and `personas/subscriptions/technical-assessment.md`. The Master prompt-source column records repository paths; clickable GitHub links are pending publication. These are subscription-agent personas, separate from the provisioned Hermes profiles in `personas/subagents/`. The Horology App plugin instruction source is versioned under `plugins/horology-tools/`; its gateway operating skill does not replace the Welladino workflow skills.
 
 ### Additional bounded provider reads
 

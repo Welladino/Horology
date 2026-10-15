@@ -13,7 +13,7 @@ Read [architecture](../../architecture/subscription_agents.md) for responsibilit
 
 ## Maintain and install skills
 
-Edit source in `plugins/welladino-workflows/skills/`. Read each SKILL.md and its linked references. Update live-field guidance when the workflow changes, keeping exact column positions out of instructions.
+Edit source in `plugins/horology-workflows/skills/`. Read each SKILL.md and its linked references. Update live-field guidance when the workflow changes, keeping exact column positions out of instructions.
 
 For local Codex copies, run from the Horology root:
 
@@ -21,7 +21,7 @@ For local Codex copies, run from the Horology root:
 mkdir -p "${CODEX_HOME:-$HOME/.codex}/skills"
 for skill in welladino-capture-triage welladino-research welladino-technical-assessment; do
   mkdir -p "${CODEX_HOME:-$HOME/.codex}/skills/$skill"
-  cp -R "plugins/welladino-workflows/skills/$skill/." "${CODEX_HOME:-$HOME/.codex}/skills/$skill/"
+  cp -R "plugins/horology-workflows/skills/$skill/." "${CODEX_HOME:-$HOME/.codex}/skills/$skill/"
 done
 ```
 

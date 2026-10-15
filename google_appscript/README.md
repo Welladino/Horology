@@ -23,7 +23,7 @@ planning-note deliverable, not automatic implementation.
 
 | Folder | Purpose | Runtime |
 | --- | --- | --- |
-| [Workflow plugin](../plugins/welladino-workflows/) | Shared capture, research and technical-assessment instructions | Loaded by the selected agent platform |
+| [Workflow plugin](../plugins/horology-workflows/) | Shared capture, research and technical-assessment instructions | Loaded by the selected agent platform |
 | [clickup-sync](clickup-sync/README.md) | Modular Sheets/ClickUp sync and document lookup | Google Apps Script |
 
 The files here are versioned in Horology, but do not depend on a running Hermes
@@ -31,7 +31,7 @@ container or a deployed Horology server. Existing Hermes personas, MCP servers
 and Neon document graph remain separate. Backfill and further integrations can
 be added when needed; this folder does not enable them.
 
-Workflow skill source and plugin metadata live together in `plugins/welladino-workflows/`.
+Workflow skill source and plugin metadata live together in `plugins/horology-workflows/`.
 
 Maintain each component locally, test it, review the Git diff and publish only
 the selected component. Keep credentials outside Git and record meaningful

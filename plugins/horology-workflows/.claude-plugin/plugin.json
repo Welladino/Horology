@@ -1,7 +1,7 @@
 {
-  "name": "welladino-workflows",
-  "displayName": "Welladino Workflows",
-  "version": "0.1.3",
+  "name": "horology-workflows",
+  "displayName": "Horology Workflows",
+  "version": "0.2.0",
   "description": "Capture and triage Welladino Pipeline ideas, research selected questions with linked evidence and proposed decisions, and assess software options before implementation. Needs Google Drive, Docs and Sheets connected; ClickUp when a task uses it.",
   "author": {
     "name": "Saravanaraj",

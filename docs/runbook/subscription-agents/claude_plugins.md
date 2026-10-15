@@ -4,9 +4,9 @@ The repository root is a Claude plugin marketplace (`.claude-plugin/marketplace.
 
 | Install id | Folder | Brings |
 | --- | --- | --- |
-| `horology-tools@horology` | `plugins/horology/` | `horology-mcp-access` skill + gateway connector (`.mcp.json`) |
+| `horology-tools@horology` | `plugins/horology-tools/` | `horology-mcp-access` skill + gateway connector (`.mcp.json`) |
 | `horology-document-graph@horology` | `plugins/horology-document-graph/` | `horology-document-graph` skill + document-graph connector (`.mcp.json`) |
-| `welladino-workflows@horology` | `plugins/welladino-workflows/` | capture, research and technical-assessment skills (Google Drive/Sheets come from your own connectors) |
+| `horology-workflows@horology` | `plugins/horology-workflows/` | capture, research and technical-assessment skills (Google Drive/Sheets come from your own connectors) |
 
 Each plugin folder keeps one `skills/` directory shared by its Claude manifest (`.claude-plugin/plugin.json`) and its OpenAI/Codex manifests (`plugin.json`, `.codex-plugin/plugin.json`). The gateway plugin's Claude name is `horology-tools`; its ChatGPT App identity (`.app.json`) is unchanged.
 
@@ -17,7 +17,7 @@ command claude plugin validate .
 ```
 
 ```bash
-for p in plugins/horology plugins/horology-document-graph plugins/welladino-workflows; do command claude plugin validate "$p"; done
+for p in plugins/horology-tools plugins/horology-document-graph plugins/horology-workflows; do command claude plugin validate "$p"; done
 ```
 
 ## Install in Claude Code (this Mac)
@@ -32,7 +32,7 @@ command claude plugin marketplace add ./
 command claude plugin install horology-document-graph@horology
 ```
 
-Install the others the same way (`horology-tools@horology`, `welladino-workflows@horology`). The first tool call opens a browser for Google sign-in; use an Audience test user mapped to a workspace.
+Install the others the same way (`horology-tools@horology`, `horology-workflows@horology`). The first tool call opens a browser for Google sign-in; use an Audience test user mapped to a workspace.
 
 If the same server is already added as a claude.ai connector (for example "Horology document graph"), Claude Code shows both; remove one to avoid duplicate tools.
 
