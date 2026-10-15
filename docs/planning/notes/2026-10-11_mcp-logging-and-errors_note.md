@@ -1,9 +1,0 @@
-# MCP operation logging and sanitized errors
-
-Added independently packaged shared observability modules to the restricted gateway and document graph. Tool wrappers preserve names, signatures and async execution while emitting argument-free JSON operation events to stdout. Events include tool, integration, duration, outcome and correlation ID; gateway events additionally identify the server-provisioned assignment. OpenRouter embedding operations are instrumented separately. Standard HTTP access/server logs remain alongside these application events.
-
-Errors reaching MCP clients expose only a category and request ID; raw provider errors, DSNs, tokens, arguments, returned documents and other response contents are excluded from this layer's output. Categories distinguish timeouts, connection failures, provider rejection, permission/quota denial, invalid input/response and other failures. No exception traceback is logged by the application wrappers and raised sanitized errors suppress exception chaining. No automatic retries or quota resets/refunds were added.
-
-Neon connections now use connect_timeout=5, statement_timeout=10000ms and lock_timeout=3000ms. Existing gateway HTTP 25-second, Supabase connection/query and OpenRouter 30-second timeouts remain. These are connection/statement/inactivity timeouts, not a total wall-clock deadline for every multi-step operation.
-
-Validation: 48 full repository/gateway tests passed, including injected HTTP timeout/connection/DB connection failures with secret-bearing messages and correlation/signature assertions. Both images rebuilt and restarted locally. Gateway authenticated smoke passed with seventeen tools and denial checks; document graph discovered all seven tools. Running gateway logs showed structured success and permission-denied events. No paid calls, migrations, document writes or secret changes were needed. Cloud log routing and public authentication remain deployment work.

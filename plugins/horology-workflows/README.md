@@ -1,8 +1,8 @@
-# Welladino Workflows plugin
+# Horology Workflows plugin
 
 Source of truth for the capture/triage, research and technical-assessment skills.
-Edit the instructions under `skills/` and keep root and compatibility manifests synchronized when releasing.
+Edit the instructions under `skills/` and keep the Claude manifest (`.claude-plugin/plugin.json`, name `horology-workflows`) and the OpenAI/Codex manifests (`plugin.json`, `.codex-plugin/plugin.json`, identity `welladino-workflows`) in step when releasing.
 
-The manifest and assets preserve the installed plugin identity and version 0.1.3. Moving source does not publish a new release or update installed copies. Google Drive/Docs/Sheets and ClickUp connections are configured separately.
+Moving or editing source does not publish a release or update installed copies. Google Drive/Docs/Sheets and ClickUp connections are configured separately.
 
-Maintenance: [subscription-agent operations](../../docs/runbook/subscription-agents/operations.md).
+Maintenance: [subscription-agent operations](../../docs/runbook/subscription-agents/operations.md). Claude install: [Claude plugins](../../docs/runbook/subscription-agents/claude_plugins.md).

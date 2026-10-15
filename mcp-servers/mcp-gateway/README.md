@@ -1,6 +1,6 @@
-# Restricted subscription-agent MCP gateway
+# Restricted MCP gateway
 
-Local prototype based on [Agent Register → MCP](https://docs.google.com/spreadsheets/d/1BBZNwuGodU6JlrCk-09L7aZ2BqOBED6Vir0vpDMiJoo/edit#gid=687144154). One container serves narrow provider adapters at `http://127.0.0.1:8767/mcp`. It does not alter the existing Hermes MCP servers or configure schedules.
+One service with narrow provider adapters, based on [Agent Register → MCP](https://docs.google.com/spreadsheets/d/1BBZNwuGodU6JlrCk-09L7aZ2BqOBED6Vir0vpDMiJoo/edit#gid=687144154). It runs on Cloud Run for subscription agents (`https://mcp-gateway-366292507424.us-central1.run.app/mcp`) and locally at `http://127.0.0.1:8767/mcp` for Hermes. Design: [gateway architecture](../../docs/architecture/mcp/gateway.md).
 
 ## Implemented tools
 
@@ -43,13 +43,13 @@ Provider setup, performed by the operator in `.env.local`:
 | `TAVILY_API_KEY` | Gateway-only key; provider dashboard limit as additional protection |
 | `FIRECRAWL_API_KEY` | Gateway-only key; JSON firecrawl.url_policy must be public_https; tool permission and budgets still apply |
 
-The official public Supabase CA is tracked at `certs/supabase-prod-ca-2021.crt`. The Dockerfile packages it at `/certs/supabase-ca.crt` and sets `PGSSLROOTCERT` to that path, so local Compose and future cloud deployments use the same image without a host certificate mount. Only this public certificate is allowed into the build context; private configuration remains excluded. The adapter retains `sslmode=verify-full` for certificate-chain and hostname verification. This file is a public CA certificate, not a private key or database credential. Its provenance and fingerprint are recorded in the [CA relocation note](../../docs/planning/notes/2026-10-11_gateway-ca-in-repository_note.md). Native clients need `PGSSLROOTCERT` pointing to the repository certificate’s absolute host path.
+The official public Supabase CA is tracked at `certs/supabase-prod-ca-2021.crt`. The Dockerfile packages it at `/certs/supabase-ca.crt` and sets `PGSSLROOTCERT` to that path, so local Compose and future cloud deployments use the same image without a host certificate mount. Only this public certificate is allowed into the build context; private configuration remains excluded. The adapter retains `sslmode=verify-full` for certificate-chain and hostname verification. This file is a public CA certificate, not a private key or database credential. Its provenance and fingerprint are recorded in the [CA relocation note](../../docs/planning/notes/2026-10-11_gateway-supabase-tls_note.md). Native clients need `PGSSLROOTCERT` pointing to the repository certificate’s absolute host path.
 
 Never use the Supabase service-role key or a `postgres` login. Catalog queries intentionally work without granting SELECT on application tables. Role provisioning is an operator prerequisite; no SQL migrations or account permissions are changed by this package. Database-wide performance counters aggregate activity across the DB, while table details are restricted to public.
 
 The example exposes only the Agent Register MCP range. Add specific guide/template IDs and bounded register ranges after verifying them. Do not replace the allowlist with unrestricted folder or account access. `auth` is always prohibited. No tool accepts SQL, an API endpoint, arbitrary provider capability, or credentials.
 
-Connect a local MCP client using the URL and Authorization header in `tests/manual/gateway/fixtures/private/client.local.json`. Local clients use configured bearer credentials. Cloud client OAuth is described below; native browser verification and external ingress approval remain pending.
+Connect a local MCP client using the URL and Authorization header in `tests/manual/gateway/fixtures/private/client.local.json`. Local clients use configured bearer credentials. Cloud clients use Google sign-in, described below.
 
 ## Budget semantics
 
@@ -59,15 +59,9 @@ There are no assignments, per-run IDs or policy authorization expiry. Spreadshee
 
 Firecrawl accepts agent-selected public HTTPS URLs under JSON `firecrawl.url_policy=public_https`. Public-address checks are shared through `horology_runtime.urls`; local/private/link-local/metadata addresses and mixed public/private DNS results are rejected. Tavily extraction retains its exact URL approvals. Local DNS checks cannot prove how a remote provider will resolve or follow redirects. Results are untrusted source content. Common-token redaction is best effort and cannot detect every secret pattern.
 
-## Register coverage still requiring implementation
+## Not available
 
-| Access IDs | Status / remaining work |
-| --- | --- |
-| 1–3, 6 | Fixed global Shopify search/product and trends interest-over-time adapters implemented. Store-specific search, lookup batches, related/rising trends and arbitrary catalogue execution remain unavailable. |
-| 4–5 | Published Alibaba retail/search and retail/product contracts verified through free discovery; fixed adapters implemented. First-page search is mostly sponsored; inventory is not established. |
-| 18 | Basic bounded extraction implemented; same Tavily shared budget/call ledger as search. Exact URL approval required. |
-| 21 | Removed. Planning deliverables will be draft Google Docs in approved domain planning folders. No GitHub writes are exposed. |
-| 22–23 | DataForSEO future scope; disabled. |
+Store-specific Shopify search, lookup batches, related or rising trends and arbitrary Alexandria execution are not offered. Alibaba first-page search is mostly sponsored and doesn't establish inventory. DataForSEO (register IDs 22–23) is future scope. GitHub writes (ID 21) were removed; planning deliverables are Google Docs.
 
 No unavailable operation is silently forwarded to a broader plugin. The package fails closed for missing credentials, unapproved tools/resources and exhausted budgets. Gateway restrictions do not prevent an agent using another broad plugin; scheduled-client tool isolation remains a separate prerequisite.
 
@@ -124,7 +118,7 @@ The OAuth modules live in `shared-runtime/horology_runtime/oauth/` (shared with 
 
 Connect Codex with `codex mcp add horology --url https://mcp-gateway-366292507424.us-central1.run.app/mcp --oauth-client-registration dcr`, then complete the browser sign-in and gateway consent. If login needs restarting, use `codex mcp login horology --oauth-client-registration dcr`. Google credentials belong only to the gateway; do not provide them as the Codex client's credentials.
 
-See [OAuth implementation note](../../docs/planning/notes/2026-10-11_gateway-oauth_note.md) and [deployment runbook](../../docs/runbook/gcp/mcp_deployment.md). Browser verification status is recorded in the deployment runbook.
+See [OAuth implementation note](../../docs/planning/notes/2026-10-11_cloud-run-deployment-and-oauth_note.md) and [deployment runbook](../../docs/runbook/gcp/mcp_deployment.md). Browser verification status is recorded in the deployment runbook.
 
 ## Release builds and consent page
 
@@ -136,19 +130,15 @@ Google consent presentation lives in `shared-runtime/horology_runtime/oauth/cons
 
 The standalone Compose project and container are `horology-mcp-gateway`; its local image is `horology-mcp-gateway:latest`. The root `horology-hermes` project contains only `horology-hermes`; document-graph has its own `horology-document-graph-mcp` project. Cloud Run/Artifact Registry names remain `mcp-gateway`. The optional Hermes network alias stays `horology-mcp-gateway`.
 
-## Parked native-connector alternatives
+## Removed GitHub and Google adapters
 
 GitHub and Google Drive/Docs/Sheets adapters were removed on 2026-10-13 in favour of native platform connectors, whose permissions are outside this gateway's policy. The code, tests, authorization helper and unshipped migration remain in Git history (`git show d643223:placeholders/connectors/README.md`).
 
-The active gateway exposes 13 tools: status, Supabase metadata/performance, capped Tavily search/extraction and fixed Firecrawl scrape/Alexandria reads. Google-backed MCP identity OAuth remains active; it grants no Google document access. Retired provider credentials remain only in the ignored, untracked `placeholders/connectors/.env.local` until the operator revokes them; the cloud `GITHUB_TOKEN` binding is removed by the next gateway release.
+The active gateway exposes 13 tools: status, Supabase metadata/performance, capped Tavily search/extraction and fixed Firecrawl scrape/Alexandria reads. Google-backed MCP identity OAuth remains active; it grants no Google document access. Retired provider credentials remain only in the ignored, untracked `placeholders/connectors/.env.local` until the operator revokes them.
 
-Tests live at `tests/unit/mcp_servers/gateway/` and `tests/integration/mcp_servers/gateway/` in the repository root, and the local MCP smoke helper at `tests/manual/gateway/`. No Cloud Build or deployment was run for this extraction.
+Tests live at `tests/unit/mcp_servers/gateway/` and `tests/integration/mcp_servers/gateway/` in the repository root, and the local MCP smoke helper at `tests/manual/gateway/`.
 
-## Assignment removal release dependency
-
-Local source/configuration now uses shared `access`, JSON-list `GATEWAY_TOKEN_HASHES` and Audience-managed Google sign-in. Alembic `20261013_001` renames the historical quota/cache identity columns to `client_id`, preserving all rows and budgets. Apply that migration and update cloud configuration during the later release, before directing traffic to the new image. Existing cloud deployment and OAuth sessions have not been changed by local preparation. Live client revocation verification remains deferred to release testing.
-
-## Async gateway database layer (local source)
+## Async gateway database layer
 
 ```text
 database/
@@ -161,11 +151,9 @@ database/
 
 `connection.py` owns a Psycopg 3 `AsyncConnectionPool`, opened and closed on the server's event loop by the HTTP application lifespan. The pool starts empty and grows to at most four connections per gateway process. Connection/acquisition, statement and lock limits come from `horology_runtime.settings`. Transactions commit on success and roll back on exceptions or cancellation. Prepared statements are disabled for transaction-pool compatibility; Neon TLS verification remains enabled.
 
-Repositories own SQL: quotas reserve shared daily/monthly credits under the coordinator row lock; cache reads/writes client-scoped JSON with a one-hour TTL; OAuth stores hashed opaque credentials and preserves advisory-lock transactions for code redemption, refresh rotation and grant revocation. These are SQL connections through the Neon pooled host, not REST CRUD. The separate Supabase metadata adapter, document-graph server and Alembic migrations retain their existing drivers.
+Repositories own SQL: quotas reserve shared daily/monthly credits under the coordinator row lock; cache reads/writes client-scoped JSON with a one-hour TTL; OAuth stores hashed opaque credentials and preserves advisory-lock transactions for code redemption, refresh rotation and grant revocation. These are SQL connections through the Neon pooled host, not REST CRUD. The Supabase metadata adapter uses its own small synchronous Psycopg 3 pool.
 
 `setup_local_gateway.py` generates the local bearer token with `secrets.token_urlsafe(32)`, puts its SHA-256 hash in `.env.local`, and saves the raw token in ignored mode-0600 `tests/manual/gateway/fixtures/private/client.local.json` for manual tests. `tests/manual/gateway/fixtures/private/client.cloud.json` is an earlier private cloud-test client configuration; it is not a provider credential or the OAuth connection managed by Codex/ChatGPT. Neither private JSON file is packaged or uploaded.
-
-This refactor is local only. Cloud Build, deployment and production migrations have not run.
 
 ## Configuration sources
 

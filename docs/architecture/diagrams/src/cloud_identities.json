@@ -1,0 +1,25 @@
+{
+  "rows": [
+    {"group": "People", "tone": "blue", "rows": [
+      {"cards": [
+        {"icon": "user", "title": "Daily account", "text": "Views the project; impersonates horology-deployer for builds and deploys"},
+        {"icon": "shield", "title": "Protected administrator", "text": "IAM and infrastructure changes only, through the horology-admin profile"},
+        {"icon": "check", "title": "Audience test users", "text": "The only Google accounts that can sign in to either MCP service"}
+      ]}
+    ]},
+    {"group": "Service accounts", "tone": "purple", "rows": [
+      {"cards": [
+        {"icon": "key", "title": "horology-deployer", "text": "Submits builds, updates the services, tags images"},
+        {"icon": "box", "title": "mcp-build", "text": "Runs the gates and publishes images; no secrets, no deploy rights"}
+      ]},
+      {"arrow": false, "cards": [
+        {"icon": "lock", "title": "mcp-gateway", "text": "Reads only the gateway's secrets"},
+        {"icon": "search", "title": "document-graph", "text": "Reads its secrets and starts the sync job"},
+        {"icon": "clock", "title": "document-graph-sync", "text": "Reads shared Drive folders and writes the Document Index"}
+      ]}
+    ]},
+    {"cards": [
+      {"icon": "key", "tone": "green", "title": "Secret Manager", "text": "Provider keys, database logins and the Google OAuth client, as pinned versions per service"}
+    ]}
+  ]
+}

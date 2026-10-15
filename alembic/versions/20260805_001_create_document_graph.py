@@ -11,7 +11,7 @@ run_log (audit trail of what each supervisor/subagent run did).
 This is separate from Hermes's own SQLite state (sessions/messages) and
 from Article_aggregator_agent's own Supabase project — see
 docs/planning/notes/2026-08-05_horology-founding-decisions_note.md and
-docs/planning/notes/2026-08-05_egress-firewall-and-port-binding_note.md
+docs/planning/notes/2026-08-05_hermes-hardening_note.md
 for why.
 """
 from typing import Sequence, Union

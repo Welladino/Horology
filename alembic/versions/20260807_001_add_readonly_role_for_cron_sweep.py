@@ -14,7 +14,7 @@ This is the credential the daily cron backfill-sweep script uses, kept
 separate from document-graph-mcp's own read-write DATABASE_URL_POOLED,
 per the "every credential-holder gets its own narrowly-scoped
 credential" pattern already used for both MCP servers. See
-docs/planning/notes/2026-08-07_document-graph-completeness-punch-list_note.md
+docs/planning/notes/2026-08-06_document-graph-v1_note.md
 and the accompanying research brief on the cron script/security
 pattern.
 

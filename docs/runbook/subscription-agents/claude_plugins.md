@@ -1,54 +1,49 @@
 # Claude plugins
 
-The repository root is a Claude plugin marketplace (`.claude-plugin/marketplace.json`, name `horology`) listing three plugins:
+Three plugins, each a folder under `plugins/`:
 
-| Install id | Folder | Brings |
+| Plugin (Claude name) | Folder | Brings |
 | --- | --- | --- |
-| `horology-tools@horology` | `plugins/horology-tools/` | `horology-mcp-access` skill + gateway connector (`.mcp.json`) |
-| `horology-document-graph@horology` | `plugins/horology-document-graph/` | `horology-document-graph` skill + document-graph connector (`.mcp.json`) |
-| `horology-workflows@horology` | `plugins/horology-workflows/` | capture, research and technical-assessment skills (Google Drive/Sheets come from your own connectors) |
+| `horology-tools` | `plugins/horology-tools/` | `horology-mcp-access` skill + gateway connector (`.mcp.json`) |
+| `horology-document-graph` | `plugins/horology-document-graph/` | `horology-document-graph` skill + document-graph connector (`.mcp.json`) |
+| `horology-workflows` | `plugins/horology-workflows/` | Capture, research and technical-assessment skills; Drive, Sheets and ClickUp come from your own connectors |
 
-Each plugin folder keeps one `skills/` directory shared by its Claude manifest (`.claude-plugin/plugin.json`) and its OpenAI/Codex manifests (`plugin.json`, `.codex-plugin/plugin.json`). The gateway plugin's Claude name is `horology-tools`; its ChatGPT App identity (`.app.json`) is unchanged.
+Each folder keeps one `skills/` directory shared by its Claude manifest (`.claude-plugin/plugin.json`) and its OpenAI/Codex manifests (`plugin.json`, `.codex-plugin/plugin.json`). The OpenAI/Codex identities (`dev-6acc…` App, `welladino-workflows`) are separate and unchanged.
 
 ## Validate after editing
 
-```bash
-command claude plugin validate .
-```
+Bump the version in `.claude-plugin/plugin.json` whenever a plugin changes, so an upload replaces the old one.
 
 ```bash
 for p in plugins/horology-tools plugins/horology-document-graph plugins/horology-workflows; do command claude plugin validate "$p"; done
 ```
 
-## Install in Claude Code (this Mac)
+## Build the zips
 
-From the repository root. A local marketplace loads plugin files in place, so later edits apply at the next session or after `/reload-plugins`.
-
-```bash
-command claude plugin marketplace add ./
-```
+One zip per plugin folder, not the repository. `plugins/dist/` is gitignored.
 
 ```bash
-command claude plugin install horology-document-graph@horology
+mkdir -p plugins/dist && cd plugins && for p in horology-tools horology-document-graph horology-workflows; do rm -f dist/$p.zip; zip -qr dist/$p.zip $p -x '*.DS_Store' '*__pycache__*'; done && cd ..
 ```
 
-Install the others the same way (`horology-tools@horology`, `horology-workflows@horology`). The first tool call opens a browser for Google sign-in; use an Audience test user mapped to a workspace.
+## Install
 
-If the same server is already added as a claude.ai connector (for example "Horology document graph"), Claude Code shows both; remove one to avoid duplicate tools.
+Upload each zip in Claude: Customize → Plugins → upload. Uploaded plugins are saved to your account and stay private unless shared. Sign in to each bundled connector when Claude first asks, with a Google Auth Platform Audience test user (for the document graph, one mapped to a workspace).
 
-## Install in Claude (Cowork / claude.ai)
+Where they work:
 
-Plugins are uploaded as files: zip one plugin folder (not the repository), then Customize → Plugins → upload. Leave out `.DS_Store`; the OpenAI and Codex manifest files can stay in, as Claude ignores them.
+- **claude.ai chat and Cowork:** yes.
+- **Claude Code on this Mac:** account plugins sync in as `<name>@synced` (Claude Code v2.1.273 or later); run `/reload-plugins` or start a new session.
+- **Cloud sessions (claude.ai/code):** plugins don't load there. Cloud sessions use claude.ai connectors you enable on the session and skills enabled on claude.ai.
+
+If the same server is also added as a claude.ai connector, the tools appear twice; switch one off in that session.
+
+To test an edited plugin locally for one session, without uploading:
 
 ```bash
-cd plugins && zip -r ../horology-document-graph.zip horology-document-graph -x '*.DS_Store' && cd ..
+claude --plugin-dir plugins/horology-document-graph
 ```
 
-The zip is a build artifact; don't commit it. Sign in to the bundled connector when Claude first asks.
+## Check after installing
 
-## Status (2026-10-13)
-
-- **Claude Code:** all three plugins are installed from this marketplace (user scope), and both connectors are signed in. Verified calls:
-  - document graph: `list_documents`;
-  - gateway: `gateway_status` and `supabase_list_schema`.
-- **Cowork:** the three plugin zips were built and uploaded by the operator, and the document-graph plugin appears there. The workflow skills read the Workflow Guide and Agent Location Directory through the Google Drive connector.
+These make no paid calls: `gateway_status` (14 names: 13 tools plus the `tavily_advanced_search` permission) and `list_documents`. The document graph should list 15 tools.

@@ -1,10 +1,10 @@
 # MCP release builds
 
-Start with [MCP operations: how the pieces connect](../architecture/mcp_operations.md) for diagrams, identities, security checks and client access.
+Start with the [Cloud architecture](../../architecture/cloud/README.md) for the release pipeline and identities, and [MCP services](../../architecture/mcp/README.md) for sign-in. Day-to-day checks: [operator access and checks](operator_checks.md).
 
 Run from the Horology repository root. Cloud Build receives source, runs mocked provider/security tests against disposable PostgreSQL, audits Python dependencies, builds both images, then scans them with Trivy. A failed gate prevents publication. Real provider keys and production databases are never used by tests. The local Hermes Docker stack tests skip because the build has no Docker CLI/runtime credentials; gateway persistence tests must run.
 
-See [IAM and deployment access](../architecture/gcp_access.md) for the daily-account impersonation path.
+See [operator access and checks](operator_checks.md) for the gcloud configurations and impersonation.
 
 ## Submit
 
@@ -12,7 +12,7 @@ See [IAM and deployment access](../architecture/gcp_access.md) for the daily-acc
 gcloud --configuration=horology builds submit . --project=horology-dev --config=cloudbuild.yaml --gcs-source-staging-dir=gs://horology-dev-mcp-build-source/source --service-account=projects/horology-dev/serviceAccounts/mcp-build@horology-dev.iam.gserviceaccount.com
 ```
 
-Submit to the global endpoint (no `--region`). Only global builds on e2-standard-2 use the free-tier SKU "Build time e2-standard-2" (2,500 minutes a month per billing account); `--region=us-central1` builds are billed per vCPU and GiB from the first minute. See the [note](../../planning/notes/2026-10-13_cloud-build-global-free-tier_note.md). Images still go to the `us-central1` Artifact Registry.
+Submit to the global endpoint (no `--region`). Only global builds on e2-standard-2 use the free-tier SKU "Build time e2-standard-2" (2,500 minutes a month per billing account); `--region=us-central1` builds are billed per vCPU and GiB from the first minute. See the [note](../../planning/notes/2026-10-12_release-pipeline-and-access_note.md). Images still go to the `us-central1` Artifact Registry.
 
 First configure the build identity with Artifact Registry Writer on the `mcp-servers` repository, Logs Writer in the project, and Storage Object Viewer on `horology-dev-mcp-build-source`. That private source bucket deletes uploads after seven days (GCS soft-delete retention can extend physical storage). The submitting account needs permission to submit builds and act as this service account. The builder needs no provider secrets or Cloud Run deployment privileges. Cloud Build API must be enabled.
 
@@ -41,4 +41,4 @@ Cloud Build logs contain pytest/audit/scanner results in Cloud Logging. JUnit is
 
 ## Moving an existing deployed tag with restricted IAM
 
-The routine deployer has tags.update but no tags.delete. The gcloud docker tags add command can delete/recreate an existing tag and fails in that case. Use Artifact Registry's tags.patch API with updateMask=version to move an existing deployed-current tag, keeping the restricted IAM unchanged. Authenticate through the horology configuration, hold the resulting access token only in process memory, and verify the returned version equals the deployed digest. See [the verified rollout note](../../planning/notes/2026-10-12_mcp-read-capabilities_note.md).
+The routine deployer has tags.update but no tags.delete. The gcloud docker tags add command can delete/recreate an existing tag and fails in that case. Use Artifact Registry's tags.patch API with updateMask=version to move an existing deployed-current tag, keeping the restricted IAM unchanged. Authenticate through the horology configuration, hold the resulting access token only in process memory, and verify the returned version equals the deployed digest. See [the verified rollout note](../../planning/notes/2026-10-12_gateway-provider-scope_note.md).

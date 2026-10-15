@@ -1,0 +1,23 @@
+{
+  "rows": [
+    {"step": "Add the connector", "text": "A Claude, ChatGPT or Codex client is given the gateway or document-graph /mcp URL"},
+    {"cards": [
+      {"icon": "flow", "tone": "purple", "title": "Discover and register", "text": "The client reads the OAuth metadata and registers itself dynamically"}
+    ]},
+    {"cards": [
+      {"icon": "user", "tone": "blue", "title": "Google sign-in", "text": "openid and email only. Only Google Auth Platform Audience test users can finish it."}
+    ]},
+    {"cards": [
+      {"icon": "check", "tone": "purple", "title": "Horology consent page", "text": "Shows the client, the signed-in account and what the connection can do. Allow access issues a code."}
+    ]},
+    {"cards": [
+      {"icon": "key", "tone": "purple", "title": "Token exchange with PKCE", "text": "Access and refresh tokens, stored hashed in gateway_auth.records or graph_auth.records"}
+    ]},
+    {"group": "Every tool call", "tone": "green", "rows": [
+      {"cards": [
+        {"icon": "lock", "title": "Gateway", "text": "Token → shared policy → atomic credit reservation → provider call → bounded result"},
+        {"icon": "search", "title": "Document graph", "text": "Token → email mapped to one workspace → every query filtered by that workspace"}
+      ]}
+    ]}
+  ]
+}

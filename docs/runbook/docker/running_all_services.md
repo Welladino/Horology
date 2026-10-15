@@ -28,7 +28,7 @@ Once the main network exists, start the restricted gateway with Hermes connectiv
 docker compose -f mcp-servers/mcp-gateway/compose.yaml -f mcp-servers/mcp-gateway/compose.hermes-network.yaml up -d --build gateway
 ```
 
-Use both gateway Compose files for later recreations if Hermes connectivity is needed. Its private .env.local and policy.local.json configure authentication and provider access. Set GATEWAY_DATABASE_URL to the dedicated Neon gateway login; quota history lives in Neon and survives container recreation. Local monitoring assignments expire after 24 hours; scheduled assignment provisioning remains pending.
+Use both gateway Compose files for later recreations if Hermes connectivity is needed. Its private .env.local and policy.local.json configure authentication and provider access. Set GATEWAY_DATABASE_URL to the dedicated Neon gateway login; quota history lives in Neon and survives container recreation. Local clients authenticate with a bearer token whose hash is in `.env.local`.
 
 Document graph publishes `127.0.0.1:8765`; laptop clients such as Codex connect to `http://127.0.0.1:8765/mcp`. Hermes continues to use `http://document-graph-mcp:8765/mcp` on the shared Docker network. Hermes connects to the authenticated gateway at http://horology-mcp-gateway:8767/mcp. The gateway also publishes localhost port 8767 for local test clients.
 

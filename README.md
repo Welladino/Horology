@@ -8,7 +8,7 @@ Built on [Hermes Agent](https://github.com/NousResearch/hermes-agent) (Nous Rese
 
 Read in this order:
 
-1. **[`docs/architecture/system_overview.md`](docs/architecture/system_overview.md)** — how the system actually works: the three containers, the subagent roster, the document graph, dispatch mechanism, tool caps. This is the one doc to read before touching anything.
+1. **[`docs/architecture/README.md`](docs/architecture/README.md)** — how the system actually works: the system map, Hermes and subscription agents, the two MCP services, data and cloud. Read this before touching anything.
 2. **[`CLAUDE.md`](CLAUDE.md)** — how this repo's *own documentation* is organized (research vs. notes vs. architecture vs. runbook), and the conventions subagents follow when writing business documents.
 3. **[`docs/planning/README.md`](docs/planning/README.md)** — the planning-doc workflow, if you're going to make a design decision and want to know where to write it up.
 

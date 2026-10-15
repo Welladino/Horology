@@ -37,4 +37,4 @@ Maintain each component locally, test it, review the Git diff and publish only
 the selected component. Keep credentials outside Git and record meaningful
 workflow changes in the repository planning notes.
 
-Current design: [architecture](../docs/architecture/subscription_agents.md). Maintenance and publishing: [runbook](../docs/runbook/subscription-agents/README.md).
+Current design: [architecture](../docs/architecture/subscription-agents/README.md). Maintenance and publishing: [runbook](../docs/runbook/subscription-agents/README.md).

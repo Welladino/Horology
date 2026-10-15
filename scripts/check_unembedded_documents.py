@@ -24,7 +24,7 @@ wakeAgent contract (verified hands-on against the real hermes container,
 On the "found something" path, this prints a plain-text list (one id per
 line) that the paired cron job's prompt instructs the agent to read and
 act on by calling auto_link_similar_documents(id) for each - see
-docs/planning/notes/2026-08-07_document-graph-completeness-punch-list_note.md.
+docs/planning/notes/2026-08-06_document-graph-v1_note.md.
 
 Source under test: none yet - runs only inside the hermes container's own
 Python (asyncpg is already present there; psycopg2 is not, so this uses

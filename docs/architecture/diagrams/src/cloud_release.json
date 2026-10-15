@@ -1,0 +1,27 @@
+{
+  "rows": [
+    {"step": "Source", "text": "GitHub for version control; releases are submitted from local source by the impersonated horology-deployer"},
+    {"group": "Gates · same checks in Cloud Build and GitHub Actions", "tone": "blue", "rows": [
+      {"cards": [
+        {"icon": "shield", "title": "Source scan", "text": "Trivy secrets and Dockerfile configuration; gitleaks history on GitHub"},
+        {"icon": "check", "title": "Tests", "text": "Unit and integration against disposable PostgreSQL"},
+        {"icon": "search", "title": "Audits", "text": "Bandit and pip-audit"}
+      ]},
+      {"arrow": false, "cards": [
+        {"icon": "box", "title": "Build both images", "text": "Gateway and document graph (which also carries the sync job)"},
+        {"icon": "lock", "title": "Image contract", "text": "Non-root, required assets, no local credential files"},
+        {"icon": "shield", "title": "Image scans and licences", "text": "Fixable High/Critical and secrets block; licence gates"}
+      ]}
+    ]},
+    {"cards": [
+      {"icon": "database", "tone": "purple", "title": "Artifact Registry · mcp-servers", "text": "Build-ID and latest tags; five recent versions kept, deployed- tags protected"}
+    ]},
+    {"arrow": "operator deploys an exact digest", "group": "Cloud Run · us-central1", "tone": "green", "rows": [
+      {"cards": [
+        {"icon": "lock", "title": "mcp-gateway", "text": "Public HTTPS, MCP tools need OAuth. 1 CPU, 512 MiB, 4 requests per instance."},
+        {"icon": "search", "title": "document-graph", "text": "Public HTTPS, MCP tools need OAuth. Starts the sync job."},
+        {"icon": "clock", "title": "document-graph-sync job", "text": "Same image, python -m graph_sync, 60-minute limit, no retries"}
+      ]}
+    ]}
+  ]
+}

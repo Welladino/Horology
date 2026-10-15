@@ -1,6 +1,6 @@
 # Subscription-agent operations
 
-Read [architecture](../../architecture/subscription_agents.md) for responsibilities and stages. These steps maintain skills and the Sheets/ClickUp integration; they do not deploy Hermes or start AI schedules.
+Read [architecture](../../architecture/subscription-agents/README.md) for responsibilities and stages. These steps maintain skills and the Sheets/ClickUp integration; they do not deploy Hermes or start AI schedules.
 
 ## Live records and instructions
 

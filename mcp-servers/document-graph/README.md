@@ -12,7 +12,7 @@ Graph logic (documents, sections, embeddings, linking, search) lives in `documen
 
 Copy `.env.example` to `.env` for a new setup. Required: DATABASE_URL_POOLED (Neon pooled connection) and OPENROUTER_API_KEY (embeddings). Optional: EMBED_MODEL, default google/gemini-embedding-001, DOCUMENT_GRAPH_BIND, default 0.0.0.0, and DOCUMENT_GRAPH_WORKSPACE, default welladino (the one workspace local, unauthenticated clients see). Embeddings remain 768-dimensional to match the database. DATABASE_URL is not an environment input; no duplicate connection string is needed. The document-graph Compose project loads the service-specific .env; Python does not load it itself. Keep .env excluded from Git and images. Root credentials still required by other components should remain there.
 
-0.0.0.0 binds the container listener to its network interfaces, not to a chosen remote server. Compose publishes this service only at `127.0.0.1:8765`; laptop clients use `http://127.0.0.1:8765/mcp`. Hermes reaches it by Docker service name, http://document-graph-mcp:8765/mcp. Binding to 127.0.0.1 inside the container would prevent other containers connecting. No application authentication is implemented here; do not expose this service publicly before adding cloud authentication and embedding limits.
+0.0.0.0 binds the container listener to its network interfaces, not to a chosen remote server. Compose publishes this service only at `127.0.0.1:8765`; laptop clients use `http://127.0.0.1:8765/mcp`. Hermes reaches it by Docker service name, http://document-graph-mcp:8765/mcp. Binding to 127.0.0.1 inside the container would prevent other containers connecting. Local mode has no application authentication; never bind it beyond localhost. Cloud Run turns on Google sign-in (below).
 
 Application operation logs emit JSON to stdout with tool, integration, duration, outcome and correlation ID. Tool errors expose only a category and request ID; arguments, documents, credentials and raw exception messages are excluded. Neon has a five-second connection timeout, ten-second statement timeout and three-second lock timeout. OpenRouter retains its thirty-second HTTP timeout. No automatic retries. Inspect locally with `docker compose -f mcp-servers/document-graph/compose.yaml logs document-graph-mcp`.
 
@@ -24,11 +24,11 @@ Document-graph runs in the `horology-document-graph-mcp` project, separately fro
 
 ## Local Codex connection
 
-Use `http://127.0.0.1:8765/mcp` for Codex on your laptop. `document-graph-mcp` is a Docker network hostname, so it is used by Hermes rather than host applications. The local document-graph endpoint has no application OAuth; its tools include document writes and paid embeddings. Keep the host binding at `127.0.0.1`. Cloud Run remains protected by IAM.
+Use `http://127.0.0.1:8765/mcp` for Codex on your laptop. `document-graph-mcp` is a Docker network hostname, so it is used by Hermes rather than host applications. The local document-graph endpoint has no application OAuth; its tools include document writes and paid embeddings. Keep the host binding at `127.0.0.1`. The Cloud Run service requires Google sign-in.
 
 ## Sign-in and the Document Index sync
 
-With `DOCUMENT_GRAPH_OAUTH_ENABLED=true` the server uses the shared Google sign-in (`horology_runtime.oauth`) with its own `graph_auth.records` table, scope `graph`, and `DOCUMENT_GRAPH_WORKSPACES` mapping each approved email to one workspace. Local Compose leaves it off. Cloud steps: [deployment runbook](../../docs/runbook/gcp/mcp_deployment.md#document-graph-sign-in-and-sheet-sync-release-prepared-2026-10-13-not-yet-run).
+With `DOCUMENT_GRAPH_OAUTH_ENABLED=true` the server uses the shared Google sign-in (`horology_runtime.oauth`) with its own `graph_auth.records` table, scope `graph`, and `DOCUMENT_GRAPH_WORKSPACES` mapping each approved email to one workspace. Local Compose leaves it off. Cloud steps: [deployment runbook](../../docs/runbook/gcp/mcp_deployment.md).
 
 `sync_graph` starts the Cloud Run job named in `GRAPH_SYNC_JOB` for the caller's workspace. The job code lives in [`jobs/document-graph-sync/`](../../jobs/document-graph-sync/) and ships in this image (`python -m graph_sync`).
 

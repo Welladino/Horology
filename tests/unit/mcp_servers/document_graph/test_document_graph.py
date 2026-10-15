@@ -5,7 +5,7 @@ Mocked: a fake async database records SQL and returns scripted rows, and
 OpenRouter is patched. No real DB, no real OpenRouter call, no Docker.
 They verify our own logic (validation, workspace scoping, request shape),
 not the live integration; see
-docs/planning/notes/2026-08-06_auto-link-similar-documents_note.md for why
+docs/planning/notes/2026-08-06_document-graph-v1_note.md for why
 hands-on verification against real systems remains the standing practice.
 """
 import asyncio

@@ -1,20 +1,20 @@
 # MCP Servers
 
-Horology's own purpose-built MCP servers — each exposes a small, fixed set of named tools against one external system, with its own credential and its own container. None expose arbitrary code execution or arbitrary API access; see each doc for the specific tools and the reasoning behind that boundary.
+Horology's two purpose-built MCP servers each expose a small, fixed set of named tools with their own credentials and their own container. Neither allows arbitrary code execution or arbitrary API access. How they work: [MCP architecture](../../architecture/mcp/README.md).
 
-- [`document_graph_server.md`](document_graph_server.md) — Neon Postgres: write/read/link business documents (recommendations, content, analysis, reports).
-- [`github_monitor_server.md`](github_monitor_server.md) — authenticated gateway GitHub monitoring for policy-approved repositories: CI status, PRs, Dependabot alerts, code search.
+- [`document_graph_server.md`](document_graph_server.md) — the document graph: running, connecting and testing it locally.
+- Gateway: setup, local start-up and verification are in the [gateway README](../../../mcp-servers/mcp-gateway/README.md).
+- Cloud deployment of both: [`../gcp/mcp_deployment.md`](../gcp/mcp_deployment.md).
 
-For starting/stopping/rebuilding these containers alongside Hermes itself, see [`docs/runbook/docker/running_all_services.md`](../docker/running_all_services.md).
+For starting, stopping and rebuilding these containers alongside Hermes, see [`running_all_services.md`](../docker/running_all_services.md).
 
 ## Adding a new MCP server
 
-Pattern established by both servers above:
+Pattern established by both servers:
 
-1. `mcp-servers/<name>/` — `server.py` (using the `mcp` Python SDK, `MCPServer` class, `streamable-http` transport), `requirements.txt` (pin exact versions), `Dockerfile` (matches local dev Python).
-2. Add a service to `docker-compose.yml` — **no `ports:` mapping**, credential(s) only in that service's own `environment:`, never shared with `hermes`'s environment.
-3. Verify in isolation before connecting anything: `curl` from the host (should fail), `curl` from inside another container on the same network (should succeed).
-4. Connect via `hermes mcp add <name> --url http://<service-name>:<port>/mcp` (add `-p <profile>` for a specific subagent — connections are per-profile, not shared).
-5. Write a doc here following the same shape: what it exposes, the credential and its scope, how to run/test/connect it.
-
-Both Second-Soul and Code Sentinel use the restricted gateway for GitHub. The standalone monitor is retired. Document graph remains separate and loads its own private .env.
+1. `mcp-servers/<name>/` — `server.py` (the `mcp` Python SDK's `MCPServer`, `streamable-http` transport), `requirements.txt` with exact pins, a `Dockerfile` built from the repository root that installs `shared-runtime/`, and runs as a non-root user.
+2. Its own `compose.yaml` (own Compose project), publishing at most a `127.0.0.1` port, credentials only in its own private `.env`. An optional `compose.hermes-network.yaml` joins `horology_default` for Hermes.
+3. Add the source folder to the root `.dockerignore` allowlist, and the image to `cloudbuild.yaml` and `scripts/ci/check_image.py`.
+4. Verify in isolation before connecting anything: reachable only where intended.
+5. Connect Hermes with `hermes mcp add <name> --url http://<service-name>:<port>/mcp` (add `-p <profile>`; connections are per profile).
+6. Document it here and in [`docs/architecture/mcp/`](../../architecture/mcp/README.md).

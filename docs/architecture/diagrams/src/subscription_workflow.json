@@ -1,0 +1,24 @@
+{
+  "rows": [
+    {"step": "Stage 0 · Capture", "text": "An idea or question becomes a Pipeline row with a permanent numeric ID"},
+    {"cards": [
+      {"icon": "search", "tone": "purple", "title": "Check what exists", "text": "Search the document graph for earlier research, decisions, topics and entities"}
+    ]},
+    {"group": "Stage 1 · Investigation and proposal", "tone": "blue", "rows": [
+      {"cards": [
+        {"icon": "search", "title": "Research", "text": "welladino-research: evidence, options and a recommendation"},
+        {"icon": "cpu", "title": "Technical assessment", "text": "welladino-technical-assessment: alternatives, effort, cost and uncertainty"}
+      ]}
+    ]},
+    {"cards": [
+      {"icon": "sheet", "tone": "orange", "title": "Drive deliverable and Document Index", "text": "Saved to the domain folder from the Location Directory; Graph Inclusion decides whether it enters the graph"}
+    ]},
+    {"step": "Stage 2 · Founder decision", "text": "Recorded in the Decision Register and reviewed in ClickUp"},
+    {"arrow": false, "cards": [
+      {"icon": "loop", "tone": "orange", "title": "Rework", "text": "Back to Stage 1 with the decision's instructions"},
+      {"icon": "box", "tone": "grey", "title": "Park or reject", "text": "Records kept, work stops"},
+      {"icon": "check", "tone": "green", "title": "Approve", "text": "A defined scope moves to Stage 3"}
+    ]},
+    {"step": "Stage 3 · Specialist deliverable", "text": "The approved proposal becomes a detailed deliverable, then review. For code work, a planning note, not automatic implementation."}
+  ]
+}

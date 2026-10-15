@@ -1,0 +1,101 @@
+{
+  "rows": [
+    {
+      "step": "Founder",
+      "text": "Asks Second-Soul for work, or starts a subscription-agent session, and makes the decisions"
+    },
+    {
+      "cards": [
+        {
+          "icon": "cpu",
+          "title": "Hermes agents",
+          "text": "Second-Soul supervisor dispatches kanban tasks to gtm-manager, marketing-executive and code-sentinel. Local Docker.",
+          "tone": "blue"
+        },
+        {
+          "icon": "user",
+          "title": "Subscription agents",
+          "text": "Claude, ChatGPT and Codex sessions using the horology-tools, horology-document-graph and horology-workflows plugins",
+          "tone": "blue"
+        }
+      ]
+    },
+    {
+      "arrow": "MCP over HTTP, Google sign-in in the cloud",
+      "group": "MCP services · Cloud Run (horology-dev) · local containers for Hermes",
+      "rows": [
+        {
+          "cards": [
+            {
+              "icon": "lock",
+              "title": "MCP gateway",
+              "text": "14 capped tools: Supabase metadata, Tavily search, Firecrawl scrape and Alexandria reads. Shared policy and credit budgets."
+            },
+            {
+              "icon": "search",
+              "title": "Document graph",
+              "text": "15 tools: passage search, topics, entities, links, write and sync"
+            },
+            {
+              "icon": "clock",
+              "title": "Graph sync job",
+              "text": "Imports Document Index rows marked TRUE, embeds changed files, extracts entities"
+            }
+          ]
+        }
+      ],
+      "tone": "purple"
+    },
+    {
+      "group": "Data and AI services",
+      "rows": [
+        {
+          "cards": [
+            {
+              "icon": "database",
+              "title": "Neon Postgres",
+              "text": "Documents, passages, embeddings, topics, entities; gateway budgets and cache; OAuth records"
+            },
+            {
+              "icon": "cloud",
+              "title": "OpenRouter",
+              "text": "Gemini embeddings, entity extraction and topic naming"
+            },
+            {
+              "icon": "key",
+              "title": "Providers",
+              "text": "Supabase, Tavily and Firecrawl, reached only through the gateway"
+            }
+          ]
+        }
+      ],
+      "tone": "green"
+    },
+    {
+      "arrow": false,
+      "group": "Subscription-agent records",
+      "rows": [
+        {
+          "cards": [
+            {
+              "icon": "sheet",
+              "title": "Drive and Sheets",
+              "text": "Pipeline, Decision Register, Document Index and deliverables"
+            },
+            {
+              "icon": "flow",
+              "title": "Apps Script",
+              "text": "clickup-sync keeps registers and ClickUp tasks in step"
+            },
+            {
+              "icon": "check",
+              "title": "ClickUp",
+              "text": "Review UI for stages and founder decisions"
+            }
+          ]
+        }
+      ],
+      "tone": "orange"
+    }
+  ]
+}

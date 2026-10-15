@@ -18,4 +18,4 @@ Graph logic comes from [`graph_core`](../../document-graph-core/README.md), shar
 
 Indexable files: Markdown or plain-text uploads (up to 2 MB) and Google Docs. Other types get `error` in Graph Sync Status. A file Drive won't show the job's identity (403/404, usually because its folder isn't shared with `document-graph-sync@horology-dev.iam.gserviceaccount.com`) gets `not_shared`; share the folder as Viewer and sync again. A row that errors keeps its previous graph copy. Agent-written documents (`source = agent`) are never touched.
 
-Run it locally: [document-graph README](../../mcp-servers/document-graph/README.md#sign-in-and-the-document-index-sync). Cloud setup: [deployment runbook](../../docs/runbook/gcp/mcp_deployment.md). Tests: `tests/jobs/`.
+Run it locally: [document-graph README](../../mcp-servers/document-graph/README.md#sign-in-and-the-document-index-sync). Cloud setup: [deployment runbook](../../docs/runbook/gcp/mcp_deployment.md). Tests: `tests/unit/jobs/` and `tests/integration/jobs/`.
