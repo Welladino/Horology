@@ -69,6 +69,18 @@ OAUTH = OAuthPolicy()
 
 
 @dataclass(frozen=True)
+class AccessPolicy:
+    # Who may use which MCP server and workspace (horology_runtime.access).
+    # A change in the tables reaches every instance within cache_seconds.
+    cache_seconds: int = 300
+    miss_seconds: int = 60  # unknown emails: a newly added person waits at most this long
+    cache_size: int = 10000
+
+
+ACCESS = AccessPolicy()
+
+
+@dataclass(frozen=True)
 class DatabasePolicy:
     gateway_pool_size: int = 4
     document_graph_pool_size: int = 4

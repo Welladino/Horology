@@ -20,8 +20,8 @@ Both services: 1 CPU, 512 MiB, concurrency 4, at most 1 instance, minimum 0, req
 | Service | Secrets (pinned version) | Plain settings |
 |---|---|---|
 | `mcp-gateway` (runs as `mcp-gateway@`) | `GATEWAY_DATABASE_URL` = `horology-gateway-db:1`, `TAVILY_API_KEY` = `horology-gateway-tavily:1`, `FIRECRAWL_API_KEY` = `horology-gateway-firecrawl:1`, `SUPABASE_METADATA_DSN` = `horology-gateway-supabase:1`, `GOOGLE_OAUTH_CLIENT_ID` / `_SECRET` = `horology-gateway-google-client-id:1` / `-secret:1` | `GATEWAY_OAUTH_ENABLED=true`, `GATEWAY_PUBLIC_URL` (service base URL, no `/mcp`). Policy is baked into the image. |
-| `document-graph` (runs as `document-graph@`) | `DATABASE_URL_POOLED` = `horology-graph-db:2`, `OPENROUTER_API_KEY` = `horology-graph-openrouter:2`, `GOOGLE_OAUTH_CLIENT_ID` / `_SECRET` = `horology-graph-google-client-id:1` / `-secret:1` | `DOCUMENT_GRAPH_OAUTH_ENABLED=true`, `DOCUMENT_GRAPH_PUBLIC_URL`, `DOCUMENT_GRAPH_WORKSPACES` (email → workspace JSON), `GRAPH_SYNC_JOB` |
-| `document-graph-sync` job (runs as `document-graph-sync@`) | `DATABASE_URL_POOLED` = `horology-graph-db:2`, `OPENROUTER_API_KEY` = `horology-graph-openrouter:2` | `GRAPH_SYNC_WORKBOOKS` (workspace → Document Index id JSON), `GRAPH_SYNC_JOB`; command `python -m graph_sync`, 60-minute task limit, no retries |
+| `document-graph` (runs as `document-graph@`) | `DATABASE_URL_POOLED` = `horology-graph-db:2`, `OPENROUTER_API_KEY` = `horology-graph-openrouter:2`, `GOOGLE_OAUTH_CLIENT_ID` / `_SECRET` = `horology-graph-google-client-id:1` / `-secret:1` | `DOCUMENT_GRAPH_OAUTH_ENABLED=true`, `DOCUMENT_GRAPH_PUBLIC_URL`, `GRAPH_SYNC_JOB`. Who may connect, and to which workspaces, is in the [users tables](../mcp/access.md). |
+| `document-graph-sync` job (runs as `document-graph-sync@`) | `DATABASE_URL_POOLED` = `horology-graph-db:2`, `OPENROUTER_API_KEY` = `horology-graph-openrouter:2` | `GRAPH_SYNC_JOB`; command `python -m graph_sync`, 60-minute task limit, no retries. Each workspace's spreadsheets come from the `workspaces` table. |
 
 Both services share one Google OAuth client, so one Audience test-user list covers both. Its redirect URIs are `https://mcp-gateway-366292507424.us-central1.run.app/auth/google/callback` and `https://document-graph-366292507424.us-central1.run.app/auth/google/callback`.
 
@@ -115,11 +115,11 @@ Results land in the Document Index (Graph Sync Status, and the Entities and Enti
 
 1. Copy the Document Index workbook for the new workspace.
 2. In Drive, share the Document Index workbook with `document-graph-sync@horology-dev.iam.gserviceaccount.com` as **Editor** (it writes status back), the Pipeline and Decision Register workbooks as **Viewer** (the records pass only reads them), and each folder holding indexed documents as **Viewer**.
-3. Add the workbook to `GRAPH_SYNC_WORKBOOKS` on the job (`horology-admin`), and the person's email to `DOCUMENT_GRAPH_WORKSPACES` on the service. Both are JSON, so use gcloud's `^|^` separator prefix, for example `--update-env-vars='^|^GRAPH_SYNC_WORKBOOKS={"welladino":{"index":"…","pipeline":"…","decisions":"…"}}'`. A plain string value is a Document Index ID alone, and skips the records pass.
+3. Add the workspace with its spreadsheet IDs, and its people, with the [access script](../mcp/access.md#add-a-workspace). No redeploy is needed.
 
 ## Add or remove a person
 
-Add: Google Auth Platform → Audience (`horology-dev`) → Test users → **Add users**. Keep publishing status **Testing**. For the document graph, also map their email in `DOCUMENT_GRAPH_WORKSPACES`.
+Add: Google Auth Platform → Audience (`horology-dev`) → Test users → **Add users**. Keep publishing status **Testing**. Then add them, their workspaces and the servers they may use with the [access script](../mcp/access.md#add-a-person).
 
 Remove:
 
@@ -130,9 +130,9 @@ Remove:
 set -a; . mcp-servers/mcp-gateway/.env.local; set +a; .venv/bin/python mcp-servers/mcp-gateway/scripts/revoke_email.py person@example.com
 ```
 
-3. Remove their email from `DOCUMENT_GRAPH_WORKSPACES`; an unmapped email can't use a document-graph token.
+3. Disable them with the [access script](../mcp/access.md#remove-a-person) (`user disable`); both servers refuse them.
 
-Clients stop working within 5 minutes, when the in-memory token cache expires; deploying a new revision cuts them off at once. Grants issued before 2026-10-13 carry no email and can't be matched.
+Clients stop working within 5 minutes, when the in-memory caches expire; deploying a new revision cuts them off at once. Grants issued before 2026-10-13 carry no email and can't be matched.
 
 ## One-time setup (already done)
 
@@ -151,7 +151,7 @@ for secret in horology-graph-db horology-graph-openrouter; do gcloud --configura
 The job (replace `DIGEST`):
 
 ```bash
-gcloud --configuration=horology-admin run jobs create document-graph-sync --project=horology-dev --region=us-central1 --image=us-central1-docker.pkg.dev/horology-dev/mcp-servers/document-graph@sha256:DIGEST --command=python --args=-m,graph_sync --service-account=document-graph-sync@horology-dev.iam.gserviceaccount.com --set-secrets=DATABASE_URL_POOLED=horology-graph-db:2,OPENROUTER_API_KEY=horology-graph-openrouter:2 --set-env-vars='^|^GRAPH_SYNC_WORKBOOKS={"welladino":"1kObhQNjsFhziS-wRzjaEIzr9j8jjbfvd-ZgvzuwQ-Jc"}|GRAPH_SYNC_JOB=projects/horology-dev/locations/us-central1/jobs/document-graph-sync' --max-retries=0 --task-timeout=3600s
+gcloud --configuration=horology-admin run jobs create document-graph-sync --project=horology-dev --region=us-central1 --image=us-central1-docker.pkg.dev/horology-dev/mcp-servers/document-graph@sha256:DIGEST --command=python --args=-m,graph_sync --service-account=document-graph-sync@horology-dev.iam.gserviceaccount.com --set-secrets=DATABASE_URL_POOLED=horology-graph-db:2,OPENROUTER_API_KEY=horology-graph-openrouter:2 --set-env-vars=GRAPH_SYNC_JOB=projects/horology-dev/locations/us-central1/jobs/document-graph-sync --max-retries=0 --task-timeout=3600s
 ```
 
 Who may start it (the service, and the job itself for follow-up runs):

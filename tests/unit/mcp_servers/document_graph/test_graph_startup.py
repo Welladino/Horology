@@ -29,7 +29,7 @@ def started(monkeypatch):
     """Run main() with the given settings; returns uvicorn.run's keyword arguments."""
     calls = []
     monkeypatch.setattr(uvicorn, "run", lambda app, **kwargs: calls.append(kwargs))
-    for name in ("DOCUMENT_GRAPH_OAUTH_ENABLED", "DOCUMENT_GRAPH_WORKSPACES", "GOOGLE_OAUTH_CLIENT_ID",
+    for name in ("DOCUMENT_GRAPH_OAUTH_ENABLED", "GOOGLE_OAUTH_CLIENT_ID",
                  "GOOGLE_OAUTH_CLIENT_SECRET", "DOCUMENT_GRAPH_PUBLIC_URL", "DOCUMENT_GRAPH_BIND", "PORT", "K_SERVICE"):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv("DATABASE_URL_POOLED", "postgresql://unused@127.0.0.1:1/unused")
@@ -40,10 +40,10 @@ def started(monkeypatch):
         load_graph_server().main()
         return calls[-1]
     yield start
-    workspace.configure(None)
+    workspace.configure(False)
 
 
-SIGN_IN = {"DOCUMENT_GRAPH_OAUTH_ENABLED": "true", "DOCUMENT_GRAPH_WORKSPACES": '{"me@example.com": "welladino"}',
+SIGN_IN = {"DOCUMENT_GRAPH_OAUTH_ENABLED": "true",
            "GOOGLE_OAUTH_CLIENT_ID": "client-id", "GOOGLE_OAUTH_CLIENT_SECRET": "client-secret",
            "DOCUMENT_GRAPH_PUBLIC_URL": "https://graph.example.run.app"}
 
@@ -66,12 +66,6 @@ def test_sign_in_mode_starts_without_access_logs(started):
 def test_sign_in_without_google_credentials_refuses_to_start(started, missing):
     with pytest.raises(ValueError, match="Google OAuth credentials are required"):
         started(**{**SIGN_IN, missing: ""})
-
-
-@pytest.mark.parametrize("mapping", ["{}", '{"not-an-email": "welladino"}', '{"me@example.com": ""}', "[]"])
-def test_sign_in_with_a_bad_workspace_map_refuses_to_start(started, mapping):
-    with pytest.raises(ValueError, match="DOCUMENT_GRAPH_WORKSPACES"):
-        started(**{**SIGN_IN, "DOCUMENT_GRAPH_WORKSPACES": mapping})
 
 
 def test_sign_in_with_a_plain_http_public_url_refuses_to_start(started):

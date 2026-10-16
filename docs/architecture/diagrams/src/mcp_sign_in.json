@@ -16,7 +16,7 @@
     {"group": "Every tool call", "tone": "green", "rows": [
       {"cards": [
         {"icon": "lock", "title": "Gateway", "text": "Token → shared policy → atomic credit reservation → provider call → bounded result"},
-        {"icon": "search", "title": "Document graph", "text": "Token → email mapped to one workspace → every query filtered by that workspace"}
+        {"icon": "search", "title": "Document graph", "text": "Token → the workspace picked at sign-in, re-checked against the users tables → every query filtered by it"}
       ]}
     ]}
   ]

@@ -34,12 +34,18 @@ def build_server(policy, database, tokens, oauth_config=None):
     public_url = gateway_public_url()
     auth = AuthSettings(issuer_url=public_url, resource_server_url=public_url+'/mcp', required_scopes=['gateway'])
     if oauth_config:
+        from horology_runtime.access import Directory
         from horology_runtime.oauth.provider import GoogleOAuthProvider
+        directory = Directory(database, 'gateway')
+
+        async def check(email):
+            authorize(policy, 'gateway_status')  # fails only if status is removed from the shared policy
+            await directory.check(email)  # the account is active and granted 'gateway' (users tables)
+
         provider = GoogleOAuthProvider(
             OAuthRepository(database, 'gateway_auth.records'), public_url, legacy=Verifier(), scope='gateway',
             consent=lambda: (*gateway_consent(policy), NOTE),
-            # Every caller shares one policy; this only fails if status is removed from it.
-            check=lambda email: authorize(policy, 'gateway_status'), **oauth_config)
+            check=check, **oauth_config)
         auth.client_registration_options = ClientRegistrationOptions(enabled=True, valid_scopes=['gateway'], default_scopes=['gateway'])
         auth.revocation_options = RevocationOptions(enabled=True)
         mcp = MCPServer('Welladino restricted gateway', auth_server_provider=provider, auth=auth)

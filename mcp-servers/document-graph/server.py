@@ -1,10 +1,10 @@
 """Document graph MCP entrypoint.
 
 Local mode (default) has no sign-in and one workspace; keep it on 127.0.0.1.
-With DOCUMENT_GRAPH_OAUTH_ENABLED=true it uses the shared Google sign-in,
-its own token table and an email -> workspace map.
+With DOCUMENT_GRAPH_OAUTH_ENABLED=true it uses the shared Google sign-in and
+its own token table; who may connect, and to which workspaces, comes from the
+users tables in Neon (horology_runtime.access, server id 'document-graph').
 """
-import json
 import logging
 import os
 from contextlib import asynccontextmanager
@@ -21,8 +21,9 @@ from document_graph.shared import workspace
 from document_graph.tools import TOOLS, register_tools
 
 SCOPE = 'graph'
+SERVER_ID = 'document-graph'  # its row in mcp_servers
 CONSENT_NOTE = ('Google sign-in verifies your identity. It does not grant Gmail or Google Drive access. '
-                'You only see documents in the workspace mapped to this account.')
+                'This connection only sees documents in the workspace shown here.')
 
 
 def consent():
@@ -39,11 +40,14 @@ def build_server(database=None, oauth_config=None):
         mcp = MCPServer("horology-document-graph")
         register_tools(mcp)
         return mcp
+    from horology_runtime.access import Directory
     from horology_runtime.oauth.provider import GoogleOAuthProvider
     public_url = document_graph_public_url()
+    directory = Directory(database, SERVER_ID)
     provider = GoogleOAuthProvider(
         OAuthRepository(database, 'graph_auth.records'), public_url, oauth_config['client_id'],
-        oauth_config['client_secret'], scope=SCOPE, consent=consent, check=workspace.workspace_for)
+        oauth_config['client_secret'], scope=SCOPE, consent=consent, check=directory.check,
+        workspaces=directory.workspaces)
     auth = AuthSettings(issuer_url=public_url, resource_server_url=public_url + '/mcp', required_scopes=[SCOPE],
                         client_registration_options=ClientRegistrationOptions(enabled=True, valid_scopes=[SCOPE], default_scopes=[SCOPE]),
                         revocation_options=RevocationOptions(enabled=True))
@@ -82,7 +86,7 @@ def main():
     database = Database(os.environ.get("DATABASE_URL_POOLED"), DATABASE.document_graph_pool_size)
     oauth_config = None
     if os.environ.get('DOCUMENT_GRAPH_OAUTH_ENABLED', '').lower() == 'true':
-        workspace.configure(json.loads(os.environ.get('DOCUMENT_GRAPH_WORKSPACES', '{}')))
+        workspace.configure(True)
         oauth_config = {'client_id': os.environ.get('GOOGLE_OAUTH_CLIENT_ID'),
                         'client_secret': os.environ.get('GOOGLE_OAUTH_CLIENT_SECRET')}
     options = http_server_options(8765, "DOCUMENT_GRAPH_BIND", "0.0.0.0")  # nosec B104: Cloud Run serves on all interfaces

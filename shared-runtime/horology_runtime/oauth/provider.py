@@ -6,6 +6,7 @@ Tokens are bound to that service's /mcp resource and stored in its own table.
 import asyncio
 import hashlib
 import hmac
+import inspect
 import secrets
 import re
 import time
@@ -24,29 +25,43 @@ from .consent_page import render_consent
 class GatewayCode(AuthorizationCode):
     grant_id: str
     email: str = ''
+    workspace: str = ''
 
 
 class GatewayRefresh(RefreshToken):
     grant_id: str
     resource: str
     email: str = ''
+    workspace: str = ''
 
 
 class GoogleOAuthProvider:
-    def __init__(self, store, public_url, client_id, client_secret, *, scope, consent, check=lambda email: None, legacy=None):
+    def __init__(self, store, public_url, client_id, client_secret, *, scope, consent, check=lambda email: None,
+                 workspaces=None, legacy=None):
         """consent() returns (sections, tool names, note) for the consent page.
         check(email) raises when the signed-in account may not use this service
-        right now; it runs at sign-in and on every token load and refresh."""
+        right now; it runs at sign-in and on every token load and refresh, and
+        may be async (horology_runtime.access.Directory.check).
+
+        workspaces(email), for a workspace-scoped service, lists the account's
+        workspaces: the person picks one at sign-in (silently when there is only
+        one) and it is stored on the tokens. check is then called as
+        check(email, workspace) and returns the workspace to use; it lands in
+        the access token's claims as "workspace"."""
         # Who may sign in is managed by Google Auth Platform Audience test users.
         if not client_id or not client_secret:
             raise ValueError('Google OAuth credentials are required')
         self.store, self.url, self.scope = store, public_url, scope
         self.client_id, self.client_secret = client_id, client_secret
-        self.consent_info, self.check = consent, check
+        self.consent_info, self.check, self.workspaces = consent, check, workspaces
         self.legacy = legacy
         # sha256(token) -> (remember_until, record); least recently used dropped first.
         self.verified = OrderedDict()
         self.jwks = jwt.PyJWKClient('https://www.googleapis.com/oauth2/v3/certs', timeout=TIMEOUTS.gateway_http)
+
+    async def _check(self, email, workspace=None):
+        result = self.check(email, workspace) if self.workspaces else self.check(email)
+        return await result if inspect.isawaitable(result) else result
 
     async def get_client(self, client_id):
         data = await self.store.get('client', client_id)
@@ -104,7 +119,12 @@ class GoogleOAuthProvider:
             return HTMLResponse('Login expired. Start again.', status_code=400)
         try:
             claims = await self.verify_google(request.query_params.get('code',''), data['nonce'])
-            self.check(claims['email'].lower())
+            await self._check(claims['email'].lower())
+            choices = None
+            if self.workspaces:
+                choices = await self.workspaces(claims['email'].lower())
+                if not choices:
+                    raise ValueError('No workspace')
             sections, tools, note = self.consent_info()
             client = await self.get_client(data['client_id'])
             if client is None:
@@ -113,13 +133,13 @@ class GoogleOAuthProvider:
             return HTMLResponse('Sign-in could not be authorized. Check the account is an approved test user.', status_code=403)
         consent = secrets.token_urlsafe(32)
         # Stored in plain text on the grant so scripts/revoke_email.py can find it.
-        data.update(subject=claims['sub'], email=claims['email'].lower())
+        data.update(subject=claims['sub'], email=claims['email'].lower(), workspaces=choices)
         await self.store.put('consent', consent, data, time.time()+OAUTH.login_seconds)
         # Chrome applies form-action to the POST's final redirect too. Permit
         # only this SDK-validated client callback origin, including its port.
         redirect = urlparse(data['params']['redirect_uri'])
         callback_origin = f'{redirect.scheme}://{redirect.netloc}'
-        body, csp = render_consent(client.client_name or client.client_id, claims["email"], consent, sections, tools, callback_origin, note)
+        body, csp = render_consent(client.client_name or client.client_id, claims["email"], consent, sections, tools, callback_origin, note, choices)
         response = HTMLResponse(body, headers={"Content-Security-Policy": csp, "X-Content-Type-Options": "nosniff"})
         return self.cookie(response, consent)
 
@@ -136,12 +156,18 @@ class GoogleOAuthProvider:
         if form.get('decision') != 'allow':
             query['error'] = 'access_denied'
         else:
+            workspace = ''
+            if self.workspaces:
+                choices = data.get('workspaces') or []
+                workspace = str(form.get('workspace') or (choices[0] if len(choices) == 1 else ''))
+                if workspace not in choices:
+                    return HTMLResponse('Choose a workspace. Start again from your MCP client.', status_code=400)
             try:
-                self.check(data.get('email', ''))
+                await self._check(data.get('email', ''), workspace if self.workspaces else None)
             except Exception:
                 return HTMLResponse('Sign-in could not be authorized. Check the account is an approved test user.', status_code=403)
             code = secrets.token_urlsafe(32)
-            model = GatewayCode(code=code, scopes=[self.scope], expires_at=time.time()+OAUTH.code_seconds, client_id=data['client_id'], code_challenge=params.code_challenge, redirect_uri=params.redirect_uri, redirect_uri_provided_explicitly=params.redirect_uri_provided_explicitly, resource=self.url+'/mcp', subject=data['subject'], email=data.get('email', ''), grant_id=secrets.token_urlsafe(32))
+            model = GatewayCode(code=code, scopes=[self.scope], expires_at=time.time()+OAUTH.code_seconds, client_id=data['client_id'], code_challenge=params.code_challenge, redirect_uri=params.redirect_uri, redirect_uri_provided_explicitly=params.redirect_uri_provided_explicitly, resource=self.url+'/mcp', subject=data['subject'], email=data.get('email', ''), workspace=workspace, grant_id=secrets.token_urlsafe(32))
             await self.store.put('code', code, model.model_dump(mode='json',exclude={'code'}), model.expires_at)
             query['code'] = code
         target = str(params.redirect_uri)
@@ -160,14 +186,24 @@ class GoogleOAuthProvider:
         return GatewayRefresh(token=refresh_token, **data) if data else None
 
     async def issue(self, grant, scopes, records):
-        self.check(grant.email)
+        # The account check runs for every issue. A refresh token from before
+        # workspaces were stored resolves to the account's only workspace, or is
+        # refused when there are several. Any refusal becomes invalid_grant.
+        try:
+            resolved = await self._check(grant.email, grant.workspace if self.workspaces else None)
+        except Exception as error:
+            raise ValueError('Account not allowed') from error
+        workspace = (resolved or '') if self.workspaces else ''
+        claims = {'grant_id': grant.grant_id, 'email': grant.email}
+        if self.workspaces:
+            claims['workspace'] = workspace
         now = int(time.time())
         access_expiry = now+OAUTH.access_seconds
         refresh_expiry = now+OAUTH.refresh_seconds
         access, refresh = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
         common = {'client_id':grant.client_id,'subject':grant.subject,'email':grant.email,'scopes':scopes,'resource':self.url+'/mcp'}
-        await records.put('access',access,{**common,'expires_at':access_expiry,'claims':{'grant_id':grant.grant_id,'email':grant.email},'grant_id':grant.grant_id},access_expiry)
-        await records.put('refresh',refresh,{**common,'expires_at':refresh_expiry,'grant_id':grant.grant_id},refresh_expiry)
+        await records.put('access',access,{**common,'expires_at':access_expiry,'claims':claims,'grant_id':grant.grant_id},access_expiry)
+        await records.put('refresh',refresh,{**common,'expires_at':refresh_expiry,'grant_id':grant.grant_id,'workspace':workspace},refresh_expiry)
         return OAuthToken(access_token=access,token_type='Bearer',expires_in=access_expiry-now,refresh_token=refresh,scope=' '.join(scopes))  # nosec B106: not a password
 
     async def exchange_authorization_code(self, client, authorization_code):
@@ -209,9 +245,12 @@ class GoogleOAuthProvider:
             cached = (min(now+OAUTH.access_cache_seconds, data['expires_at']), dict(data))
         # The account check runs on every call, cached or not.
         try:
-            self.check(data.get('email', ''))
+            claims = dict(data.get('claims') or {})
+            workspace = await self._check(data.get('email', ''), claims.get('workspace', '') if self.workspaces else None)
         except Exception:
             return None
+        if self.workspaces:
+            data['claims'] = {**claims, 'workspace': workspace}
         self.verified[key] = cached
         while len(self.verified) > OAUTH.access_cache_size:
             self.verified.popitem(last=False)

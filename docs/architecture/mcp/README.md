@@ -24,9 +24,12 @@ Both cloud services use the shared Google sign-in in `shared-runtime/horology_ru
 |---|---|---|
 | Token table | `gateway_auth.records` | `graph_auth.records` |
 | Scope | `gateway` | `graph` |
-| After sign-in | One shared policy for every account | Email mapped to one workspace by `DOCUMENT_GRAPH_WORKSPACES` |
+| Who may connect | Granted `gateway` in `user_mcp_access` | Granted `document-graph`, and a member of the chosen workspace |
+| After sign-in | One shared policy for every account | The workspace picked at sign-in, stored on the tokens |
 
 Google is asked only for `openid email`, so sign-in grants no Gmail or Drive access. Who can sign in is the Audience test-user list in Google Auth Platform; the app stays in Testing, because publishing it would let any Google account in. Clients register themselves, and codes are exchanged with PKCE. Tokens are stored hashed and rotate on refresh. A token issued by one service is refused by the other. Removing an Audience user blocks new sign-ins; an existing client keeps working until its refresh token lapses after 7 days unused or its grant is revoked. For the gateway, `mcp-servers/mcp-gateway/scripts/revoke_email.py` revokes every token issued to one email; the document graph has no equivalent script yet.
+
+**Access.** On top of Google's list, each server checks the users tables in Neon at sign-in, on refresh and on every request: the person is active, holds this server in `user_mcp_access`, and (document graph) belongs to the token's workspace. A person in several workspaces picks one on the consent page. Lookups are cached per instance for 5 minutes (LRU, 10,000 entries; unknown emails 60 seconds), so a change made with the [access script](../../runbook/mcp/access.md) applies everywhere within 5 minutes without a redeploy.
 
 ## Shared runtime
 
@@ -35,6 +38,7 @@ Google is asked only for `openid email`, so sign-in grants no Gmail or Drive acc
 | Module | Does |
 |---|---|
 | `database.py` | Psycopg 3 async connection pool |
+| `access.py` | Who may use which MCP server and workspace, from the users tables, with the 5-minute cache |
 | `oauth/` | Google sign-in, consent page, token storage |
 | `settings.py` | Timeouts and token lifetimes, as code constants |
 | `operations.py`, `logging.py`, `error_handling.py` | Structured operation logs and safe error categories |

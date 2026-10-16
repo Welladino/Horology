@@ -1,4 +1,4 @@
-"""python -m graph_sync: sync one workspace (GRAPH_SYNC_WORKSPACE) or every configured workbook.
+"""python -m graph_sync: sync one workspace (GRAPH_SYNC_WORKSPACE) or every active workspace.
 
 GRAPH_SYNC_MODE:
 - "sync" (default): import the Document Index, then entities (tab edits,
@@ -8,10 +8,11 @@ GRAPH_SYNC_MODE:
 - "records": copy Pipeline Master, the Decision Register and the Document
   Index into the execution history only (no AI). A sync run does this first.
 
-GRAPH_SYNC_WORKBOOKS maps workspace -> its spreadsheets: a Document Index id
-({"welladino": "1kOb..."}), or {"index": id, "pipeline": id, "decisions": id}
-to include the records pass. DATABASE_URL_POOLED and OPENROUTER_API_KEY as
-for the document graph.
+Each workspace's spreadsheets come from the workspaces table (active rows
+with a Document Index; scripts/ops/access.py sets them). For a local run,
+GRAPH_SYNC_WORKBOOKS overrides it: workspace -> a Document Index id
+({"welladino": "1kOb..."}) or {"index": id, "pipeline": id, "decisions": id}.
+DATABASE_URL_POOLED and OPENROUTER_API_KEY as for the document graph.
 
 One run at a time per workspace: a run that finds another in progress skips
 that workspace. Sync and entities each handle up to 30 documents per run;
@@ -39,10 +40,26 @@ from .google import GoogleClient
 from .sync import sync_workspace
 
 
-def workbooks():
-    mapping = json.loads(os.environ.get("GRAPH_SYNC_WORKBOOKS", "{}"))
+_WORKSPACES = """
+    SELECT name, index_sheet_id, pipeline_sheet_id, decisions_sheet_id FROM access.workspaces
+    WHERE active AND coalesce(index_sheet_id, '') <> '' ORDER BY name
+"""
+
+
+async def configured_workbooks(database):
+    """{workspace: {"index", "pipeline", "decisions"}} from the workspaces table."""
+    async with database.connection() as db, db.cursor() as cur:
+        await cur.execute(_WORKSPACES)
+        rows = await cur.fetchall()
+    return {name: {k: v for k, v in (("index", index), ("pipeline", pipeline), ("decisions", decisions)) if v}
+            for name, index, pipeline, decisions in rows}
+
+
+async def workbooks(database):
+    override = os.environ.get("GRAPH_SYNC_WORKBOOKS", "").strip()
+    mapping = json.loads(override) if override else await configured_workbooks(database)
     if not isinstance(mapping, dict) or not mapping:
-        raise SystemExit("GRAPH_SYNC_WORKBOOKS must map workspace names to spreadsheet ids")
+        raise SystemExit("No workspace to sync: add one with scripts/ops/access.py (or set GRAPH_SYNC_WORKBOOKS locally)")
     only = os.environ.get("GRAPH_SYNC_WORKSPACE", "").strip()
     if only:
         if only not in mapping:
@@ -78,7 +95,7 @@ async def _records_first(google, workspace, books):
 
 
 async def run_workspace(google, workspace, workbook, mode, chain, token=None):
-    """workbook: the workspace's GRAPH_SYNC_WORKBOOKS value (a Document Index id, or the three ids)."""
+    """workbook: the workspace's spreadsheets (a Document Index id, or the three ids)."""
     books = records.books_for(workbook)
     spreadsheet_id = books.get("index", "")
     running = await runs.claim(workspace, mode, chain, token)
@@ -117,7 +134,6 @@ async def run_workspace(google, workspace, workbook, mode, chain, token=None):
 
 
 async def main():
-    targets = workbooks()
     mode = os.environ.get("GRAPH_SYNC_MODE", "sync").strip() or "sync"
     if mode not in MODES:
         raise SystemExit(f"GRAPH_SYNC_MODE must be one of {MODES}")
@@ -127,6 +143,7 @@ async def main():
     async with Database(os.environ.get("DATABASE_URL_POOLED"), DATABASE.document_graph_pool_size) as database:
         graph_core.configure(database)
         await graph_core.database.check_ready()  # stop at once, with the reason, on an unmigrated database
+        targets = await workbooks(database)
         failed = False
         for workspace, spreadsheet_id in targets.items():
             try:

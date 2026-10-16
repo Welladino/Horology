@@ -14,6 +14,7 @@ class Database(SharedDatabase):
         async with self.transaction() as db, db.cursor() as cur:
             await cur.execute('SELECT client_id FROM gateway_quotas.reservations LIMIT 0')
             await cur.execute('SELECT client_id FROM gateway_quotas.cache LIMIT 0')
+            await cur.execute('SELECT user_id, server_id FROM access.user_mcp_access LIMIT 0')  # access tables (20261016_008)
             await cur.execute('SELECT id FROM gateway_quotas.reservation_lock WHERE id = 1')
             if await cur.fetchone() != (1,):
                 raise Denied('Gateway quota migration is not ready')

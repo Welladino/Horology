@@ -18,3 +18,4 @@ Running list of research briefs under `docs/planning/research/`. Add a row when 
 | 2026-10-14 | Document-graph topics and entities | `2026-10-14_document-graph-topics-and-entities_research.md` |
 | 2026-10-16 | Subscription-agent supervisor, manual runs, Runs/Steps tabs, digest and planner | `2026-10-16_subscription-agent-supervisor-and-runs_research.md` |
 | 2026-10-16 | Execution history in Neon (runs, events, outputs) and fewer Pipeline tabs | `2026-10-16_execution-history-in-neon_research.md` |
+| 2026-10-16 | Users, workspaces and MCP access in Neon, cached; workspace chosen at sign-in | `2026-10-16_users-workspaces-and-mcp-access_research.md` |

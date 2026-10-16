@@ -9,6 +9,7 @@ REQUIRED_TABLES = (
     "entity_decisions", "entity_runs",
     "graph_runs", "graph_auth.records",
     "run_log", "pipeline_items", "pipeline_events", "decisions", "document_index", "run_outputs",
+    "access.mcp_servers", "access.workspaces", "access.users", "access.workspace_members", "access.user_mcp_access",
 )
 
 

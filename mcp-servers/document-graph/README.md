@@ -28,7 +28,7 @@ Use `http://127.0.0.1:8765/mcp` for Codex on your laptop. `document-graph-mcp` i
 
 ## Sign-in and the Document Index sync
 
-With `DOCUMENT_GRAPH_OAUTH_ENABLED=true` the server uses the shared Google sign-in (`horology_runtime.oauth`) with its own `graph_auth.records` table, scope `graph`, and `DOCUMENT_GRAPH_WORKSPACES` mapping each approved email to one workspace. Local Compose leaves it off. Cloud steps: [deployment runbook](../../docs/runbook/gcp/mcp_deployment.md).
+With `DOCUMENT_GRAPH_OAUTH_ENABLED=true` the server uses the shared Google sign-in (`horology_runtime.oauth`) with its own `graph_auth.records` table, scope `graph`, and the [users tables](../../docs/runbook/mcp/access.md) for who may connect: a person in several workspaces picks one when connecting, and it is stored on that connection's tokens. Local Compose leaves it off. Cloud steps: [deployment runbook](../../docs/runbook/gcp/mcp_deployment.md).
 
 `sync_graph` starts the Cloud Run job named in `GRAPH_SYNC_JOB` for the caller's workspace. The job code lives in [`jobs/document-graph-sync/`](../../jobs/document-graph-sync/) and ships in this image (`python -m graph_sync`).
 
@@ -42,7 +42,7 @@ gcloud auth application-default login --scopes=openid,https://www.googleapis.com
 gcloud auth application-default set-quota-project horology-dev
 ```
 
-Then, from the repository root. `dotenv` loads this folder's `.env` (Neon via `horology_graph`, OpenRouter); the shell can't source that file because its URLs contain `&`:
+Then, from the repository root. `dotenv` loads this folder's `.env` (Neon via `horology_graph`, OpenRouter); the shell can't source that file because its URLs contain `&`. Without `GRAPH_SYNC_WORKBOOKS` the job uses the `workspaces` table; this sets it explicitly:
 
 ```bash
 GRAPH_SYNC_WORKBOOKS='{"welladino":{"index":"1kObhQNjsFhziS-wRzjaEIzr9j8jjbfvd-ZgvzuwQ-Jc","pipeline":"1aL678ACs97YpLIGrGU5LbpXHc7jQBxl64ED-sLyehvI","decisions":"1_megp_hD4gwRuF4wmk4g2vQGAWbLl4uNUpho-oLoygE"}}' PYTHONPATH=mcp-servers/document-graph:jobs/document-graph-sync .venv/bin/dotenv -f mcp-servers/document-graph/.env run -- .venv/bin/python -m graph_sync

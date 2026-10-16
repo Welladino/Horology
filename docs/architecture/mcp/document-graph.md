@@ -46,7 +46,7 @@ All model calls go through `graph_core.ai`. The backend is a setting (`GRAPH_AI_
 
 ## Document Index sync
 
-The job in `jobs/document-graph-sync/` ships in the same image and runs as the Cloud Run job `document-graph-sync`. For one workspace, or every workbook in `GRAPH_SYNC_WORKBOOKS`, it:
+The job in `jobs/document-graph-sync/` ships in the same image and runs as the Cloud Run job `document-graph-sync`. For one workspace, or every active workspace in the `workspaces` table that has a Document Index, it:
 
 1. reads Document Index rows and imports or refreshes those with Graph Inclusion TRUE whose Drive revision changed (Markdown or plain text up to 2 MB, and Google Docs);
 2. splits, embeds and links only the changed documents, follows `Supersedes document ID`, and extracts entities;

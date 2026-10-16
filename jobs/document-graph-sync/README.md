@@ -11,7 +11,7 @@ Graph logic comes from [`graph_core`](../../document-graph-core/README.md), shar
 
 | Variable | Meaning |
 | --- | --- |
-| `GRAPH_SYNC_WORKBOOKS` | JSON map, workspace → Document Index spreadsheet id |
+| `GRAPH_SYNC_WORKBOOKS` | Optional, for local runs: JSON map, workspace → spreadsheet ids. Without it, active rows of the `workspaces` table are used. |
 | `GRAPH_SYNC_WORKSPACE` | Optional: sync only this workspace (set by `sync_graph`) |
 | `DATABASE_URL_POOLED` | Neon pooled URL with the `horology_graph` login |
 | `OPENROUTER_API_KEY` | Embeddings |
