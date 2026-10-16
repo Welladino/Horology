@@ -62,7 +62,7 @@
     },
     {
       "step": "Stage 2 · Founder decision",
-      "text": "The founder decides in the Decision Register; the sync applies it"
+      "text": "The founder decides in the Decision Register; the pipeline-decisions script applies it"
     },
     {
       "arrow": false,

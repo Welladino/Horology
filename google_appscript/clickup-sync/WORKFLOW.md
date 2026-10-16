@@ -20,19 +20,15 @@ it does not run agents, create research, approve spending, or implement code.
    Script project editors can access the token; restrict that access.
 4. Run `initializeSheets()` once and authorise Google access. It appends fields
    only; it does not read or write ClickUp. Run it again safely if interrupted.
-5. The live Master tables, dropdowns and domain views were updated by Codex.
+5. The live Master tables and dropdowns were updated by Codex.
    For another spreadsheet/test copy, extend its native table to include the new columns:
    Pipeline **A:V** and Decision Register **A:R**, assuming the inspected columns
    have not changed. Use actual last headers if you added other fields meanwhile.
    Preserve all existing dropdown choices. Add Pipeline status `Rework` and
    Decision status `rework` and `parked` if absent. Existing statuses include
    `proposed`, `accepted`, and `rejected`; use those exact lower-case values.
-6. Update the domain-view FILTER formulas to include the appended columns,
-   preserving their existing domain conditions. Pipeline views currently omit
-   Domain, so extend the ending `Master!D2:T` to `Master!D2:V`.
-   Decision Register views extend `Master!A2:N` to `Master!A2:R`.
-   Extend header rows only where those views already have headers; don't add new
-   header rows to headerless views. If a formula differs, retain its structure.
+6. (Removed: the Pipeline no longer has domain tabs; filter the Master table instead.
+   If a Decision Register copy still has domain FILTER views, extend them to the new columns.)
 7. Fill Stage for selected pilot rows explicitly; don't infer from old accepted
    decisions. Stage 0 = capture; Stage 1 = investigation; Stage 2 = review;
    Stage 3 = specialist deliverable. Leave other rows until you select them.
@@ -134,19 +130,22 @@ Pipeline ID/Review stage, and set Pipeline Stage 2, Awaiting decision, Current
 decision ID and Review stage. Exactly one proposed decision may be active per item;
 resolve or supersede older proposals before selecting a new one.
 
+Decisions made in Sheets are applied by the separate
+[pipeline-decisions](../pipeline-decisions/README.md) script, not this sync. While
+a decided item waits to be applied, this sync skips it.
+
 For **rework in Sheets**, edit the current decision row: Status = `rework` and
-write Rework instructions. The next sync sets Pipeline Rework, restores the
-originating work stage and sets Agent status Ready, except Manual agents stay
-No action. Agents must read the selected Decision Register feedback before working.
+write Rework instructions. The pipeline-decisions script sets Pipeline Rework,
+restores the originating work stage and sets Agent status Ready, except Manual
+and Unassigned agents stay No action. Agents must read the selected Decision Register feedback before working.
 Create a new proposed decision for the next review round and retain earlier rows.
 
 For **approval in Sheets**, set current decision Status = `accepted`.
 Stage 1 approval sets Pipeline Approved / Stage 3 / Ready. Stage 3 approval sets
 Handed off / Stage 3 / No action. Decisions `parked` or `rejected` stop selection.
-Sheet decisions are applied once; ordinary subsequent row edits do not repeatedly
-queue the same accepted decision.
+Sheet decisions are applied once, only while the item is Awaiting decision.
 
-For **approval in ClickUp**, first set ALLOW_CLICKUP_REVIEW: true in Config.js. Only a transition
+For **approval in ClickUp** (on: ALLOW_CLICKUP_REVIEW is true in Config.js; set it false to turn it off), only a transition
 from an established `review` baseline is accepted: `open` accepts the selected
 proposal, `blocked` parks it, and `rejected` rejects it. `closed` isn't an approval
 shortcut. `backlog` isn't interpreted as rework; enter feedback in the register.

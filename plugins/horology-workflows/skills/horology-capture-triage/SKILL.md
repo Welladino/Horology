@@ -18,7 +18,7 @@ Capture, transfer, or triage thoughts the user asks to retain across Welladino's
 
 ## Workflow
 
-Edit Pipeline Master only; domain tabs are automatic views. Resolve records by permanent Pipeline ID and map fields by live headers.
+Edit Pipeline Master only; filter its table to see one domain. Resolve records by permanent Pipeline ID and map fields by live headers.
 
 1. Read Pipeline Master and live headers; map fields by name because columns may be reordered.
 2. Match existing records by permanent Pipeline ID, source URL, and meaning. Update an existing item rather than duplicate it. ClickUp task URLs uniquely identify tasks even when title prefixes repeat.

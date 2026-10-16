@@ -1,0 +1,13 @@
+{
+  "name": "horology-pipeline-decisions",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "test": "node tests/test-decisions.cjs",
+    "clasp:status": "clasp status",
+    "clasp:push": "clasp push"
+  },
+  "devDependencies": {
+    "@google/clasp": "3.4.1"
+  }
+}

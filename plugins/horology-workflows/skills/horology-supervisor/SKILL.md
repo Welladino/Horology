@@ -1,14 +1,15 @@
 ---
 name: horology-supervisor
-description: Run Pipeline items that are Ready. Dispatch mode finds Ready rows for this platform, claims them and starts one session per item, locally or in the cloud. Item mode handles one item end to end — reads it, chooses the specialist skills, runs them, checks the results and saves. Use when asked to run the Ready items or to run a specific item.
+description: Run Pipeline items that are Ready, and report on runs. Dispatch mode finds Ready rows for this platform, claims them and starts one session per item, locally or in the cloud. Item mode handles one item end to end — reads it, chooses the specialist skills, runs them, checks the results and saves. Status mode reports what is running, what finished and what it found, and answers questions about it. Use when asked to run the Ready items or a specific item, or what's happening, what ran or what a run found.
 ---
 
 # Supervisor
 
 ## When to use
 
-- "Run the Ready items" or "what's Ready?": **dispatch** mode.
+- "Run the Ready items": **dispatch** mode.
 - "Run item 42", or a session started by dispatch for one item: **item** mode.
+- "What's happening?", "what's Ready?", "what did the runs find?", "how did item 42 go?": **status** mode. It only reads; it starts and changes nothing.
 
 The founder starts runs; nothing here runs on its own. The supervisor chooses and coordinates; the specialist skills from the Horology Specialists plugin do the work.
 
@@ -44,6 +45,21 @@ For exactly one Pipeline ID:
 
 The allowed moves are defined in [workflow.yaml](../horology-capture-triage/references/workflow.yaml); don't make others.
 
+## Status mode
+
+The founder talks to you instead of each session. Answer from what the runs recorded and saved:
+
+1. Call `list_runs` for the period asked about (default the last 24 hours), or for one `pipeline_id`.
+2. Sort the runs into:
+   - **Running:** status claimed and not expired. You can't see progress inside a running session; give its start time, location and session link.
+   - **Finished:** status done. `list_runs` gives only an output count; get the outputs from `get_item_history` for that item, open them (Drive documents from their Document Index rows; agent documents with `get_document`) and give the key finding and recommendation in a sentence or two each.
+   - **Failed or died:** status failed (give its notes), or a claim that expired without finishing (the session stopped; the item can be run again).
+3. Add what's waiting on the founder: Ready rows not yet claimed (by Agent type and Run location), Plan rows, and items Awaiting decision.
+4. For one item, use `get_item_history` for its full timeline. Flag changes marked `expected: false`.
+5. Answer follow-up questions from the saved outputs, and say when something isn't in them. A session's conversation isn't recorded; only what it saved, its `finish_run` notes and the status changes are. To see or steer a running session, give its session link.
+
+Skills used, steps done and notes are reported by the session itself; outputs and status changes come from the sheets. Say which you are relying on when it matters.
+
 ## Decision and permission boundaries
 
 - The founder decides. Never accept, reject or park a proposal, and never record a decision as accepted.
@@ -55,6 +71,7 @@ The allowed moves are defined in [workflow.yaml](../horology-capture-triage/refe
 
 - Dispatch: the items started, their run IDs, run location and session links, and any skipped (claimed, wrong platform) with the reason.
 - Item: the specialists used, where outputs were saved, the result of your check, and anything blocked or pending.
+- Status: running, finished (with findings and links), failed or died (with the reason), and waiting on the founder, in that order. Keep it short; offer detail on request.
 
 ## Verification before finishing
 

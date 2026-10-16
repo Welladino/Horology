@@ -30,12 +30,23 @@ function syncEligibility(c,dt,row,s) {
   // Pending/managed items must report lost stages as blocked, not disappear.
   if(!String(row.data.Stage||'').trim() && !s.pending && !s.taskId && !row.data['ClickUp Pipeline URL'])
     return {status:'skipped',reason:'Stage not set; item is not ready for ClickUp sync.'};
+  if(awaitingApply(dt,row))
+    return {status:'skipped',reason:'Decision recorded; waiting for the pipeline-decisions script to apply it.'};
   try {
     validateSyncRow(c,dt,row,s);
     return {status:'eligible'};
   } catch(e) {
     return {status:'blocked',reason:e.message};
   }
+}
+
+// Awaiting decision, but its current decision is already decided: the
+// pipeline-decisions script will move the item on; sync it after that.
+function awaitingApply(dt,row) {
+  const d=row.data;
+  if(norm(d.Status)!=='awaiting decision') return false;
+  const current=decisionRows(dt,d.ID).filter(r=>r.data['Decision ID']===d['Current decision ID']);
+  return current.length===1 && ['accepted','rework','parked','rejected'].includes(norm(current[0].data.Status));
 }
 
 function comparePipelineIds(a,b) {

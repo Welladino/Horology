@@ -10,7 +10,7 @@ const SYNC_CONFIG = {
   PILOT_PIPELINE_IDS: [], // Fill e.g. ['18']; start with one or two rows.
   MAX_ITEMS_PER_RUN: 5,
   ENABLE_WRITES: true, // Enable only after preview and schema setup.
-  ALLOW_CLICKUP_REVIEW: false, // Enable only for lists with trusted editors.
+  ALLOW_CLICKUP_REVIEW: true, // Review decisions from ClickUp; only for lists with trusted editors.
   ALLOW_ADOPT_EXISTING: false,
   SYNC_ALL: true // true + empty pilot IDs selects all rows.
 };

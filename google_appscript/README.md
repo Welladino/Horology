@@ -13,7 +13,7 @@ scheduling and usage limits depend on the selected platform and account.
 - Document Index associates documents with permanent Pipeline IDs and revisions.
 - ClickUp presents Pipeline tasks and review status.
 - Subscription agents perform selected work using shared workflow skills.
-- Apps Script transfers records between Sheets and ClickUp; it does not run AI.
+- Apps Script applies founder decisions to the Pipeline and transfers records between Sheets and ClickUp; it does not run AI.
 
 Flow: capture → Stage 1 proposal → Stage 2 decision → rework or Stage 3
 specialist deliverable → review. Approval of a code proposal authorises its
@@ -24,10 +24,11 @@ planning-note deliverable, not automatic implementation.
 | Folder | Purpose | Runtime |
 | --- | --- | --- |
 | [Workflow plugin](../plugins/horology-workflows/) and [specialists plugin](../plugins/horology-specialists/) | Supervisor, capture and specialist agent instructions | Loaded by the selected agent platform |
-| [clickup-sync](clickup-sync/README.md) | Modular Sheets/ClickUp sync and document lookup | Google Apps Script |
+| [pipeline-decisions](pipeline-decisions/README.md) | Applies decided Decision Register rows to their Pipeline items; no ClickUp | Google Apps Script |
+| [clickup-sync](clickup-sync/README.md) | Optional Sheets/ClickUp mirror and document lookup | Google Apps Script |
 
 The files here are versioned in Horology, but do not depend on a running Hermes
-container or a deployed Horology server. Existing Hermes personas, MCP servers
+container or a deployed Horology server. Hermes, the MCP servers
 and Neon document graph remain separate. Backfill and further integrations can
 be added when needed; this folder does not enable them.
 

@@ -10,7 +10,7 @@
     "developerName": "Saravanaraj",
     "displayName": "Welladino Workflows",
     "logo": "./assets/icon.svg",
-    "longDescription": "Horology skills for retaining ideas in Pipeline and for a supervisor that runs Ready items: it claims each in the Runs tab, starts one session per item locally or in the cloud, chooses the specialist skills, checks the results and records the run. Preserves duplicate checks and founder decision boundaries. Requires separately connected Google Drive, Docs, and Sheets; ClickUp access is needed when a task uses ClickUp. Install Horology Specialists for the specialist skills.",
+    "longDescription": "Horology skills for retaining ideas in Pipeline and for a supervisor that runs Ready items: it claims each, starts one session per item locally or in the cloud, chooses the specialist skills, checks the results, records the run and reports on runs. Preserves duplicate checks and founder decision boundaries. Requires separately connected Google Drive, Docs, and Sheets; ClickUp access is needed when a task uses ClickUp. Install Horology Specialists for the specialist skills.",
     "shortDescription": "Capture, run, plan and report on Pipeline items",
     "capabilities": []
   },

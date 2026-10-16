@@ -49,7 +49,7 @@ function syncRow(c,pt,dt,row,st,cache,live,out) {
   }
   if(live && d['ClickUp Pipeline URL']!==task.url) put(pt,row,'ClickUp Pipeline URL',task.url||'https://app.clickup.com/t/'+id);
   ingestClickUpReview(c,pt,dt,row,s,task,remote,live,out);
-  applySheetDecision(c,pt,dt,row,s,live,out);
+  // Sheet decisions are applied by the pipeline-decisions script, not here.
   const status=STATUS_MAP[norm(d.Status)];desc=description(c,pt,row);
   if(task.name!==d.Title || String(task.description||task.text_content||'')!==desc || remote!==status) {
     out.push({pipelineId:d.ID,action:'update task',taskId:id,status});

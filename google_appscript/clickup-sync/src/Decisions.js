@@ -42,35 +42,9 @@ function ingestClickUpReview(c,pt,dt,row,s,task,remote,live,out) {
       if(dt.headers.includes('Decision Date')) put(dt,dr,'Decision Date',new Date());
       if(dt.headers.includes('Review source')) put(dt,dr,'Review source','ClickUp status '+remote+'; actor not exposed by task API; '+new Date().toISOString());
       put(pt,row,'Status',outcome.status);put(pt,row,'Stage',outcome.stage);
-      put(pt,row,'Agent status',d['Agent type']==='Manual'?'No action':outcome.agent);
+      // Only agent rows become Ready; Manual and Unassigned stay No action (as in pipeline-decisions).
+      put(pt,row,'Agent status',['claude code','codex'].includes(norm(d['Agent type']))?outcome.agent:'No action');
       s.appliedDecision=decisionFingerprint(dr);
     } else {dr.data.Status=outcome.decision;d.Status=outcome.status;d.Stage=outcome.stage;}
-  }
-}
-
-
-function applySheetDecision(c,pt,dt,row,s,live,out) {
-  const d=row.data;
-  let accepted=decisionRows(dt,d.ID).filter(r=>['accepted','rework','parked','rejected'].includes(norm(r.data.Status)));
-  // Only explicitly selected review record is authoritative, never historical accepted rows.
-  const selected=String(d['Current decision ID']||'').trim();
-  if(selected) {
-    const dr=accepted.find(r=>r.data['Decision ID']===selected);
-    if(dr && s.appliedDecision!==decisionFingerprint(dr)) {
-      const stage=dr.data['Review stage'];
-      if(!['Stage 1','Stage 3'].includes(stage)) throw Error('Decision needs Review stage Stage 1 or Stage 3.');
-      let outcome;
-      if(norm(dr.data.Status)==='rework') {
-        if(!String(dr.data['Rework instructions']).trim()) throw Error('Rework instructions required.');
-        outcome={status:'Rework',stage,agent:d['Agent type']==='Manual'?'No action':'Ready'};
-      } else if(norm(dr.data.Status)==='accepted') outcome=reviewOutcome('open',stage);
-      else outcome=reviewOutcome(norm(dr.data.Status)==='parked'?'blocked':'rejected',stage);
-      out.push({pipelineId:d.ID,action:'apply sheet decision',decision:selected,outcome});
-      if(live) {
-        put(pt,row,'Status',outcome.status);put(pt,row,'Stage',outcome.stage);
-        put(pt,row,'Agent status',d['Agent type']==='Manual'?'No action':outcome.agent);
-        s.appliedDecision=decisionFingerprint(dr);
-      } else Object.assign(d,{Status:outcome.status,Stage:outcome.stage});
-    }
   }
 }

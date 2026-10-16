@@ -55,7 +55,7 @@ def build(wf):
             card(t["submit-for-review"], "sheet", "orange", "Submitted for review"),
             card(t["run-failed"], "loop", "grey", "Run failed"),
         ]}]},
-        {"step": f"Stage 2 · {stages['Stage 2']}", "text": "The founder decides in the Decision Register; the sync applies it"},
+        {"step": f"Stage 2 · {stages['Stage 2']}", "text": "The founder decides in the Decision Register; the pipeline-decisions script applies it"},
         {"arrow": False, "cards": [
             card(t["accept-stage-1"], "check", "green", "Accept a Stage 1 proposal"),
             card(t["rework"], "loop", "orange", "Rework"),

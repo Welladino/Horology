@@ -1,5 +1,5 @@
 # Horology Pipeline workflow: the single definition of states, values and allowed moves.
-# Skills, the Apps Script sync and the digest's health checks follow this file.
+# Skills, the Apps Scripts and the digest's health checks follow this file.
 # Changing a rule means changing it here first. Validated by tests/unit/workflow/.
 
 version: 1
@@ -10,7 +10,7 @@ actors:
   capture: horology-capture-triage, recording new or updated items.
   planner: horology-planner, acting only on Agent status Plan rows.
   supervisor: horology-supervisor (dispatch and item modes) and the specialists it runs.
-  sync: The Apps Script ClickUp sync, applying recorded decisions.
+  sync: The pipeline-decisions Apps Script applying recorded decisions (or the ClickUp sync, when ClickUp review is enabled).
 
 # Pipeline Master fields that drive the workflow, with their allowed values.
 fields:
@@ -92,7 +92,7 @@ transitions:
     actor: supervisor
     from: {Agent status: Ready}
     to: {Status: Researching}
-    when: A supervisor session claims the item in the Runs tab and starts work.
+    when: A supervisor session claims the item (claim_item) and starts work.
 
   - id: submit-for-review
     actor: supervisor

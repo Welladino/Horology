@@ -18,8 +18,8 @@ The workflow's states, field values and allowed moves (with who may make each) a
 | Templates | Document structure and visual assets | Drive `02_Templates` |
 | Deliverables | Research, direction, plans and assessments | Domain or entity folders from the Location Directory |
 | Skills | Versioned agent instructions | `plugins/horology-workflows/skills/` (supervisor, capture and triage), `plugins/horology-specialists/skills/` (specialists) |
-| Agent prompts | Research and Technical Assessment personas | `personas/subscriptions/` |
-| ClickUp sync | Mirrors register rows to ClickUp tasks, statuses and decision comments | `google_appscript/clickup-sync/` (Apps Script) |
+| Decision applier | Moves an item on when its current decision is accepted, rework, parked or rejected | `google_appscript/pipeline-decisions/` (Apps Script) |
+| ClickUp sync (optional) | Mirrors register rows to ClickUp tasks, statuses and decision comments; a task moved out of `review` to open, blocked or rejected records accept, park or reject | `google_appscript/clickup-sync/` (Apps Script) |
 
 Sheets is the operational record and Drive holds the detailed deliverables; ClickUp is only a review screen. The repository versions the skills and the sync code; it is not a copy of Drive or Sheets.
 
@@ -27,7 +27,7 @@ Sheets is the operational record and Drive holds the detailed deliverables; Clic
 
 - **Stage 0, capture.** `horology-capture-triage` records an idea, parked proposal or research request as a Pipeline row and checks for duplicates.
 - **Stage 1, investigation and proposal.** The question decides the form: research (`horology-research`), direction, a plan, or a technical assessment (`horology-technical-assessment`). These are not a fixed sequence. The deliverable is saved to Drive and listed in the Document Index.
-- **Stage 2, founder decision.** Approve, rework, park or reject, recorded in the Decision Register with feedback.
+- **Stage 2, founder decision.** Approve, rework, park or reject, recorded in the Decision Register with feedback. The pipeline-decisions script then moves the item on (for example to Approved, Stage 3 and Ready) within about 10 minutes, or straight away when you edit the register yourself.
 - **Stage 3, specialist deliverable.** An approved scope becomes a detailed deliverable, then review. For code work this is a planning note in the repository, not automatic implementation.
 
 Stage and Review stage are separate fields, so a review can be told apart even when ClickUp statuses overlap.
@@ -40,9 +40,9 @@ The Pipeline's permanent numeric ID joins decisions and documents; each register
 
 `Agent status = Ready` marks the next bounded step for an AI agent; `Agent type` names the intended platform; `Manual` means founder-led. A sheet value alone launches nothing.
 
-Runs are always started by the founder, from a session: in Claude Code or Codex, "run the Ready items" or "run item 42". Nothing runs on a trigger or schedule. The **supervisor** (`horology-supervisor`) has two modes:
+Runs are always started by the founder, from a session: in Claude Code or Codex, "run the Ready items" or "run item 42". Nothing runs on a trigger or schedule. The **supervisor** (`horology-supervisor`) has three modes:
 
-- **Dispatch:** finds rows with Agent status Ready whose **Agent type** is the platform it's running on (Claude Code or Codex; each platform runs only its own rows), claims each in the **Runs** tab (2-hour claim), and starts **one session per item** according to the row's **Run location**:
+- **Dispatch:** finds rows with Agent status Ready whose **Agent type** is the platform it's running on (Claude Code or Codex; each platform runs only its own rows), claims each with `claim_item` (2-hour claim), and starts **one session per item** according to the row's **Run location**:
 
   | Agent type | Local | Cloud |
   |---|---|---|
@@ -51,6 +51,7 @@ Runs are always started by the founder, from a session: in Claude Code or Codex,
 
   Where shell commands aren't available (for example claude.ai chat), it runs the items itself, one at a time.
 - **Item:** handles exactly one item. It reads the row, decision feedback, any planned steps and the document graph; chooses specialist skills from the Horology Specialists plugin; runs them as subagents; checks the results; and finishes the run. Specialist skills save their own Drive outputs, Document Index rows and proposed decisions.
+- **Status:** read-only. Asked "what's happening?" or "what did item 42 find?", it reports running, finished (with key findings), failed and died runs, and what's waiting on the founder, from `list_runs`, `get_item_history` and the saved outputs. The founder talks to the supervisor instead of each session. It can't see progress inside a running session or steer one; that needs the session link.
 
 One session per item keeps each supervisor's context to a single item, and lets its specialists run as subagents (subagents can't start their own).
 

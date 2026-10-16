@@ -14,7 +14,7 @@ Generate the top summary and JSON from the same evidence and written reasons. Di
 
 ## Shared records
 
-Read live sheet metadata and headers before saving. Pipeline Master is editable; domain tabs are views. Resolve by permanent numeric ID, not row position or External ID. Agent type includes Manual; automated selection skips Manual. Link type/URL/GitHub branch identify the work target, while Document Index associates documents with Pipeline ID.
+Read live sheet metadata and headers before saving. Pipeline Master is the editable record. Resolve by permanent numeric ID, not row position or External ID. Agent type includes Manual; automated selection skips Manual. Link type/URL/GitHub branch identify the work target, while Document Index associates documents with Pipeline ID.
 
 Upsert [Document Index](https://docs.google.com/spreadsheets/d/1kObhQNjsFhziS-wRzjaEIzr9j8jjbfvd-ZgvzuwQ-Jc/edit) by Drive file ID/URL, preserving its document ID. Allocate permanent numeric Document IDs from live records and match dropdowns. Record the assessment as research, Draft, with Related Pipeline URL. Entity is blank for Article Aggregator, Welladino and Horology; use it only for a named Newsletter/Ecommerce business. Graph Inclusion is the founder's choice; rows set TRUE are copied into the document graph by the sync job.
 

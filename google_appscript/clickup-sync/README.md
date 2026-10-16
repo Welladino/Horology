@@ -12,6 +12,8 @@ All 14 files, including founder-entered settings, the list-discovery utility and
 manifest, are preserved locally. These imported files are the maintained source.
 No upload, trigger or online configuration change was performed.
 
+Decisions recorded in Sheets are applied by [pipeline-decisions](../pipeline-decisions/README.md), not this sync.
+
 ## Layout
 
 - `src/`: Apps Script modules. The live `appsscript.json` manifest will be pulled.

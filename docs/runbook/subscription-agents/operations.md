@@ -54,6 +54,10 @@ or for one item:
 
 The supervisor claims each item through the document graph and starts one session per item. Check progress by asking a session to `list_runs`, or `get_item_history` for one item. Every run needs the document-graph connector. Cloud runs need the Horology repository on GitHub, the skills under `.claude/skills/`, and the document graph and Google connectors on your claude.ai account. Codex runs need the Codex CLI installed and signed in.
 
+## Decide on an item
+
+In the Decision Register, set the current decision's Status to accepted, rework (with Rework instructions), parked or rejected. The [pipeline-decisions](../../../google_appscript/pipeline-decisions/README.md) script moves the Pipeline item on within 10 minutes, or straight away when you edit the register yourself. To check: run `previewDecisions` in its Apps Script project, or look at the item's Status.
+
 ## Scheduled jobs
 
 Create these on any platform's scheduler (Claude Code routine or desktop scheduled task, Cowork, Codex automation). They report or prepare; they never run items.

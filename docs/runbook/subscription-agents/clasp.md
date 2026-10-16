@@ -86,6 +86,32 @@ Push updates the connected project's source. Avoid `--force` and `--watch` for r
 
 5. In the Apps Script editor, run `previewSync`. Check the proposed task, status and comment changes against the selected pilot rows. Preview does not write to ClickUp. Follow the [sync workflow](../../../google_appscript/clickup-sync/WORKFLOW.md) before enabling writes and running `applySync` or installing a trigger. Restore intended write/trigger settings only after verifying the result.
 
+## Pipeline decisions project
+
+`google_appscript/pipeline-decisions/` is a separate standalone project. Run these from that folder.
+
+First time (creates the project in your Google account):
+
+```sh
+npm install
+npx clasp create --type standalone --title "Horology — Pipeline decisions" --rootDir src
+```
+
+This writes `.clasp.json` (ignored by Git). Check that `src/Config.js` has the right Pipeline and Decision Register IDs, then:
+
+```sh
+npm test
+npm run clasp:push
+```
+
+In the Apps Script editor:
+
+1. Run `previewDecisions` and approve the Sheets access prompt. Check the execution log lists only the items you expect.
+2. Run `applyDecisions` once and check those Pipeline rows.
+3. Run `installTriggers` to apply decisions every 10 minutes and after each Decision Register edit. `stopTriggers` removes them.
+
+Later updates: `npm test`, `git diff -- src`, then `npm run clasp:push`. The installed triggers use the new code straight away.
+
 ## Troubleshooting
 
 | Symptom | Check |

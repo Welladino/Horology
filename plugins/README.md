@@ -10,4 +10,4 @@ Maintain each plugin's manifest, skills and referenced assets together. Installe
 
 - `horology-specialists/`: specialist skills the supervisor hands items to (research, technical assessment, security review, GTM, marketing strategy, content planning).
 
-ClickUp synchronization code lives in `google_appscript/clickup-sync/`; agent prompts live in `personas/subscriptions/`.
+Apps Script code lives in `google_appscript/` (`pipeline-decisions/`, and the optional `clickup-sync/`). Agent instructions are the skills in these plugins; Hermes profiles will move to the same structure when Hermes is set up again.

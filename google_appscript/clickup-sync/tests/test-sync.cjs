@@ -48,14 +48,16 @@ test('Stage 3 approval hands off, does not queue implementation',()=>{
  const f=fixture();f.row.data['Review stage']='Stage 3';f.dr.data['Review stage']='Stage 3';f.run(true);f.task.status.status='open';f.run(true);
  assert.equal(f.row.data.Status,'Handed off');assert.equal(f.row.data['Agent status'],'No action');assert.equal(f.task.status.status,'closed');
 });
-test('manual rework requires feedback and queues originating stage',()=>{
- const f=fixture();f.run(true);f.dr.data.Status='rework';
- assert.throws(()=>f.run(true),/instructions required/);
- f.dr.data['Rework instructions']='Compare the managed option cost';f.run(true);
- assert.equal(f.row.data.Status,'Rework');assert.equal(f.row.data.Stage,'Stage 1');assert.equal(f.row.data['Agent status'],'Ready');
+test('sheet decisions are left to the pipeline-decisions script',()=>{
+ const f=fixture();f.run(true);f.dr.data.Status='rework';f.dr.data['Rework instructions']='Compare the managed option cost';
+ assert.equal(f.ctx.syncEligibility(f.c,f.dt,f.row,{}).status,'skipped');
+ assert.equal(f.row.data.Status,'Awaiting decision');assert.equal(f.row.data['Agent status'],'No action');
 });
-test('Manual agent is never automatically queued',()=>{
- const f=fixture();f.row.data['Agent type']='Manual';f.dr.data.Status='accepted';f.run(true);assert.equal(f.row.data['Agent status'],'No action');
+test('ClickUp approval makes only agent rows Ready',()=>{
+ for(const [type,expected] of [['Codex','Ready'],['Unassigned','No action'],['Manual','No action']]) {
+  const f=fixture();f.row.data['Agent type']=type;f.run(true);f.task.status.status='open';f.run(true);
+  assert.equal(f.row.data.Status,'Approved');assert.equal(f.row.data['Agent status'],expected);
+ }
 });
 test('changed review content rejects stale ClickUp approval',()=>{
  const f=fixture();f.run(true);f.dr.data.Question='Changed proposal';f.task.status.status='open';assert.throws(()=>f.run(true),/contents changed/);

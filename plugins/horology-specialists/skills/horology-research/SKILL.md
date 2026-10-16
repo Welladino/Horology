@@ -18,7 +18,7 @@ Investigate a selected Pipeline question and record evidence, options, and recom
 
 ## Workflow
 
-Edit Pipeline Master only; domain tabs are automatic views. Resolve records by permanent Pipeline ID and map fields by live headers.
+Edit Pipeline Master only; filter its table to see one domain. Resolve records by permanent Pipeline ID and map fields by live headers.
 
 1. Reuse existing evidence before creating another document. For Article Aggregator code claims, follow its AGENTS.md, inspect the graph and architecture map first, then verify relevant source at the current revision. For external technical claims, use primary sources and verify changing facts.
 2. Copy the native Research template into the verified domain/entity Research destination before filling it. Preserve metadata and section roles; use the platform's document-editing safeguards and native link controls where supported.
