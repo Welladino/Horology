@@ -5,3 +5,5 @@ REPO = Path(__file__).resolve().parents[2]
 GATEWAY = REPO / "mcp-servers" / "mcp-gateway"
 DOCUMENT_GRAPH = REPO / "mcp-servers" / "document-graph"
 SYNC_JOB = REPO / "jobs" / "document-graph-sync"
+WORKFLOW = REPO / "plugins" / "horology-workflows" / "skills" / "horology-capture-triage" / "references" / "workflow.yaml"
+CLICKUP_SYNC = REPO / "google_appscript" / "clickup-sync"

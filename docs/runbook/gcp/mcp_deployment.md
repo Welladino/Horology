@@ -95,7 +95,7 @@ Agents normally start it with `sync_graph`. By hand, for every workspace:
 gcloud --configuration=horology-admin run jobs execute document-graph-sync --project=horology-dev --region=us-central1 --wait
 ```
 
-Only entity extraction, or only rebuilding topics:
+Only entity extraction, only rebuilding topics, or only the records pass (copies the Pipeline, Decision Register and Document Index into the execution history):
 
 ```bash
 gcloud --configuration=horology-admin run jobs execute document-graph-sync --project=horology-dev --region=us-central1 --update-env-vars=GRAPH_SYNC_MODE=entities
@@ -105,13 +105,17 @@ gcloud --configuration=horology-admin run jobs execute document-graph-sync --pro
 gcloud --configuration=horology-admin run jobs execute document-graph-sync --project=horology-dev --region=us-central1 --update-env-vars=GRAPH_SYNC_MODE=topics
 ```
 
+```bash
+gcloud --configuration=horology-admin run jobs execute document-graph-sync --project=horology-dev --region=us-central1 --update-env-vars=GRAPH_SYNC_MODE=records
+```
+
 Results land in the Document Index (Graph Sync Status, and the Entities and Entity types tabs), not in the command output. A run handles 30 documents and starts the next run itself, at most 10 in a row.
 
 ## Add a workspace
 
 1. Copy the Document Index workbook for the new workspace.
-2. In Drive, share the workbook with `document-graph-sync@horology-dev.iam.gserviceaccount.com` as **Editor** (it writes status back) and each folder holding indexed documents as **Viewer**.
-3. Add the workbook to `GRAPH_SYNC_WORKBOOKS` on the job (`horology-admin`), and the person's email to `DOCUMENT_GRAPH_WORKSPACES` on the service. Both are JSON, so use gcloud's `^|^` separator prefix, for example `--update-env-vars='^|^GRAPH_SYNC_WORKBOOKS={"welladino":"…","other":"…"}'`.
+2. In Drive, share the Document Index workbook with `document-graph-sync@horology-dev.iam.gserviceaccount.com` as **Editor** (it writes status back), the Pipeline and Decision Register workbooks as **Viewer** (the records pass only reads them), and each folder holding indexed documents as **Viewer**.
+3. Add the workbook to `GRAPH_SYNC_WORKBOOKS` on the job (`horology-admin`), and the person's email to `DOCUMENT_GRAPH_WORKSPACES` on the service. Both are JSON, so use gcloud's `^|^` separator prefix, for example `--update-env-vars='^|^GRAPH_SYNC_WORKBOOKS={"welladino":{"index":"…","pipeline":"…","decisions":"…"}}'`. A plain string value is a Document Index ID alone, and skips the records pass.
 
 ## Add or remove a person
 

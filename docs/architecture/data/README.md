@@ -22,13 +22,14 @@ Each service connects through Neon's pooled endpoint with its own login, granted
 | `public` | `topics`, `section_topics` | Topic clusters and section membership |
 | `public` | `entity_types`, `entities`, `entity_aliases`, `entity_mentions`, `entity_relations`, `relation_evidence`, `entity_decisions`, `entity_runs` | Entities, aliases, where they're mentioned, relationships and their evidence, review decisions, extraction runs |
 | `public` | `graph_runs` | Sync and rebuild runs, one at a time per workspace |
-| `public` | `run_log` | Reserved for Second-Soul's own audit trail; not used yet |
+| `public` | `run_log`, `run_outputs` | Execution history: one row per agent run (claim, status, self-reported skills, steps and notes) and the outputs linked to it. The service login can't delete runs. |
+| `public` | `pipeline_items`, `pipeline_events`, `decisions`, `document_index` | Copies of Pipeline Master, the Decision Register and the Document Index, kept by the sync job's records pass, and every field change between copies (attributed to the run active at the time) |
 | `graph_auth` | `records` | Document-graph OAuth clients, codes and tokens (hashed) |
 | `gateway_quotas` | `reservations`, `reservation_lock`, `cache` | Credit reservations, the lock that makes them atomic, one-hour response cache |
 | `gateway_auth` | `records` | Gateway OAuth clients, codes and tokens (hashed) |
 
 ## Migrations
 
-Root Alembic (`alembic/`, `alembic.ini`) owns every change; services never create tables at start-up. Revisions are named `YYYYMMDD_NNN_description` and run in order; the current head is `20261015_006` (`graph_runs`). Migrations that create logins read their passwords from the environment (for example `GATEWAY_DB_PASSWORD`), so passwords never enter the repository. Downgrading the gateway migrations destroys quota accounting. Workflow: [Alembic runbook](../../runbook/db/alembic_workflow.md).
+Root Alembic (`alembic/`, `alembic.ini`) owns every change; services never create tables at start-up. Revisions are named `YYYYMMDD_NNN_description` and run in order; the current head is `20261016_007` (execution history). Migrations that create logins read their passwords from the environment (for example `GATEWAY_DB_PASSWORD`), so passwords never enter the repository. Downgrading the gateway migrations destroys quota accounting. Workflow: [Alembic runbook](../../runbook/db/alembic_workflow.md).
 
 Every driver is Psycopg 3: the services, the sync job, Alembic (`postgresql+psycopg`), CI and tests.

@@ -47,4 +47,4 @@ claude --plugin-dir plugins/horology-document-graph
 
 ## Check after installing
 
-These make no paid calls: `gateway_status` (14 names: 13 tools plus the `tavily_advanced_search` permission) and `list_documents`. The document graph should list 15 tools.
+These make no paid calls: `gateway_status` (14 names: 13 tools plus the `tavily_advanced_search` permission) and `list_documents`. The document graph should list 19 tools.

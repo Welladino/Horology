@@ -23,6 +23,7 @@ COPY mcp-servers/document-graph/server.py .
 COPY mcp-servers/document-graph/document_graph ./document_graph
 # Same image runs as the Cloud Run job: python -m graph_sync
 COPY jobs/document-graph-sync/graph_sync ./graph_sync
+COPY plugins/horology-workflows/skills/horology-capture-triage/references/workflow.yaml ./workflow.yaml
 
 USER 10001
 

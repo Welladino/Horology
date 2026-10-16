@@ -1,6 +1,6 @@
 ---
 name: horology-document-graph
-description: Find what has already been researched, planned or decided before starting work, by searching the Horology document graph for your workspace; read and link those documents, add agent documents, and start the Document Index sync. Use at the start of research, planning or assessment, and when asked what exists on a topic. Requires the horology-document-graph connector.
+description: Find what has already been researched, planned or decided before starting work, by searching the Horology document graph for your workspace; read and link those documents, add agent documents, start the Document Index sync, and claim, finish and look back on agent runs on Pipeline items. Use at the start of research, planning or assessment, and when asked what exists on a topic. Requires the horology-document-graph connector.
 ---
 
 # Horology document graph
@@ -75,6 +75,18 @@ Results appear in the sheet, not in the tool response. Graph Sync Status values:
 - `not_applicable`: Graph Inclusion is FALSE.
 
 Start a sync only when asked, or after the operator changed Graph Inclusion. Don't change Graph Inclusion yourself: what enters the graph is the operator's decision.
+
+## Runs and item history
+
+Agent runs on Pipeline items are recorded here. A run makes two calls; everything else is recorded from the sheets by the sync:
+
+- `claim_item` before working on an item (kind `run` for the supervisor, `plan` for the planner). `claimed: false` means another live run holds it: skip it. Claims expire after 2 hours.
+- `finish_run` once at the end, with status `done`, `failed` or `released`, the skills used, steps done and notes.
+
+The supervisor skill's runs reference has the full rules. To look back:
+
+- `list_runs` gives recent runs (default the last 24 hours, optionally for one `pipeline_id`), with their outputs and whether a claim expired. Skills, steps and notes are self-reported by the agent.
+- `get_item_history` gives one item's timeline: runs, field changes between syncs (each marked `expected` against the workflow, and linked to the run active at the time), decisions and documents. Changes made between two syncs appear as one.
 
 ## Limits and failures
 

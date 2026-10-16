@@ -5,6 +5,7 @@ module only turns tool calls into service calls.
 """
 from graph_core.documents import service as documents
 from graph_core.entities import service as entities
+from graph_core.history import service as history
 from graph_core.documents.service import VALID_DOC_TYPES  # noqa: F401  (re-exported for callers and tests)
 from graph_core.runs import service as runs
 from graph_core.sections import service as sections
@@ -228,3 +229,48 @@ async def entity_documents(entity_id: int, limit: int = 10) -> dict:
     document's type, domain and Pipeline ID."""
     return await entities.entity_documents(current_workspace(), entity_id, max(1, min(limit, 50)))
 
+
+async def claim_item(pipeline_id: int, agent_type: str, run_location: str = "Local", kind: str = "run") -> dict:
+    """Claim a Pipeline item before working on it, so no other run takes it at the same time.
+
+    Call once per item, before starting its work. agent_type is the platform
+    you run on: "Claude Code" or "Codex". run_location is the item's Run
+    location ("Local" or "Cloud"; blank in the sheet means Local). kind is
+    "run" for doing the work (supervisor) or "plan" for planning it (planner).
+    Returns claimed: true with a run_id (e.g. R-12) and claim_expires (2
+    hours); pass run_id to finish_run when you end. claimed: false means
+    another live run holds the item: skip it. Status changes and outputs are
+    recorded from the sheets; you don't report them.
+    """
+    return await history.claim(current_workspace(), pipeline_id, agent_type, run_location, kind)
+
+
+async def finish_run(run_id: str, status: str, skills_used: list[str] | None = None, steps_done: str | None = None,
+                     notes: str | None = None, session_link: str | None = None) -> dict:
+    """Record how a run ended. Call once, at the end of every run you claimed.
+
+    status: "done" (work finished and saved), "failed" (it couldn't finish;
+    say why in notes) or "released" (you didn't start it, e.g. another claim
+    won). skills_used: the specialist skills you ran, in order. steps_done:
+    which planned steps were completed. notes: a few lines on the result or
+    the blocker. session_link: the session URL or ID, when known. These are
+    recorded as reported by you; outputs and status changes come from the
+    sheets.
+    """
+    return await history.finish(current_workspace(), run_id, status, skills_used, steps_done, notes, session_link)
+
+
+async def list_runs(since_hours: int = 24, pipeline_id: int | None = None, limit: int = 50) -> list[dict]:
+    """List runs started or finished in the last since_hours (default 24, up to 744), newest first,
+    optionally for one Pipeline item. Each has its status (claimed, done, failed, released), whether an
+    open claim has expired (the run died), times, session link, how many outputs were linked, and the
+    self-reported skills used, steps done and notes."""
+    return await history.list_runs(current_workspace(), since_hours, pipeline_id, limit)
+
+
+async def get_item_history(pipeline_id: int) -> dict:
+    """How a Pipeline item got where it is: its current copy, decisions, and a timeline of status
+    changes (each marked expected or not by the workflow), runs with their outputs, Document Index
+    documents (with the graph document id when included) and agent documents. Built from the last
+    records sync of the sheets, so it can lag the sheet by one sync."""
+    return await history.item_history(current_workspace(), pipeline_id)

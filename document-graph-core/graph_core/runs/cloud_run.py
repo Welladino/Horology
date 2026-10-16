@@ -24,12 +24,12 @@ async def _token():
     return _credentials.token
 
 
-MODES = ("sync", "entities", "topics")
+MODES = ("sync", "entities", "topics", "records")
 
 
 async def start(workspace, mode="sync", chain=1, token=""):
     """mode: "sync" imports the Document Index (then entities); "entities" runs the entity step only;
-    "topics" re-clusters the workspace's topics. chain: this run's place in a chain of follow-ups;
+    "topics" re-clusters the workspace's topics; "records" copies the registers into the execution history. chain: this run's place in a chain of follow-ups;
     token: identifies the workspace claim taken for this run, which the job confirms."""
     if mode not in MODES:
         raise ValueError(f"mode must be one of {MODES}")

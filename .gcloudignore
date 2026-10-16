@@ -68,3 +68,14 @@
 !jobs/document-graph-sync/requirements.txt
 !jobs/document-graph-sync/graph_sync/
 !jobs/document-graph-sync/graph_sync/*.py
+# The Pipeline workflow (copied into the document-graph image) and the sync's status map its test checks.
+!plugins/
+!plugins/horology-workflows/
+!plugins/horology-workflows/skills/
+!plugins/horology-workflows/skills/horology-capture-triage/
+!plugins/horology-workflows/skills/horology-capture-triage/references/
+!plugins/horology-workflows/skills/horology-capture-triage/references/workflow.yaml
+!google_appscript/
+!google_appscript/clickup-sync/
+!google_appscript/clickup-sync/src/
+!google_appscript/clickup-sync/src/Config.js

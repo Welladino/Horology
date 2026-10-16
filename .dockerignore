@@ -34,6 +34,13 @@
 !mcp-servers/document-graph/document_graph/**/
 !mcp-servers/document-graph/document_graph/**/*.py
 !mcp-servers/document-graph/document_graph/*.py
+# The Pipeline workflow, read by the history tools to check values and changes.
+!plugins/
+!plugins/horology-workflows/
+!plugins/horology-workflows/skills/
+!plugins/horology-workflows/skills/horology-capture-triage/
+!plugins/horology-workflows/skills/horology-capture-triage/references/
+!plugins/horology-workflows/skills/horology-capture-triage/references/workflow.yaml
 **/__pycache__/
 
 

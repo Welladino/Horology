@@ -2,78 +2,110 @@
   "rows": [
     {
       "step": "Stage 0 · Capture",
-      "text": "An idea or question becomes a Pipeline row with a permanent numeric ID"
+      "text": "Inbox · Stage 0 · No action (by capture)"
     },
     {
-      "cards": [
-        {
-          "icon": "flow",
-          "tone": "purple",
-          "title": "Supervisor",
-          "text": "horology-supervisor reads the item and decision feedback, checks the document graph, and chooses agents and a platform from the Agent Register"
-        }
-      ]
-    },
-    {
-      "group": "Stage 1 · Investigation and proposal",
-      "tone": "blue",
+      "group": "Selecting work · Agent status No action → Plan → Ready",
+      "tone": "grey",
       "rows": [
         {
           "cards": [
             {
-              "icon": "search",
-              "title": "Research",
-              "text": "horology-research: evidence, options and a recommendation"
+              "icon": "flow",
+              "tone": "grey",
+              "title": "Ask for a plan",
+              "text": "Plan (by founder)"
             },
             {
-              "icon": "cpu",
-              "title": "Technical assessment",
-              "text": "horology-technical-assessment: alternatives, effort, cost and uncertainty"
+              "icon": "check",
+              "tone": "purple",
+              "title": "Planner",
+              "text": "No action · Planner output Yes (by planner)"
+            },
+            {
+              "icon": "user",
+              "tone": "blue",
+              "title": "Select for a run",
+              "text": "Stage 1 or Stage 3 · Ready (by founder)"
             }
           ]
         }
       ]
     },
     {
-      "cards": [
+      "group": "Stage 1 · Investigation and proposal (research, direction, plan or assessment)",
+      "tone": "blue",
+      "rows": [
         {
-          "icon": "sheet",
-          "tone": "orange",
-          "title": "Drive deliverable and Document Index",
-          "text": "Saved to the domain folder from the Location Directory; Graph Inclusion decides whether it enters the graph"
+          "cards": [
+            {
+              "icon": "cpu",
+              "tone": "blue",
+              "title": "Run starts",
+              "text": "Researching (by supervisor)"
+            },
+            {
+              "icon": "sheet",
+              "tone": "orange",
+              "title": "Submitted for review",
+              "text": "Awaiting decision · Stage 2 · No action (by supervisor)"
+            },
+            {
+              "icon": "loop",
+              "tone": "grey",
+              "title": "Run failed",
+              "text": "No action (by supervisor)"
+            }
+          ]
         }
       ]
     },
     {
       "step": "Stage 2 · Founder decision",
-      "text": "Recorded in the Decision Register and reviewed in ClickUp"
+      "text": "The founder decides in the Decision Register; the sync applies it"
     },
     {
       "arrow": false,
       "cards": [
         {
+          "icon": "check",
+          "tone": "green",
+          "title": "Accept a Stage 1 proposal",
+          "text": "Approved · Stage 3 · Ready (by founder or sync)"
+        },
+        {
           "icon": "loop",
           "tone": "orange",
           "title": "Rework",
-          "text": "Back to Stage 1 with the decision's instructions"
+          "text": "Rework · Stage 1 or Stage 3 · Ready (by founder or sync)"
         },
         {
           "icon": "box",
           "tone": "grey",
-          "title": "Park or reject",
-          "text": "Records kept, work stops"
+          "title": "Park",
+          "text": "Parked · Stage 2 · No action (by founder or sync)"
         },
         {
-          "icon": "check",
-          "tone": "green",
-          "title": "Approve",
-          "text": "A defined scope moves to Stage 3"
+          "icon": "box",
+          "tone": "grey",
+          "title": "Reject",
+          "text": "Rejected · Stage 2 · No action (by founder or sync)"
         }
       ]
     },
     {
       "step": "Stage 3 · Specialist deliverable",
-      "text": "The approved proposal becomes a detailed deliverable, then review. For code work, a planning note, not automatic implementation."
+      "text": "Runs again from Ready, then back to review"
+    },
+    {
+      "cards": [
+        {
+          "icon": "check",
+          "tone": "green",
+          "title": "Accept the deliverable",
+          "text": "Handed off · Stage 3 · No action (by founder or sync)"
+        }
+      ]
     }
   ]
 }

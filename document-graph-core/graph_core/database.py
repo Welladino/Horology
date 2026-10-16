@@ -8,6 +8,7 @@ REQUIRED_TABLES = (
     "entity_types", "entities", "entity_aliases", "entity_mentions", "entity_relations", "relation_evidence",
     "entity_decisions", "entity_runs",
     "graph_runs", "graph_auth.records",
+    "run_log", "pipeline_items", "pipeline_events", "decisions", "document_index", "run_outputs",
 )
 
 

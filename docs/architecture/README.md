@@ -41,7 +41,7 @@ Both reach the outside world only through two MCP services: the **gateway** (cap
 
 ## Diagrams
 
-Each diagram is described in `diagrams/src/<name>.json` and rendered to `diagrams/<name>.svg` (follows light or dark mode, used in these pages) and `<name>.png` (light, for Drive or Docs). After editing a description:
+Each diagram is described in `diagrams/src/<name>.json` and rendered to `diagrams/<name>.svg` (follows light or dark mode, used in these pages) and `<name>.png` (light, for Drive or Docs). `subscription_workflow` is generated from `workflow.yaml` by `scripts/docs/workflow_diagram.py`; don't edit its description by hand. After editing a description:
 
 ```bash
 python3 scripts/docs/render_diagrams.py

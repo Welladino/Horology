@@ -6,7 +6,8 @@ TOOLS = (graph.write_document, graph.link_documents, graph.get_document, graph.l
          graph.search_documents, graph.get_related_documents, graph.list_unembedded_documents,
          graph.auto_link_similar_documents, graph.sync_graph,
          graph.list_topics, graph.get_topic, graph.rebuild_topics,
-         graph.list_entities, graph.find_entity, graph.entity_documents)
+         graph.list_entities, graph.find_entity, graph.entity_documents,
+         graph.claim_item, graph.finish_run, graph.list_runs, graph.get_item_history)
 
 
 def register_tools(mcp):

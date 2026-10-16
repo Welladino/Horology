@@ -4,11 +4,14 @@ GRAPH_SYNC_MODE:
 - "sync" (default): import the Document Index, then entities (tab edits,
   extraction for new or changed documents, fresh Entities tabs);
 - "entities": the entity step only (also picks up agent documents);
-- "topics": re-cluster topics without reading the sheet.
+- "topics": re-cluster topics without reading the sheet;
+- "records": copy Pipeline Master, the Decision Register and the Document
+  Index into the execution history only (no AI). A sync run does this first.
 
-GRAPH_SYNC_WORKBOOKS maps workspace -> Document Index spreadsheet id, e.g.
-{"welladino": "1kOb..."}. DATABASE_URL_POOLED and OPENROUTER_API_KEY as for
-the document graph.
+GRAPH_SYNC_WORKBOOKS maps workspace -> its spreadsheets: a Document Index id
+({"welladino": "1kOb..."}), or {"index": id, "pipeline": id, "decisions": id}
+to include the records pass. DATABASE_URL_POOLED and OPENROUTER_API_KEY as
+for the document graph.
 
 One run at a time per workspace: a run that finds another in progress skips
 that workspace. Sync and entities each handle up to 30 documents per run;
@@ -31,7 +34,7 @@ import graph_core
 from graph_core.runs import service as runs
 from graph_core.topics import service as topics
 
-from . import review_tab
+from . import records, review_tab
 from .google import GoogleClient
 from .sync import sync_workspace
 
@@ -63,18 +66,36 @@ def follow_up_mode(mode, result):
     return None
 
 
-async def run_workspace(google, workspace, spreadsheet_id, mode, chain, token=None):
+async def _records_first(google, workspace, books):
+    """The records pass before a sync; its failure is reported, never blocks the document import."""
+    if google is None or not (books.get("pipeline") or books.get("decisions")):
+        return {"skipped": "no Pipeline or Decision Register configured for this workspace"}
+    try:
+        return await records.run(google, workspace, books)
+    except Exception as error:
+        log.warning("workspace %s: records pass failed: %s", workspace, category(error))
+        return {"failed": category(error)}
+
+
+async def run_workspace(google, workspace, workbook, mode, chain, token=None):
+    """workbook: the workspace's GRAPH_SYNC_WORKBOOKS value (a Document Index id, or the three ids)."""
+    books = records.books_for(workbook)
+    spreadsheet_id = books.get("index", "")
     running = await runs.claim(workspace, mode, chain, token)
     if running:
         log.warning("workspace %s skipped: a %s run is in progress", workspace, running)
         return {"workspace": workspace, "skipped": f"{running} run in progress"}
     try:
-        if mode == "topics":
+        if mode == "records":
+            result = {"records": await records.run(google, workspace, books)}
+        elif mode == "topics":
             result = await topics.rebuild(workspace)
         elif mode == "entities":
             result = await review_tab.run(google, spreadsheet_id, workspace)
         else:
+            history = await _records_first(google, workspace, books)
             result = await sync_workspace(google, workspace, spreadsheet_id)
+            result["records"] = history
             result["entities"] = await review_tab.run(google, spreadsheet_id, workspace)
     except BaseException:
         await runs.release(workspace, mode)
@@ -102,7 +123,7 @@ async def main():
         raise SystemExit(f"GRAPH_SYNC_MODE must be one of {MODES}")
     chain = int(os.environ.get("GRAPH_SYNC_CHAIN", "1") or 1)
     token = os.environ.get("GRAPH_RUN_TOKEN", "").strip() or None
-    google = GoogleClient() if mode in ("sync", "entities") else None
+    google = GoogleClient() if mode in ("sync", "entities", "records") else None
     async with Database(os.environ.get("DATABASE_URL_POOLED"), DATABASE.document_graph_pool_size) as database:
         graph_core.configure(database)
         await graph_core.database.check_ready()  # stop at once, with the reason, on an unmigrated database

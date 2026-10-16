@@ -4,6 +4,8 @@ Subscription agents are Horology's document-driven way of working. Claude, ChatG
 
 ![Subscription-agent workflow](../diagrams/subscription_workflow.svg)
 
+The workflow's states, field values and allowed moves (with who may make each) are defined once in [`workflow.yaml`](../../../plugins/horology-workflows/skills/horology-capture-triage/references/workflow.yaml). The skills follow it, a unit test checks it against itself and the ClickUp sync's status map, and the diagram above is generated from it.
+
 ## Components
 
 | Component | Role | Where it lives |
@@ -48,7 +50,7 @@ Runs are always started by the founder, from a session: in Claude Code or Codex,
   | Codex | `codex exec` | `codex cloud exec` |
 
   Where shell commands aren't available (for example claude.ai chat), it runs the items itself, one at a time.
-- **Item:** handles exactly one item. It reads the row, decision feedback, any planned **Steps** and the document graph; chooses specialist skills from the Horology Specialists plugin; runs them as subagents; checks the results; and closes the Runs row. Specialist skills save their own Drive outputs, Document Index rows and proposed decisions.
+- **Item:** handles exactly one item. It reads the row, decision feedback, any planned steps and the document graph; chooses specialist skills from the Horology Specialists plugin; runs them as subagents; checks the results; and finishes the run. Specialist skills save their own Drive outputs, Document Index rows and proposed decisions.
 
 One session per item keeps each supervisor's context to a single item, and lets its specialists run as subagents (subagents can't start their own).
 
@@ -59,11 +61,11 @@ One session per item keeps each supervisor's context to a single item, and lets 
 | Run location | Local or Cloud; blank means Local |
 | Planner output | Yes or No; Yes when the planner has written a sharper question or steps |
 
-The **Runs** tab records every run (claim, location, session link, status, skills used, outputs). The **Steps** tab holds an item's planned steps; the item's session works through them in order. Rules: the supervisor skill's [runs reference](../../../plugins/horology-workflows/skills/horology-supervisor/references/runs.md).
+Runs are recorded in Neon, not in the workbook. Each run makes two document-graph calls: `claim_item` at the start (a 2-hour claim, so two sessions never take the same item) and `finish_run` at the end. Status changes, outputs and decisions are recorded from the sheets by the sync job's records pass, and read back with `list_runs` and `get_item_history` ([execution history](../mcp/document-graph.md#execution-history)). Planned steps are a numbered list in Next step; the item's session works through them in order. Rules: the supervisor skill's [runs reference](../../../plugins/horology-workflows/skills/horology-supervisor/references/runs.md). To see one domain, use the Master table's filter.
 
 Cloud sessions load skills from `.claude/skills/` in this repository (links to the plugin skill folders) and connectors from the founder's claude.ai account.
 
-**Scheduled oversight** does no item work. The **digest** (`horology-digest`, daily) writes a Google Doc report card: counts by status, what finished with key findings and recommendations, what's waiting on the founder, and health and graph checks. The **planner** (`horology-planner`) acts only on rows set to Plan: it rewrites Next step as a bounded question or writes Steps, sets Planner output to Yes and Agent status back to No action; the founder then marks the item Ready. Both run on any platform's scheduler or on request. Design and options considered: [supervisor and runs brief](../../planning/research/2026-10-16_subscription-agent-supervisor-and-runs_research.md).
+**Scheduled oversight** does no item work. The **digest** (`horology-digest`, daily) writes a Google Doc report card: counts by status, what finished with key findings and recommendations, what's waiting on the founder, and health and graph checks. The **planner** (`horology-planner`) acts only on rows set to Plan: it rewrites Next step as a bounded question or a numbered list of steps, sets Planner output to Yes and Agent status back to No action; the founder then marks the item Ready. Both run on any platform's scheduler or on request. Design and options considered: [supervisor and runs brief](../../planning/research/2026-10-16_subscription-agent-supervisor-and-runs_research.md).
 
 ## ClickUp sync
 

@@ -13,6 +13,7 @@ The document graph (`mcp-servers/document-graph/`) holds what agents and the fou
 | Topics | `list_topics`, `get_topic`, `rebuild_topics` |
 | Entities | `list_entities`, `find_entity`, `entity_documents` |
 | Upkeep | `sync_graph`, `list_unembedded_documents` |
+| Runs and history | `claim_item`, `finish_run`, `list_runs`, `get_item_history` |
 
 The service in `document_graph/graph.py` only validates input, takes the caller's workspace and calls `graph_core`; it has no graph logic or SQL of its own.
 
@@ -54,6 +55,14 @@ The job in `jobs/document-graph-sync/` ships in the same image and runs as the C
 
 A row that fails keeps its previous graph copy. A file whose folder isn't shared with the job's service account gets `not_shared`.
 
+## Execution history
+
+Sheets are where the founder edits and decides; Neon keeps the machine history. An agent makes two calls per run: `claim_item` (an atomic 2-hour claim per item, so two runs never take the same one) and `finish_run` (status, plus self-reported skills used, steps done and notes). Everything else is derived.
+
+Before each sync, and on its own with `GRAPH_SYNC_MODE=records`, the job's **records pass** reads Pipeline Master, the Decision Register and the Document Index (read-only) and compares them with the previous copy. Each changed field becomes a `pipeline_events` row, attributed to the run active on that item at the time, and checked against the transitions in `workflow.yaml` (bundled in the image). Document Index rows changed during a run, and agent documents written during it, are linked to it as outputs. A failing records pass is logged and never blocks the document import. Changes made between two syncs appear as one.
+
+`list_runs` and `get_item_history` read it back: recent runs with their outputs, and one item's timeline of runs, field changes (each marked expected or not), decisions and documents.
+
 `sync_graph` and `rebuild_topics` start the job through `graph_core.runs`. Only one run per workspace at a time (`graph_runs`): the claim is taken when the request is accepted and confirmed by the job with a token. Agent requests have a 5-minute cooldown. A run handles at most 30 documents and starts its own follow-up run for the rest, at most 10 in a row.
 
 ## Code layout
@@ -67,6 +76,7 @@ A row that fails keeps its previous graph copy. A file whose folder isn't shared
 | `topics/` | Section graph, clustering, naming, placement of new sections |
 | `entities/` | Buckets, extraction, resolution, review edits, lookups |
 | `runs/` | One run per workspace, cooldown, starting the Cloud Run job, follow-ups |
+| `history/` | Run claims, the records pass, item timelines, workflow checks |
 | `ai/` | Chat and embeddings backends, retry, concurrency gate, masking |
 
 Entry points (MCP tools, the job) call services. Domains call each other's services, never each other's repositories, and only `documents/` writes the `documents` table. The service and the job never import each other.

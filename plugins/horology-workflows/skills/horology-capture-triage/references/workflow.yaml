@@ -1,0 +1,178 @@
+# Horology Pipeline workflow: the single definition of states, values and allowed moves.
+# Skills, the Apps Script sync and the digest's health checks follow this file.
+# Changing a rule means changing it here first. Validated by tests/unit/workflow/.
+
+version: 1
+
+# Who may change things.
+actors:
+  founder: The founder, editing the sheet or answering in a session.
+  capture: horology-capture-triage, recording new or updated items.
+  planner: horology-planner, acting only on Agent status Plan rows.
+  supervisor: horology-supervisor (dispatch and item modes) and the specialists it runs.
+  sync: The Apps Script ClickUp sync, applying recorded decisions.
+
+# Pipeline Master fields that drive the workflow, with their allowed values.
+fields:
+  Status:
+    values: [Inbox, Parked, Researching, Awaiting decision, Approved, Rework, Handed off, Rejected]
+  Stage:
+    values: [Stage 0, Stage 1, Stage 2, Stage 3]
+  Review stage:
+    values: [Stage 1, Stage 3]
+  Agent status:
+    values: [No action, Plan, Ready]
+    default: No action
+  Agent type:
+    values: [Claude Code, Codex, Manual, Unassigned]
+    default: Unassigned
+  Run location:
+    values: [Local, Cloud]
+    blank_means: Local
+  Planner output:
+    values: ["No", "Yes"]
+    set_by: [planner]
+
+statuses:
+  Inbox: {meaning: Captured; not yet scoped or selected, stages: [Stage 0, Stage 1]}
+  Parked: {meaning: Deliberately deferred, with a revisit trigger, stages: [Stage 0, Stage 1, Stage 2]}
+  Researching: {meaning: An authorised investigation or deliverable is in progress, stages: [Stage 1, Stage 3]}
+  Awaiting decision: {meaning: Work is ready for the founder's review, stages: [Stage 2]}
+  Approved: {meaning: The founder accepted a Stage 1 proposal; the Stage 3 deliverable is next, stages: [Stage 3]}
+  Rework: {meaning: The founder asked for changes; instructions are on the decision, stages: [Stage 1, Stage 3]}
+  Handed off: {meaning: The Stage 3 deliverable was accepted; workflow complete, stages: [Stage 3]}
+  Rejected: {meaning: Not pursued; history kept, stages: [Stage 2]}
+
+stages:
+  Stage 0: Capture
+  Stage 1: Investigation and proposal (research, direction, plan or assessment)
+  Stage 2: Founder decision
+  Stage 3: Specialist deliverable
+
+# Allowed moves. "from"/"to" give the fields that change; unlisted fields stay as they are.
+# "when" is the trigger. Moves not listed here are unexpected and the digest reports them.
+transitions:
+  - id: capture
+    actor: capture
+    from: {}
+    to: {Status: Inbox, Stage: Stage 0, Agent status: No action, Agent type: Unassigned}
+    when: A new idea, request or parked proposal is recorded.
+
+  - id: park
+    actor: founder
+    from: {Status: [Inbox, Rework]}
+    to: {Status: Parked, Agent status: No action}
+    when: The founder defers the item and sets a revisit trigger.
+
+  - id: unpark
+    actor: founder
+    from: {Status: Parked}
+    to: {Status: Inbox}
+    when: The revisit trigger is met.
+
+  - id: request-plan
+    actor: founder
+    from: {Agent status: No action, Status: [Inbox, Rework, Approved]}
+    to: {Agent status: Plan}
+    when: The item needs scoping or splitting before it can run.
+
+  - id: planned
+    actor: planner
+    from: {Agent status: Plan}
+    to: {Agent status: No action, Planner output: "Yes"}
+    when: The planner has written a sharper Next step or Steps. It never sets Ready.
+
+  - id: select
+    actor: founder
+    from: {Agent status: [No action, Plan], Status: [Inbox, Rework, Approved], Agent type: [Claude Code, Codex]}
+    to: {Agent status: Ready, Stage: [Stage 1, Stage 3]}
+    when: The founder chooses Agent type and Run location and selects the item for a run. Manual and Unassigned items are never Ready.
+
+  - id: start-run
+    actor: supervisor
+    from: {Agent status: Ready}
+    to: {Status: Researching}
+    when: A supervisor session claims the item in the Runs tab and starts work.
+
+  - id: submit-for-review
+    actor: supervisor
+    from: {Status: Researching}
+    to: {Status: Awaiting decision, Stage: Stage 2, Review stage: [Stage 1, Stage 3], Agent status: No action}
+    when: Outputs are saved to Drive and the Document Index and a proposed decision exists. Review stage is the stage the work came from.
+
+  - id: run-failed
+    actor: supervisor
+    from: {Status: Researching}
+    to: {Agent status: No action}
+    when: The run failed or was released; Status stays Researching and the Runs row explains why. The founder decides whether to select it again.
+
+  - id: accept-stage-1
+    actor: [founder, sync]
+    from: {Status: Awaiting decision, Review stage: Stage 1}
+    to: {Status: Approved, Stage: Stage 3, Agent status: Ready}
+    when: The decision is accepted. Manual items get No action instead of Ready.
+
+  - id: accept-stage-3
+    actor: [founder, sync]
+    from: {Status: Awaiting decision, Review stage: Stage 3}
+    to: {Status: Handed off, Stage: Stage 3, Agent status: No action}
+    when: The Stage 3 deliverable is accepted.
+
+  - id: rework
+    actor: [founder, sync]
+    from: {Status: Awaiting decision}
+    to: {Status: Rework, Stage: [Stage 1, Stage 3], Agent status: Ready}
+    when: The decision is marked rework with instructions. Stage returns to the Review stage. Manual items get No action.
+
+  - id: decide-park
+    actor: [founder, sync]
+    from: {Status: Awaiting decision}
+    to: {Status: Parked, Stage: Stage 2, Agent status: No action}
+    when: The decision is parked.
+
+  - id: decide-reject
+    actor: [founder, sync]
+    from: {Status: Awaiting decision}
+    to: {Status: Rejected, Stage: Stage 2, Agent status: No action}
+    when: The decision is rejected.
+
+  - id: reject
+    actor: founder
+    from: {Status: [Inbox, Parked]}
+    to: {Status: Rejected}
+    when: The founder drops an item without a review round.
+
+  - id: reopen
+    actor: founder
+    from: {Status: Rejected}
+    to: {Status: Inbox, Stage: Stage 0}
+    when: The founder reopens rejected work.
+
+# Decision Register status values and the transition each one triggers.
+decisions:
+  proposed: {meaning: Drafted by an agent; waiting for the founder}
+  accepted: {triggers: [accept-stage-1, accept-stage-3]}
+  rework: {triggers: [rework], requires: Rework instructions}
+  parked: {triggers: [decide-park]}
+  rejected: {triggers: [decide-reject]}
+
+# Runs: one record per claim, in the execution history (run_log in Neon).
+# Agents call claim_item at the start and finish_run at the end; nothing else.
+runs:
+  statuses: [claimed, running, done, failed, released]
+  claim_hours: 2
+  transitions:
+    - {from: claimed, to: done, when: "finish_run: outputs saved and checked"}
+    - {from: claimed, to: failed, when: "finish_run: the run could not finish; notes say why"}
+    - {from: claimed, to: released, when: "finish_run: the run was not started"}
+  expired: A claimed or running run whose claim has expired belongs to a dead run; the item may be claimed again.
+
+# Steps: the planner writes them as a numbered list in Next step / Research question;
+# the run reports the completed numbers in finish_run's steps_done.
+
+# Founder-only rules every actor follows.
+rules:
+  - Only the founder makes an item Ready, directly or through a decision (accept or rework), and only the founder chooses Agent type and Run location and decides.
+  - Agents never record a decision as accepted, parked or rejected.
+  - Each platform runs only rows whose Agent type is that platform. Manual rows are never run by agents.
+  - Ready selects the stated next step only; it never authorises implementation.

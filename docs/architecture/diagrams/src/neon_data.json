@@ -33,7 +33,7 @@
             {
               "icon": "clock",
               "title": "Runs",
-              "text": "graph_runs: one sync or rebuild per workspace at a time"
+              "text": "graph_runs: one sync or rebuild per workspace at a time. run_log, run_outputs and Pipeline copies with their change events: the execution history"
             },
             {
               "icon": "lock",

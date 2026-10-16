@@ -30,6 +30,18 @@ Ensure destination skill directories exist before copying. Start a fresh session
 
 Cloud sessions cannot read these local paths automatically. Package these source folders into the Welladino workflow plugin and update it through its supported publishing process. Do not edit a downloaded plugin cache as a release. Configure Drive/Sheets access separately and test loading the skills plus reading the guides/registers before allowing writes. Claude and other runners need their own supported loading/install mechanism.
 
+## Change the workflow
+
+Edit [`workflow.yaml`](../../../plugins/horology-workflows/skills/horology-capture-triage/references/workflow.yaml) first, then the skills or sync code that apply the changed rule. Check and redraw:
+
+```bash
+.venv/bin/python -m pytest tests/unit/workflow -q
+```
+
+```bash
+.venv/bin/python scripts/docs/workflow_diagram.py
+```
+
 ## Run Ready items
 
 Set the item's Agent status to Ready, Agent type to Claude Code or Codex, and Run location to Local or Cloud (blank means Local). Then, in a Claude Code or Codex session opened in the Horology repository:
@@ -40,7 +52,7 @@ or for one item:
 
 > Use horology-supervisor to run Pipeline item 42.
 
-The supervisor claims each item in the Runs tab and starts one session per item. Check progress in the Runs tab (status, session link). Cloud runs need the Horology repository on GitHub, the skills under `.claude/skills/`, and the document graph and Google connectors on your claude.ai account. Codex runs need the Codex CLI installed and signed in.
+The supervisor claims each item through the document graph and starts one session per item. Check progress by asking a session to `list_runs`, or `get_item_history` for one item. Every run needs the document-graph connector. Cloud runs need the Horology repository on GitHub, the skills under `.claude/skills/`, and the document graph and Google connectors on your claude.ai account. Codex runs need the Codex CLI installed and signed in.
 
 ## Scheduled jobs
 

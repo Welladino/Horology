@@ -7,7 +7,7 @@
 
 ## Done since the last digest
 
-- Runs rows with Finished in the period: Pipeline ID, Skills used, Status, Output document IDs, Notes.
+- `list_runs` for the period (`since_hours`): Pipeline ID, kind, status, skills used, steps done, outputs and notes. Skills, steps and notes are self-reported; outputs and status changes come from the sheets.
 - Document Index rows created or revised in the period, including ones without a matching run.
 - Decision Register rows recorded in the period, with their status.
 - For each finished item, the key finding and recommendation from its output documents.
@@ -23,11 +23,11 @@
 
 | Check | How |
 |---|---|
-| Stale claims | Runs rows with status claimed or running and Claim expires in the past |
-| Failed runs | Runs rows with status failed in the period, with their notes |
+| Stale claims | `list_runs` entries with status claimed or running and `expired` true |
+| Failed runs | `list_runs` entries with status failed in the period, with their notes |
 | Stuck decisions | Awaiting decision for more than 7 days |
-| Missing records | Output document IDs in Runs that aren't in the Document Index, or Awaiting decision items with no output documents |
-| Steps left open | Steps rows still proposed for items that are no longer Ready |
+| Missing records | Runs finished as done with no outputs, or Awaiting decision items with no output documents |
+| Unexpected moves | `get_item_history` changes marked `expected: false` for items that changed in the period |
 | Near-duplicates | Documents written in the period whose `auto_link_similar_documents` or `get_related_documents` links show a similarity of 0.90 or more |
 | Contradictions | New recommendations that conflict with an accepted decision on the same subject |
 
