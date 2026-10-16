@@ -1,0 +1,6 @@
+interface:
+  display_name: "Horology Planner"
+  short_description: "Scope or split Pipeline items marked Plan"
+  default_prompt: "Use $horology-planner to plan the Pipeline items set to Plan."
+policy:
+  allow_implicit_invocation: true

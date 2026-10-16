@@ -16,3 +16,4 @@ Running list of research briefs under `docs/planning/research/`. Add a row when 
 | 2026-10-12 | Pending MCP capabilities, document-graph access and index integration | `2026-10-12_mcp-next-steps_research.md` |
 | 2026-10-13 | Document-graph agent access, workspaces and on-demand sheet sync | `2026-10-13_document-graph-agent-access-and-sheet-sync_research.md` |
 | 2026-10-14 | Document-graph topics and entities | `2026-10-14_document-graph-topics-and-entities_research.md` |
+| 2026-10-16 | Subscription-agent supervisor, manual runs, Runs/Steps tabs, digest and planner | `2026-10-16_subscription-agent-supervisor-and-runs_research.md` |

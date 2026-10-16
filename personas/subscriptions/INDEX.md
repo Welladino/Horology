@@ -5,5 +5,5 @@ These prompts were moved from Welladino — Agent Register, Master. They are not
 
 | Register ID | Agent | Platform | Skill | Persona source |
 |---|---|---|---|---|
-| 1 | Research | ChatGPT | welladino-research | [research.md](research.md) |
-| 2 | Technical Assessment | ChatGPT | welladino-technical-assessment | [technical-assessment.md](technical-assessment.md) |
+| 1 | Research | ChatGPT | horology-research | [research.md](research.md) |
+| 2 | Technical Assessment | ChatGPT | horology-technical-assessment | [technical-assessment.md](technical-assessment.md) |

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Horology Supervisor"
+  short_description: "Run Ready Pipeline items, one session per item"
+  default_prompt: "Use $horology-supervisor to run the Ready Pipeline items for this platform."
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Horology GTM"
+  short_description: "Target customers, positioning and first channels"
+  default_prompt: "Use $horology-gtm to recommend how this Pipeline item should reach its first paying customers."
+policy:
+  allow_implicit_invocation: true

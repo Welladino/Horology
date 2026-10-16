@@ -1,0 +1,6 @@
+interface:
+  display_name: "Horology Digest"
+  short_description: "Daily report card of the Pipeline as a Google Doc"
+  default_prompt: "Use $horology-digest to write today's Horology digest."
+policy:
+  allow_implicit_invocation: true

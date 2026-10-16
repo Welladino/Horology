@@ -1,0 +1,6 @@
+interface:
+  display_name: "Horology Content Planner"
+  short_description: "Plan content and draft copy"
+  default_prompt: "Use $horology-content-planner to plan content for this Pipeline item and draft the first pieces."
+policy:
+  allow_implicit_invocation: true

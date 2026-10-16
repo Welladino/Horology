@@ -13,15 +13,16 @@ Read [architecture](../../architecture/subscription-agents/README.md) for respon
 
 ## Maintain and install skills
 
-Edit source in `plugins/horology-workflows/skills/`. Read each SKILL.md and its linked references. Update live-field guidance when the workflow changes, keeping exact column positions out of instructions.
+Edit source in `plugins/horology-workflows/skills/` and `plugins/horology-specialists/skills/`. Read each SKILL.md and its linked references. Update live-field guidance when the workflow changes, keeping exact column positions out of instructions.
 
 For local Codex copies, run from the Horology root:
 
 ```sh
 mkdir -p "${CODEX_HOME:-$HOME/.codex}/skills"
-for skill in welladino-capture-triage welladino-research welladino-technical-assessment; do
+for dir in plugins/horology-workflows/skills/* plugins/horology-specialists/skills/*; do
+  skill=$(basename "$dir")
   mkdir -p "${CODEX_HOME:-$HOME/.codex}/skills/$skill"
-  cp -R "plugins/horology-workflows/skills/$skill/." "${CODEX_HOME:-$HOME/.codex}/skills/$skill/"
+  cp -R "$dir/." "${CODEX_HOME:-$HOME/.codex}/skills/$skill/"
 done
 ```
 
@@ -29,15 +30,28 @@ Ensure destination skill directories exist before copying. Start a fresh session
 
 Cloud sessions cannot read these local paths automatically. Package these source folders into the Welladino workflow plugin and update it through its supported publishing process. Do not edit a downloaded plugin cache as a release. Configure Drive/Sheets access separately and test loading the skills plus reading the guides/registers before allowing writes. Claude and other runners need their own supported loading/install mechanism.
 
-## Run one selected item
+## Run Ready items
 
-1. Read live Master headers, selected permanent ID, Agent type/status, stage, bounded scope and target repo/branch when applicable. Skip Manual in scheduled runs.
-2. Read guides and the relevant skill; verify tools and destinations are accessible.
-3. Produce the authorised deliverable. Copy a template, index the output against Pipeline ID, and preserve decision/document history.
-4. Request founder review through the workflow. Rework reads Decision Register feedback; acceptance authorises only the agreed next-stage scope.
-5. Read back records and links. Report incomplete saves or access gaps. Do not start implementation, backfill or another stage without authorisation.
+Set the item's Agent status to Ready, Agent type to Claude Code or Codex, and Run location to Local or Cloud (blank means Local). Then, in a Claude Code or Codex session opened in the Horology repository:
 
-Before adding a schedule, verify platform support and access in that environment, choose a bounded selection and stopping point, and prevent overlapping writers. No schedule is installed by these instructions.
+> Use horology-supervisor to run the Ready items.
+
+or for one item:
+
+> Use horology-supervisor to run Pipeline item 42.
+
+The supervisor claims each item in the Runs tab and starts one session per item. Check progress in the Runs tab (status, session link). Cloud runs need the Horology repository on GitHub, the skills under `.claude/skills/`, and the document graph and Google connectors on your claude.ai account. Codex runs need the Codex CLI installed and signed in.
+
+## Scheduled jobs
+
+Create these on any platform's scheduler (Claude Code routine or desktop scheduled task, Cowork, Codex automation). They report or prepare; they never run items.
+
+| Job | When | Prompt |
+|---|---|---|
+| Digest | Daily | `Use horology-digest to write today's Horology digest.` |
+| Planner | Daily, or on request | `Use horology-planner to plan the Pipeline items set to Plan.` |
+
+The scheduled session needs the skills (installed plugin, or `.claude/skills/` for a cloud routine) and Drive, Docs and Sheets access. An empty Plan list means the planner run ends quickly.
 
 ## Maintain ClickUp integration
 

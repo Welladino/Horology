@@ -1,4 +1,0 @@
-interface:
-  display_name: "Welladino Capture and Triage"
-  short_description: "Capture and triage future work in Pipeline"
-  default_prompt: "Use $welladino-capture-triage to capture these ideas in the correct Pipeline tab and check for duplicates."

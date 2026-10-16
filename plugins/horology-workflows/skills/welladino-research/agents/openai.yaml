@@ -1,4 +1,0 @@
-interface:
-  display_name: "Welladino Research"
-  short_description: "Research a selected item and link its evidence"
-  default_prompt: "Use $welladino-research to investigate this Pipeline item and prepare a recommendation for my decision."

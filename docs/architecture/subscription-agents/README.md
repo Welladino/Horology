@@ -15,7 +15,7 @@ Subscription agents are Horology's document-driven way of working. Claude, ChatG
 | Agent Register | Agents, their platforms and prompt sources | Sheets in `01_Registers` |
 | Templates | Document structure and visual assets | Drive `02_Templates` |
 | Deliverables | Research, direction, plans and assessments | Domain or entity folders from the Location Directory |
-| Skills | Versioned agent instructions | `plugins/horology-workflows/skills/` |
+| Skills | Versioned agent instructions | `plugins/horology-workflows/skills/` (supervisor, capture and triage), `plugins/horology-specialists/skills/` (specialists) |
 | Agent prompts | Research and Technical Assessment personas | `personas/subscriptions/` |
 | ClickUp sync | Mirrors register rows to ClickUp tasks, statuses and decision comments | `google_appscript/clickup-sync/` (Apps Script) |
 
@@ -23,8 +23,8 @@ Sheets is the operational record and Drive holds the detailed deliverables; Clic
 
 ## Stages
 
-- **Stage 0, capture.** `welladino-capture-triage` records an idea, parked proposal or research request as a Pipeline row and checks for duplicates.
-- **Stage 1, investigation and proposal.** The question decides the form: research (`welladino-research`), direction, a plan, or a technical assessment (`welladino-technical-assessment`). These are not a fixed sequence. The deliverable is saved to Drive and listed in the Document Index.
+- **Stage 0, capture.** `horology-capture-triage` records an idea, parked proposal or research request as a Pipeline row and checks for duplicates.
+- **Stage 1, investigation and proposal.** The question decides the form: research (`horology-research`), direction, a plan, or a technical assessment (`horology-technical-assessment`). These are not a fixed sequence. The deliverable is saved to Drive and listed in the Document Index.
 - **Stage 2, founder decision.** Approve, rework, park or reject, recorded in the Decision Register with feedback.
 - **Stage 3, specialist deliverable.** An approved scope becomes a detailed deliverable, then review. For code work this is a planning note in the repository, not automatic implementation.
 
@@ -36,9 +36,34 @@ The Pipeline's permanent numeric ID joins decisions and documents; each register
 
 ## Selecting and running agents
 
-`Agent status = Ready` marks the next bounded step for an AI agent; `Agent type` names the intended platform; `Manual` means founder-led. A session starts because the founder asks, or because a schedule was set up on the agent platform; a sheet value alone launches nothing. The agent reads the current Drive instructions, the Pipeline row and the relevant skill, then saves its output and updates the registers.
+`Agent status = Ready` marks the next bounded step for an AI agent; `Agent type` names the intended platform; `Manual` means founder-led. A sheet value alone launches nothing.
 
-There is no scheduler or multi-writer coordination here: use one writer at a time until ID allocation and work claiming are coordinated.
+Runs are always started by the founder, from a session: in Claude Code or Codex, "run the Ready items" or "run item 42". Nothing runs on a trigger or schedule. The **supervisor** (`horology-supervisor`) has two modes:
+
+- **Dispatch:** finds rows with Agent status Ready whose **Agent type** is the platform it's running on (Claude Code or Codex; each platform runs only its own rows), claims each in the **Runs** tab (2-hour claim), and starts **one session per item** according to the row's **Run location**:
+
+  | Agent type | Local | Cloud |
+  |---|---|---|
+  | Claude Code | `claude -p` | `claude --cloud` |
+  | Codex | `codex exec` | `codex cloud exec` |
+
+  Where shell commands aren't available (for example claude.ai chat), it runs the items itself, one at a time.
+- **Item:** handles exactly one item. It reads the row, decision feedback, any planned **Steps** and the document graph; chooses specialist skills from the Horology Specialists plugin; runs them as subagents; checks the results; and closes the Runs row. Specialist skills save their own Drive outputs, Document Index rows and proposed decisions.
+
+One session per item keeps each supervisor's context to a single item, and lets its specialists run as subagents (subagents can't start their own).
+
+| Pipeline field | Values |
+|---|---|
+| Agent status | No action, **Plan** (asks the planner to scope or split the item), Ready |
+| Agent type | Claude Code, Codex, Manual (founder-led, never run by agents), Unassigned |
+| Run location | Local or Cloud; blank means Local |
+| Planner output | Yes or No; Yes when the planner has written a sharper question or steps |
+
+The **Runs** tab records every run (claim, location, session link, status, skills used, outputs). The **Steps** tab holds an item's planned steps; the item's session works through them in order. Rules: the supervisor skill's [runs reference](../../../plugins/horology-workflows/skills/horology-supervisor/references/runs.md).
+
+Cloud sessions load skills from `.claude/skills/` in this repository (links to the plugin skill folders) and connectors from the founder's claude.ai account.
+
+**Scheduled oversight** does no item work. The **digest** (`horology-digest`, daily) writes a Google Doc report card: counts by status, what finished with key findings and recommendations, what's waiting on the founder, and health and graph checks. The **planner** (`horology-planner`) acts only on rows set to Plan: it rewrites Next step as a bounded question or writes Steps, sets Planner output to Yes and Agent status back to No action; the founder then marks the item Ready. Both run on any platform's scheduler or on request. Design and options considered: [supervisor and runs brief](../../planning/research/2026-10-16_subscription-agent-supervisor-and-runs_research.md).
 
 ## ClickUp sync
 
@@ -52,7 +77,8 @@ Pipeline and the registers cover Welladino, Article Aggregator, Newsletter, Ecom
 
 | Plugin | Brings |
 |---|---|
-| `horology-workflows` | The three workflow skills. Drive, Docs, Sheets and ClickUp come from the user's own connectors. |
+| `horology-workflows` | The supervisor, capture and triage, the planner and the digest. Drive, Docs, Sheets and ClickUp come from the user's own connectors. |
+| `horology-specialists` | The specialists the supervisor chooses between: research, technical assessment, security review, GTM, marketing strategy, content planning. Each is a skill named in the Agent Register. |
 | `horology-document-graph` | The document-graph connector and its skill: search before starting, write findings that have no Drive document |
 | `horology-tools` | The gateway connector and its skill: Supabase metadata, Tavily, Firecrawl |
 

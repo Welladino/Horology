@@ -28,7 +28,7 @@ Both reach the outside world only through two MCP services: the **gateway** (cap
 | Path | Component |
 |---|---|
 | `personas/` | Hermes personas (source of truth) and subscription-agent prompts |
-| `plugins/` | `horology-tools`, `horology-document-graph` and `horology-workflows` plugins and their skills |
+| `plugins/` | `horology-tools`, `horology-document-graph`, `horology-workflows` and `horology-specialists` plugins and their skills |
 | `mcp-servers/mcp-gateway/` | Gateway service |
 | `mcp-servers/document-graph/` | Document-graph service |
 | `document-graph-core/` | Graph logic shared by the document-graph service and the sync job |

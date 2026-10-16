@@ -23,7 +23,7 @@ planning-note deliverable, not automatic implementation.
 
 | Folder | Purpose | Runtime |
 | --- | --- | --- |
-| [Workflow plugin](../plugins/horology-workflows/) | Shared capture, research and technical-assessment instructions | Loaded by the selected agent platform |
+| [Workflow plugin](../plugins/horology-workflows/) and [specialists plugin](../plugins/horology-specialists/) | Supervisor, capture and specialist agent instructions | Loaded by the selected agent platform |
 | [clickup-sync](clickup-sync/README.md) | Modular Sheets/ClickUp sync and document lookup | Google Apps Script |
 
 The files here are versioned in Horology, but do not depend on a running Hermes

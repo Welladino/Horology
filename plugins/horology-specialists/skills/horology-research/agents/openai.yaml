@@ -1,0 +1,4 @@
+interface:
+  display_name: "Horology Research"
+  short_description: "Research a selected item and link its evidence"
+  default_prompt: "Use $horology-research to investigate this Pipeline item and prepare a recommendation for my decision."

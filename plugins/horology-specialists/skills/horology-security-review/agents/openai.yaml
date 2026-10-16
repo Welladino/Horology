@@ -1,0 +1,6 @@
+interface:
+  display_name: "Horology Security Review"
+  short_description: "Read-only security review with prioritised findings"
+  default_prompt: "Use $horology-security-review to review this Pipeline item's repository for security issues."
+policy:
+  allow_implicit_invocation: true

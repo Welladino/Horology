@@ -1,21 +1,22 @@
 # Claude plugins
 
-Three plugins, each a folder under `plugins/`:
+Four plugins, each a folder under `plugins/`:
 
 | Plugin (Claude name) | Folder | Brings |
 | --- | --- | --- |
 | `horology-tools` | `plugins/horology-tools/` | `horology-mcp-access` skill + gateway connector (`.mcp.json`) |
 | `horology-document-graph` | `plugins/horology-document-graph/` | `horology-document-graph` skill + document-graph connector (`.mcp.json`) |
-| `horology-workflows` | `plugins/horology-workflows/` | Capture, research and technical-assessment skills; Drive, Sheets and ClickUp come from your own connectors |
+| `horology-workflows` | `plugins/horology-workflows/` Supervisor, capture-and-triage, planner and digest skills; Drive, Sheets and ClickUp come from your own connectors |
+| `horology-specialists` | `plugins/horology-specialists/` | Specialist skills: research, technical assessment, security review, GTM, marketing strategy, content planning |
 
-Each folder keeps one `skills/` directory shared by its Claude manifest (`.claude-plugin/plugin.json`) and its OpenAI/Codex manifests (`plugin.json`, `.codex-plugin/plugin.json`). The OpenAI/Codex identities (`dev-6acc…` App, `welladino-workflows`) are separate and unchanged.
+Each folder keeps one `skills/` directory shared by its Claude manifest (`.claude-plugin/plugin.json`) and its OpenAI/Codex manifests (`plugin.json`, `.codex-plugin/plugin.json`). The OpenAI/Codex identities (`dev-6acc…` App, `welladino-workflows`, `horology-specialists`) are separate from the Claude names.
 
 ## Validate after editing
 
 Bump the version in `.claude-plugin/plugin.json` whenever a plugin changes, so an upload replaces the old one.
 
 ```bash
-for p in plugins/horology-tools plugins/horology-document-graph plugins/horology-workflows; do command claude plugin validate "$p"; done
+for p in plugins/horology-tools plugins/horology-document-graph plugins/horology-workflows plugins/horology-specialists; do command claude plugin validate "$p"; done
 ```
 
 ## Build the zips
@@ -23,7 +24,7 @@ for p in plugins/horology-tools plugins/horology-document-graph plugins/horology
 One zip per plugin folder, not the repository. `plugins/dist/` is gitignored.
 
 ```bash
-mkdir -p plugins/dist && cd plugins && for p in horology-tools horology-document-graph horology-workflows; do rm -f dist/$p.zip; zip -qr dist/$p.zip $p -x '*.DS_Store' '*__pycache__*'; done && cd ..
+mkdir -p plugins/dist && cd plugins && for p in horology-tools horology-document-graph horology-workflows horology-specialists; do rm -f dist/$p.zip; zip -qr dist/$p.zip $p -x '*.DS_Store' '*__pycache__*'; done && cd ..
 ```
 
 ## Install
