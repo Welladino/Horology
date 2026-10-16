@@ -33,7 +33,7 @@ Every task must end with `kanban_complete`, or `kanban_block` with a reason. A t
 | `marketing-executive` | Copy, drafts and campaigns | document graph |
 | `code-sentinel` | Repository health and security monitoring | document graph, gateway |
 
-Personas are edited in `personas/supervisor/SOUL.md` and `personas/subagents/*.md`, then synced into `hermes-data/` ([commands](../../runbook/docker/hermes_setup.md)). `personas/subagents/INDEX.md` is a one-line-per-profile list that Second-Soul reads first; a full persona is loaded only when that subagent is needed, so Second-Soul's prompt doesn't grow with the roster.
+Each profile's persona is its `SOUL.md` inside `hermes-data/`; Second-Soul first reads `/opt/data/personas/subagents/INDEX.md`, a one-line-per-profile list, so its prompt doesn't grow with the roster. The repository no longer holds these files (removed 2026-10-16): the next Hermes setup will rebuild the profiles on the plugin structure, sharing the `horology-*` skills, with a thin `SOUL.md` per profile. The previous versions are in git at `55f7818:personas/`.
 
 Finished, substantive outputs go to the document graph with `write_document`, followed by `auto_link_similar_documents`. The rules are in [`CLAUDE.md`](../../../CLAUDE.md#how-hermes-subagents-should-create-documents).
 

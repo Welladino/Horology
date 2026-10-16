@@ -134,7 +134,7 @@ The standalone Compose project and container are `horology-mcp-gateway`; its loc
 
 GitHub and Google Drive/Docs/Sheets adapters were removed on 2026-10-13 in favour of native platform connectors, whose permissions are outside this gateway's policy. The code, tests, authorization helper and unshipped migration remain in Git history (`git show d643223:placeholders/connectors/README.md`).
 
-The active gateway exposes 13 tools: status, Supabase metadata/performance, capped Tavily search/extraction and fixed Firecrawl scrape/Alexandria reads. Google-backed MCP identity OAuth remains active; it grants no Google document access. Retired provider credentials remain only in the ignored, untracked `placeholders/connectors/.env.local` until the operator revokes them.
+The active gateway exposes 13 tools: status, Supabase metadata/performance, capped Tavily search/extraction and fixed Firecrawl scrape/Alexandria reads. Google-backed MCP identity OAuth remains active; it grants no Google document access. The retired adapters' local credentials were deleted on 16 October 2026. Their Google grant was issued to the same OAuth client as MCP sign-in, so revoke it through the Google Account's third-party access page, not by deleting the client.
 
 Tests live at `tests/unit/mcp_servers/gateway/` and `tests/integration/mcp_servers/gateway/` in the repository root, and the local MCP smoke helper at `tests/manual/gateway/`.
 

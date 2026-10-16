@@ -47,10 +47,9 @@ Full setup detail (persona syncing, cron scripts, troubleshooting): [`docs/runbo
 | Path | What's there |
 |---|---|
 | `google_appscript/` | Subscription-agent workflow infrastructure; currently the portable Google Apps Script Sheets/ClickUp sync. See [its README](google_appscript/README.md). |
-| `personas/` | Source-of-truth persona files (`supervisor/SOUL.md`, `subagents/*.md`) — edited here, then synced into the running container. Never edit `hermes-data/` directly. |
 | `mcp-servers/` | The two purpose-built MCP servers (`document-graph`, `github-monitor`) — each its own Dockerfile, `requirements.txt`, and credential. |
 | `alembic/` | Postgres migrations for the document graph (Neon). Workflow: [`docs/runbook/db/alembic_workflow.md`](docs/runbook/db/alembic_workflow.md). |
-| `scripts/` | Cron `--script` files, synced into the container the same way as personas. |
+| `scripts/` | Cron `--script` files, copied into the Hermes container by hand (`docker cp`), plus docs and CI helpers. |
 | `tests/` | By kind: `tests/unit/` (no database or Docker), `tests/integration/` (a disposable migrated Postgres; skipped without it) and `tests/system/` (the real Compose stack; skipped without Docker). See [`tests/README.md`](tests/README.md). Run before shipping any change to an MCP server or `docker-compose.yml`: `python3 -m pytest tests/ -v`. See [`docs/runbook/testing/running_tests_and_audits.md`](docs/runbook/testing/running_tests_and_audits.md). |
 | `docs/architecture/` | Standing reference, current state, no history — start here (see above). |
 | `docs/planning/notes/` & `docs/planning/research/` | Dated trail of *why* the system looks the way it does — check here before assuming something is arbitrary. |

@@ -1,6 +1,6 @@
 # Hermes Setup
 
-Hermes-specific setup: the one-time provider wizard, dashboard account/login, and syncing personas from this repo into the running container. For starting/stopping the whole stack (all three containers) or the general Docker layout, see [`docs/runbook/docker/running_all_services.md`](running_all_services.md).
+Hermes-specific setup: the one-time provider wizard, dashboard account/login, and where personas live in the running container. For starting/stopping the whole stack (all three containers) or the general Docker layout, see [`docs/runbook/docker/running_all_services.md`](running_all_services.md).
 
 Background/rationale for choosing Docker over the `curl | bash` installer, and Hermes over Claude Code CLI for automation, is in [`docs/planning/notes/2026-08-05_horology-founding-decisions_note.md`](../../planning/notes/2026-08-05_horology-founding-decisions_note.md).
 
@@ -39,24 +39,14 @@ The dashboard gives you a browser-based chat with the running agent, plus visibi
 
 The agent's OpenAI-compatible API also runs on port `8642` (no dashboard auth on that port by default — see Hermes's own docs before exposing it beyond `localhost`).
 
-## Syncing personas into the running container
+## Personas
 
-Persona files (`personas/supervisor/SOUL.md`, `personas/subagents/*.md`) are authored and version-controlled in this repo, then copied into the running container's `hermes-data/` — Hermes reads them from `/opt/data/...`, which is *not* the same as the repo copies until you sync.
+The repository no longer holds the persona files (removed 2026-10-16; previous versions at `git show 55f7818:personas/...`). The running container keeps its own copies: `/opt/data/SOUL.md` (Second-Soul), `/opt/data/profiles/<name>/SOUL.md` per subagent, and the index at `/opt/data/personas/subagents/INDEX.md`. The next Hermes setup rebuilds them on the plugin structure.
 
-After editing any persona file in the repo:
+To change one now, write the file locally and copy it in, for example:
 
 ```bash
-# Supervisor
-docker cp personas/supervisor/SOUL.md horology-hermes:/opt/data/SOUL.md
-
-# A subagent profile (repeat per profile that changed)
-docker cp personas/subagents/gtm-manager.md horology-hermes:/opt/data/profiles/gtm-manager/SOUL.md
-docker cp personas/subagents/marketing-executive.md horology-hermes:/opt/data/profiles/marketing-executive/SOUL.md
-docker cp personas/subagents/code-sentinel.md horology-hermes:/opt/data/profiles/code-sentinel/SOUL.md
-
-# The index (used by Second-Soul to decide which profile fits a task)
-docker exec horology-hermes mkdir -p /opt/data/personas/subagents
-docker cp personas/subagents/. horology-hermes:/opt/data/personas/subagents/
+docker cp SOUL.md horology-hermes:/opt/data/profiles/gtm-manager/SOUL.md
 ```
 
 Verify it took effect:
@@ -65,15 +55,13 @@ Verify it took effect:
 docker exec horology-hermes hermes chat -q "What subagents are available to you and what's each one's scope, in one line each?"
 ```
 
-There is currently no automatic sync (no file watcher) — this is a manual step after every persona edit. Worth revisiting once there are enough personas/subagents that manual `docker cp` per file becomes tedious.
-
 ### Why persona files use absolute paths (`/opt/data/...`), not relative ones
 
 `SOUL.md`'s own instructions reference `/opt/data/personas/subagents/INDEX.md` as an absolute path deliberately, not `personas/subagents/INDEX.md`. The agent's file-tool working directory is `/opt/hermes` (Hermes's own installed codebase), not `/opt/data` (our mounted volume) — a relative path resolves against the wrong root and the agent will report the file "doesn't exist." Confirmed by testing: the first version of this instruction (relative path) failed with exactly that error; switching to the absolute `/opt/data/...` path fixed it. Any future persona/index file that references another file by path should use the full `/opt/data/...` form.
 
 ## Syncing cron scripts into the running container
 
-Cron `--script` files (e.g. `scripts/check_unembedded_documents.py`) are authored and version-controlled in this repo under `scripts/`, then copied into the running container's `/opt/data/scripts/` — same pattern as personas. Hermes only reads scripts by relative filename from that directory (`hermes cron create ... --script <filename>`); absolute/`~` paths outside it aren't supported.
+Cron `--script` files (e.g. `scripts/check_unembedded_documents.py`) are authored and version-controlled in this repo under `scripts/`, then copied into the running container's `/opt/data/scripts/`. Hermes only reads scripts by relative filename from that directory (`hermes cron create ... --script <filename>`); absolute/`~` paths outside it aren't supported.
 
 After editing a script in the repo:
 
@@ -81,7 +69,7 @@ After editing a script in the repo:
 docker cp scripts/check_unembedded_documents.py horology-hermes:/opt/data/scripts/check_unembedded_documents.py
 ```
 
-No automatic sync here either — same manual `docker cp` step as personas, for the same reason (few enough scripts that a file watcher isn't worth building yet).
+There's no automatic sync: copy each changed script with `docker cp` (few enough scripts that a file watcher isn't worth building yet).
 
 ### Cron script runtime notes (verified hands-on, 2026-08-07)
 
@@ -108,8 +96,8 @@ agent:
 EOF"
 docker exec horology-hermes sh -c "grep OPENROUTER_API_KEY /opt/data/.env >> /opt/data/profiles/<name>/.env"
 
-# Sync its persona (write personas/subagents/<name>.md in the repo first)
-docker cp personas/subagents/<name>.md horology-hermes:/opt/data/profiles/<name>/SOUL.md
+# Copy in its persona (write SOUL.md locally first)
+docker cp SOUL.md horology-hermes:/opt/data/profiles/<name>/SOUL.md
 
 # Connect the MCP servers it needs (repeat per server, per profile)
 printf "n\ny\n" | docker exec -i horology-hermes hermes -p <name> mcp add document-graph --url http://document-graph-mcp:8765/mcp
@@ -121,8 +109,9 @@ docker exec horology-hermes hermes -p <name> tools disable computer_use image_ge
 # Cap web searches (native guardrail — see "Web search backend" section below)
 docker exec horology-hermes hermes -p <name> config set tool_loop_guardrails.loop_caps.max_web_searches 10
 
-# Add a row to personas/subagents/INDEX.md in the repo, then sync it
-docker cp personas/subagents/INDEX.md horology-hermes:/opt/data/personas/subagents/INDEX.md
+# Add a row to the index Second-Soul reads (edit a local copy, then copy it back)
+docker cp horology-hermes:/opt/data/personas/subagents/INDEX.md INDEX.md
+docker cp INDEX.md horology-hermes:/opt/data/personas/subagents/INDEX.md
 ```
 
 ## Web search backend (Tavily)

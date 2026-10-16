@@ -2,15 +2,13 @@
 
 ## Source locations
 
-- `personas/subscriptions/research.md`: Agent Register Master ID 1, Research prompt.
-- `personas/subscriptions/technical-assessment.md`: Master ID 2, Technical Assessment prompt.
 - `plugins/horology-tools/`: Horology App-backed plugin manifests, preserved `.app.json` binding and the `horology-mcp-access` operating skill.
 
-The two personas are subscription-agent prompts, not provisioned Hermes profiles. Their original Instructions / Prompt text is preserved under that heading. Keep the Research and Technical Assessment workflow skills installed separately; the gateway skill does not replace them.
+Agent instructions live in the plugin skills: `plugins/horology-workflows/skills/` and `plugins/horology-specialists/skills/`. The gateway skill doesn't replace them.
 
 ## Register source pointers
 
-Master `H1:H3` now uses header `Prompt source / link` and the two repository paths. GitHub links will be added later, after the files are published. Edit only those cells; preserve permanent agent IDs, schedules, platform/skill selection and formatting. Before replacing a pointer, verify the destination file exists and the exact prompt has been saved. The live register is [Welladino — Agent Register](https://docs.google.com/spreadsheets/d/1BBZNwuGodU6JlrCk-09L7aZ2BqOBED6Vir0vpDMiJoo/edit).
+The [Welladino — Agent Register](https://docs.google.com/spreadsheets/d/1BBZNwuGodU6JlrCk-09L7aZ2BqOBED6Vir0vpDMiJoo/edit) Master `H2:H3` still point to the former `personas/subscriptions/` prompts, which were removed on 16 October 2026 in favour of the skills. Update them when the Agent Register is reworked.
 
 ## Plugin maintenance
 

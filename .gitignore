@@ -15,7 +15,6 @@ hermes-data/
 reports/
 
 # Private leftovers from the removed GitHub/Drive adapters (retired credentials, policy snapshots).
-placeholders/
 
 # Python: virtualenv, caches and packaging output.
 .venv/
