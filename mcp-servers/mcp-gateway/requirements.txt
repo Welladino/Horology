@@ -1,4 +1,4 @@
-mcp==2.0.0
+mcp==2.2.0
 httpx==0.28.1
 certifi==2026.7.22
 PyJWT[crypto]==2.15.1

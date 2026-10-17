@@ -9,3 +9,12 @@
 This folder is on sys.path (pytest adds a root conftest's folder), so tests import `support`.
 """
 collect_ignore = ["manual"]
+
+
+import os  # noqa: E402
+
+from support.paths import WORKFLOW  # noqa: E402
+
+# graph_core finds workflow.yaml beside the repository only when installed
+# editable; Cloud Build installs it as a package, so point it at the file.
+os.environ.setdefault("HOROLOGY_WORKFLOW", str(WORKFLOW))
