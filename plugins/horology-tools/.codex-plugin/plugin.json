@@ -1,20 +1,19 @@
 {
+  "apps": "./.codex-plugin/apps.json",
+  "author": {
+    "name": "App developer"
+  },
+  "description": "horology-tools",
   "interface": {
     "capabilities": [],
     "category": "Other",
     "defaultPrompt": null,
     "developerName": "App developer",
-    "displayName": "Horology",
-    "longDescription": "Horology",
-    "shortDescription": "Horology"
+    "displayName": "horology-tools",
+    "longDescription": "horology-tools",
+    "shortDescription": "horology-tools"
   },
-  "apps": "./.app.json",
-  "name": "dev-6acc6833d128819185f9cf4241d60942",
-  "version": "1.0.2",
-  "description": "Horology",
-  "author": {
-    "name": "App developer"
-  },
-  "keywords": [],
+  "name": "dev-6ad311aa3a5881919a224275ae1b87b3",
+  "version": "1.0.1",
   "skills": "./skills"
 }

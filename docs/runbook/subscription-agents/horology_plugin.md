@@ -1,29 +1,15 @@
-# Horology plugin instructions and register prompts
+# Horology plugin maintenance
 
-## Source locations
+The platform-independent skill source is `plugins/horology-*/skills/`. Each account plugin must contain exactly the skills under its corresponding source folder. Never add installed legacy skills to a new release merely because they were in an earlier account release.
 
-- `plugins/horology-tools/`: Horology App-backed plugin manifests, preserved `.app.json` binding and the `horology-mcp-access` operating skill.
+All Codex configuration source belongs under `plugins/<folder>/.codex-plugin/`. Edit `plugin.json` there. Verified registered App mappings belong in `apps.json`. Shared skills, references and shared assets remain in their existing folders.
 
-Agent instructions live in the plugin skills: `plugins/horology-workflows/skills/` and `plugins/horology-specialists/skills/`. The gateway skill doesn't replace them.
+Run `python3 scripts/ops/codex/build_codex_plugins.py` from the repository root. It creates portable upload archives under ignored `plugins/dist/codex/`, generating any required root `plugin.json` and `.app.json` inside the archive. The MCP plugins use registered App connections; no separate source `mcp.json` is maintained. Do not copy generated manifests back to source.
 
-## Register source pointers
+Before publishing, read the account plugin's current inventory and release ID. Preserve its backend identity, App binding, authentication, presentation and audience. For App-backed plugins, update skills and version without changing the registered connection. Bump the source version and update using the observed release ID. Explicitly delete retired skill paths when the source no longer contains them; omission alone preserves them. Re-read the saved inventory and compare its skill names to the source.
 
-The [Welladino — Agent Register](https://docs.google.com/spreadsheets/d/1BBZNwuGodU6JlrCk-09L7aZ2BqOBED6Vir0vpDMiJoo/edit) Master `H2:H3` still point to the former `personas/subscriptions/` prompts, which were removed on 16 October 2026 in favour of the skills. Update them when the Agent Register is reworked.
+The visible name must match the source folder. Platform-generated internal names such as `dev-*` or the existing immutable `welladino-workflows` identify installed account packages; do not recreate or rename them to make the source folder name match.
 
-## Plugin maintenance
+A bundled remote URL is not proof of cloud availability. Register hosted MCP servers through ChatGPT's Add custom MCP server flow with OAuth DCR and verify the connected state. Local `codex mcp login` is separate. Use `gateway_status` and a bounded document listing for smoke tests; do not spend paid search, scraping or embedding credits.
 
-The existing private personal plugin is [Horology](https://chatgpt.com/plugins/plugin_asdk_app_6acc6833d128819185f9cf4241d60942), backend ID `plugin_asdk_app_6acc6833d128819185f9cf4241d60942`. This update is version 1.0.1, release `pluginrel_6accb189d62c819193ed45f45f6ab880`.
-
-1. Read its latest source and current release through Plugin Creator before editing.
-2. Edit the scoped skill under `plugins/horology-tools/skills/`. Preserve App identity, `.app.json`, OAuth/MCP connection, presentation and default prompts.
-3. Bump versions consistently in `plugin.json` and `.codex-plugin/plugin.json`.
-4. Validate skill frontmatter and the portable manifest. Compare App/presentation/configuration with the previous release.
-5. Zip the plugin folder under its manifest name, preserving hidden files, outside the source folder. Include only plugin package files, not the server credentials or repo.
-6. Update the existing plugin with its observed release ID, then read back the changed files and confirm its identity and App binding are unchanged.
-7. Check `gateway_status` for connectivity without invoking paid provider tools.
-
-Existing tools remain supplied by the App connection. A saved skill release does not prove it has reloaded into an already open chat; verify discovery in a refreshed host before claiming the host used the new skill. No server redeployment or OAuth reconnect is required just to save these instructions.
-
-## Read capability expansion (1.0.2)
-
-Release pluginrel_6accc08041f0819195ce29023943ab84 updates the skill for fixed Alexandria reads and bounded Tavily extraction. The App binding is unchanged. Google, GitHub writes and DataForSEO remain deferred. Refresh host tool discovery/instructions if new tools are absent; reconnecting is not a quota reset.
+See [Codex setup](codex_setup.md) for current release identities and connection verification, and [Claude skills and connectors](claude_skills.md) for the independent Claude setup.

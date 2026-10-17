@@ -10,7 +10,7 @@
 
 ## Decision
 - **Connectors:** the gateway and the document graph are claude.ai custom connectors on the founder's account, added 2026-10-17. No server change: sign-in and the [users tables](../../runbook/mcp/access.md) already decide who gets in.
-- **Skills:** each of the 12 skills is uploaded to claude.ai on its own, from a zip built by `scripts/ops/build_skill_zips.py`. Uploaded 2026-10-17; they appear in local Claude Code as `anthropic-skills:horology-*`.
+- **Skills:** each of the 12 skills is uploaded to claude.ai on its own, from a zip built by `scripts/ops/claude/build_skill_zips.py`. Uploaded 2026-10-17; they appear in local Claude Code as `anthropic-skills:horology-*`.
 - **Removed:** the Claude plugin manifests (`.claude-plugin/plugin.json`), both `.mcp.json` files, the `.claude/skills/` links and the Claude plugins runbook. Replaced by the [Claude skills and connectors](../../runbook/subscription-agents/claude_skills.md) runbook.
 - **Kept:** the skill folders under `plugins/` as the one source, at the same paths (the document-graph image copies `horology-capture-triage/references/workflow.yaml`), and the OpenAI/Codex manifests, which Codex still uses.
 

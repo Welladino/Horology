@@ -6,10 +6,10 @@ copied into this skill's references/ and the links rewritten; files they link
 to beside them come too. OpenAI-only agents/ folders are left out. From the
 repository root:
 
-    python3 scripts/ops/build_skill_zips.py                   # all skills
-    python3 scripts/ops/build_skill_zips.py horology-planner  # just these
+    python3 scripts/ops/claude/build_skill_zips.py                   # all skills
+    python3 scripts/ops/claude/build_skill_zips.py horology-planner  # just these
 
-Zips land in plugins/dist/skills/ (git-ignored). Upload each changed one on
+Zips land in plugins/dist/claude/ (git-ignored). Upload each changed one on
 claude.ai: docs/runbook/subscription-agents/claude_skills.md.
 """
 import argparse
@@ -19,8 +19,8 @@ import sys
 import tempfile
 from pathlib import Path
 
-REPO = Path(__file__).resolve().parents[2]
-OUT = REPO / 'plugins' / 'dist' / 'skills'
+REPO = Path(__file__).resolve().parents[3]
+OUT = REPO / 'plugins' / 'dist' / 'claude'
 CROSS = re.compile(r'\]\(\.\./([\w-]+)/references/([^)#\s]+)\)')
 SIBLING = re.compile(r'\]\(([\w.-]+\.(?:md|yaml))\)')
 

@@ -18,19 +18,19 @@ Sign in with Google when asked, as someone on the Audience test-user list and in
 Edit skills in their source folders, `plugins/*/skills/<name>/`. Then build the zips, all of them or only the ones changed:
 
 ```bash
-python3 scripts/ops/build_skill_zips.py
+python3 scripts/ops/claude/build_skill_zips.py
 ```
 
 ```bash
-python3 scripts/ops/build_skill_zips.py horology-supervisor horology-planner
+python3 scripts/ops/claude/build_skill_zips.py horology-supervisor horology-planner
 ```
 
-Zips land in `plugins/dist/skills/` (git-ignored), one per skill. A skill that links to another skill's reference files gets its own copy of them, since claude.ai keeps each skill separate.
+Zips land in `plugins/dist/claude/` (git-ignored), one per skill. A skill that links to another skill's reference files gets its own copy of them, since claude.ai keeps each skill separate.
 
 Upload each changed zip: Customize (desktop app sidebar) or claude.ai skills settings → **Skills** → upload. Uploading a skill with an existing name replaces it. Keep each skill switched on.
 
 ```bash
-open plugins/dist/skills
+open plugins/dist/claude
 ```
 
 There are 12 skills: supervisor, planner, digest and capture-triage (`horology-workflows`); research, technical assessment, security review, GTM, marketing strategy and content planner (`horology-specialists`); `horology-mcp-access` (`horology-tools`); and `horology-document-graph`.

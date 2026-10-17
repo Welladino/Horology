@@ -1,21 +1,18 @@
 {
   "interface": {
     "category": "Productivity",
-    "composerIcon": "./assets/icon.svg",
     "defaultPrompt": [
       "Capture these ideas in the Welladino Pipeline and check for duplicates.",
-      "Run the Ready Pipeline items for this platform.",
-      "Write today's Horology digest."
+      "Research this selected Pipeline item and prepare evidence and a recommendation for my decision."
     ],
     "developerName": "Saravanaraj",
-    "displayName": "Welladino Workflows",
-    "logo": "./assets/icon.svg",
+    "displayName": "horology-workflows",
     "longDescription": "Horology skills for retaining ideas in Pipeline and for a supervisor that runs Ready items: it claims each, starts one session per item locally or in the cloud, chooses the specialist skills, checks the results, records the run and reports on runs. Preserves duplicate checks and founder decision boundaries. Requires separately connected Google Drive, Docs, and Sheets; ClickUp access is needed when a task uses ClickUp. Install Horology Specialists for the specialist skills.",
-    "shortDescription": "Capture, run, plan and report on Pipeline items",
+    "shortDescription": "Capture, run, plan and report",
     "capabilities": []
   },
   "name": "welladino-workflows",
-  "version": "0.2.0",
+  "version": "0.2.2",
   "description": "Capture and triage Pipeline ideas; run Ready items with a supervisor that starts one session per item and hands each to the specialist skills in the Horology Specialists plugin; plan items marked Plan; and write a daily digest.",
   "author": {
     "name": "Saravanaraj",

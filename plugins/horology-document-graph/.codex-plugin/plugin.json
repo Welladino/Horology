@@ -1,0 +1,19 @@
+{
+  "apps": "./.codex-plugin/apps.json",
+  "author": {
+    "name": "App developer"
+  },
+  "description": "horology-document-graph",
+  "interface": {
+    "capabilities": [],
+    "category": "Other",
+    "defaultPrompt": null,
+    "developerName": "App developer",
+    "displayName": "horology-document-graph",
+    "longDescription": "horology-document-graph",
+    "shortDescription": "horology-document-graph"
+  },
+  "name": "dev-6ad31252859c8191b5e7fb52b2dd57ab",
+  "version": "1.0.1",
+  "skills": "./skills"
+}
