@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "horology-document-graph": {
-      "type": "http",
-      "url": "https://document-graph-366292507424.us-central1.run.app/mcp"
-    }
-  }
-}

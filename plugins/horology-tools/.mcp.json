@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "horology-tools": {
-      "type": "http",
-      "url": "https://mcp-gateway-366292507424.us-central1.run.app/mcp"
-    }
-  }
-}

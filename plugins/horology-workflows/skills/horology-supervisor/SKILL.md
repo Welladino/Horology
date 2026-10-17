@@ -11,7 +11,7 @@ description: Run Pipeline items that are Ready, and report on runs. Dispatch mod
 - "Run item 42", or a session started by dispatch for one item: **item** mode.
 - "What's happening?", "what's Ready?", "what did the runs find?", "how did item 42 go?": **status** mode. It only reads; it starts and changes nothing.
 
-The founder starts runs; nothing here runs on its own. The supervisor chooses and coordinates; the specialist skills from the Horology Specialists plugin do the work.
+The founder starts runs; nothing here runs on its own. The supervisor chooses and coordinates; the specialist `horology-*` skills do the work.
 
 ## Required context and locations
 

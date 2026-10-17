@@ -23,6 +23,7 @@ Implementation notes under `docs/planning/notes/`, grouped by area. Add a row wh
 |------|------|--------|
 | 2026-10-10 | [Setup](../2026-10-10_subscription-agents-setup_note.md) | Apps Script under version control, naming, skills, prompts, repository layout |
 | 2026-10-13 | [ClickUp eligible-row batching](../2026-10-13_clickup-eligible-batching_note.md) | Which Pipeline rows the sync processes, and in what order |
+| 2026-10-17 | [Claude skills and connectors on claude.ai](../2026-10-17_claude-skills-and-connectors-on-claude-ai_note.md) | Why Claude uses claude.ai skills and connectors instead of plugins; the skill zip build |
 
 ## MCP gateway
 

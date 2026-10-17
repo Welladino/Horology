@@ -1,12 +1,12 @@
 # Plugins
 
-- `horology-tools/`: Horology MCP gateway plugin and operating instructions (Claude name `horology-tools`).
-- `horology-document-graph/`: document-graph connector and skill (Claude only so far).
-- `horology-workflows/`: supervisor, capture-and-triage, planner and digest workflow plugin (Claude name `horology-workflows`; its OpenAI/Codex manifests keep the `welladino-workflows` identity).
+- `horology-tools/`: the gateway skill (`horology-mcp-access`), and the OpenAI/Codex Horology App plugin.
+- `horology-document-graph/`: the document-graph skill.
+- `horology-workflows/`: supervisor, capture-and-triage, planner and digest skills (OpenAI/Codex identity `welladino-workflows`).
 
-Each folder can hold a Claude manifest (`.claude-plugin/plugin.json`) next to the OpenAI/Codex manifests; they share `skills/`. See [Claude plugins](../docs/runbook/subscription-agents/claude_plugins.md).
+Each folder's `skills/` is the source for every platform. Claude takes each skill as a claude.ai upload, built with `scripts/ops/build_skill_zips.py`, not as a plugin: see [Claude skills and connectors](../docs/runbook/subscription-agents/claude_skills.md). The OpenAI/Codex manifests (`plugin.json`, `.codex-plugin/plugin.json`) package the same `skills/` for Codex.
 
-Maintain each plugin's manifest, skills and referenced assets together. Installed copies and account releases are distributions, not source. Publishing is separate from repository edits.
+Maintain each folder's skills, referenced assets and Codex manifests together. Installed copies and account releases are distributions, not source. Publishing is separate from repository edits.
 
 - `horology-specialists/`: specialist skills the supervisor hands items to (research, technical assessment, security review, GTM, marketing strategy, content planning).
 

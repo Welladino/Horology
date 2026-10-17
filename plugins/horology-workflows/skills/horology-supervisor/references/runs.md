@@ -42,5 +42,5 @@ Run from a checkout of the Horology repository, so cloud sessions clone the righ
 | Codex | `codex exec "<prompt>"` | `codex cloud exec --env <ENV_ID> "<prompt>"` |
 
 - Start local sessions in the background, a few at a time, and note each session ID from its JSON output.
-- `claude --cloud` returns a session link. Cloud sessions use the skills committed under `.claude/skills/` and the connectors on the founder's claude.ai account.
+- `claude --cloud` returns a session link. Cloud sessions use the skills and connectors on the founder's claude.ai account, whatever repository they clone.
 - `codex exec` and `codex cloud exec` need the Codex CLI installed and signed in; `codex cloud exec` is experimental and needs a Codex cloud environment ID. If either isn't available, finish the run as failed with the reason.

@@ -2,7 +2,7 @@
 
 ## Choosing specialists
 
-Choose from the installed `horology-*` skills of the Horology Specialists plugin. Their names and descriptions say what each does; open a candidate's `SKILL.md` when the fit isn't clear. Ignore other installed skills. The Agent Register is an overview for the founder, not an input.
+Choose from the installed specialist `horology-*` skills: research, technical assessment, security review, GTM, marketing strategy and content planner. Their names and descriptions say what each does; open a candidate's `SKILL.md` when the fit isn't clear. Ignore other installed skills. The Agent Register is an overview for the founder, not an input.
 
 - Start from the question in Next step / Research question, and use Pipeline Type as a hint, not a rule. Feature, Enhancement and Refactor feasibility usually goes to technical assessment; Research and Idea questions to research.
 - Neighbouring specialists split the work like this:

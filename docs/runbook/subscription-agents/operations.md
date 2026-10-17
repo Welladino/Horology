@@ -28,7 +28,7 @@ done
 
 Ensure destination skill directories exist before copying. Start a fresh session to verify discovery. Keep source and installed copies distinct. The old shared-folder skill paths are compatibility symlinks; maintain only the Horology source.
 
-Cloud sessions cannot read these local paths automatically. Package these source folders into the Welladino workflow plugin and update it through its supported publishing process. Do not edit a downloaded plugin cache as a release. Configure Drive/Sheets access separately and test loading the skills plus reading the guides/registers before allowing writes. Claude and other runners need their own supported loading/install mechanism.
+Cloud sessions cannot read these local paths. For Claude, upload the skills and add the connectors on claude.ai ([Claude skills and connectors](claude_skills.md)). For Codex, package these source folders into the Welladino workflow plugin and update it through its supported publishing process. Do not edit a downloaded plugin cache as a release. Configure Drive/Sheets access separately and test loading the skills plus reading the guides/registers before allowing writes.
 
 ## Change the workflow
 
@@ -52,7 +52,7 @@ or for one item:
 
 > Use horology-supervisor to run Pipeline item 42.
 
-The supervisor claims each item through the document graph and starts one session per item. Check progress by asking a session to `list_runs`, or `get_item_history` for one item. Every run needs the document-graph connector. Cloud runs need the Horology repository on GitHub, the skills under `.claude/skills/`, and the document graph and Google connectors on your claude.ai account. Codex runs need the Codex CLI installed and signed in.
+The supervisor claims each item through the document graph and starts one session per item. Check progress by asking a session to `list_runs`, or `get_item_history` for one item. Every run needs the document-graph connector. Claude cloud runs need the skills and the document graph and Google connectors on your claude.ai account. Codex runs need the Codex CLI installed and signed in.
 
 ## Decide on an item
 
@@ -67,7 +67,7 @@ Create these on any platform's scheduler (Claude Code routine or desktop schedul
 | Digest | Daily | `Use horology-digest to write today's Horology digest.` |
 | Planner | Daily, or on request | `Use horology-planner to plan the Pipeline items set to Plan.` |
 
-The scheduled session needs the skills (installed plugin, or `.claude/skills/` for a cloud routine) and Drive, Docs and Sheets access. An empty Plan list means the planner run ends quickly.
+The scheduled session needs the skills (claude.ai skills for Claude, the installed plugin for Codex) and Drive, Docs and Sheets access. An empty Plan list means the planner run ends quickly.
 
 ## Maintain ClickUp integration
 

@@ -7,7 +7,7 @@ How Horology works today. These pages are updated in place when the system chang
 Horology has two ways of working, which share the same services:
 
 - **Hermes agents** run locally in Docker. Second-Soul, the supervisor, hands work to named subagent profiles through kanban tasks.
-- **Subscription agents** are Claude, ChatGPT and Codex sessions on personal subscriptions. They follow skills from the Horology plugins and keep their records in Drive and Sheets.
+- **Subscription agents** are Claude, ChatGPT and Codex sessions on personal subscriptions. They follow the Horology skills (uploaded to claude.ai for Claude, plugins for Codex) and keep their records in Drive and Sheets.
 
 Both reach the outside world only through two MCP services: the **gateway** (capped provider tools) and the **document graph** (what has been researched and decided). Neither exposes arbitrary SQL or API access.
 
@@ -16,7 +16,7 @@ Both reach the outside world only through two MCP services: the **gateway** (cap
 | Area | What it covers |
 |---|---|
 | [Hermes](hermes/README.md) | Containers, kanban dispatch, profiles and personas, tools and limits |
-| [Subscription agents](subscription-agents/README.md) | Stages, registers and IDs, ClickUp sync, plugins and skills |
+| [Subscription agents](subscription-agents/README.md) | Stages, registers and IDs, ClickUp sync, skills and connectors |
 | [MCP services](mcp/README.md) | What the two services share: sign-in, local and cloud copies, logging and errors |
 | ↳ [Gateway](mcp/gateway.md) | Tools, shared policy, credit budgets, provider boundaries |
 | ↳ [Document graph](mcp/document-graph.md) | Documents, passage search, topics, entities, the sync job |
@@ -27,7 +27,7 @@ Both reach the outside world only through two MCP services: the **gateway** (cap
 
 | Path | Component |
 |---|---|
-| `plugins/` | `horology-tools`, `horology-document-graph`, `horology-workflows` and `horology-specialists` plugins and their skills |
+| `plugins/` | Skill source in four folders (`horology-tools`, `horology-document-graph`, `horology-workflows`, `horology-specialists`), with the OpenAI/Codex plugin manifests |
 | `mcp-servers/mcp-gateway/` | Gateway service |
 | `mcp-servers/document-graph/` | Document-graph service |
 | `document-graph-core/` | Graph logic shared by the document-graph service and the sync job |

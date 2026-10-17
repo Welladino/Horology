@@ -1,4 +1,4 @@
-# Horology Specialists plugin
+# Horology Specialists
 
 Specialist skills the supervisor (`horology-supervisor`, in `plugins/horology-workflows/`) hands Pipeline items to. Each specialist is one skill under `skills/`, named in the Agent Register's Skills column so the supervisor can find it.
 
@@ -11,6 +11,6 @@ Specialist skills the supervisor (`horology-supervisor`, in `plugins/horology-wo
 | `horology-marketing-strategy` | A marketing plan from an agreed GTM direction |
 | `horology-content-planner` | Content plans, briefs and draft copy |
 
-To add a specialist: add `skills/<name>/SKILL.md` (and `agents/openai.yaml` for ChatGPT/Codex display), bump the versions in all three manifests, and add a row to the Agent Register.
+To add a specialist: add `skills/<name>/SKILL.md` (and `agents/openai.yaml` for ChatGPT/Codex display), bump the versions in both OpenAI/Codex manifests, upload it to claude.ai, and add a row to the Agent Register.
 
-Keep the Claude manifest (`.claude-plugin/plugin.json`) and the OpenAI/Codex manifests (`plugin.json`, `.codex-plugin/plugin.json`) in step when releasing. Install: [Claude plugins](../../docs/runbook/subscription-agents/claude_plugins.md).
+Keep the OpenAI/Codex manifests (`plugin.json`, `.codex-plugin/plugin.json`) in step when releasing. Claude: [Claude skills and connectors](../../docs/runbook/subscription-agents/claude_skills.md).
