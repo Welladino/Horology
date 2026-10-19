@@ -12,7 +12,7 @@ The workflow's states, field values and allowed moves (with who may make each) a
 |---|---|---|
 | Workflow guides | Instructions and presentation rules | Drive `01_Welladino/00_Guides` |
 | Pipeline | Work queue: stage, scope, selection and status | Sheets in `01_Registers` |
-| Locations | Where agents read and save: folders, templates, registers and task lists per domain or entity, edited by the founder | `Locations` tab of the Pipeline workbook |
+| Locations | Where agents read and save: one row per folder, template, register or task list, found by Domain, Entity, Kind and Output type and resolved by Drive ID; edited by the founder, never created by agents | `Locations` tab of the Pipeline workbook |
 | Decision Register | Founder decisions, evidence and rework instructions | Sheets in `01_Registers` |
 | Document Index | Which documents belong to which item, revisions, supersedes, Graph Inclusion | Sheets in `01_Registers` |
 | Agent Register | Agents, their platforms and prompt sources | Sheets in `01_Registers` |

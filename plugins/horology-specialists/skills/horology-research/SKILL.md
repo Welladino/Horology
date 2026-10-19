@@ -12,6 +12,7 @@ Investigate a selected Pipeline question and record evidence, options, and recom
 ## Required context and locations
 
 - Read the current [Workflow Guide](https://docs.google.com/document/d/1CdytxCa2c-M7KroQ05JO52_mVhogQ5J_acBhRDRsF5I/edit) and [Pipeline Locations](https://docs.google.com/spreadsheets/d/1aL678ACs97YpLIGrGU5LbpXHc7jQBxl64ED-sLyehvI/edit#gid=2040100904) for rules and verified destinations.
+- Find destinations and templates in Pipeline Locations by Domain, Entity, Kind and Output type; Welladino rows are shared by every domain. Use the Drive ID in the row's Location, never a folder inferred from names or paths, and never create folders. If no row matches, more than one does, or Location is blank, ask the founder instead of saving elsewhere.
 - Read the [Document Presentation Guide](https://docs.google.com/document/d/1D2N9VJRCmBFJ4T9cUGH47zQUVqk99sjavpbbwYIYY8I/edit) before creating or filling documents, and [linking rules](references/linking.md) when saving outputs.
 - Identify the selected Pipeline item by its permanent numeric ID; historical EPIC-NEWS references belong to External ID. Resolve a bounded question, expected output, and stopping point from the request; clarify material missing scope before dependent work.
 - These rules are portable; tool availability and authentication are platform-specific.

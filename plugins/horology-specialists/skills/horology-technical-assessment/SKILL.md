@@ -12,6 +12,7 @@ Use for Stage 1 evaluation of a code-related Pipeline item, including Feature, E
 ## Required context and locations
 
 - Read the current [Workflow Guide](https://docs.google.com/document/d/1CdytxCa2c-M7KroQ05JO52_mVhogQ5J_acBhRDRsF5I/edit), [Pipeline Locations](https://docs.google.com/spreadsheets/d/1aL678ACs97YpLIGrGU5LbpXHc7jQBxl64ED-sLyehvI/edit#gid=2040100904), and [Presentation Guide](https://docs.google.com/document/d/1D2N9VJRCmBFJ4T9cUGH47zQUVqk99sjavpbbwYIYY8I/edit).
+- Find destinations and templates in Pipeline Locations by Domain, Entity, Kind and Output type; Welladino rows are shared by every domain. Use the Drive ID in the row's Location, never a folder inferred from names or paths, and never create folders. If no row matches, more than one does, or Location is blank, ask the founder instead of saving elsewhere.
 - Read [output and linking rules](references/output.md) when saving the assessment or generating the quadrant.
 - Resolve the permanent numeric Pipeline ID and bounded question from the request. Map live Master headers by name; columns may move. External ID is optional. Entity is blank for Article Aggregator, Welladino and Horology.
 - Read Link type, URL, and GitHub branch. Verify the repository remote, target branch, and inspected commit before making code claims. Do not assume the current checkout is the requested branch or switch a dirty checkout to inspect it. Use read-only Git revision reads or an available matching checkout when appropriate. Report inaccessible branch/source evidence and clarify an ambiguous target.

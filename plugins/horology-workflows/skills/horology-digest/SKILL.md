@@ -12,6 +12,7 @@ A scheduled daily run, or when the founder asks "what happened?", "give me the d
 ## Required context and locations
 
 - Read the current [Workflow Guide](https://docs.google.com/document/d/1CdytxCa2c-M7KroQ05JO52_mVhogQ5J_acBhRDRsF5I/edit), [Pipeline Locations](https://docs.google.com/spreadsheets/d/1aL678ACs97YpLIGrGU5LbpXHc7jQBxl64ED-sLyehvI/edit#gid=2040100904) and [Document Presentation Guide](https://docs.google.com/document/d/1D2N9VJRCmBFJ4T9cUGH47zQUVqk99sjavpbbwYIYY8I/edit).
+- Find destinations and templates in Pipeline Locations by Domain, Entity, Kind and Output type; Welladino rows are shared by every domain. Use the Drive ID in the row's Location, never a folder inferred from names or paths, and never create folders. If no row matches, more than one does, or Location is blank, ask the founder instead of saving elsewhere.
 - Read [what to check](references/checks.md) for the data each section needs.
 - Sources: [Pipeline](https://docs.google.com/spreadsheets/d/1aL678ACs97YpLIGrGU5LbpXHc7jQBxl64ED-sLyehvI/edit) (Master), [Document Index](https://docs.google.com/spreadsheets/d/1kObhQNjsFhziS-wRzjaEIzr9j8jjbfvd-ZgvzuwQ-Jc/edit) and [Decision Register](https://docs.google.com/spreadsheets/d/1_megp_hD4gwRuF4wmk4g2vQGAWbLl4uNUpho-oLoygE/edit). Map columns by header name.
 - Runs and item history come from the document-graph connector (`list_runs`, `get_item_history`); use the `horology-document-graph` skill for the graph checks. Say which checks were skipped when the connector isn't available.
@@ -21,7 +22,7 @@ A scheduled daily run, or when the founder asks "what happened?", "give me the d
 1. Find the previous digest in the Document Index (Document Type report, title starting "Horology digest"). The period runs from its date to now; if there is none, use the last 24 hours.
 2. Gather the data for each section in [what to check](references/checks.md).
 3. For each item finished in the period, open its output documents and pull the key finding and the recommendation in a sentence or two each. Don't copy whole sections; the founder should be able to skip opening most reports.
-4. Write the digest as a new Google Doc titled "Horology digest — YYYY-MM-DD", in the digest destination from the Pipeline Locations tab (if none is listed, use the Horology domain's reports destination and say a Digests destination should be added). Use the Digest template if the Pipeline Locations tab lists one.
+4. Write the digest as a new Google Doc titled "Horology digest — YYYY-MM-DD", in the Horology Folder row with Output type Digests in Pipeline Locations (if there is none, use the Horology Root folder and say in the digest that a Digests row should be added; this is the one fallback to the ask-first rule, because digests run unattended). Use a Template row with Output type Digests if there is one.
 5. The base content, in this order:
    - **Report card:** counts of Pipeline items by Status, by Agent status and by Agent type, and per domain; Ready and Plan counts stand out.
    - **Done since the last digest:** one row per finished item — item, specialists used, key finding, recommendation, link to the output, run status.
