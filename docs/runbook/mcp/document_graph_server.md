@@ -1,6 +1,6 @@
 # Document graph MCP server (local)
 
-Running, testing and connecting the local document-graph container. What it does and its tools: [document-graph architecture](../../architecture/mcp/document-graph.md). Cloud deployment: [`../gcp/mcp_deployment.md`](../gcp/mcp_deployment.md).
+Running, testing and connecting the local document-graph container. What it does and its tools: [document-graph architecture](https://github.com/Welladino/Horology/blob/main/docs/architecture/mcp/document-graph.md). Cloud deployment: [`../gcp/mcp_deployment.md`](../gcp/mcp_deployment.md).
 
 The local copy has **no sign-in** and serves one workspace (`DOCUMENT_GRAPH_WORKSPACE`, default `welladino`). Its tools write documents and make paid embedding calls, so it must stay bound to `127.0.0.1`.
 

@@ -1,0 +1,6 @@
+# GitBook Git Sync for the Horology Runbook space. Project directory: docs/runbook.
+root: ./
+
+structure:
+  readme: setup/how-horology-works.md
+  summary: SUMMARY.md

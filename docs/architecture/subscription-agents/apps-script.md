@@ -1,6 +1,6 @@
 # Apps Script projects
 
-Three Google Apps Script projects support the subscription-agent workflow. None of them runs AI: they move records between the registers and ClickUp, apply the founder's decisions, and keep the Locations tab in step with Drive. Source lives in [`google_appscript/`](https://github.com/Welladino/Horology/tree/main/google_appscript), one folder per project, published with clasp ([runbook](../../runbook/subscription-agents/clasp.md)).
+Three Google Apps Script projects support the subscription-agent workflow. None of them runs AI: they move records between the registers and ClickUp, apply the founder's decisions, and keep the Locations tab in step with Drive. Source lives in [`google_appscript/`](https://github.com/Welladino/Horology/tree/main/google_appscript), one folder per project, published with clasp ([runbook](https://github.com/Welladino/Horology/blob/main/docs/runbook/subscription-agents/clasp.md)).
 
 | Project | Folder | Attached to | Does |
 |---|---|---|---|

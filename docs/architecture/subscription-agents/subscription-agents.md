@@ -154,6 +154,6 @@ Skill source is grouped in four folders under `plugins/`. Claude gets each skill
 | `horology-document-graph` | The skill for the document-graph connector: search before starting, write findings that have no Drive document |
 | `horology-tools` | The skill for the gateway connector: Supabase metadata, Tavily, Firecrawl |
 
-Drive plus a Document Index row stays the main record for a finished deliverable. Rows with Graph Inclusion TRUE are copied into the document graph by the [sync job](../mcp/document-graph.md#document-index-sync), so later sessions can find them. Setting up Claude: [Claude skills and connectors](../../runbook/subscription-agents/claude_skills.md).
+Drive plus a Document Index row stays the main record for a finished deliverable. Rows with Graph Inclusion TRUE are copied into the document graph by the [sync job](../mcp/document-graph.md#document-index-sync), so later sessions can find them. Setting up Claude: [Claude skills and connectors](https://github.com/Welladino/Horology/blob/main/docs/runbook/subscription-agents/claude_skills.md).
 
 Native platform connectors (GitHub, Drive and so on) are outside the gateway's policy and budgets. Permission to research does not authorise code changes.

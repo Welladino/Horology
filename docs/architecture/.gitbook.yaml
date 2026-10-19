@@ -1,0 +1,6 @@
+# GitBook Git Sync for the Horology Architecture space. Project directory: docs/architecture.
+root: ./
+
+structure:
+  readme: overview.md
+  summary: SUMMARY.md

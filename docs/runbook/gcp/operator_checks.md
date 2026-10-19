@@ -1,6 +1,6 @@
 # Operator access and checks
 
-How the identities fit together: [Cloud architecture](../../architecture/cloud/cloud-infrastructure.md#identities).
+How the identities fit together: [Cloud architecture](https://github.com/Welladino/Horology/blob/main/docs/architecture/cloud/cloud-infrastructure.md#identities).
 
 ## gcloud configurations
 

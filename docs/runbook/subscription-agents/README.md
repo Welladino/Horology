@@ -9,4 +9,4 @@
 - [Plugin maintenance](horology_plugin.md) — source and release checks.
 - [Apps Script projects](clasp.md) — clasp setup, publishing the three projects, trigger setup and ClickUp Sync's Script Properties.
 
-For responsibilities and the overall flow, read the [subscription-agent architecture](../../architecture/subscription-agents/subscription-agents.md).
+For responsibilities and the overall flow, read the [subscription-agent architecture](https://github.com/Welladino/Horology/blob/main/docs/architecture/subscription-agents/subscription-agents.md).

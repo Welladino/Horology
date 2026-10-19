@@ -1,6 +1,6 @@
 # Apps Script projects: setup and publishing
 
-Three projects, each in its own folder under `google_appscript/`; what they do is in the [Apps Script architecture](../../architecture/subscription-agents/apps-script.md). Run each project's commands from its folder.
+Three projects, each in its own folder under `google_appscript/`; what they do is in the [Apps Script architecture](https://github.com/Welladino/Horology/blob/main/docs/architecture/subscription-agents/apps-script.md). Run each project's commands from its folder.
 
 | Project | Folder | Script ID | Attached to |
 |---|---|---|---|

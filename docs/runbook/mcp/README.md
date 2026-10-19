@@ -1,6 +1,6 @@
 # MCP Servers
 
-Horology's two purpose-built MCP servers each expose a small, fixed set of named tools with their own credentials and their own container. Neither allows arbitrary code execution or arbitrary API access. How they work: [MCP architecture](../../architecture/mcp/mcp-services.md).
+Horology's two purpose-built MCP servers each expose a small, fixed set of named tools with their own credentials and their own container. Neither allows arbitrary code execution or arbitrary API access. How they work: [MCP architecture](https://github.com/Welladino/Horology/blob/main/docs/architecture/mcp/mcp-services.md).
 
 - [`document_graph_server.md`](document_graph_server.md) — the document graph: running, connecting and testing it locally.
 - Gateway: setup, local start-up and verification are in the [gateway README](https://github.com/Welladino/Horology/blob/main/mcp-servers/mcp-gateway/README.md).
@@ -19,4 +19,4 @@ Pattern established by both servers:
 4. Verify in isolation before connecting anything: reachable only where intended.
 5. Connect Hermes with `hermes mcp add <name> --url http://<service-name>:<port>/mcp` (add `-p <profile>`; connections are per profile).
 6. If it uses Google sign-in, add it to `mcp_servers` and check access through `horology_runtime.access` ([steps](access.md#add-an-mcp-server)).
-7. Document it here and in [`docs/architecture/mcp/`](../../architecture/mcp/mcp-services.md).
+7. Document it here and in [`docs/architecture/mcp/`](https://github.com/Welladino/Horology/blob/main/docs/architecture/mcp/mcp-services.md).

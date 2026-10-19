@@ -1,6 +1,6 @@
 # Architecture
 
-How Horology works today. These pages are updated in place when the system changes; the reasons behind each change are in [`docs/planning/`](https://github.com/Welladino/Horology/blob/main/docs/planning/README.md), and the commands to run things are in [`docs/runbook/`](../runbook/). To set up a new workspace, follow [Set up Horology](../runbook/setup/setup.md).
+How Horology works today. These pages are updated in place when the system changes; the reasons behind each change are in [`docs/planning/`](https://github.com/Welladino/Horology/blob/main/docs/planning/README.md), and the commands to run things are in [`docs/runbook/`](https://github.com/Welladino/Horology/tree/main/docs/runbook). To set up a new workspace, follow [Set up Horology](https://github.com/Welladino/Horology/blob/main/docs/runbook/setup/setup.md).
 
 ```mermaid
 flowchart TB

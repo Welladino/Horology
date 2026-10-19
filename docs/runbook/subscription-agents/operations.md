@@ -1,6 +1,6 @@
 # Subscription-agent operations
 
-Read [architecture](../../architecture/subscription-agents/subscription-agents.md) for responsibilities and stages. These steps maintain skills and the Sheets/ClickUp integration; they do not deploy Hermes or start AI schedules.
+Read [architecture](https://github.com/Welladino/Horology/blob/main/docs/architecture/subscription-agents/subscription-agents.md) for responsibilities and stages. These steps maintain skills and the Sheets/ClickUp integration; they do not deploy Hermes or start AI schedules.
 
 ## Live records and instructions
 
@@ -30,7 +30,7 @@ Cloud sessions cannot read these local paths. For Claude, upload the skills and 
 
 ## Change the workflow
 
-Edit [`workflow.yaml`](https://github.com/Welladino/Horology/blob/main/plugins/horology-workflows/skills/horology-capture-triage/references/workflow.yaml) first, then the skills or Apps Script code that apply the changed rule, and the Mermaid workflow diagrams in the [subscription-agents page](../../architecture/subscription-agents/subscription-agents.md). Then check:
+Edit [`workflow.yaml`](https://github.com/Welladino/Horology/blob/main/plugins/horology-workflows/skills/horology-capture-triage/references/workflow.yaml) first, then the skills or Apps Script code that apply the changed rule, and the Mermaid workflow diagrams in the [subscription-agents page](https://github.com/Welladino/Horology/blob/main/docs/architecture/subscription-agents/subscription-agents.md). Then check:
 
 ```bash
 .venv/bin/python -m pytest tests/unit/workflow -q
@@ -52,7 +52,7 @@ The supervisor claims each item through the document graph and starts one sessio
 
 ## Decide on an item
 
-In the Decision Register, set the current decision's Status to accepted, rework (with Rework instructions), parked or rejected. The [Pipeline decisions](../../architecture/subscription-agents/apps-script.md#pipeline-decisions) script moves the Pipeline item on within 10 minutes, or straight away when you edit the register yourself. To check: use **Extensions → Horology — Pipeline decisions → Preview decisions** in the Pipeline, or look at the item's Status.
+In the Decision Register, set the current decision's Status to accepted, rework (with Rework instructions), parked or rejected. The [Pipeline decisions](https://github.com/Welladino/Horology/blob/main/docs/architecture/subscription-agents/apps-script.md#pipeline-decisions) script moves the Pipeline item on within 10 minutes, or straight away when you edit the register yourself. To check: use **Extensions → Horology — Pipeline decisions → Preview decisions** in the Pipeline, or look at the item's Status.
 
 ## Scheduled jobs
 
@@ -67,4 +67,4 @@ The scheduled session needs the skills (claude.ai skills for Claude, the install
 
 ## Maintain ClickUp integration
 
-Use the [Apps Script runbook](clasp.md) to connect, compare and publish the Apps Script projects and set up ClickUp Sync. The [Apps Script architecture](../../architecture/subscription-agents/apps-script.md) describes their behaviour: decision rules, the Drive check, and the sync's status mapping, review and batching.
+Use the [Apps Script runbook](clasp.md) to connect, compare and publish the Apps Script projects and set up ClickUp Sync. The [Apps Script architecture](https://github.com/Welladino/Horology/blob/main/docs/architecture/subscription-agents/apps-script.md) describes their behaviour: decision rules, the Drive check, and the sync's status mapping, review and batching.

@@ -49,7 +49,7 @@ Releases start from local source: the deployer uploads it to the source bucket a
 | Image vulnerability scan | Fixable High/Critical vulnerabilities, secrets. Unfixed ones are reported, not blocking. |
 | Licence scan | Forbidden licences (for example AGPL, SSPL) |
 
-The pipeline publishes images; it never deploys or migrates. The operator deploys an exact digest and runs migrations separately. Artifact Registry keeps the five most recent versions of each package plus anything tagged `deployed-`; `deployed-current` marks the image serving traffic. Commands: [Cloud Build](../../runbook/gcp/cloud_build.md), [deployment](../../runbook/gcp/mcp_deployment.md).
+The pipeline publishes images; it never deploys or migrates. The operator deploys an exact digest and runs migrations separately. Artifact Registry keeps the five most recent versions of each package plus anything tagged `deployed-`; `deployed-current` marks the image serving traffic. Commands: [Cloud Build](https://github.com/Welladino/Horology/blob/main/docs/runbook/gcp/cloud_build.md), [deployment](https://github.com/Welladino/Horology/blob/main/docs/runbook/gcp/mcp_deployment.md).
 
 ## Identities
 
@@ -97,4 +97,4 @@ Deploying is still trusted access: code running as a runtime identity can use th
 
 ## Monitoring
 
-The [Horology services dashboard](https://console.cloud.google.com/monitoring/dashboards/builder/db07a8ab-5016-4c93-a272-e4199b20ed6b?project=horology-dev) shows requests, latency, cold starts, instances, per-tool time and outcomes, error categories and sync-job results. Tool timings come from the services' JSON logs through the log-based metrics `horology_tool_duration_ms` and `horology_tool_calls`. Definitions are in `ops/gcp/monitoring/`; queries and alerting: [monitoring runbook](../../runbook/gcp/monitoring.md).
+The [Horology services dashboard](https://console.cloud.google.com/monitoring/dashboards/builder/db07a8ab-5016-4c93-a272-e4199b20ed6b?project=horology-dev) shows requests, latency, cold starts, instances, per-tool time and outcomes, error categories and sync-job results. Tool timings come from the services' JSON logs through the log-based metrics `horology_tool_duration_ms` and `horology_tool_calls`. Definitions are in `ops/gcp/monitoring/`; queries and alerting: [monitoring runbook](https://github.com/Welladino/Horology/blob/main/docs/runbook/gcp/monitoring.md).
