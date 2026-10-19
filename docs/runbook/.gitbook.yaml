@@ -3,4 +3,3 @@ root: ./
 
 structure:
   readme: setup/how-horology-works.md
-  summary: SUMMARY.md
