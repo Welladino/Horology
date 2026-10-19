@@ -174,7 +174,7 @@ The operator adds you as a test user, creates the workspace with those IDs and g
 - **Codex:** install the four plugins: [Codex plugins and connections](../subscription-agents/codex_setup.md).
 - Both: connect Google Drive and Sheets in the platform's own connector settings.
 
-The skills currently link the founder's Pipeline and registers directly. Until they read the Pipeline link from your workspace instead, a new workspace needs skill packages built with its own register links; ask the operator.
+> **Note:** the skills currently link the founder's Pipeline, Decision Register and Document Index directly, so a new workspace needs skill packages built with its own links; ask the operator. This will change: the plan is for skills to ask the document graph for the signed-in workspace's register links (the IDs you send in step 5 are already stored with your workspace), fall back to a Pipeline link in your own instructions, and otherwise ask you.
 
 ## 7. Run your first item
 
@@ -184,9 +184,11 @@ The skills currently link the founder's Pipeline and registers directly. Until t
 
 Ask the supervisor "what's happening?" at any point. For a vague item, set Agent status to **Plan** first and the planner turns it into a sharper question or steps.
 
-## 8. Optional: set up a watcher
+## 8. Optional: set up a watcher or other scheduled agents
 
-A watcher is a scheduled agent that checks something regularly, such as competitor launches, campaigns or prices, and writes a dated report of what's new. Ask in Claude Code or Codex, e.g. "watch what our competitors launch every week". The `horology-watcher-setup` skill asks what to watch, which Agent reference folders to read, where to report, which connectors to allow and when to run. It shows the prompt and schedule before doing anything, then creates a Claude routine (runs in the cloud, at most hourly) or a Codex scheduled task, and records it on the **Watchers** tab of your Agent Register. Watchers only report; they never act on what they find. More: [the skills](skills.md#running-the-work-workflow-skills).
+A watcher is a scheduled agent that checks something regularly, such as competitor launches, campaigns or prices, and writes a dated report of what's new. Ask in Claude Code or Codex, e.g. "watch what our competitors launch every week". The `horology-watcher-setup` skill asks what to watch, which Agent reference folders to read, where to report, which connectors to allow and when to run. It shows the prompt and schedule before doing anything, then creates a Claude routine (runs in the cloud, at most hourly) or a Codex scheduled task, and records it on the **Watchers** tab of your Agent Register. Watchers only report; they never act on what they find.
+
+The same skill schedules the other agents that suit a timer, each marked by its **Type** on the Watchers tab: the **Digest** (daily report card), the **Planner** (scopes rows set to Plan), a periodic **Security review** of a repository, and the **Graph sync**. Ask, for example, "run the digest every weekday at 8". More: [the skills](skills.md#running-the-work-workflow-skills).
 
 ## Optional: ClickUp Sync
 
@@ -201,4 +203,4 @@ To review items in ClickUp, set up the standalone ClickUp Sync with your token, 
 - [ ] Operator has added you, your workspace and your register IDs
 - [ ] Skills and connectors installed; Drive and Sheets connected
 - [ ] First item run and decided
-- [ ] Optional: a first watcher set up and its first report checked
+- [ ] Optional: a first watcher, or the digest, scheduled and its first run checked

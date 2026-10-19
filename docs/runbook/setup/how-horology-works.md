@@ -46,7 +46,7 @@ flowchart TB
 | **Pipeline** (Google Sheet) | One row per piece of work: its question, domain, status, stage and which agent should take it. Its other tabs describe your workspace: **Locations** (your folders), **Domains** (built from Locations), **Templates** and **Registers** (links to the other sheets). | You and the agents |
 | **Decision Register** | One row per decision, with your feedback for rework | You, and agents propose |
 | **Document Index** | One row per document the work produced, linked to its Pipeline item | Agents |
-| **Agent Register** | Watchers: scheduled agents that check something regularly and report, each with its prompt and schedule | You, with the watcher-setup skill |
+| **Agent Register** | Watchers tab: every scheduled agent (watchers, digest, planner, security review, graph sync) with its type, prompt and schedule; MCP tab: what the MCP tools allow | You, with the watcher-setup skill |
 | **Drive folders** | Grouped by domain (a business, product or area). Each folder in Locations has a type: **Hub** (a domain's root), **Node** (holds other folders), **Agent reference** (read for context), **Agent output** (agents save here), **Others** (not for agents) | You create them; agents only save into Agent output folders |
 | **Skills** | The instructions each agent follows, installed in Claude and Codex | Maintained in this repository |
 | **Document graph** | A searchable store of past research and decisions, so agents build on what's known instead of starting over | Agents write to it; the sync job copies in documents you mark for it |
@@ -102,7 +102,7 @@ You talk to one agent, the **supervisor**, unless you name another. It reads the
 | Digest | A daily Google Doc: counts, what finished, what's waiting on you, anything wrong |
 | Workspace setup | Adds domains, businesses and folders: shows the folder tree, creates it after your yes, adds the Locations rows |
 | Template | Writes or revises a document template, then offers to add it to the Templates tab |
-| Watcher setup | Sets up a watcher: its prompt, schedule and connectors, on Claude or Codex |
+| Watcher setup | Sets up a watcher, or schedules the digest, planner, a security review or the graph sync: its prompt, schedule and connectors, on Claude or Codex |
 
 Before starting, agents search the document graph for what's already known, read your **Agent reference** folders for the item's domain, and copy the right template. They save only into **Agent output** folders and ask you when no folder fits; only the workspace-setup skill creates folders, after you approve them.
 
@@ -110,7 +110,9 @@ Before starting, agents search the document graph for what's already known, read
 
 Some work isn't a one-off item but a standing question: what did competitors launch this week, what campaigns are they running, did prices change. A **watcher** answers one on a schedule.
 
-Each watcher is a row on the **Watchers** tab of the Agent Register, with a self-contained prompt, plus a scheduled task that runs it: a Claude routine in Anthropic's cloud, or a Codex scheduled task. Each run reads its last report so it reports only what's new, reads the Agent reference folders its prompt names, searches with the connectors it's allowed, writes a dated report in an Agent output folder, adds it to the Document Index, and updates its row's Last run and Last report. It never acts on what it finds; anything that needs action is flagged at the top of the report for you. Set one up, change it or pause it by asking: "watch what our competitors launch every week".
+Each watcher is a row on the **Watchers** tab of the Agent Register, with a self-contained prompt, plus a scheduled task that runs it: a Claude routine in Anthropic's cloud, or a Codex scheduled task. Each run reads its last report so it reports only what's new, reads the Agent reference folders its prompt names, searches with the connectors it's allowed, writes a dated report in an Agent output folder and adds it to the Document Index. It finds its previous report by its title in that folder. It never acts on what it finds; anything that needs action is flagged at the top of the report for you. Set one up, change it or pause it by asking: "watch what our competitors launch every week".
+
+The same tab holds the other agents you can run on a schedule, each marked in its **Type** column: the **Digest** (daily report card), the **Planner** (scopes rows set to Plan), a periodic **Security review** of a repository, and the **Graph sync** (copies Document Index rows into the document graph). The supervisor is never scheduled: Pipeline work starts when you ask.
 
 ## Your part, day to day
 

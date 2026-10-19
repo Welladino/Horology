@@ -32,7 +32,7 @@ flowchart TB
 | **horology-planner** | Turn a vague item into one sharp question, or numbered steps | Set Agent status to Plan, then "plan the Plan items" or "plan item 42" | Next step and Planner output on Plan rows |
 | **horology-digest** | Get a daily report: counts, what finished, what's waiting on you, problems | "Give me the digest" (or run it on a daily schedule) | A new Google Doc; nothing else |
 | **horology-workspace-setup** | Add a domain, a business or folders; change a folder's Type; update the Templates or Registers tab | "Add a domain for our new product" · "Add a business called Caps under Shop" · "I need a research folder for pricing" | Shows the folder tree first; after your yes, creates the folders and adds their Locations rows |
-| **horology-watcher-setup** | Set up a watcher: a scheduled agent that checks something regularly (competitor launches, campaigns, prices) and writes a report | "Watch what our competitors launch every week" · "Pause the pricing watcher" | Shows the row and prompt first; after your yes, creates the Claude routine or Codex scheduled task and adds the row to the Watchers tab |
+| **horology-watcher-setup** | Set up a watcher, a scheduled agent that checks something regularly (competitor launches, campaigns, prices) and writes a report, or schedule the digest, planner, a security review or the graph sync | "Watch what our competitors launch every week" · "Run the digest every weekday at 8" · "Pause the pricing watcher" | Shows the row and prompt first; after your yes, creates the Claude routine or Codex scheduled task and adds the row to the Watchers tab |
 | **horology-template** | Create a new document template, or revise one | "Make a template for competitor briefs" · "Add a risks section to the Plan template" | Shows the outline first; creates the Doc, then asks before adding it to the Templates tab |
 
 ## Doing the work: specialist skills
@@ -62,7 +62,7 @@ You rarely call these yourself; the skills above use them.
 ## What every skill respects
 
 - **You decide.** No skill accepts a proposal, sets your decision, or treats approved research as permission to build.
-- **Nothing runs by itself, except watchers you set up.** A Ready row only selects work; it starts when you ask. Watchers run on the schedule you approved, and only report.
+- **Nothing runs by itself, except what you schedule.** A Ready row only selects work; it starts when you ask. Watchers and scheduled agents run on the schedule you approved; watchers only report, and the supervisor is never scheduled.
 - **Agents save only into Agent output folders** and read Agent reference folders; only workspace setup creates folders, after you approve the tree.
 - **When something doesn't fit,** a missing folder or an unknown domain, the agent asks instead of guessing.
 - **Skills don't name your domains.** They read them from the Domains tab, so the same skills work in any workspace.
