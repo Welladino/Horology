@@ -1,6 +1,6 @@
 # How Horology works
 
-Horology is a small team of AI agents that research, assess and plan work for you, while you keep the decisions. You keep a list of work in a Google Sheet, the agents do the work in Claude or Codex sessions, their results land as Google Docs in your Drive, and you accept, rework, park or reject each one. This page explains the pieces and how a piece of work moves through them. To set up your own, follow [Set up Horology](../start-here/setup.md).
+Horology is a small team of AI agents that research, assess and plan work for you, while you keep the decisions. You keep a list of work in a Google Sheet, the agents do the work in Claude or Codex sessions, their results land as Google Docs in your Drive, and you accept, rework, park or reject each one. This page explains the pieces and how a piece of work moves through them. To set up your own, follow [Set up Horology](setup.md).
 
 ## The pieces
 

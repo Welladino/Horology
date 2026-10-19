@@ -44,14 +44,14 @@ Both reach the outside world only through two MCP services: the **gateway** (cap
 
 | Area                                                              | What it covers                                                                                            |
 | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| [Hermes](platform/hermes-agents.md)                               | Containers, kanban dispatch, profiles and personas, tools and limits                                      |
+| [Hermes](hermes/hermes-agents.md)                                  | Containers, kanban dispatch, profiles and personas, tools and limits                                      |
 | [Subscription agents](subscription-agents/subscription-agents.md) | Stages, registers and IDs, ClickUp sync, skills and connectors                                            |
 | [Apps Script projects](subscription-agents/apps-script.md)        | Pipeline decisions, the Locations script and the ClickUp sync: what each does and where its settings live |
-| [MCP services](mcp-services/mcp-services.md)                      | What the two services share: sign-in, local and cloud copies, logging and errors                          |
-| ↳ [Gateway](mcp-services/gateway.md)                              | Tools, shared policy, credit budgets, provider boundaries                                                 |
-| ↳ [Document graph](mcp-services/document-graph.md)                | Documents, passage search, topics, entities, the sync job                                                 |
-| [Data model](platform/data-model.md)                              | The Neon database: schemas, logins and migrations                                                         |
-| [Cloud infrastructure](platform/cloud-infrastructure.md)          | GCP project, Cloud Run, identities, secrets, release gates                                                |
+| [MCP services](mcp/mcp-services.md)                                | What the two services share: sign-in, local and cloud copies, logging and errors                          |
+| ↳ [Gateway](mcp/gateway.md)                                        | Tools, shared policy, credit budgets, provider boundaries                                                 |
+| ↳ [Document graph](mcp/document-graph.md)                          | Documents, passage search, topics, entities, the sync job                                                 |
+| [Data model](data/data-model.md)                                   | The Neon database: schemas, logins and migrations                                                         |
+| [Cloud infrastructure](cloud/cloud-infrastructure.md)             | GCP project, Cloud Run, identities, secrets, release gates                                                |
 
 ## Where the code lives
 
