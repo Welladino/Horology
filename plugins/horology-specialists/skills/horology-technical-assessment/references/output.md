@@ -1,6 +1,6 @@
 # Assessment output and linking
 
-Copy the Technical Assessment template from the Templates tab into the Output folder for technical research (see the domains, folders and templates rules linked from SKILL.md). Never fill the template original during an assessment.
+Copy the Technical Assessment template from the Templates tab into the Agent output folder for technical research (see the domains, folders and templates rules linked from SKILL.md). Never fill the template original during an assessment.
 
 ## Ratings and quadrant
 

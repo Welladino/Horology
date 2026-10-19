@@ -17,8 +17,11 @@
     a { color: #1a73e8; text-decoration: none; }
     .root > summary { font-weight: bold; }
     .tag { font-size: 11px; padding: 0 5px; border-radius: 8px; margin-left: 4px; }
-    .Input { background: #e6f4ea; color: #137333; }
-    .Output { background: #e8f0fe; color: #174ea6; }
+    .Agent-reference { background: #e6f4ea; color: #137333; }
+    .Agent-output { background: #e8f0fe; color: #174ea6; }
+    .Others { background: #fef7e0; color: #8a5a00; }
+    .Hub { background: #fce8e6; color: #a50e0e; }
+    .Node { background: #f1f3f4; color: #5f6368; }
     .entity { color: #5f6368; font-size: 11px; margin-left: 4px; }
     .purpose { color: #5f6368; font-size: 12px; margin: 0 0 3px 20px; }
     .hidden { display: none; }
@@ -27,7 +30,7 @@
 </head>
 <body>
   <div class="bar">
-    <input id="filter" placeholder="Filter folders">
+    <input id="filter" placeholder="Filter folders or types">
     <button id="open">Expand</button>
     <button id="close">Collapse</button>
   </div>
@@ -45,7 +48,7 @@
       if (n.url) a.href = n.url;
       s.appendChild(a);
       if (n.kind === 'Entity folder') s.appendChild(span('entity', n.entity));
-      if (n.type) s.appendChild(span('tag ' + n.type, n.type));
+      if (n.type) s.appendChild(span('tag ' + n.type.replace(/\s+/g, '-'), n.type));
       d.appendChild(s);
       if (n.purpose) d.appendChild(Object.assign(document.createElement('div'), {className: 'purpose', textContent: n.purpose}));
       n.children.forEach(c => d.appendChild(node(c)));

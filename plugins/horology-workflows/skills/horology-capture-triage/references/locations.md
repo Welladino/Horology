@@ -13,16 +13,16 @@ The Domains tab (named range `Domains`) lists every domain with its entities, ro
 
 The Locations tab has one row per folder: Domain, Entity, Kind (Root folder, Entity folder or Subfolder), Parent, Name, Type, Location and Purpose. Use the rows for the item's Domain and Entity.
 
-- **Input** rows are the founder's own material. Read the relevant ones for context before working. Never write into them.
-- **Output** rows are where agents save. Choose the one whose Name and Purpose fit what you are saving.
-- Rows with a blank Type are structure only. Don't save into them.
+- **Agent reference** rows are material to read: the founder's own documents and the template library. Read the relevant ones for context before working. Never write into them.
+- **Agent output** rows are where agents save. Choose the one whose Name and Purpose fit what you are saving.
+- **Hub** (a domain's root folder), **Node** (a folder that only holds other folders) and **Others** (registers, archives and anything else not for agents) are not for reading or saving. Don't use their contents.
 - Use the Drive ID in Location. Never find a folder by name or path, and never create, move or rename folders.
-- If no Output folder fits, two fit equally, or Location is blank, ask the founder instead of saving somewhere else.
+- If no Agent output folder fits, two fit equally, or Location is blank, ask the founder instead of saving somewhere else.
 
 ## Templates
 
 The Templates tab lists each template with its link and use.
 
 - Choose the smallest template whose Use fits the question.
-- Copy it into the chosen Output folder and fill the copy. Never edit the original.
+- Copy it into the chosen Agent output folder and fill the copy. Never edit the original.
 - If no template fits, create a plain Google Doc with the standard metadata and say so.

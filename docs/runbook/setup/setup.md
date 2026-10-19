@@ -1,6 +1,6 @@
 # Set up Horology
 
-How to give a new person or business their own Horology workspace: their own registers, folders and scripts, with Claude or Codex agents working in it. It takes about an hour. What each part does is in the [architecture overview](../../architecture/overview.md).
+How to give a new person or business their own Horology workspace: their own registers, folders and scripts, with Claude or Codex agents working in it. It takes about an hour. New to Horology? Read [How Horology works](how-horology-works.md) first; the technical detail is in the [architecture overview](../../architecture/overview.md).
 
 ```mermaid
 flowchart TB

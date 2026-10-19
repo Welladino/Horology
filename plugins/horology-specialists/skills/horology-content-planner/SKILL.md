@@ -14,7 +14,7 @@ Planning or drafting content: a content calendar, briefs for posts, newsletters,
 - Read [domains, folders and templates](../horology-research/references/locations.md) before choosing a domain or entity, reading context or saving anything.
 - Follow the [presentation rules](../horology-research/references/presentation.md) when creating or filling documents.
 - Read [linking rules](../horology-research/references/linking.md) when saving outputs.
-- Resolve the permanent Pipeline ID, the request and the domain or entity. Find the brand guide, the accepted marketing plan and earlier content for this business in its Input folders, the graph and the Document Index. Search the graph before drafting so you don't repeat published pieces.
+- Resolve the permanent Pipeline ID, the request and the domain or entity. Find the brand guide, the accepted marketing plan and earlier content for this business in its Agent reference folders, the graph and the Document Index. Search the graph before drafting so you don't repeat published pieces.
 
 ## Workflow
 
@@ -23,7 +23,7 @@ Planning or drafting content: a content calendar, briefs for posts, newsletters,
 3. For each piece: write a brief (goal, audience, key message, proof points, call to action, length, sources) and then a draft.
 4. Write real copy, not descriptions of copy. Match the brand voice; avoid generic marketing language. Note anything that needs a fact check or the founder's input.
 5. Check drafts against the graph: flag near-duplicates of earlier content (a similarity of 0.90 or more) instead of presenting them as new.
-6. Save plans and drafts from the closest template in the Templates tab, in the Output folder that fits, and register them in the Document Index.
+6. Save plans and drafts from the closest template in the Templates tab, in the Agent output folder that fits, and register them in the Document Index.
 7. Set the Pipeline item to Awaiting decision when the plan or drafts are ready for review.
 
 ## Decision and permission boundaries

@@ -18,12 +18,12 @@ A Pipeline question about the path to paying customers: target segment, position
 
 ## Workflow
 
-1. Gather what is actually known: the product, current customers or users, prior recommendations and decisions, and any evidence in the domain's Input folders, Drive or the graph. List what is missing.
+1. Gather what is actually known: the product, current customers or users, prior recommendations and decisions, and any evidence in the domain's Agent reference folders, Drive or the graph. List what is missing.
 2. If the item is too thin to recommend responsibly, say what is missing and stop rather than fill gaps with plausible assumptions.
 3. Define the target segment concretely: who, what problem, why now, and how you would reach them.
 4. Compare a small number of credible channel and positioning options against each other: expected reach, cost and effort, time to signal, and how you'd know it worked. Use primary sources for market and pricing claims and date them.
 5. Recommend one path with a first test: what to do, for whom, through which channel, what success looks like, and when to revisit. Say plainly if a proposed approach looks weak, and why.
-6. Copy the closest template from the Templates tab (usually Direction or Plan) into the Output folder that fits, fill it, and register it in the Document Index.
+6. Copy the closest template from the Templates tab (usually Direction or Plan) into the Agent output folder that fits, fill it, and register it in the Document Index.
 7. Set the Pipeline item to Awaiting decision when the recommendation is ready. Draft a proposed decision only when the requested workflow includes one.
 
 ## Decision and permission boundaries

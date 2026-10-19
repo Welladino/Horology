@@ -14,7 +14,7 @@ Turning an agreed go-to-market direction into a marketing plan: who to reach, wh
 - Read [domains, folders and templates](../horology-research/references/locations.md) before choosing a domain or entity, reading context or saving anything.
 - Follow the [presentation rules](../horology-research/references/presentation.md) when creating or filling documents.
 - Read [linking rules](../horology-research/references/linking.md) when saving outputs.
-- Resolve the permanent Pipeline ID, the bounded question and the domain or entity. Find the accepted GTM direction and any brand guide for this business in its Input folders, the graph, the Document Index or the Decision Register. If there's no agreed direction, say so and recommend a GTM step first.
+- Resolve the permanent Pipeline ID, the bounded question and the domain or entity. Find the accepted GTM direction and any brand guide for this business in its Agent reference folders, the graph, the Document Index or the Decision Register. If there's no agreed direction, say so and recommend a GTM step first.
 
 ## Workflow
 
@@ -24,7 +24,7 @@ Turning an agreed go-to-market direction into a marketing plan: who to reach, wh
 4. Choose the channel mix and campaigns: purpose, audience, message, format, cadence and rough effort for each. Prefer fewer, well-run channels.
 5. State budget and time assumptions in ranges, with currency and units. Unknown is not zero.
 6. Define metrics: one primary outcome, a few leading indicators, the review point, and what result would change the plan.
-7. Copy the Plan template from the Templates tab into the Output folder for plans, fill it, and register it in the Document Index. Set the Pipeline item to Awaiting decision when ready; draft a proposed decision only when the requested workflow includes one.
+7. Copy the Plan template from the Templates tab into the Agent output folder for plans, fill it, and register it in the Document Index. Set the Pipeline item to Awaiting decision when ready; draft a proposed decision only when the requested workflow includes one.
 
 ## Decision and permission boundaries
 

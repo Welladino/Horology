@@ -1,5 +1,6 @@
 # Subscription-agent runbooks
 
+- [How Horology works](../setup/how-horology-works.md) — the pieces, how a work item moves through them, and your part day to day.
 - [Set up Horology](../setup/setup.md) — a new workspace from the starter registers: folders, scripts, access, skills and a first run.
 - [Subscription-agent operations](operations.md) — shared skills, Drive/Sheets access, selected work, reviews and scheduling prerequisites.
 - [Claude skills and connectors](claude_skills.md) — the MCP connectors and the skill uploads on claude.ai, for cloud and local sessions.
