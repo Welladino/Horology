@@ -50,7 +50,7 @@ Functions: `previewDecisions` (reports, writes nothing), `applyDecisions` (a pre
 
 Under **Extensions → Horology — Workbook** (the project was called Horology — Locations before it also held the item form):
 
-- **Add Pipeline item:** a sidebar form for a new Master row. It fills the next ID, Created and Updated, and the capture values (Inbox, Stage 0, No action, Unassigned), or Stage 1 when the item is marked Ready; Domain comes from the Domains tab and Entity from that domain's entities, and the other dropdowns from Master's own.
+- **Add Pipeline item:** a pop-up form for new Master rows, which stays open to add several. It fills the next ID, Created and Updated, and the capture values (Inbox, Stage 0, No action, Unassigned), or Stage 1 when the item is marked Ready; Domain comes from the Domains tab and Entity from that domain's entities, and the other dropdowns from Master's own.
 - **Show folder structure:** a sidebar drawing the Locations tab as a collapsible tree, with Input and Output marked, a filter and links to each folder. Rows whose parent can't be found are listed separately rather than hidden.
 - **Check folders against Drive:** opens each folder by the ID in its Location link and updates **Name** and **Parent** to match Drive. It reports folders that are trashed, can't be opened, moved out of the listed folders, or moved into another domain or entity, and lists subfolders in Drive that aren't in Locations as suggestions. The report opens at once with a progress message; the check itself takes a few seconds, reading all listed folders and their subfolders in batched Drive API queries (advanced Drive service, v3, including shared drives).
 

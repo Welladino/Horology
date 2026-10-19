@@ -3,65 +3,97 @@
 <head>
   <base target="_blank">
   <style>
-    body { font: 13px/1.45 Arial, sans-serif; color: #202124; margin: 12px; }
-    label { display: block; margin: 10px 0 3px; font-weight: bold; font-size: 12px; }
+    body { font: 13px/1.45 Arial, sans-serif; color: #202124; margin: 4px 6px 12px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; }
+    .wide { grid-column: 1 / -1; }
+    label { display: block; margin: 8px 0 3px; font-weight: bold; font-size: 12px; }
     .hint { font-weight: normal; color: #5f6368; }
     input, select, textarea { width: 100%; box-sizing: border-box; padding: 6px 7px; border: 1px solid #dadce0; border-radius: 4px; font: inherit; }
     textarea { resize: vertical; }
     details { margin-top: 12px; }
     summary { cursor: pointer; color: #1a73e8; }
-    button { margin-top: 14px; padding: 8px 14px; border: 0; border-radius: 4px; background: #1a73e8; color: #fff; font-weight: bold; cursor: pointer; }
-    button:disabled { background: #9aa0a6; cursor: default; }
-    .msg { margin-top: 12px; padding: 8px; border-radius: 4px; display: none; }
+    .bar { display: flex; align-items: center; gap: 10px; margin-top: 16px; }
+    button { padding: 8px 16px; border-radius: 4px; font-weight: bold; cursor: pointer; font: inherit; }
+    #add { border: 0; background: #1a73e8; color: #fff; }
+    #add:disabled { background: #9aa0a6; cursor: default; }
+    #close { border: 1px solid #dadce0; background: #fff; color: #1a73e8; }
+    .msg { padding: 7px 10px; border-radius: 4px; display: none; flex: 1; }
     .ok { display: block; background: #e6f4ea; color: #137333; }
     .err { display: block; background: #fce8e6; color: #a50e0e; }
   </style>
 </head>
 <body>
   <form id="form">
-    <label for="Title">Title</label>
-    <input id="Title" required>
+    <div class="grid">
+      <div class="wide">
+        <label for="Title">Title</label>
+        <input id="Title" required autofocus>
+      </div>
 
-    <label for="Domain">Domain</label>
-    <select id="Domain" required></select>
+      <div>
+        <label for="Domain">Domain</label>
+        <select id="Domain" required></select>
+      </div>
+      <div id="entityBox">
+        <label for="Entity">Entity <span class="hint">(a business in this domain, optional)</span></label>
+        <select id="Entity"></select>
+      </div>
 
-    <div id="entityBox">
-      <label for="Entity">Entity <span class="hint">(a business in this domain, optional)</span></label>
-      <select id="Entity"></select>
+      <div>
+        <label for="Type">Type</label>
+        <select id="Type"></select>
+      </div>
+      <div>
+        <label for="Agent status">Agent status <span class="hint">(Ready runs it; Plan scopes it first)</span></label>
+        <select id="Agent status"></select>
+      </div>
+
+      <div>
+        <label for="Agent type">Agent type</label>
+        <select id="Agent type"></select>
+      </div>
+      <div>
+        <label for="Run location">Run location</label>
+        <select id="Run location"></select>
+      </div>
+
+      <div class="wide">
+        <label for="Summary / Why">Summary / Why</label>
+        <textarea id="Summary / Why" rows="3"></textarea>
+      </div>
+      <div class="wide">
+        <label for="Next step / Research question">Next step / Research question</label>
+        <textarea id="Next step / Research question" rows="4"></textarea>
+      </div>
     </div>
-
-    <label for="Type">Type</label>
-    <select id="Type"></select>
-
-    <label for="Summary / Why">Summary / Why</label>
-    <textarea id="Summary / Why" rows="3"></textarea>
-
-    <label for="Next step / Research question">Next step / Research question</label>
-    <textarea id="Next step / Research question" rows="4"></textarea>
-
-    <label for="Agent status">Agent status <span class="hint">(Ready runs it; Plan asks the planner to scope it)</span></label>
-    <select id="Agent status"></select>
-
-    <label for="Agent type">Agent type</label>
-    <select id="Agent type"></select>
-
-    <label for="Run location">Run location</label>
-    <select id="Run location"></select>
 
     <details>
       <summary>Work target and revisit trigger</summary>
-      <label for="Link type">Link type</label>
-      <select id="Link type"></select>
-      <label for="URL">URL</label>
-      <input id="URL" placeholder="Repository, website or service">
-      <label for="GitHub branch">GitHub branch</label>
-      <input id="GitHub branch">
-      <label for="Revisit trigger">Revisit trigger</label>
-      <input id="Revisit trigger">
+      <div class="grid">
+        <div>
+          <label for="Link type">Link type</label>
+          <select id="Link type"></select>
+        </div>
+        <div>
+          <label for="URL">URL</label>
+          <input id="URL" placeholder="Repository, website or service">
+        </div>
+        <div>
+          <label for="GitHub branch">GitHub branch</label>
+          <input id="GitHub branch">
+        </div>
+        <div>
+          <label for="Revisit trigger">Revisit trigger</label>
+          <input id="Revisit trigger">
+        </div>
+      </div>
     </details>
 
-    <button id="add" type="submit">Add item</button>
-    <div id="msg" class="msg"></div>
+    <div class="bar">
+      <button id="add" type="submit">Add item</button>
+      <button id="close" type="button">Close</button>
+      <div id="msg" class="msg"></div>
+    </div>
   </form>
   <script>
     const data = <?!= data ?>;
@@ -81,21 +113,24 @@
     function entities() {
       const list = data.domains[$('Domain').value] || [];
       fill($('Entity'), list, true);
-      $('entityBox').style.display = list.length ? '' : 'none';
+      $('entityBox').style.visibility = list.length ? 'visible' : 'hidden';
     }
     $('Domain').onchange = entities;
     entities();
 
     function show(cls, text) { Object.assign($('msg'), {className: 'msg ' + cls, textContent: text}); }
 
+    $('close').onclick = () => google.script.host.close();
+
     $('form').onsubmit = e => {
       e.preventDefault();
       const form = {};
       document.querySelectorAll('input, select, textarea').forEach(el => { form[el.id] = el.value; });
       $('add').disabled = true;
+      show('ok', 'Adding…');
       google.script.run
         .withSuccessHandler(r => {
-          show('ok', 'Added item ' + r.id + ' on row ' + r.row + '.');
+          show('ok', 'Added item ' + r.id + ' on row ' + r.row + '. Add another, or Close.');
           ['Title', 'Summary / Why', 'Next step / Research question', 'URL', 'GitHub branch', 'Revisit trigger'].forEach(k => { $(k).value = ''; });
           $('add').disabled = false;
           $('Title').focus();

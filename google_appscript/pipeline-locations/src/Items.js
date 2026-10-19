@@ -1,11 +1,11 @@
-/* The Add Pipeline item sidebar: reads the Domains tab and Master's dropdowns, and
+/* The Add Pipeline item dialog: reads the Domains tab and Master's dropdowns, and
  * writes one new row to Master below the last item.
  */
 
 function showItemForm() {
   const page = HtmlService.createTemplateFromFile('ItemForm');
   page.data = safeJson(itemFormData());
-  SpreadsheetApp.getUi().showSidebar(page.evaluate().setTitle('Add Pipeline item'));
+  SpreadsheetApp.getUi().showModalDialog(page.evaluate().setWidth(760).setHeight(640), 'Add Pipeline item');
 }
 
 function itemFormData() {
