@@ -3,7 +3,7 @@
 Horology's two purpose-built MCP servers each expose a small, fixed set of named tools with their own credentials and their own container. Neither allows arbitrary code execution or arbitrary API access. How they work: [MCP architecture](../../architecture/mcp/mcp-services.md).
 
 - [`document_graph_server.md`](document_graph_server.md) — the document graph: running, connecting and testing it locally.
-- Gateway: setup, local start-up and verification are in the [gateway README](../../../mcp-servers/mcp-gateway/README.md).
+- Gateway: setup, local start-up and verification are in the [gateway README](https://github.com/Welladino/Horology/blob/main/mcp-servers/mcp-gateway/README.md).
 - Cloud deployment of both: [`../gcp/mcp_deployment.md`](../gcp/mcp_deployment.md).
 - Users, workspaces and which person may use which server: [`access.md`](access.md).
 

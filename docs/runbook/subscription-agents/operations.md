@@ -30,7 +30,7 @@ Cloud sessions cannot read these local paths. For Claude, upload the skills and 
 
 ## Change the workflow
 
-Edit [`workflow.yaml`](../../../plugins/horology-workflows/skills/horology-capture-triage/references/workflow.yaml) first, then the skills or Apps Script code that apply the changed rule, and the Mermaid workflow diagrams in the [subscription-agents page](../../architecture/subscription-agents/subscription-agents.md). Then check:
+Edit [`workflow.yaml`](https://github.com/Welladino/Horology/blob/main/plugins/horology-workflows/skills/horology-capture-triage/references/workflow.yaml) first, then the skills or Apps Script code that apply the changed rule, and the Mermaid workflow diagrams in the [subscription-agents page](../../architecture/subscription-agents/subscription-agents.md). Then check:
 
 ```bash
 .venv/bin/python -m pytest tests/unit/workflow -q

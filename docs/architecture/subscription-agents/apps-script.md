@@ -1,6 +1,6 @@
 # Apps Script projects
 
-Three Google Apps Script projects support the subscription-agent workflow. None of them runs AI: they move records between the registers and ClickUp, apply the founder's decisions, and keep the Locations tab in step with Drive. Source lives in [`google_appscript/`](../../../google_appscript/), one folder per project, published with clasp ([runbook](../../runbook/subscription-agents/clasp.md)).
+Three Google Apps Script projects support the subscription-agent workflow. None of them runs AI: they move records between the registers and ClickUp, apply the founder's decisions, and keep the Locations tab in step with Drive. Source lives in [`google_appscript/`](https://github.com/Welladino/Horology/tree/main/google_appscript), one folder per project, published with clasp ([runbook](../../runbook/subscription-agents/clasp.md)).
 
 | Project | Folder | Attached to | Does |
 |---|---|---|---|
@@ -37,7 +37,7 @@ When the current decision for an item that is **Awaiting decision** is set to ac
 | parked | either | Parked, Stage 2, No action |
 | rejected | either | Rejected, Stage 2, No action |
 
-Only Claude Code and Codex rows are made Ready; Manual and Unassigned get No action. It also sets the item's Updated date and, if blank, the decision's Decision Date. The rules come from [`workflow.yaml`](../../../plugins/horology-workflows/skills/horology-capture-triage/references/workflow.yaml); a unit test checks they agree.
+Only Claude Code and Codex rows are made Ready; Manual and Unassigned get No action. It also sets the item's Updated date and, if blank, the decision's Decision Date. The rules come from [`workflow.yaml`](https://github.com/Welladino/Horology/blob/main/plugins/horology-workflows/skills/horology-capture-triage/references/workflow.yaml); a unit test checks they agree.
 
 - It acts only on items still Awaiting decision, using the decision named in Current decision ID, so a decision is never applied twice and old accepted decisions are never replayed. It keeps no state of its own.
 - Proposed decisions are skipped. Problems (no Current decision ID, a decision for another item or stage, rework without instructions) are reported and that item is left unchanged.

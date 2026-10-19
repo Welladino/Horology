@@ -1,6 +1,6 @@
 # Deploy the MCP services to Cloud Run
 
-How the pieces fit: [Cloud architecture](../../architecture/cloud/cloud-infrastructure.md) and [MCP services](../../architecture/mcp/mcp-services.md). Building images: [Cloud Build](cloud_build.md). Profiles, post-deploy checks and build lookups: [operator access and checks](operator_checks.md). Why things are set up this way: the [notes index](../../planning/notes/index/HOROLOGY_NOTES_INDEX.md).
+How the pieces fit: [Cloud architecture](../../architecture/cloud/cloud-infrastructure.md) and [MCP services](../../architecture/mcp/mcp-services.md). Building images: [Cloud Build](cloud_build.md). Profiles, post-deploy checks and build lookups: [operator access and checks](operator_checks.md). Why things are set up this way: the [notes index](https://github.com/Welladino/Horology/blob/main/docs/planning/notes/index/HOROLOGY_NOTES_INDEX.md).
 
 Project `horology-dev`, region `us-central1`, registry `us-central1-docker.pkg.dev/horology-dev/mcp-servers`. Pass `--project` and `--region` on every command.
 

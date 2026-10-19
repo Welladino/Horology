@@ -2,7 +2,7 @@
 
 Hermes-specific setup: the one-time provider wizard, dashboard account/login, and where personas live in the running container. For starting/stopping the whole stack (all three containers) or the general Docker layout, see [`docs/runbook/docker/running_all_services.md`](running_all_services.md).
 
-Background/rationale for choosing Docker over the `curl | bash` installer, and Hermes over Claude Code CLI for automation, is in [`docs/planning/notes/2026-08-05_horology-founding-decisions_note.md`](../../planning/notes/2026-08-05_horology-founding-decisions_note.md).
+Background/rationale for choosing Docker over the `curl | bash` installer, and Hermes over Claude Code CLI for automation, is in [`docs/planning/notes/2026-08-05_horology-founding-decisions_note.md`](https://github.com/Welladino/Horology/blob/main/docs/planning/notes/2026-08-05_horology-founding-decisions_note.md).
 
 ## One-time provider setup
 
@@ -75,7 +75,7 @@ There's no automatic sync: copy each changed script with `docker cp` (few enough
 
 - `.sh`/`.bash` scripts run under bash; anything else (e.g. `.py`) runs under Hermes's own bundled Python interpreter (`/opt/hermes/.venv/bin/python3` inside the container) — **not** the repo's own `.venv`. Check what's importable there before assuming a dependency is available: `docker exec horology-hermes /opt/hermes/.venv/bin/python3 -c "import <module>"`. Confirmed `psycopg2` is *not* present there but `asyncpg` is — `scripts/check_unembedded_documents.py` uses `asyncpg` for exactly this reason, unlike the MCP servers, which use Psycopg 3.
 - Cron scripts do **not** inherit Hermes-managed secrets (provider API keys, etc.) — confirmed by design, per Hermes's own docs. A script needing a credential (e.g. a database connection string) needs its own env var, added to the `hermes` service's `environment:` block in `docker-compose.yml` (a plain container env var survives into the cron subprocess fine — verified hands-on; it's specifically *Hermes-managed* secrets that get stripped, not every env var).
-- **The `wakeAgent` gate** (a cron job's `--script`, without `--no-agent`, decides at runtime whether the agent should run at all): a final stdout line of exactly `{"wakeAgent": false}` skips the agent entirely for that run — confirmed zero LLM turn, `hermes cron runs <job_id>` shows "Script gate returned `wakeAgent=false` — agent skipped." Any other outcome (line omitted, or `{"wakeAgent": true}`) wakes the agent and injects **all** of the script's stdout — including the gate line itself, unstripped — verbatim into the agent's prompt under a "## Script Output" heading. This is the mechanism behind the daily document-graph embedding sweep (see [`docs/planning/notes/2026-08-06_document-graph-v1_note.md`](../../planning/notes/2026-08-06_document-graph-v1_note.md)) — cheap on days nothing needs backfilling, an agent turn only on days something does.
+- **The `wakeAgent` gate** (a cron job's `--script`, without `--no-agent`, decides at runtime whether the agent should run at all): a final stdout line of exactly `{"wakeAgent": false}` skips the agent entirely for that run — confirmed zero LLM turn, `hermes cron runs <job_id>` shows "Script gate returned `wakeAgent=false` — agent skipped." Any other outcome (line omitted, or `{"wakeAgent": true}`) wakes the agent and injects **all** of the script's stdout — including the gate line itself, unstripped — verbatim into the agent's prompt under a "## Script Output" heading. This is the mechanism behind the daily document-graph embedding sweep (see [`docs/planning/notes/2026-08-06_document-graph-v1_note.md`](https://github.com/Welladino/Horology/blob/main/docs/planning/notes/2026-08-06_document-graph-v1_note.md)) — cheap on days nothing needs backfilling, an agent turn only on days something does.
 - `--no-agent` is a different mode entirely (script IS the whole job, stdout delivered verbatim, no agent involved ever) — not used for the embedding sweep, since that needs an agent to actually call `auto_link_similar_documents` when something is found.
 - To test a job immediately without waiting for its schedule: `hermes cron run <job_id>`. Output lands in `/opt/data/cron/output/<job_id>/<timestamp>.md`.
 
@@ -135,7 +135,7 @@ docker exec horology-hermes hermes -p marketing-executive config set tool_loop_g
 docker exec horology-hermes hermes -p code-sentinel config set tool_loop_guardrails.loop_caps.max_web_searches 10
 ```
 
-Hermes has no fallback web-search backend and no crawl/map/sheets tools wired in (Tavily's basic search/extract only) — see [`docs/planning/research/2026-08-06_tavily-feature-surface-and-web-fallback_research.md`](../../planning/research/2026-08-06_tavily-feature-surface-and-web-fallback_research.md).
+Hermes has no fallback web-search backend and no crawl/map/sheets tools wired in (Tavily's basic search/extract only) — see [`docs/planning/research/2026-08-06_tavily-feature-surface-and-web-fallback_research.md`](https://github.com/Welladino/Horology/blob/main/docs/planning/research/2026-08-06_tavily-feature-surface-and-web-fallback_research.md).
 
 Verify: `hermes doctor` should show `✓ web` with no missing-key warning; a real query (`hermes chat -q "..."`) should return actual search results.
 

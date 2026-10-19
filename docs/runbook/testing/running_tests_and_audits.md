@@ -2,7 +2,7 @@
 
 ## Test suite
 
-Tests are grouped by kind: `tests/unit/`, `tests/integration/`, `tests/system/`. What each kind needs and where a new test goes: [`tests/README.md`](../../../tests/README.md).
+Tests are grouped by kind: `tests/unit/`, `tests/integration/`, `tests/system/`. What each kind needs and where a new test goes: [`tests/README.md`](https://github.com/Welladino/Horology/blob/main/tests/README.md).
 
 Install the shared packages into the development environment first:
 
@@ -116,6 +116,6 @@ pip-audit -r mcp-servers/mcp-gateway/requirements.txt
 
 Run all three whenever a dependency is added or bumped, and periodically (e.g. before any deployment) since a package can gain a new CVE after it's already pinned. If a vulnerability is found: check what it actually is (`pip-audit --desc`) before reflexively bumping — some are low-relevance to this project's actual usage (e.g. a local-multi-user issue on a single-user dev machine), but bumping to the fixed version is still usually the right call when there's no compatibility cost (re-run the test suite after bumping to confirm nothing broke).
 
-Note: `pip-audit` only checks Python dependencies here — Hermes's own bundled dependency vulnerabilities (found via `hermes doctor` / `hermes security audit` inside the container, not this tool) are tracked separately, see [`docs/planning/notes/2026-08-05_hermes-hardening_note.md`](../../planning/notes/2026-08-05_hermes-hardening_note.md).
+Note: `pip-audit` only checks Python dependencies here — Hermes's own bundled dependency vulnerabilities (found via `hermes doctor` / `hermes security audit` inside the container, not this tool) are tracked separately, see [`docs/planning/notes/2026-08-05_hermes-hardening_note.md`](https://github.com/Welladino/Horology/blob/main/docs/planning/notes/2026-08-05_hermes-hardening_note.md).
 
 Docker images install the shared runtime and `document-graph-core` from the shared build context automatically.

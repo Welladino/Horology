@@ -1,6 +1,6 @@
 # Users, workspaces and MCP access
 
-Who may use which MCP server, and which workspaces each person can open, live in Neon, in the `access` schema (`users`, `workspaces`, `workspace_members`, `user_mcp_access`, `mcp_servers`). Manage them with `scripts/ops/access.py`, which uses the owner connection (`DATABASE_URL` in the root `.env`, as for migrations). Running services pick up a change within 5 minutes. Design: [brief](../../planning/research/2026-10-16_users-workspaces-and-mcp-access_research.md).
+Who may use which MCP server, and which workspaces each person can open, live in Neon, in the `access` schema (`users`, `workspaces`, `workspace_members`, `user_mcp_access`, `mcp_servers`). Manage them with `scripts/ops/access.py`, which uses the owner connection (`DATABASE_URL` in the root `.env`, as for migrations). Running services pick up a change within 5 minutes. Design: [brief](https://github.com/Welladino/Horology/blob/main/docs/planning/research/2026-10-16_users-workspaces-and-mcp-access_research.md).
 
 Run from the repository root:
 

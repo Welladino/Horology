@@ -1,6 +1,6 @@
 # Alembic / Neon Workflow
 
-How the document-graph database (Neon Postgres: `documents`, `document_links`, `run_log`) is migrated and connected to. Design rationale is in [`docs/planning/notes/2026-08-05_horology-founding-decisions_note.md`](../../planning/notes/2026-08-05_horology-founding-decisions_note.md) — this doc is the practical how-to only.
+How the document-graph database (Neon Postgres: `documents`, `document_links`, `run_log`) is migrated and connected to. Design rationale is in [`docs/planning/notes/2026-08-05_horology-founding-decisions_note.md`](https://github.com/Welladino/Horology/blob/main/docs/planning/notes/2026-08-05_horology-founding-decisions_note.md) — this doc is the practical how-to only.
 
 ## One-time setup
 

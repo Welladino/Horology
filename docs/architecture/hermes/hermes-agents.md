@@ -55,7 +55,7 @@ Every task must end with `kanban_complete`, or `kanban_block` with a reason. A t
 
 Each profile's persona is its `SOUL.md` inside `hermes-data/`; Second-Soul first reads `/opt/data/personas/subagents/INDEX.md`, a one-line-per-profile list, so its prompt doesn't grow with the roster. The repository no longer holds these files (removed 2026-10-16): the next Hermes setup will rebuild the profiles on the plugin structure, sharing the `horology-*` skills, with a thin `SOUL.md` per profile. The previous versions are in git at `55f7818:personas/`.
 
-Finished, substantive outputs go to the document graph with `write_document`, followed by `auto_link_similar_documents`. The rules are in [`CLAUDE.md`](../../../CLAUDE.md#how-hermes-subagents-should-create-documents).
+Finished, substantive outputs go to the document graph with `write_document`, followed by `auto_link_similar_documents`. The rules are in [`CLAUDE.md`](https://github.com/Welladino/Horology/blob/main/CLAUDE.md#how-hermes-subagents-should-create-documents).
 
 ## Tools and limits
 

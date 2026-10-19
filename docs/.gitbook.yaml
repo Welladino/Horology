@@ -1,0 +1,8 @@
+# GitBook Git Sync for the Horology space. Project directory: docs.
+# Only the pages listed in SUMMARY.md (runbook and architecture) are published;
+# links to planning notes and code point to GitHub.
+root: ./
+
+structure:
+  readme: runbook/setup/how-horology-works.md
+  summary: SUMMARY.md

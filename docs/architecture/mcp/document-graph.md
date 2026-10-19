@@ -99,4 +99,4 @@ Before each sync, and on its own with `GRAPH_SYNC_MODE=records`, the job's **rec
 
 Entry points (MCP tools, the job) call services. Domains call each other's services, never each other's repositories, and only `documents/` writes the `documents` table. The service and the job never import each other.
 
-Tables: [Data](../data/data-model.md). Running the sync locally: the [document-graph README](../../../mcp-servers/document-graph/README.md#sign-in-and-the-document-index-sync).
+Tables: [Data](../data/data-model.md). Running the sync locally: the [document-graph README](https://github.com/Welladino/Horology/blob/main/mcp-servers/document-graph/README.md#sign-in-and-the-document-index-sync).

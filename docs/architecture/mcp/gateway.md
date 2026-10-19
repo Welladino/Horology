@@ -55,4 +55,4 @@ GitHub and Google Drive adapters were removed in favour of the platforms' own co
 | `config/` | Policy files |
 | `scripts/` | Local set-up and `revoke_email.py` |
 
-Database tables: [Data](../data/data-model.md). Setup and local use: the [gateway README](../../../mcp-servers/mcp-gateway/README.md).
+Database tables: [Data](../data/data-model.md). Setup and local use: the [gateway README](https://github.com/Welladino/Horology/blob/main/mcp-servers/mcp-gateway/README.md).

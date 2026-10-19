@@ -56,7 +56,7 @@ A laptop client such as Codex uses `http://127.0.0.1:8765/mcp`.
 
 ## Running the sync job locally
 
-See the [document-graph README](../../../mcp-servers/document-graph/README.md#sign-in-and-the-document-index-sync).
+See the [document-graph README](https://github.com/Welladino/Horology/blob/main/mcp-servers/document-graph/README.md#sign-in-and-the-document-index-sync).
 
 ## Dependency pinning
 

@@ -1,6 +1,6 @@
 # Claude skills and connectors
 
-Claude gets Horology from your claude.ai account: two custom connectors for the MCP servers, and one uploaded skill per skill folder. They load in cloud sessions (whatever repository they clone, or none), claude.ai chat, Cowork, and Claude Code on this Mac. Plugins don't load in cloud sessions, so Claude doesn't use the folders in `plugins/` as plugins; they're the skill source, and the OpenAI/Codex packaging. Why: the [note](../../planning/notes/2026-10-17_claude-skills-and-connectors-on-claude-ai_note.md).
+Claude gets Horology from your claude.ai account: two custom connectors for the MCP servers, and one uploaded skill per skill folder. They load in cloud sessions (whatever repository they clone, or none), claude.ai chat, Cowork, and Claude Code on this Mac. Plugins don't load in cloud sessions, so Claude doesn't use the folders in `plugins/` as plugins; they're the skill source, and the OpenAI/Codex packaging. Why: the [note](https://github.com/Welladino/Horology/blob/main/docs/planning/notes/2026-10-17_claude-skills-and-connectors-on-claude-ai_note.md).
 
 ## Connectors
 
