@@ -1,4 +1,4 @@
-# Summary
+# Table of contents
 
 * [Architecture](overview.md "Overview")
 
@@ -9,12 +9,12 @@
 
 ## MCP services
 
-* [MCP services](mcp/mcp-services.md)
-* [Gateway](mcp/gateway.md)
-* [Document graph](mcp/document-graph.md)
+* [MCP services](mcp-services/mcp-services.md)
+* [Gateway](mcp-services/gateway.md)
+* [Document graph](mcp-services/document-graph.md)
 
 ## Platform
 
-* [Data model](data/data-model.md)
-* [Cloud infrastructure](cloud/cloud-infrastructure.md)
-* [Hermes agents](hermes/hermes-agents.md)
+* [Data model](platform/data-model.md)
+* [Cloud infrastructure](platform/cloud-infrastructure.md)
+* [Hermes agents](platform/hermes-agents.md)
