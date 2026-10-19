@@ -1,8 +1,26 @@
-# Data
+# Data model
 
 Horology keeps its own state in one Neon Postgres database. Business deliverables from subscription agents live in Drive and Sheets instead; Hermes' own session and kanban state stays in the gitignored `hermes-data/`.
 
-![Neon schemas and logins](../diagrams/neon_data.svg)
+```mermaid
+flowchart TB
+  db["<b>One Neon database</b><br/>Alembic in alembic/versions owns every schema change, run with the owner connection"]
+  subgraph graphdb["Document graph · login horology_graph"]
+    docs[("<b>Documents</b><br/>documents (workspace, source, domain, pipeline_id), document_links, document_embeddings, document_chunks")]
+    topics[("<b>Topics</b><br/>topics, section_topics")]
+    entities[("<b>Entities</b><br/>entity_types, entities, entity_aliases, entity_mentions, entity_relations, relation_evidence, entity_decisions, entity_runs")]
+    runs[("<b>Runs</b><br/>graph_runs: one sync or rebuild per workspace at a time. run_log, run_outputs and Pipeline copies with their change events: the execution history")]
+    gauth[("<b>graph_auth</b><br/>records: OAuth clients, codes and tokens, hashed")]
+  end
+  subgraph gateway["Gateway · login horology_gateway"]
+    quotas[("<b>gateway_quotas</b><br/>reservations, reservation_lock, cache: daily and monthly credits, one-hour cache")]
+    gwauth[("<b>gateway_auth</b><br/>records: OAuth clients, codes and tokens, hashed")]
+  end
+  sweep["<b>horology_cron_sweep_ro</b><br/>Read-only login for the unembedded-documents check: SELECT on documents and document_embeddings"]
+  db --> graphdb
+  db --> gateway
+  sweep -. reads .-> docs
+```
 
 ## Logins
 

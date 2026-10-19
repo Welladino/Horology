@@ -25,7 +25,7 @@ Reuse existing Postgres for transactional accounting rather than add a database,
 
 ## Impact
 
-- Current state: [Cloud](../../architecture/cloud/README.md), [MCP sign-in](../../architecture/mcp/README.md#sign-in). Commands: [deployment runbook](../../runbook/gcp/mcp_deployment.md).
+- Current state: [Cloud](../../architecture/cloud/cloud-infrastructure.md), [MCP sign-in](../../architecture/mcp/mcp-services.md#sign-in). Commands: [deployment runbook](../../runbook/gcp/mcp_deployment.md).
 - The assignment model used at first was replaced by one shared policy and Audience-managed sign-in ([note](2026-10-13_gateway-shared-policy-and-budgets_note.md)).
 
 ## Follow-Ups

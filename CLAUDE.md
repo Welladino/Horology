@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (or any agent) working in this reposi
 
 Horology is a solo founder's personal "AI co-founder" system: **Second-Soul**, a supervisor agent, dispatches work to named specialist subagents (GTM strategy, marketing content, codebase/security monitoring, and more over time). The founder talks only to Second-Soul.
 
-Framework, in one line: Hermes Agent (Nous Research) as the agent runtime, subagents as Hermes **profiles** dispatched via **kanban tasks**, purpose-built MCP servers (no arbitrary API/SQL access) for anything external. Full architecture, diagrams and the current subagent roster start at [`docs/architecture/README.md`](docs/architecture/README.md) — read that for how the system actually works. This file is about how the *repo's own documentation* is organized, not the system itself.
+Framework, in one line: Hermes Agent (Nous Research) as the agent runtime, subagents as Hermes **profiles** dispatched via **kanban tasks**, purpose-built MCP servers (no arbitrary API/SQL access) for anything external. Full architecture, diagrams and the current subagent roster start at [`docs/architecture/overview.md`](docs/architecture/overview.md) — read that for how the system actually works. This file is about how the *repo's own documentation* is organized, not the system itself.
 
 ## Where Repo Documentation Goes
 
@@ -16,7 +16,7 @@ Four kinds of doc, four folders — matching content to the right one is what ke
 |---|---|---|
 | `docs/planning/research/` | Open questions being investigated: options considered, tradeoffs, sources. No decision yet, or the investigation phase of one. | Future you/agent asking "why did we consider X" |
 | `docs/planning/notes/` | Decisions actually made and implemented: what changed, why, verified how. | Future you/agent asking "what did we do and why" |
-| `docs/architecture/` | Standing, current-state reference — updated in place, not dated. How the system works *right now*. One subfolder per area; diagrams in `diagrams/`, rendered with `scripts/docs/render_diagrams.py`. | Anyone orienting themselves in the system before making a change |
+| `docs/architecture/` | Standing, current-state reference — updated in place, not dated. How the system works *right now*. One subfolder per area, each page named for its subject (no `README.md`); start at [`docs/architecture/overview.md`](docs/architecture/overview.md). Diagrams are Mermaid blocks inside the pages, edited in place. | Anyone orienting themselves in the system before making a change |
 | `docs/runbook/` | Practical how-to: commands to run, in what order, with what flags. Terminal-ready. | You, running something yourself; an agent needing the exact CLI invocation |
 
 **The rule for research vs. notes**: if there's a genuine "we looked into several options before deciding" phase, write it up as a `research/` brief first (`docs/planning/templates/RESEARCH_BRIEF_TEMPLATE.md`), then a short `notes/` entry for the decision that references it. If it was direct — found a problem, fixed it, verified — a single `notes/` entry is enough (`docs/planning/templates/IMPLEMENTATION_NOTE_TEMPLATE.md`). Don't merge a real investigation into a decision note; don't split a two-line fix into two files either.
@@ -29,7 +29,7 @@ See `docs/planning/README.md` for the full workflow and naming convention.
 
 ## Subscription agents
 
-The secondary subscription-agent workflow uses personal AI subscriptions, Drive instructions and Sheets records. Read [its architecture](docs/architecture/subscription-agents/README.md) and [runbook](docs/runbook/subscription-agents/README.md) before changing it. Its skill source is `plugins/horology-workflows/skills/` (supervisor, capture and triage) and `plugins/horology-specialists/skills/` (specialist agents); installed copies are distributions. Subscription-agent business outputs go to Drive/Sheets. The Neon and kanban rules below apply to Hermes/Second-Soul agents, not subscription-agent sessions.
+The secondary subscription-agent workflow uses personal AI subscriptions, versioned skills and Sheets records (the Pipeline's Locations, Domains, Templates and Registers tabs say where things live). Read [its architecture](docs/architecture/subscription-agents/subscription-agents.md) and [runbook](docs/runbook/subscription-agents/README.md) before changing it. Its skill source is `plugins/horology-workflows/skills/` (supervisor, capture and triage) and `plugins/horology-specialists/skills/` (specialist agents); installed copies are distributions. Subscription-agent business outputs go to Drive/Sheets. The Neon and kanban rules below apply to Hermes/Second-Soul agents, not subscription-agent sessions.
 
 ## How Hermes Subagents Should Create Documents
 

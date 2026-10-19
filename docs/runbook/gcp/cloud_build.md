@@ -1,6 +1,6 @@
 # MCP release builds
 
-Start with the [Cloud architecture](../../architecture/cloud/README.md) for the release pipeline and identities, and [MCP services](../../architecture/mcp/README.md) for sign-in. Day-to-day checks: [operator access and checks](operator_checks.md).
+Start with the [Cloud architecture](../../architecture/cloud/cloud-infrastructure.md) for the release pipeline and identities, and [MCP services](../../architecture/mcp/mcp-services.md) for sign-in. Day-to-day checks: [operator access and checks](operator_checks.md).
 
 Run from the Horology repository root. Cloud Build receives source, runs mocked provider/security tests against disposable PostgreSQL, audits Python dependencies, builds both images, then scans them with Trivy. A failed gate prevents publication. Real provider keys and production databases are never used by tests. The local Hermes Docker stack tests skip because the build has no Docker CLI/runtime credentials; gateway persistence tests must run.
 

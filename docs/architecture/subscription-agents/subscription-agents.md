@@ -2,9 +2,71 @@
 
 Subscription agents are Horology's document-driven way of working. Claude, ChatGPT and Codex sessions, run on personal AI subscriptions, do research, assessment and planning by following versioned skills and writing their results to Drive and Sheets. They don't use Hermes, its profiles or kanban.
 
-![Subscription-agent workflow](../diagrams/subscription_workflow.svg)
+The workflow's states, field values and allowed moves (with who may make each) are defined once in [`workflow.yaml`](../../../plugins/horology-workflows/skills/horology-capture-triage/references/workflow.yaml). The skills and Apps Scripts follow it. Unit tests check it against itself and the scripts, and check that every status and move below is in it. Each arrow is labelled with its move's ID in `workflow.yaml` and who makes it.
 
-The workflow's states, field values and allowed moves (with who may make each) are defined once in [`workflow.yaml`](../../../plugins/horology-workflows/skills/horology-capture-triage/references/workflow.yaml). The skills follow it, a unit test checks it against itself and the ClickUp sync's status map, and the diagram above is generated from it.
+**Status** (the item's place in the workflow):
+
+```mermaid
+stateDiagram-v2
+  state "Awaiting decision" as Awaiting
+  state "Handed off" as HandedOff
+  [*] --> Inbox: capture · capture skill · Stage 0
+  Inbox --> Parked: park · founder
+  Rework --> Parked: park · founder
+  Parked --> Inbox: unpark · founder
+  Inbox --> Researching: start-run · supervisor
+  Rework --> Researching: start-run · supervisor
+  Approved --> Researching: start-run · supervisor
+  Researching --> Awaiting: submit-for-review · supervisor · Stage 2
+  Awaiting --> Approved: accept-stage-1 · founder or sync · Stage 3, Ready
+  Awaiting --> HandedOff: accept-stage-3 · founder or sync
+  Awaiting --> Rework: rework · founder or sync · Ready
+  Awaiting --> Parked: decide-park · founder or sync
+  Awaiting --> Rejected: decide-reject · founder or sync
+  Inbox --> Rejected: reject · founder
+  Parked --> Rejected: reject · founder
+  Rejected --> Inbox: reopen · founder
+  HandedOff --> [*]
+```
+
+**Agent status** (whether an agent should act on it):
+
+```mermaid
+flowchart LR
+  noaction["No action"]
+  plan["Plan"]
+  ready["Ready"]
+  noaction -- "request-plan · founder" --> plan
+  plan -- "planned · planner · Planner output Yes" --> noaction
+  noaction -- "select · founder · Stage 1 or 3, Claude Code or Codex rows" --> ready
+  plan -- "select · founder" --> ready
+  ready -- "submit-for-review or run-failed · supervisor" --> noaction
+```
+
+A run (`start-run`) only starts on a Ready row; the decisions script sets Ready again after accept-stage-1 and rework, and No action after the other decisions.
+
+## One item, start to finish
+
+```mermaid
+flowchart TB
+  pick["<b>1. You pick the work</b><br/>In Pipeline Master, set Agent status to Plan (needs scoping) or Ready (run it). Choose Agent type and Run location."]
+  planner["<b>2a. Plan → Planner</b><br/>Rewrites Next step as a sharper question or numbered steps, then sets it back to No action. You review and set Ready."]
+  sup["<b>2b. Ready → Supervisor</b><br/>You ask a Claude Code or Codex session to run the Ready items. It claims each one and starts one session per item."]
+  spec["<b>3. Specialists do the work</b><br/>Research, technical assessment, security, GTM, marketing, content. The supervisor checks the results, then finishes the run."]
+  land["<b>4. Results land where you see them</b><br/>Drive documents, Document Index rows and a proposed decision. The item moves to Awaiting decision."]
+  sync["<b>5. Sync job records what happened</b><br/>No AI. Copies the sheets into Neon, notes every change, links outputs to the run, and checks moves against workflow.yaml."]
+  digest["<b>6. Daily digest reports back</b><br/>A Google Doc: counts, what finished, what's waiting on you, and anything that looks wrong."]
+  decide["<b>7. You decide</b><br/>Accept, rework, park or reject in the Decision Register. Rework makes the item Ready again."]
+  pick --> planner
+  pick --> sup
+  planner -. "then Ready" .-> sup
+  sup -- "Ready items" --> spec
+  spec -- save --> land
+  land -- "read by" --> sync
+  sync -- "read by" --> digest
+  digest --> decide
+  decide -. "rework or accept" .-> sup
+```
 
 ## Components
 

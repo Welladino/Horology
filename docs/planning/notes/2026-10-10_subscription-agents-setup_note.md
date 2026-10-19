@@ -25,7 +25,7 @@ Version control, offline tests and a preview step make changes to live Sheets, C
 
 ## Impact
 
-- Current design: [subscription-agent architecture](../../architecture/subscription-agents/README.md). Maintenance: [runbook](../../runbook/subscription-agents/README.md).
+- Current design: [subscription-agent architecture](../../architecture/subscription-agents/subscription-agents.md). Maintenance: [runbook](../../runbook/subscription-agents/README.md).
 
 ## Follow-Ups
 

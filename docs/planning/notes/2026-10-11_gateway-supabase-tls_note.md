@@ -31,7 +31,7 @@ Full verification with a trust anchor of known provenance; a checked-in public c
 
 ## Impact
 
-- The image contract in Cloud Build checks the CA is present ([Cloud](../../architecture/cloud/README.md#release)).
+- The image contract in Cloud Build checks the CA is present ([Cloud](../../architecture/cloud/cloud-infrastructure.md#release)).
 
 ## Follow-Ups
 

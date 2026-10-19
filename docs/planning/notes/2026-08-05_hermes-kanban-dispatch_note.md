@@ -35,4 +35,4 @@ Getting real subagent output back to the supervisor, reliably and unattended, is
 - Decide whether `hermes kanban dispatch` must run continuously for scheduled runs; all testing so far used manual dispatch.
 - Decide whether kanban history makes the unused `run_log` table redundant.
 - A `timed_out` without a prior `kanban_block` means the task was under-scoped when created, not only a budget problem.
-- Second-Soul's own limit was later set to 150 turns (see [Hermes architecture](../../architecture/hermes/README.md#tools-and-limits)).
+- Second-Soul's own limit was later set to 150 turns (see [Hermes architecture](../../architecture/hermes/hermes-agents.md#tools-and-limits)).

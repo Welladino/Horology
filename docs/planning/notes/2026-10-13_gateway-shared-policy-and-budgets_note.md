@@ -25,7 +25,7 @@ Spending is what needs a hard limit, and a shared daily and monthly cap gives it
 
 - Accepted risk: publishing the Google app ("In production") would let any Google account sign in, because there is no second check. Keep it in Testing.
 - Removing an Audience user blocks new sign-ins only; a connected client keeps refreshing (7-day refresh lifetime, rotated on use) until `revoke_email.py` is run. Grants issued before emails were recorded can't be matched by email.
-- Current state: [gateway policy and budgets](../../architecture/mcp/gateway.md#policy), [sign-in](../../architecture/mcp/README.md#sign-in).
+- Current state: [gateway policy and budgets](../../architecture/mcp/gateway.md#policy), [sign-in](../../architecture/mcp/mcp-services.md#sign-in).
 
 ## Follow-Ups
 

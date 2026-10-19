@@ -2,7 +2,25 @@
 
 The document graph (`mcp-servers/document-graph/`) holds what agents and the founder have researched, planned and decided, so new work can build on it. Every document belongs to one **workspace**, and every query is filtered by the caller's workspace.
 
-![Document graph pipeline](../diagrams/document_graph_pipeline.svg)
+```mermaid
+flowchart TB
+  subgraph in["Two ways in"]
+    write["<b>write_document</b><br/>An agent saves a finished output; source = agent"]
+    job["<b>Graph sync job</b><br/>Document Index rows with Graph Inclusion TRUE; source = sheet. Only files whose Drive revision changed."]
+  end
+  split["<b>Split into sections</b><br/>Up to 2,000 characters each, at most 30 per document, else rejected as too_long"]
+  embed["<b>Embed</b><br/>768-dimension Gemini embeddings through OpenRouter, per section and per document"]
+  link["<b>Link</b><br/>related_to links above 0.85 similarity, plus supersedes and named links"]
+  topics["<b>Topics</b><br/>Louvain clusters of similar sections, named by a model; new sections join existing topics"]
+  entities["<b>Entities</b><br/>Extracted names, aliases and relationships, matched by exact name, embeddings and a judge model"]
+  in --> split --> embed --> link --> topics --> entities
+  subgraph out["Read back by agents"]
+    search["<b>search_documents</b><br/>Passage search by meaning, filtered by workspace and domain"]
+    topicsr["<b>list_topics · get_topic</b><br/>Themes across documents, with gaps such as research without a decision"]
+    ent["<b>find_entity · entity_documents</b><br/>Everything said about one company, tool or market"]
+  end
+  entities --> out
+```
 
 ## Tools
 
@@ -81,4 +99,4 @@ Before each sync, and on its own with `GRAPH_SYNC_MODE=records`, the job's **rec
 
 Entry points (MCP tools, the job) call services. Domains call each other's services, never each other's repositories, and only `documents/` writes the `documents` table. The service and the job never import each other.
 
-Tables: [Data](../data/README.md). Running the sync locally: the [document-graph README](../../../mcp-servers/document-graph/README.md#sign-in-and-the-document-index-sync).
+Tables: [Data](../data/data-model.md). Running the sync locally: the [document-graph README](../../../mcp-servers/document-graph/README.md#sign-in-and-the-document-index-sync).

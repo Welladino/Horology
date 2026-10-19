@@ -23,7 +23,7 @@ Fixed, priced contracts instead of arbitrary provider execution; and one place (
 
 ## Impact
 
-- Current tools and boundaries: [gateway](../../architecture/mcp/gateway.md). Hermes' gateway tool filter still names the removed GitHub tools ([known gap](../../architecture/hermes/README.md#known-gaps)).
+- Current tools and boundaries: [gateway](../../architecture/mcp/gateway.md). Hermes' gateway tool filter still names the removed GitHub tools ([known gap](../../architecture/hermes/hermes-agents.md#known-gaps)).
 
 ## Follow-Ups
 

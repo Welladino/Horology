@@ -25,7 +25,7 @@ Every gate runs before anything is published; routine access is the narrowest th
 
 ## Impact
 
-- Current state: [Cloud](../../architecture/cloud/README.md). Commands: [Cloud Build](../../runbook/gcp/cloud_build.md), [operator checks](../../runbook/gcp/operator_checks.md).
+- Current state: [Cloud](../../architecture/cloud/cloud-infrastructure.md). Commands: [Cloud Build](../../runbook/gcp/cloud_build.md), [operator checks](../../runbook/gcp/operator_checks.md).
 - GitHub Actions now runs the same gates on every push, plus a full-history gitleaks scan, and licence gates were added.
 
 ## Follow-Ups

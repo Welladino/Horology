@@ -1,6 +1,6 @@
 # Subscription-agent operations
 
-Read [architecture](../../architecture/subscription-agents/README.md) for responsibilities and stages. These steps maintain skills and the Sheets/ClickUp integration; they do not deploy Hermes or start AI schedules.
+Read [architecture](../../architecture/subscription-agents/subscription-agents.md) for responsibilities and stages. These steps maintain skills and the Sheets/ClickUp integration; they do not deploy Hermes or start AI schedules.
 
 ## Live records and instructions
 
@@ -30,15 +30,13 @@ Cloud sessions cannot read these local paths. For Claude, upload the skills and 
 
 ## Change the workflow
 
-Edit [`workflow.yaml`](../../../plugins/horology-workflows/skills/horology-capture-triage/references/workflow.yaml) first, then the skills or sync code that apply the changed rule. Check and redraw:
+Edit [`workflow.yaml`](../../../plugins/horology-workflows/skills/horology-capture-triage/references/workflow.yaml) first, then the skills or Apps Script code that apply the changed rule, and the Mermaid workflow diagrams in the [subscription-agents page](../../architecture/subscription-agents/subscription-agents.md). Then check:
 
 ```bash
 .venv/bin/python -m pytest tests/unit/workflow -q
 ```
 
-```bash
-.venv/bin/python scripts/docs/workflow_diagram.py
-```
+The tests fail if a move or status in `workflow.yaml` is missing from the diagrams.
 
 ## Run Ready items
 

@@ -1,6 +1,6 @@
 # Operator access and checks
 
-How the identities fit together: [Cloud architecture](../../architecture/cloud/README.md#identities).
+How the identities fit together: [Cloud architecture](../../architecture/cloud/cloud-infrastructure.md#identities).
 
 ## gcloud configurations
 

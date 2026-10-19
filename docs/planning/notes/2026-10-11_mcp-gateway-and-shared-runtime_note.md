@@ -31,7 +31,7 @@ Centralising authorisation and budgets in one place is what makes them enforceab
 
 - Security checklist before cloud deployment, all since carried out in the [Cloud Run deployment](2026-10-11_cloud-run-deployment-and-oauth_note.md): extended private-address tests, Secret Manager for provider keys, a durable ledger, deliberate ingress and IAM, external tests of the deployed URL, and checks that logs omit tokens and DSNs.
 - Later changes replaced assignments with one shared policy ([note](2026-10-13_gateway-shared-policy-and-budgets_note.md)) and removed GitHub and Google adapters ([note](2026-10-12_gateway-provider-scope_note.md)).
-- Current design: [gateway](../../architecture/mcp/gateway.md), [MCP services](../../architecture/mcp/README.md).
+- Current design: [gateway](../../architecture/mcp/gateway.md), [MCP services](../../architecture/mcp/mcp-services.md).
 
 ## Follow-Ups
 

@@ -8,7 +8,7 @@ Built on [Hermes Agent](https://github.com/NousResearch/hermes-agent) (Nous Rese
 
 Read in this order:
 
-1. **[`docs/architecture/README.md`](docs/architecture/README.md)** — how the system actually works: the system map, Hermes and subscription agents, the two MCP services, data and cloud. Read this before touching anything.
+1. **[`docs/architecture/overview.md`](docs/architecture/overview.md)** — how the system actually works: the system map, Hermes and subscription agents, the two MCP services, data and cloud. Read this before touching anything.
 2. **[`CLAUDE.md`](CLAUDE.md)** — how this repo's *own documentation* is organized (research vs. notes vs. architecture vs. runbook), and the conventions subagents follow when writing business documents.
 3. **[`docs/planning/README.md`](docs/planning/README.md)** — the planning-doc workflow, if you're going to make a design decision and want to know where to write it up.
 
@@ -53,7 +53,7 @@ Full setup detail (persona syncing, cron scripts, troubleshooting): [`docs/runbo
 | `tests/` | By kind: `tests/unit/` (no database or Docker), `tests/integration/` (a disposable migrated Postgres; skipped without it) and `tests/system/` (the real Compose stack; skipped without Docker). See [`tests/README.md`](tests/README.md). Run before shipping any change to an MCP server or `docker-compose.yml`: `python3 -m pytest tests/ -v`. See [`docs/runbook/testing/running_tests_and_audits.md`](docs/runbook/testing/running_tests_and_audits.md). |
 | `docs/architecture/` | Standing reference, current state, no history — start here (see above). |
 | `docs/planning/notes/` & `docs/planning/research/` | Dated trail of *why* the system looks the way it does — check here before assuming something is arbitrary. |
-| `docs/runbook/` | Copy-paste-ready commands for everything operational. |
+| `docs/runbook/` | Copy-paste-ready commands for everything operational. Setting up a new workspace: [`docs/runbook/setup/setup.md`](docs/runbook/setup/setup.md). |
 
 ## A few things that aren't obvious from the code
 

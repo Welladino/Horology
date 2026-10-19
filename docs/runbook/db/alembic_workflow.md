@@ -76,7 +76,7 @@ Current tables (as of `20260805_001_create_document_graph.py`):
 
 - **`documents`** — `doc_type` constrained to `recommendation | content | analysis | report`; `supersedes_id` self-references `documents.id` for version history (a doc chain, not just a timestamp).
 - **`document_links`** — `from_doc_id` / `to_doc_id` / `relation` (free-text, e.g. `informed_by`, `supersedes`, `contradicts`, `references`) — the traversable graph structure between documents.
-- **`run_log`** — one row per supervisor/subagent run: `agent`, `goal`, `summary`, optionally linked to the `document_id` it produced. The human-readable audit trail, distinct from the documents themselves. Since `20261016_007` it is the execution history's run record (claim, status, skills used, steps done); see [Data](../../architecture/data/README.md).
+- **`run_log`** — one row per supervisor/subagent run: `agent`, `goal`, `summary`, optionally linked to the `document_id` it produced. The human-readable audit trail, distinct from the documents themselves. Since `20261016_007` it is the execution history's run record (claim, status, skills used, steps done); see [Data](../../architecture/data/data-model.md).
 
 No `document_embeddings` table yet — semantic search over documents is deliberately deferred (see founding-decisions note) until document volume actually makes structural filtering (by `doc_type`, date, etc.) insufficient.
 

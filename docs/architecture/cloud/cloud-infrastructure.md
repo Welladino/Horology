@@ -1,4 +1,4 @@
-# Cloud
+# Cloud infrastructure
 
 The two MCP services and the sync job run on Google Cloud, in project `horology-dev` (Console name `horology`), region `us-central1`. Hermes is not deployed; it runs only on the founder's laptop.
 
@@ -16,7 +16,27 @@ Service accounts are `<name>@horology-dev.iam.gserviceaccount.com`. Runtime secr
 
 ## Release
 
-![Release pipeline](../diagrams/cloud_release.svg)
+```mermaid
+flowchart TB
+  source["<b>Source</b><br/>GitHub for version control; releases are submitted from local source by the impersonated horology-deployer"]
+  subgraph gates["Gates · same checks in Cloud Build and GitHub Actions"]
+    scan["<b>Source scan</b><br/>Trivy secrets and Dockerfile configuration; gitleaks history on GitHub"]
+    tests["<b>Tests</b><br/>Unit and integration against disposable PostgreSQL"]
+    audits["<b>Audits</b><br/>Bandit and pip-audit"]
+    build["<b>Build both images</b><br/>Gateway and document graph (which also carries the sync job)"]
+    contract["<b>Image contract</b><br/>Non-root, required assets, no local credential files"]
+    imgscan["<b>Image scans and licences</b><br/>Fixable High/Critical and secrets block; licence gates"]
+    scan --> tests --> audits --> build --> contract --> imgscan
+  end
+  registry["<b>Artifact Registry · mcp-servers</b><br/>Build-ID and latest tags; five recent versions kept, deployed- tags protected"]
+  subgraph run["Cloud Run · us-central1"]
+    gw["<b>mcp-gateway</b><br/>Public HTTPS, MCP tools need OAuth. 1 CPU, 512 MiB, 4 requests per instance."]
+    dg["<b>document-graph</b><br/>Public HTTPS, MCP tools need OAuth. Starts the sync job."]
+    job["<b>document-graph-sync job</b><br/>Same image, python -m graph_sync, 60-minute limit, no retries"]
+  end
+  source --> gates --> registry
+  registry -- "operator deploys an exact digest" --> run
+```
 
 Releases start from local source: the deployer uploads it to the source bucket and submits the checked-in `cloudbuild.yaml`. `.gcloudignore` decides what leaves the laptop and `.dockerignore` what enters images, so private `.env` files, policies and client credentials stay out of both. GitHub Actions (`.github/workflows/ci.yml`) runs the same gates on every push, plus a full-history gitleaks scan, but does not deploy.
 
@@ -33,7 +53,27 @@ The pipeline publishes images; it never deploys or migrates. The operator deploy
 
 ## Identities
 
-![Cloud identities](../diagrams/cloud_identities.svg)
+```mermaid
+flowchart TB
+  subgraph people["People"]
+    daily["<b>Daily account</b><br/>Views the project; impersonates horology-deployer for builds and deploys"]
+    admin["<b>Protected administrator</b><br/>IAM and infrastructure changes only, through the horology-admin profile"]
+    testers["<b>Audience test users</b><br/>The only Google accounts that can sign in to either MCP service"]
+  end
+  subgraph sas["Service accounts"]
+    deployer["<b>horology-deployer</b><br/>Submits builds, updates the services, tags images"]
+    build["<b>mcp-build</b><br/>Runs the gates and publishes images; no secrets, no deploy rights"]
+    gw["<b>mcp-gateway</b><br/>Reads only the gateway's secrets"]
+    dg["<b>document-graph</b><br/>Reads its secrets and starts the sync job"]
+    sync["<b>document-graph-sync</b><br/>Reads shared Drive folders and writes the Document Index"]
+  end
+  secrets[("<b>Secret Manager</b><br/>Provider keys, database logins and the Google OAuth client, as pinned versions per service")]
+  daily -- impersonates --> deployer
+  deployer --> build
+  gw --> secrets
+  dg --> secrets
+  sync --> secrets
+```
 
 | Who | gcloud configuration | Can |
 |---|---|---|

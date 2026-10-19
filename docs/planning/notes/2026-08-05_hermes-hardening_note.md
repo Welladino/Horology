@@ -26,7 +26,7 @@ Keep the blast radius of any one credential or exposure small, and verify each c
 ## Impact
 
 - Hermes is reachable only from the laptop, holds no raw provider keys, and can reach only allowlisted domains.
-- Every profile has a far smaller tool surface than Hermes' defaults. Current inventory: [Hermes architecture](../../architecture/hermes/README.md#tools-and-limits).
+- Every profile has a far smaller tool surface than Hermes' defaults. Current inventory: [Hermes architecture](../../architecture/hermes/hermes-agents.md#tools-and-limits).
 
 ## Follow-Ups
 

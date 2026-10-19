@@ -11,12 +11,25 @@ Two MCP services connect agents to anything outside them. Each exposes a fixed s
 
 The same image runs in two places:
 
-- **Cloud Run** for subscription agents. Public HTTPS; every MCP tool needs Google sign-in. See [Cloud](../cloud/README.md).
-- **Local Docker** for Hermes. Bound to localhost and the Hermes network. The gateway uses a local bearer credential; the document graph has no sign-in and serves workspace `welladino`. See [Hermes](../hermes/README.md#containers).
+- **Cloud Run** for subscription agents. Public HTTPS; every MCP tool needs Google sign-in. See [Cloud](../cloud/cloud-infrastructure.md).
+- **Local Docker** for Hermes. Bound to localhost and the Hermes network. The gateway uses a local bearer credential; the document graph has no sign-in and serves workspace `welladino`. See [Hermes](../hermes/hermes-agents.md#containers).
 
 ## Sign-in
 
-![MCP sign-in](../diagrams/mcp_sign_in.svg)
+```mermaid
+flowchart TB
+  add["<b>Add the connector</b><br/>A Claude, ChatGPT or Codex client is given the gateway or document-graph /mcp URL"]
+  reg["<b>Discover and register</b><br/>The client reads the OAuth metadata and registers itself dynamically"]
+  google["<b>Google sign-in</b><br/>openid and email only. Only Google Auth Platform Audience test users can finish it."]
+  consent["<b>Horology consent page</b><br/>Shows the client, the signed-in account and what the connection can do. Allow access issues a code."]
+  token["<b>Token exchange with PKCE</b><br/>Access and refresh tokens, stored hashed in gateway_auth.records or graph_auth.records"]
+  add --> reg --> google --> consent --> token
+  subgraph toolcall["Every tool call"]
+    gw["<b>Gateway</b><br/>Token → shared policy → atomic credit reservation → provider call → bounded result"]
+    dg["<b>Document graph</b><br/>Token → the workspace picked at sign-in, re-checked against the users tables → every query filtered by it"]
+  end
+  token --> toolcall
+```
 
 Both cloud services use the shared Google sign-in in `shared-runtime/horology_runtime/oauth/`, each with its own token table, scope and consent wording:
 

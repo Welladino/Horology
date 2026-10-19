@@ -26,7 +26,7 @@ Narrowest justified capability per identity, applied wherever the platform can e
 ## Impact
 
 - New subagent profiles start with no bundled skills, `terminal`, `code_execution` and `browser` off, and `max_web_searches` set; skills are added one at a time with a reason. Checklist: [Hermes setup](../../runbook/docker/hermes_setup.md).
-- The current tool and limit inventory is in [Hermes architecture](../../architecture/hermes/README.md#tools-and-limits).
+- The current tool and limit inventory is in [Hermes architecture](../../architecture/hermes/hermes-agents.md#tools-and-limits).
 
 ## Follow-Ups
 

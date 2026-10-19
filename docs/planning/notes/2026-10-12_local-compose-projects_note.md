@@ -23,4 +23,4 @@ Each component can be started, stopped and rebuilt on its own, Docker Desktop sh
 
 ## Impact
 
-- Current layout: [Hermes containers](../../architecture/hermes/README.md#containers). Commands: [running all services](../../runbook/docker/running_all_services.md).
+- Current layout: [Hermes containers](../../architecture/hermes/hermes-agents.md#containers). Commands: [running all services](../../runbook/docker/running_all_services.md).

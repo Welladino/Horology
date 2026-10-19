@@ -2,7 +2,27 @@
 
 Hermes Agent (Nous Research) is the runtime for Second-Soul and its subagents. It runs on the founder's laptop; nothing in this part is deployed to the cloud.
 
-![Hermes runtime](../diagrams/hermes_runtime.svg)
+```mermaid
+flowchart TB
+  founder["<b>Founder</b><br/>Talks only to Second-Soul, through the Hermes dashboard or API on localhost"]
+  soul["<b>Second-Soul</b><br/>Supervisor profile. Reads the subagent index, splits work and creates kanban tasks. 150-turn limit."]
+  founder --> soul
+  subgraph profiles["Subagent profiles · 50-turn limit each"]
+    gtm["<b>gtm-manager</b><br/>Positioning, channels and sequencing"]
+    mkt["<b>marketing-executive</b><br/>Copy, drafts and campaigns"]
+    sentinel["<b>code-sentinel</b><br/>Repository health; blocks when no read-only repository access exists"]
+  end
+  soul -- "hermes kanban create --assignee &lt;profile&gt;" --> profiles
+  subgraph mcp["Local MCP containers · Docker network horology_default"]
+    dg["<b>document-graph-mcp:8765</b><br/>Every profile writes finished work with write_document, then auto_link_similar_documents"]
+    gw["<b>horology-mcp-gateway:8767</b><br/>Second-Soul and code-sentinel; local bearer credential, same shared policy and budgets"]
+  end
+  profiles -- "kanban_complete or kanban_block closes every task" --> mcp
+  neon[("<b>Neon Postgres</b><br/>Workspace welladino for local clients")]
+  openrouter["<b>OpenRouter</b><br/>Hermes chat models and graph embeddings"]
+  mcp --> neon
+  mcp --> openrouter
+```
 
 ## Containers
 
