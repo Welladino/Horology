@@ -1,0 +1,6 @@
+interface:
+  display_name: "Horology Workspace Setup"
+  short_description: "Add domains, businesses and folders"
+  default_prompt: "Use $horology-workspace-setup to add a domain and its folders to my workspace."
+policy:
+  allow_implicit_invocation: true

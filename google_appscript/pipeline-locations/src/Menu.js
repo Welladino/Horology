@@ -1,10 +1,13 @@
-/* Entry points: the Extensions menu, the folder view and the Drive check.
- * Reads Drive and the Locations tab; writes only Name and Parent cells. It never
- * creates, moves or renames anything in Drive.
+/* Entry points: the Extensions menu, the Add Pipeline item form (Items.js), the
+ * folder view and the Drive check. Reads Drive and the workbook; writes new Master
+ * rows, and Name and Parent cells in Locations. It never creates, moves or renames
+ * anything in Drive.
  */
 
 function onOpen() {
   SpreadsheetApp.getUi().createAddonMenu()
+    .addItem('Add Pipeline item', 'showItemForm')
+    .addSeparator()
     .addItem('Show folder structure', 'showFolders')
     .addItem('Check folders against Drive', 'checkFolders')
     .addToUi();

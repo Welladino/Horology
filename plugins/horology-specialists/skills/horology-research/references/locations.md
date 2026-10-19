@@ -16,8 +16,8 @@ The Locations tab has one row per folder: Domain, Entity, Kind (Root folder, Ent
 - **Agent reference** rows are material to read: the founder's own documents and the template library. Read the relevant ones for context before working. Never write into them.
 - **Agent output** rows are where agents save. Choose the one whose Name and Purpose fit what you are saving.
 - **Hub** (a domain's root folder), **Node** (a folder that only holds other folders) and **Others** (registers, archives and anything else not for agents) are not for reading or saving. Don't use their contents.
-- Use the Drive ID in Location. Never find a folder by name or path, and never create, move or rename folders.
-- If no Agent output folder fits, two fit equally, or Location is blank, ask the founder instead of saving somewhere else.
+- Use the Drive ID in Location. Never find a folder by name or path, and never create, move or rename folders. The one exception is `horology-workspace-setup`, which creates folders only after the founder approves the tree it shows.
+- If no Agent output folder fits, two fit equally, or Location is blank, ask the founder instead of saving somewhere else. A missing folder is added with `horology-workspace-setup`.
 
 ## Templates
 

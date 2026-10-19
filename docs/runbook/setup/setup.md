@@ -1,6 +1,6 @@
 # Set up Horology
 
-How to give a new person or business their own Horology workspace: their own registers, folders and scripts, with Claude or Codex agents working in it. It takes about an hour. New to Horology? Read [How Horology works](how-horology-works.md) first; the technical detail is in the [architecture overview](../../architecture/overview.md).
+How to give a new person or business their own Horology workspace: their own registers, folders and scripts, with Claude or Codex agents working in it. It takes about an hour. New to Horology? Read [How Horology works](how-horology-works.md) first, and [the skills](skills.md) for what you can ask the agents; the technical detail is in the [architecture overview](../../architecture/overview.md).
 
 ```mermaid
 flowchart TB
@@ -133,8 +133,8 @@ Red rows are duplicates, orange rows break the folder structure (a missing paren
 Reload your Pipeline copy. The **Extensions** menu should show two entries.
 
 1. **Extensions → Horology — Pipeline decisions → Install triggers.** Approve access when asked, then click Install triggers again. From now on, a decision you record in the Decision Register moves its Pipeline item on within 10 minutes. **Preview decisions** shows what it would do.
-2. **Extensions → Horology — Locations → Check folders against Drive.** Approve access, then run it. It should report no problems; it fixes Name and Parent cells that differ from Drive, and lists Drive folders you haven't added.
-3. **Extensions → Horology — Locations → Show folder structure** draws your folders as a tree.
+2. **Extensions → Horology — Workbook → Check folders against Drive.** Approve access, then run it. It should report no problems; it fixes Name and Parent cells that differ from Drive, and lists Drive folders you haven't added.
+3. **Extensions → Horology — Workbook → Show folder structure** draws your folders as a tree.
 
 If the two entries are missing after a reload, the copy didn't bring the scripts. Create them from this repository instead, with your Pipeline's ID:
 
@@ -146,7 +146,7 @@ clasp push
 
 ```sh
 cd google_appscript/pipeline-locations
-clasp create --title "Horology — Locations" --parentId YOUR_PIPELINE_ID --rootDir src
+clasp create --title "Horology — Workbook" --parentId YOUR_PIPELINE_ID --rootDir src
 clasp push
 ```
 

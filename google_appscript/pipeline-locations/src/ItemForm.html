@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_blank">
+  <style>
+    body { font: 13px/1.45 Arial, sans-serif; color: #202124; margin: 12px; }
+    label { display: block; margin: 10px 0 3px; font-weight: bold; font-size: 12px; }
+    .hint { font-weight: normal; color: #5f6368; }
+    input, select, textarea { width: 100%; box-sizing: border-box; padding: 6px 7px; border: 1px solid #dadce0; border-radius: 4px; font: inherit; }
+    textarea { resize: vertical; }
+    details { margin-top: 12px; }
+    summary { cursor: pointer; color: #1a73e8; }
+    button { margin-top: 14px; padding: 8px 14px; border: 0; border-radius: 4px; background: #1a73e8; color: #fff; font-weight: bold; cursor: pointer; }
+    button:disabled { background: #9aa0a6; cursor: default; }
+    .msg { margin-top: 12px; padding: 8px; border-radius: 4px; display: none; }
+    .ok { display: block; background: #e6f4ea; color: #137333; }
+    .err { display: block; background: #fce8e6; color: #a50e0e; }
+  </style>
+</head>
+<body>
+  <form id="form">
+    <label for="Title">Title</label>
+    <input id="Title" required>
+
+    <label for="Domain">Domain</label>
+    <select id="Domain" required></select>
+
+    <div id="entityBox">
+      <label for="Entity">Entity <span class="hint">(a business in this domain, optional)</span></label>
+      <select id="Entity"></select>
+    </div>
+
+    <label for="Type">Type</label>
+    <select id="Type"></select>
+
+    <label for="Summary / Why">Summary / Why</label>
+    <textarea id="Summary / Why" rows="3"></textarea>
+
+    <label for="Next step / Research question">Next step / Research question</label>
+    <textarea id="Next step / Research question" rows="4"></textarea>
+
+    <label for="Agent status">Agent status <span class="hint">(Ready runs it; Plan asks the planner to scope it)</span></label>
+    <select id="Agent status"></select>
+
+    <label for="Agent type">Agent type</label>
+    <select id="Agent type"></select>
+
+    <label for="Run location">Run location</label>
+    <select id="Run location"></select>
+
+    <details>
+      <summary>Work target and revisit trigger</summary>
+      <label for="Link type">Link type</label>
+      <select id="Link type"></select>
+      <label for="URL">URL</label>
+      <input id="URL" placeholder="Repository, website or service">
+      <label for="GitHub branch">GitHub branch</label>
+      <input id="GitHub branch">
+      <label for="Revisit trigger">Revisit trigger</label>
+      <input id="Revisit trigger">
+    </details>
+
+    <button id="add" type="submit">Add item</button>
+    <div id="msg" class="msg"></div>
+  </form>
+  <script>
+    const data = <?!= data ?>;
+    const $ = id => document.getElementById(id);
+
+    function fill(select, values, blank) {
+      select.textContent = '';
+      (blank ? [''] : []).concat(values).forEach(v => select.appendChild(Object.assign(document.createElement('option'), {value: v, textContent: v || '—'})));
+    }
+    fill($('Domain'), Object.keys(data.domains), true);
+    ['Type', 'Link type', 'Run location'].forEach(k => fill($(k), data.options[k], true));
+    fill($('Agent status'), data.options['Agent status']);
+    fill($('Agent type'), data.options['Agent type']);
+    $('Agent status').value = 'No action';
+    $('Agent type').value = 'Unassigned';
+
+    function entities() {
+      const list = data.domains[$('Domain').value] || [];
+      fill($('Entity'), list, true);
+      $('entityBox').style.display = list.length ? '' : 'none';
+    }
+    $('Domain').onchange = entities;
+    entities();
+
+    function show(cls, text) { Object.assign($('msg'), {className: 'msg ' + cls, textContent: text}); }
+
+    $('form').onsubmit = e => {
+      e.preventDefault();
+      const form = {};
+      document.querySelectorAll('input, select, textarea').forEach(el => { form[el.id] = el.value; });
+      $('add').disabled = true;
+      google.script.run
+        .withSuccessHandler(r => {
+          show('ok', 'Added item ' + r.id + ' on row ' + r.row + '.');
+          ['Title', 'Summary / Why', 'Next step / Research question', 'URL', 'GitHub branch', 'Revisit trigger'].forEach(k => { $(k).value = ''; });
+          $('add').disabled = false;
+          $('Title').focus();
+        })
+        .withFailureHandler(err => { show('err', err && err.message ? err.message : String(err)); $('add').disabled = false; })
+        .addPipelineItem(form);
+    };
+  </script>
+</body>
+</html>

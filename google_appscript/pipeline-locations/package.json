@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "test": "node tests/test-locations.cjs",
+    "test": "node tests/test-locations.cjs && node tests/test-items.cjs",
     "clasp:status": "clasp status",
     "clasp:push": "clasp push"
   },

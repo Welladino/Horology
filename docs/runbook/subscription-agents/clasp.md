@@ -5,7 +5,7 @@ Three projects, each in its own folder under `google_appscript/`; what they do i
 | Project | Folder | Script ID | Attached to |
 |---|---|---|---|
 | [Horology — Pipeline decisions](https://script.google.com/d/16wWrpPS5GnmZck7ZSKXPV61by7_Vy8vXjAj-ddSAt5N7pDtMnxv5m5Iy/edit) | `pipeline-decisions/` | `16wWrpPS5GnmZck7ZSKXPV61by7_Vy8vXjAj-ddSAt5N7pDtMnxv5m5Iy` | Pipeline workbook |
-| [Horology — Locations](https://script.google.com/d/1kG83_A4JUJ00QryyZHEV4oxVJKr6_-bBIcbvCWJZ6hdxwLfL_A4yKpKj/edit) | `pipeline-locations/` | `1kG83_A4JUJ00QryyZHEV4oxVJKr6_-bBIcbvCWJZ6hdxwLfL_A4yKpKj` | Pipeline workbook |
+| [Horology — Workbook](https://script.google.com/d/1kG83_A4JUJ00QryyZHEV4oxVJKr6_-bBIcbvCWJZ6hdxwLfL_A4yKpKj/edit) | `pipeline-locations/` | `1kG83_A4JUJ00QryyZHEV4oxVJKr6_-bBIcbvCWJZ6hdxwLfL_A4yKpKj` | Pipeline workbook |
 | [Horology — ClickUp Sync](https://script.google.com/d/1SHh-DazeGYhF5LrHl1m5itQTqYblyQ6k8HmiVRekSMgYR0VjY1Ks6pyG/edit) | `clickup-sync/` | `1SHh-DazeGYhF5LrHl1m5itQTqYblyQ6k8HmiVRekSMgYR0VjY1Ks6pyG` | Standalone |
 
 ## Set up clasp
@@ -68,7 +68,7 @@ Bound to the Pipeline workbook. Reload the workbook after a push, then use **Ext
 
 ## Locations
 
-Bound to the Pipeline workbook. Reload the workbook after a push, then use **Extensions → Horology — Locations → Show folder structure** or **Check folders against Drive** (approve access the first time).
+Bound to the Pipeline workbook. Reload the workbook after a push, then use **Extensions → Horology — Workbook → Show folder structure** or **Check folders against Drive** (approve access the first time).
 
 ## ClickUp Sync
 
