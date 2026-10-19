@@ -1,0 +1,6 @@
+interface:
+  display_name: "Horology Watcher Setup"
+  short_description: "Set up a scheduled watcher agent"
+  default_prompt: "Use $horology-watcher-setup to set up a watcher that reports on competitor launches every week."
+policy:
+  allow_implicit_invocation: true

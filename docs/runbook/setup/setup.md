@@ -7,7 +7,7 @@ flowchart TB
   subgraph g1["In Google Drive and Sheets"]
     s1["<b>1. Copy the starter registers</b><br/>Pipeline, Decision Register, Document Index,<br/>Agent Register and the five templates"]
     s2["<b>2. Link them together</b><br/>Registers and Templates tabs<br/>point at your copies"]
-    s3["<b>3. Describe your folders</b><br/>Create Drive folders, one Locations row each,<br/>mark Input and Output"]
+    s3["<b>3. Describe your folders</b><br/>Create Drive folders, one Locations row each,<br/>mark Agent reference and Agent output"]
   end
   subgraph g2["In the Pipeline workbook"]
     s4["<b>4. Turn on the scripts</b><br/>Extensions menu: authorise,<br/>Install triggers, Check folders"]
@@ -18,8 +18,10 @@ flowchart TB
   end
   s7["<b>7. Run your first item</b><br/>Capture it, set Ready,<br/>ask the supervisor to run it"]
   s8["<b>Optional: ClickUp Sync</b><br/>Standalone script with your token<br/>and one list per domain"]
+  s9["<b>8. Optional: watchers</b><br/>Scheduled agents that check something<br/>regularly and write a report"]
   s1 --> s2 --> s3 --> s4 --> s5 --> s6 --> s7
   s4 -.-> s8
+  s7 -.-> s9
 ```
 
 ## What you need
@@ -39,7 +41,7 @@ The [starter pack](https://drive.google.com/drive/folders/14zEFgzre8-xSq3cRNJHat
 | Horology — Pipeline (starter) | Work items (Master), with the Locations, Domains, Templates, Registers and Read Me tabs |
 | Horology — Decision Register (starter) | Founder decisions, one row per review round |
 | Horology — Document Index (starter) | Every document, by Pipeline ID, with entity types for the document graph |
-| Horology — Agent Register (starter) | Agents, platforms and schedules (an overview for you; agents don't read it) |
+| Horology — Agent Register (starter) | Watchers (scheduled agents and their prompts) and MCP access |
 | Research, Direction, Plan, Decision fields, Technical Assessment — Template | The document templates agents copy |
 
 In your Drive, make a workspace folder with a registers folder and a templates folder inside it, for example `01_Horology/01_Registers` and `01_Horology/02_Templates`. Then for each file: open it, **File → Make a copy**, put it in the right folder and drop "(starter)" and "Copy of" from the name.
@@ -66,12 +68,13 @@ flowchart LR
   registers --> ar
   subgraph scripts["Scripts attached to the workbook"]
     decisions["<b>Pipeline decisions</b><br/>Applies your decisions to Master"]
-    locscript["<b>Locations</b><br/>Folder tree, check against Drive"]
+    locscript["<b>Workbook</b><br/>Add item form, folder tree,<br/>check against Drive"]
   end
   decisions -. "reads the link" .-> registers
   decisions -- "updates" --> master
+  locscript -- "adds items" --> master
   locscript -- "updates Name and Parent" --> locations
-  agents["<b>Agents</b><br/>Read Domains, Locations<br/>and Templates; save to Output folders"]
+  agents["<b>Agents</b><br/>Read Domains, Locations and Templates;<br/>save to Agent output folders"]
   agents --> domains
   agents --> locations
   agents --> templates
@@ -80,24 +83,24 @@ flowchart LR
 In your Pipeline copy:
 
 1. **Registers tab:** replace each Location with the link to your own copy (open the copy, copy its address). Keep one row per register; the scripts find them by name.
-2. **Templates tab:** replace each Location with the link to your own template copy.
+2. **Templates tab:** replace each Location with the link to your own template copy. Later, the `horology-template` skill writes new templates and offers to add their rows here.
 3. **Read Me tab:** the rules for every column. Nothing to change.
 
 ## 3. Describe your folders in Locations
 
 ```mermaid
 flowchart TB
-  root["<b>02_Example</b><br/>Root folder"]
-  strat["<b>01_Strategy</b><br/>Subfolder · Output<br/>agents save direction and plans"]
-  research["<b>02_Research</b><br/>Subfolder · Output<br/>agents save research"]
-  brand["<b>03_Brand_and_Identity</b><br/>Subfolder · Input<br/>your material, read for context"]
+  root["<b>02_Example</b><br/>Root folder · Hub"]
+  strat["<b>01_Strategy</b><br/>Subfolder · Agent output<br/>agents save direction and plans"]
+  research["<b>02_Research</b><br/>Subfolder · Agent output<br/>agents save research"]
+  brand["<b>03_Brand_and_Identity</b><br/>Subfolder · Agent reference<br/>your material, read for context"]
   root --> strat
   root --> research
   root --> brand
-  shop["<b>04_Shop</b><br/>Root folder of a domain with entities"]
-  entity["<b>01_Caps</b><br/>Entity folder · one business"]
-  estrat["<b>01_Strategy</b><br/>Subfolder · Output"]
-  ebrand["<b>02_Brand</b><br/>Subfolder · Input"]
+  shop["<b>04_Shop</b><br/>Root folder · Hub<br/>a domain with entities"]
+  entity["<b>01_Caps</b><br/>Entity folder · Node<br/>one business"]
+  estrat["<b>01_Strategy</b><br/>Subfolder · Agent output"]
+  ebrand["<b>02_Brand</b><br/>Subfolder · Agent reference"]
   shop --> entity --> estrat
   entity --> ebrand
   classDef output fill:#e8f0fe,stroke:#1a73e8,color:#174ea6
@@ -108,7 +111,7 @@ flowchart TB
   class root,shop,entity struct
 ```
 
-Each domain (a business, product or area of work) gets a root folder; agents save into its Output folders and read its Input folders. A domain that holds several businesses gets an entity folder per business, with the subfolders inside each.
+Each domain (a business, product or area of work) gets a root folder; agents save into its Agent output folders and read its Agent reference folders. A domain that holds several businesses gets an entity folder per business, with the subfolders inside each.
 
 1. Create the folders in Drive. Name them how you like; numbering keeps them in order.
 2. In **Locations**, one row per folder:
@@ -120,21 +123,24 @@ Each domain (a business, product or area of work) gets a root folder; agents sav
    | Kind | Root folder, Entity folder or Subfolder |
    | Parent | The Name of the folder it's in; blank for a Root folder |
    | Name | The folder's name in Drive |
-   | Type | **Input** for your material agents should read, **Output** for where agents save, blank for folders that only hold other folders |
+   | Type | **Hub** for a domain's root folder; **Node** for a folder that only holds other folders (including an entity folder); **Agent reference** for your material agents should read; **Agent output** for where agents save; **Others** for anything agents should leave alone (registers, archives) |
    | Location | The folder's Drive link |
    | Purpose | Optional: what goes there, when the name doesn't say |
 
 3. Replace or delete the example rows. The **Domains** tab fills itself from your Root and Entity folder rows; agents treat it as the list of valid domains.
 
+Once the skills are installed (step 6), you can do this by asking instead: "add a domain for our new product" runs `horology-workspace-setup`, which shows the folder tree, creates the folders after your yes and adds their rows.
+
 Red rows are duplicates, orange rows break the folder structure (a missing parent, or a subfolder sitting directly under a root that has entities), and yellow cells are missing a link.
 
 ## 4. Turn on the scripts
 
-Reload your Pipeline copy. The **Extensions** menu should show two entries.
+Reload your Pipeline copy. The **Extensions** menu should show two entries: **Horology — Pipeline decisions** and **Horology — Workbook**.
 
 1. **Extensions → Horology — Pipeline decisions → Install triggers.** Approve access when asked, then click Install triggers again. From now on, a decision you record in the Decision Register moves its Pipeline item on within 10 minutes. **Preview decisions** shows what it would do.
 2. **Extensions → Horology — Workbook → Check folders against Drive.** Approve access, then run it. It should report no problems; it fixes Name and Parent cells that differ from Drive, and lists Drive folders you haven't added.
 3. **Extensions → Horology — Workbook → Show folder structure** draws your folders as a tree.
+4. **Extensions → Horology — Workbook → Add Pipeline item** opens a form for new work items (step 7).
 
 If the two entries are missing after a reload, the copy didn't bring the scripts. Create them from this repository instead, with your Pipeline's ID:
 
@@ -150,7 +156,7 @@ clasp create --title "Horology — Workbook" --parentId YOUR_PIPELINE_ID --rootD
 clasp push
 ```
 
-Then reload the Pipeline and do steps 1–3.
+Then reload the Pipeline and do steps 1–4.
 
 ## 5. Get access to the MCP services
 
@@ -172,12 +178,15 @@ The skills currently link the founder's Pipeline and registers directly. Until t
 
 ## 7. Run your first item
 
-1. In Pipeline **Master**, add a row: the next ID (start at 1), a Title, a Domain from the Domains tab, Status **Inbox**, Stage **Stage 0**. Or ask an agent to capture it: "capture this idea in the Pipeline".
-2. Write the question in **Next step / Research question**, set **Agent type** to Claude Code or Codex, **Agent status** to **Ready**, and Stage to **Stage 1**.
-3. In a Claude Code or Codex session: "run the Ready items". The supervisor claims the item, runs the specialists and saves their documents in your Output folders.
-4. When the item reaches **Awaiting decision**, read the documents, then record your decision in the Decision Register (accepted, rework with instructions, parked or rejected). The script applies it.
+1. Open **Extensions → Horology — Workbook → Add Pipeline item**. Give it a Title and a Domain, write the question in **Next step / Research question**, set **Agent type** to Claude Code or Codex and **Agent status** to **Ready**, then **Add item**. The form fills the ID, dates, Status (Inbox) and Stage (Stage 1 for a Ready item). You can also type the row into Master yourself, or ask an agent: "capture this idea in the Pipeline".
+2. In a Claude Code or Codex session: "run the Ready items". The supervisor claims the item, runs the specialists and saves their documents in your Agent output folders.
+3. When the item reaches **Awaiting decision**, read the documents, then record your decision in the Decision Register (accepted, rework with instructions, parked or rejected). The script applies it.
 
 Ask the supervisor "what's happening?" at any point. For a vague item, set Agent status to **Plan** first and the planner turns it into a sharper question or steps.
+
+## 8. Optional: set up a watcher
+
+A watcher is a scheduled agent that checks something regularly, such as competitor launches, campaigns or prices, and writes a dated report of what's new. Ask in Claude Code or Codex, e.g. "watch what our competitors launch every week". The `horology-watcher-setup` skill asks what to watch, which Agent reference folders to read, where to report, which connectors to allow and when to run. It shows the prompt and schedule before doing anything, then creates a Claude routine (runs in the cloud, at most hourly) or a Codex scheduled task, and records it on the **Watchers** tab of your Agent Register. Watchers only report; they never act on what they find. More: [the skills](skills.md#running-the-work-workflow-skills).
 
 ## Optional: ClickUp Sync
 
@@ -187,8 +196,9 @@ To review items in ClickUp, set up the standalone ClickUp Sync with your token, 
 
 - [ ] Registers and templates copied into your folders, names tidied
 - [ ] Registers and Templates tabs link your copies
-- [ ] Locations lists your folders with Input and Output marked; no red or orange rows
+- [ ] Locations lists your folders with a Type on each; no red or orange rows
 - [ ] Decision triggers installed; folder check runs clean
 - [ ] Operator has added you, your workspace and your register IDs
 - [ ] Skills and connectors installed; Drive and Sheets connected
 - [ ] First item run and decided
+- [ ] Optional: a first watcher set up and its first report checked

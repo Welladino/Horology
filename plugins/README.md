@@ -6,7 +6,7 @@ Each `horology-*` folder owns exactly the skills in its `skills/` directory. Cla
 |---|---:|
 | horology-tools | 1 |
 | horology-document-graph | 1 |
-| horology-workflows | 6 |
+| horology-workflows | 7 |
 | horology-specialists | 6 |
 
 Codex-specific source configuration belongs inside each `.codex-plugin/` directory:

@@ -7,13 +7,13 @@
     ],
     "developerName": "Saravanaraj",
     "displayName": "horology-workflows",
-    "longDescription": "Horology skills for retaining ideas in Pipeline and for a supervisor that runs Ready items: it claims each, starts one session per item locally or in the cloud, chooses the specialist skills, checks the results, records the run and reports on runs. Also sets up domains, businesses and folders, and creates document templates, each after showing the plan. Preserves duplicate checks and founder decision boundaries. Requires separately connected Google Drive, Docs, and Sheets; ClickUp access is needed when a task uses ClickUp. Install Horology Specialists for the specialist skills.",
+    "longDescription": "Horology skills for retaining ideas in Pipeline and for a supervisor that runs Ready items: it claims each, starts one session per item locally or in the cloud, chooses the specialist skills, checks the results, records the run and reports on runs. Also sets up domains, businesses and folders, creates document templates, and sets up scheduled watchers, each after showing the plan. Preserves duplicate checks and founder decision boundaries. Requires separately connected Google Drive, Docs, and Sheets; ClickUp access is needed when a task uses ClickUp. Install Horology Specialists for the specialist skills.",
     "shortDescription": "Capture, run, plan and report",
     "capabilities": []
   },
   "name": "welladino-workflows",
-  "version": "0.4.0",
-  "description": "Capture and triage Pipeline ideas; run Ready items with a supervisor that starts one session per item and hands each to the specialist skills in the Horology Specialists plugin; plan items marked Plan; and write a daily digest; set up domains, folders and templates.",
+  "version": "0.5.0",
+  "description": "Capture and triage Pipeline ideas; run Ready items with a supervisor that starts one session per item and hands each to the specialist skills in the Horology Specialists plugin; plan items marked Plan; and write a daily digest; set up domains, folders, templates and scheduled watchers.",
   "author": {
     "name": "Saravanaraj",
     "email": "saravanaraj.subramaniam@welladino.com"

@@ -21,9 +21,11 @@ flowchart TB
     supervisor["<b>Supervisor</b><br/>Picks the right specialist and checks the result"]
     specialists["<b>Specialists</b><br/>Research, technical assessment, security review,<br/>go-to-market, marketing, content"]
     helpers["<b>Planner, capture and digest</b><br/>Scope items, record ideas, report daily"]
+    setup["<b>Workspace setup and templates</b><br/>Add domains and folders, write templates"]
   end
+  watchers["<b>Watchers</b><br/>Scheduled agents that check something<br/>regularly and write a report"]
   dg[("<b>Document graph</b><br/>Searchable memory of what's been<br/>researched and decided")]
-  scripts["<b>Apps Scripts</b><br/>Apply your decisions; keep folders in step"]
+  scripts["<b>Apps Scripts</b><br/>Apply your decisions, add items by form,<br/>keep folders in step"]
   you --> pipeline
   you --> decisions
   supervisor --> specialists
@@ -33,6 +35,8 @@ flowchart TB
   agents -- "register" --> index
   agents -- "search before starting" --> dg
   index -- "documents you include" --> dg
+  watchers -- "read" --> reference
+  watchers -- "report" --> output
   scripts -- "move items on" --> pipeline
   decisions --> scripts
 ```
@@ -42,7 +46,7 @@ flowchart TB
 | **Pipeline** (Google Sheet) | One row per piece of work: its question, domain, status, stage and which agent should take it. Its other tabs describe your workspace: **Locations** (your folders), **Domains** (built from Locations), **Templates** and **Registers** (links to the other sheets). | You and the agents |
 | **Decision Register** | One row per decision, with your feedback for rework | You, and agents propose |
 | **Document Index** | One row per document the work produced, linked to its Pipeline item | Agents |
-| **Agent Register** | An overview of the agents and where they run | You |
+| **Agent Register** | Watchers: scheduled agents that check something regularly and report, each with its prompt and schedule | You, with the watcher-setup skill |
 | **Drive folders** | Grouped by domain (a business, product or area). Each folder in Locations has a type: **Hub** (a domain's root), **Node** (holds other folders), **Agent reference** (read for context), **Agent output** (agents save here), **Others** (not for agents) | You create them; agents only save into Agent output folders |
 | **Skills** | The instructions each agent follows, installed in Claude and Codex | Maintained in this repository |
 | **Document graph** | A searchable store of past research and decisions, so agents build on what's known instead of starting over | Agents write to it; the sync job copies in documents you mark for it |
@@ -96,16 +100,25 @@ You talk to one agent, the **supervisor**, unless you name another. It reads the
 | Marketing strategy | A marketing plan once the go-to-market direction is agreed |
 | Content planner | A content calendar, briefs and draft copy |
 | Digest | A daily Google Doc: counts, what finished, what's waiting on you, anything wrong |
+| Workspace setup | Adds domains, businesses and folders: shows the folder tree, creates it after your yes, adds the Locations rows |
+| Template | Writes or revises a document template, then offers to add it to the Templates tab |
+| Watcher setup | Sets up a watcher: its prompt, schedule and connectors, on Claude or Codex |
 
-Before starting, agents search the document graph for what's already known, read your **Agent reference** folders for the item's domain, and copy the right template. They save only into **Agent output** folders, never create folders, and ask you when no folder fits.
+Before starting, agents search the document graph for what's already known, read your **Agent reference** folders for the item's domain, and copy the right template. They save only into **Agent output** folders and ask you when no folder fits; only the workspace-setup skill creates folders, after you approve them.
+
+## Watchers
+
+Some work isn't a one-off item but a standing question: what did competitors launch this week, what campaigns are they running, did prices change. A **watcher** answers one on a schedule.
+
+Each watcher is a row on the **Watchers** tab of the Agent Register, with a self-contained prompt, plus a scheduled task that runs it: a Claude routine in Anthropic's cloud, or a Codex scheduled task. Each run reads its last report so it reports only what's new, reads the Agent reference folders its prompt names, searches with the connectors it's allowed, writes a dated report in an Agent output folder, adds it to the Document Index, and updates its row's Last run and Last report. It never acts on what it finds; anything that needs action is flagged at the top of the report for you. Set one up, change it or pause it by asking: "watch what our competitors launch every week".
 
 ## Your part, day to day
 
-1. **Add work** as Pipeline rows, or ask an agent to capture it.
+1. **Add work** with **Extensions → Horology — Workbook → Add Pipeline item**, by typing a row into Master, or by asking an agent to capture it.
 2. **Mark what's next:** Plan for items that need scoping, Ready for items to run.
 3. **Start a run:** "run the Ready items" in Claude Code or Codex.
 4. **Read the results** in your Agent output folders, or ask the supervisor for a summary.
 5. **Decide** in the Decision Register. Rework needs instructions; the item goes back to Ready with them.
 6. **Keep your material current:** put the documents you want agents to use in Agent reference folders, and add new folders to Locations (then **Extensions → Horology — Workbook → Check folders against Drive**).
 
-The daily digest tells you what finished and what's waiting on you, so you don't need to check the sheets for that.
+The daily digest tells you what finished and what's waiting on you, so you don't need to check the sheets for that. Watcher reports land in their report folders on their own schedule.
