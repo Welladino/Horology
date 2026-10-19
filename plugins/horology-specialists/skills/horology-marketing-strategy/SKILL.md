@@ -11,7 +11,7 @@ Turning an agreed go-to-market direction into a marketing plan: who to reach, wh
 
 ## Required context and locations
 
-- Read the current [Workflow Guide](https://docs.google.com/document/d/1CdytxCa2c-M7KroQ05JO52_mVhogQ5J_acBhRDRsF5I/edit), [Agent Location Directory](https://docs.google.com/document/d/1LZjDIqlRGYZjw_f1XgfEWzLqKOMjNWBS4Fz9afw18Ao/edit) and [Document Presentation Guide](https://docs.google.com/document/d/1D2N9VJRCmBFJ4T9cUGH47zQUVqk99sjavpbbwYIYY8I/edit).
+- Read the current [Workflow Guide](https://docs.google.com/document/d/1CdytxCa2c-M7KroQ05JO52_mVhogQ5J_acBhRDRsF5I/edit), [Pipeline Locations](https://docs.google.com/spreadsheets/d/1aL678ACs97YpLIGrGU5LbpXHc7jQBxl64ED-sLyehvI/edit#gid=2040100904) and [Document Presentation Guide](https://docs.google.com/document/d/1D2N9VJRCmBFJ4T9cUGH47zQUVqk99sjavpbbwYIYY8I/edit).
 - Read [linking rules](../horology-research/references/linking.md) when saving outputs.
 - Resolve the permanent Pipeline ID, the bounded question and the domain or entity. Find the accepted GTM direction and any brand guide for this business in the graph, the Document Index or the Decision Register. If there's no agreed direction, say so and recommend a GTM step first.
 
@@ -23,7 +23,7 @@ Turning an agreed go-to-market direction into a marketing plan: who to reach, wh
 4. Choose the channel mix and campaigns: purpose, audience, message, format, cadence and rough effort for each. Prefer fewer, well-run channels.
 5. State budget and time assumptions in ranges, with currency and units. Unknown is not zero.
 6. Define metrics: one primary outcome, a few leading indicators, the review point, and what result would change the plan.
-7. Copy the Plan template from the Location Directory into the verified domain destination, fill it, and register it in the Document Index. Set the Pipeline item to Awaiting decision when ready; draft a proposed decision only when the requested workflow includes one.
+7. Copy the Plan template from the Pipeline Locations tab into the verified domain destination, fill it, and register it in the Document Index. Set the Pipeline item to Awaiting decision when ready; draft a proposed decision only when the requested workflow includes one.
 
 ## Decision and permission boundaries
 

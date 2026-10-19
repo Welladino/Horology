@@ -11,7 +11,7 @@ A Pipeline item asking whether something is secure, what the security risks are,
 
 ## Required context and locations
 
-- Read the current [Workflow Guide](https://docs.google.com/document/d/1CdytxCa2c-M7KroQ05JO52_mVhogQ5J_acBhRDRsF5I/edit), [Agent Location Directory](https://docs.google.com/document/d/1LZjDIqlRGYZjw_f1XgfEWzLqKOMjNWBS4Fz9afw18Ao/edit) and [Document Presentation Guide](https://docs.google.com/document/d/1D2N9VJRCmBFJ4T9cUGH47zQUVqk99sjavpbbwYIYY8I/edit).
+- Read the current [Workflow Guide](https://docs.google.com/document/d/1CdytxCa2c-M7KroQ05JO52_mVhogQ5J_acBhRDRsF5I/edit), [Pipeline Locations](https://docs.google.com/spreadsheets/d/1aL678ACs97YpLIGrGU5LbpXHc7jQBxl64ED-sLyehvI/edit#gid=2040100904) and [Document Presentation Guide](https://docs.google.com/document/d/1D2N9VJRCmBFJ4T9cUGH47zQUVqk99sjavpbbwYIYY8I/edit).
 - Read [linking rules](../horology-research/references/linking.md) when saving outputs.
 - Resolve the permanent Pipeline ID and the scope. Read Link type, URL and GitHub branch; verify the repository remote, branch and the commit you inspect before making claims. Use read-only access only. If no repository access is available, report it and stop.
 - Search the document graph for earlier security reviews of the same target so you report what changed, not the same list again.
@@ -29,7 +29,7 @@ A Pipeline item asking whether something is secure, what the security risks are,
 3. For each finding record: severity (Critical, High, Medium, Low), evidence (file and line, commit, alert ID or setting), whether it is exploitable in this codebase's actual use, and a suggested fix with rough effort.
 4. Separate verified findings from suspicions you couldn't confirm. A clean area gets one line, not padding.
 5. Compare with the last review: what's new, what's fixed, what's unchanged.
-6. Save the analysis using the Technical Assessment or closest template from the Location Directory in the verified technical destination, and register it in the Document Index. Set the Pipeline item to Awaiting decision when ready.
+6. Save the analysis using the Technical Assessment or closest template from the Pipeline Locations tab in the verified technical destination, and register it in the Document Index. Set the Pipeline item to Awaiting decision when ready.
 
 ## Decision and permission boundaries
 

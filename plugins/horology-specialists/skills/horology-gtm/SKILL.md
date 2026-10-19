@@ -11,7 +11,7 @@ A Pipeline question about the path to paying customers: target segment, position
 
 ## Required context and locations
 
-- Read the current [Workflow Guide](https://docs.google.com/document/d/1CdytxCa2c-M7KroQ05JO52_mVhogQ5J_acBhRDRsF5I/edit), [Agent Location Directory](https://docs.google.com/document/d/1LZjDIqlRGYZjw_f1XgfEWzLqKOMjNWBS4Fz9afw18Ao/edit) and [Document Presentation Guide](https://docs.google.com/document/d/1D2N9VJRCmBFJ4T9cUGH47zQUVqk99sjavpbbwYIYY8I/edit).
+- Read the current [Workflow Guide](https://docs.google.com/document/d/1CdytxCa2c-M7KroQ05JO52_mVhogQ5J_acBhRDRsF5I/edit), [Pipeline Locations](https://docs.google.com/spreadsheets/d/1aL678ACs97YpLIGrGU5LbpXHc7jQBxl64ED-sLyehvI/edit#gid=2040100904) and [Document Presentation Guide](https://docs.google.com/document/d/1D2N9VJRCmBFJ4T9cUGH47zQUVqk99sjavpbbwYIYY8I/edit).
 - Read [linking rules](../horology-research/references/linking.md) when saving outputs.
 - Resolve the permanent Pipeline ID, the bounded question and the domain or entity. Search the document graph for earlier GTM recommendations, research and decisions on the same business before starting.
 
@@ -22,7 +22,7 @@ A Pipeline question about the path to paying customers: target segment, position
 3. Define the target segment concretely: who, what problem, why now, and how you would reach them.
 4. Compare a small number of credible channel and positioning options against each other: expected reach, cost and effort, time to signal, and how you'd know it worked. Use primary sources for market and pricing claims and date them.
 5. Recommend one path with a first test: what to do, for whom, through which channel, what success looks like, and when to revisit. Say plainly if a proposed approach looks weak, and why.
-6. Copy the closest template from the Location Directory (Direction or Plan) into the verified domain destination, fill it, and register it in the Document Index. If no template fits, create a plain Google Doc with the standard metadata and say so.
+6. Copy the closest template from the Pipeline Locations tab (Direction or Plan) into the verified domain destination, fill it, and register it in the Document Index. If no template fits, create a plain Google Doc with the standard metadata and say so.
 7. Set the Pipeline item to Awaiting decision when the recommendation is ready. Draft a proposed decision only when the requested workflow includes one.
 
 ## Decision and permission boundaries

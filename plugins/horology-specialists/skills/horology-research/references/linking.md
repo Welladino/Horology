@@ -8,6 +8,6 @@ Read live headers and dropdowns before writing. Edit Pipeline and Decision Regis
 
 Allocate independent numeric IDs within each register; never renumber or reuse IDs. Use a single writer and reread before saving; concurrent allocation is not implemented. External IDs and Drive file IDs remain separate identifiers.
 
-Metadata carries domain, entity, Pipeline ID/link, purpose, draft status and related decision when applicable. Entity is blank for Welladino, Article Aggregator and Horology. Templates and destinations are resolved from the Location Directory. Copy templates; preserve originals. Use native headings, lists and tables according to the Presentation Guide.
+Metadata carries domain, entity, Pipeline ID/link, purpose, draft status and related decision when applicable. Entity is blank for Welladino, Article Aggregator and Horology. Templates and destinations are resolved from the Pipeline Locations tab. Copy templates; preserve originals. Use native headings, lists and tables according to the Presentation Guide.
 
 Rows with Graph Inclusion TRUE are copied into the document graph by the sync job, which writes Graph Sync Status back. Graph Inclusion is the founder's choice: don't set it yourself, and don't claim a document is in the graph until its status says `synced`. Platform skills, Drive access and scheduling must each be configured separately.

@@ -11,7 +11,7 @@ Investigate a selected Pipeline question and record evidence, options, and recom
 
 ## Required context and locations
 
-- Read the current [Workflow Guide](https://docs.google.com/document/d/1CdytxCa2c-M7KroQ05JO52_mVhogQ5J_acBhRDRsF5I/edit) and [Agent Location Directory](https://docs.google.com/document/d/1LZjDIqlRGYZjw_f1XgfEWzLqKOMjNWBS4Fz9afw18Ao/edit) for rules and verified destinations.
+- Read the current [Workflow Guide](https://docs.google.com/document/d/1CdytxCa2c-M7KroQ05JO52_mVhogQ5J_acBhRDRsF5I/edit) and [Pipeline Locations](https://docs.google.com/spreadsheets/d/1aL678ACs97YpLIGrGU5LbpXHc7jQBxl64ED-sLyehvI/edit#gid=2040100904) for rules and verified destinations.
 - Read the [Document Presentation Guide](https://docs.google.com/document/d/1D2N9VJRCmBFJ4T9cUGH47zQUVqk99sjavpbbwYIYY8I/edit) before creating or filling documents, and [linking rules](references/linking.md) when saving outputs.
 - Identify the selected Pipeline item by its permanent numeric ID; historical EPIC-NEWS references belong to External ID. Resolve a bounded question, expected output, and stopping point from the request; clarify material missing scope before dependent work.
 - These rules are portable; tool availability and authentication are platform-specific.

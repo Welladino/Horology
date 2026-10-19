@@ -11,7 +11,7 @@ Capture, transfer, or triage thoughts the user asks to retain across Welladino's
 
 ## Required context and locations
 
-- Read the current [Workflow Guide](https://docs.google.com/document/d/1CdytxCa2c-M7KroQ05JO52_mVhogQ5J_acBhRDRsF5I/edit) and [Agent Location Directory](https://docs.google.com/document/d/1LZjDIqlRGYZjw_f1XgfEWzLqKOMjNWBS4Fz9afw18Ao/edit) for shared rules and verified destinations.
+- Read the current [Workflow Guide](https://docs.google.com/document/d/1CdytxCa2c-M7KroQ05JO52_mVhogQ5J_acBhRDRsF5I/edit) and [Pipeline Locations](https://docs.google.com/spreadsheets/d/1aL678ACs97YpLIGrGU5LbpXHc7jQBxl64ED-sLyehvI/edit#gid=2040100904) for shared rules and verified destinations.
 - Read [record fields](references/records.md) when writing a row. Configure connectors separately for each platform.
 - Pipeline owns proposals; Drive owns supporting documents; ClickUp presents Pipeline tasks and review status. Repo Markdown is temporary technical capture, not a maintained mirror.
 - Resolve domain and entity from the conversation and existing records. Newsletter and Ecommerce staging folders are not named businesses.

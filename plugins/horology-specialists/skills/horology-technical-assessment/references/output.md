@@ -1,6 +1,6 @@
 # Assessment output and linking
 
-Copy [Technical Assessment — Template](https://docs.google.com/document/d/1Qo69VLFhlBOJhh00Jwnt0RuluvvGVAsdTPGWhLB9CEU/edit) into the live destination from the Location Directory. Never fill the template original during an assessment.
+Copy [Technical Assessment — Template](https://docs.google.com/document/d/1Qo69VLFhlBOJhh00Jwnt0RuluvvGVAsdTPGWhLB9CEU/edit) into the live destination from the Pipeline Locations tab. Never fill the template original during an assessment.
 
 ## Ratings and quadrant
 

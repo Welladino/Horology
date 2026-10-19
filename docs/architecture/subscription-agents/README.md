@@ -10,13 +10,14 @@ The workflow's states, field values and allowed moves (with who may make each) a
 
 | Component | Role | Where it lives |
 |---|---|---|
-| Workflow guides and Agent Location Directory | Instructions, output destinations, presentation rules | Drive `01_Welladino/00_Guides` |
+| Workflow guides | Instructions and presentation rules | Drive `01_Welladino/00_Guides` |
 | Pipeline | Work queue: stage, scope, selection and status | Sheets in `01_Registers` |
+| Locations | Where agents read and save: folders, templates, registers and task lists per domain or entity, edited by the founder | `Locations` tab of the Pipeline workbook |
 | Decision Register | Founder decisions, evidence and rework instructions | Sheets in `01_Registers` |
 | Document Index | Which documents belong to which item, revisions, supersedes, Graph Inclusion | Sheets in `01_Registers` |
 | Agent Register | Agents, their platforms and prompt sources | Sheets in `01_Registers` |
 | Templates | Document structure and visual assets | Drive `02_Templates` |
-| Deliverables | Research, direction, plans and assessments | Domain or entity folders from the Location Directory |
+| Deliverables | Research, direction, plans and assessments | Domain or entity folders from the Pipeline Locations tab |
 | Skills | Versioned agent instructions | `plugins/horology-workflows/skills/` (supervisor, capture and triage), `plugins/horology-specialists/skills/` (specialists) |
 | Decision applier | Moves an item on when its current decision is accepted, rework, parked or rejected | `google_appscript/pipeline-decisions/` (Apps Script) |
 | ClickUp sync (optional) | Mirrors register rows to ClickUp tasks, statuses and decision comments; a task moved out of `review` to open, blocked or rejected records accept, park or reject | `google_appscript/clickup-sync/` (Apps Script) |
