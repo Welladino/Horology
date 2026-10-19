@@ -1,0 +1,17 @@
+$schema: https://api.gitbook.com/gitbook-docs.yaml
+site:
+  title: Horology
+  structure:
+    - type: space
+      key: space-1
+      title: Architecture
+      path: architecture
+      default: true
+      content:
+        directory: ./docs/architecture
+    - type: space
+      key: space-2
+      title: Runbook
+      path: runbook
+      content:
+        directory: ./docs/runbook
