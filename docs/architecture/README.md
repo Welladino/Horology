@@ -17,6 +17,7 @@ Both reach the outside world only through two MCP services: the **gateway** (cap
 |---|---|
 | [Hermes](hermes/README.md) | Containers, kanban dispatch, profiles and personas, tools and limits |
 | [Subscription agents](subscription-agents/README.md) | Stages, registers and IDs, ClickUp sync, skills and connectors |
+| [Apps Script projects](subscription-agents/apps-script.md) | Pipeline decisions, the Locations script and the ClickUp sync: what each does and where its settings live |
 | [MCP services](mcp/README.md) | What the two services share: sign-in, local and cloud copies, logging and errors |
 | ↳ [Gateway](mcp/gateway.md) | Tools, shared policy, credit budgets, provider boundaries |
 | ↳ [Document graph](mcp/document-graph.md) | Documents, passage search, topics, entities, the sync job |

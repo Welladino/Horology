@@ -1,6 +1,6 @@
 ---
 name: horology-marketing-strategy
-description: Marketing plan for a selected Pipeline item once the go-to-market direction is set — audience, messaging pillars, channel mix, campaign plan, budget assumptions and the metrics to judge it by. Use after GTM decisions, before planning individual content.
+description: Marketing plan for a selected Pipeline item once the go-to-market direction is set — audience, messaging pillars, channel mix, campaign plan, budget assumptions and the metrics to judge it by. Use after GTM decisions, before planning individual content. Usually run by horology-supervisor; use directly only when this skill is named.
 ---
 
 # Marketing strategy
@@ -11,10 +11,10 @@ Turning an agreed go-to-market direction into a marketing plan: who to reach, wh
 
 ## Required context and locations
 
-- Read the current [Workflow Guide](https://docs.google.com/document/d/1CdytxCa2c-M7KroQ05JO52_mVhogQ5J_acBhRDRsF5I/edit), [Pipeline Locations](https://docs.google.com/spreadsheets/d/1aL678ACs97YpLIGrGU5LbpXHc7jQBxl64ED-sLyehvI/edit#gid=2040100904) and [Document Presentation Guide](https://docs.google.com/document/d/1D2N9VJRCmBFJ4T9cUGH47zQUVqk99sjavpbbwYIYY8I/edit).
-- Find destinations and templates in Pipeline Locations by Domain, Entity, Kind and Output type; Welladino rows are shared by every domain. Use the Drive ID in the row's Location, never a folder inferred from names or paths, and never create folders. If no row matches, more than one does, or Location is blank, ask the founder instead of saving elsewhere.
+- Read [domains, folders and templates](../horology-research/references/locations.md) before choosing a domain or entity, reading context or saving anything.
+- Follow the [presentation rules](../horology-research/references/presentation.md) when creating or filling documents.
 - Read [linking rules](../horology-research/references/linking.md) when saving outputs.
-- Resolve the permanent Pipeline ID, the bounded question and the domain or entity. Find the accepted GTM direction and any brand guide for this business in the graph, the Document Index or the Decision Register. If there's no agreed direction, say so and recommend a GTM step first.
+- Resolve the permanent Pipeline ID, the bounded question and the domain or entity. Find the accepted GTM direction and any brand guide for this business in its Input folders, the graph, the Document Index or the Decision Register. If there's no agreed direction, say so and recommend a GTM step first.
 
 ## Workflow
 
@@ -24,7 +24,7 @@ Turning an agreed go-to-market direction into a marketing plan: who to reach, wh
 4. Choose the channel mix and campaigns: purpose, audience, message, format, cadence and rough effort for each. Prefer fewer, well-run channels.
 5. State budget and time assumptions in ranges, with currency and units. Unknown is not zero.
 6. Define metrics: one primary outcome, a few leading indicators, the review point, and what result would change the plan.
-7. Copy the Plan template from the Pipeline Locations tab into the verified domain destination, fill it, and register it in the Document Index. Set the Pipeline item to Awaiting decision when ready; draft a proposed decision only when the requested workflow includes one.
+7. Copy the Plan template from the Templates tab into the Output folder for plans, fill it, and register it in the Document Index. Set the Pipeline item to Awaiting decision when ready; draft a proposed decision only when the requested workflow includes one.
 
 ## Decision and permission boundaries
 

@@ -24,6 +24,8 @@ Implementation notes under `docs/planning/notes/`, grouped by area. Add a row wh
 | 2026-10-10 | [Setup](../2026-10-10_subscription-agents-setup_note.md) | Apps Script under version control, naming, skills, prompts, repository layout |
 | 2026-10-13 | [ClickUp eligible-row batching](../2026-10-13_clickup-eligible-batching_note.md) | Which Pipeline rows the sync processes, and in what order |
 | 2026-10-17 | [Claude skills and connectors on claude.ai](../2026-10-17_claude-skills-and-connectors-on-claude-ai_note.md) | Why Claude uses claude.ai skills and connectors instead of plugins; the skill zip build |
+| 2026-10-19 | [Pipeline Locations tab](../2026-10-19_pipeline-locations-tab_note.md) | Agent Location Directory Doc replaced by a sheet tab; v1.2 folder provisioning dropped |
+| 2026-10-19 | [Folders, skills and Apps Script](../2026-10-19_folders-skills-and-apps-script_note.md) | Folder-only Locations, Domains tab, guide-free skills, bound decisions and Locations scripts, standalone ClickUp Sync |
 
 ## MCP gateway
 

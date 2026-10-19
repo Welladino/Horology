@@ -10,17 +10,21 @@ The workflow's states, field values and allowed moves (with who may make each) a
 
 | Component | Role | Where it lives |
 |---|---|---|
-| Workflow guides | Instructions and presentation rules | Drive `01_Welladino/00_Guides` |
-| Pipeline | Work queue: stage, scope, selection and status | Sheets in `01_Registers` |
-| Locations | Where agents read and save: one row per folder, template, register or task list, found by Domain, Entity, Kind and Output type and resolved by Drive ID; edited by the founder, never created by agents | `Locations` tab of the Pipeline workbook |
-| Decision Register | Founder decisions, evidence and rework instructions | Sheets in `01_Registers` |
-| Document Index | Which documents belong to which item, revisions, supersedes, Graph Inclusion | Sheets in `01_Registers` |
-| Agent Register | Agents, their platforms and prompt sources | Sheets in `01_Registers` |
-| Templates | Document structure and visual assets | Drive `02_Templates` |
-| Deliverables | Research, direction, plans and assessments | Domain or entity folders from the Pipeline Locations tab |
+| Pipeline | Work queue: stage, scope, selection and status | Sheets in `05_Horology/04_Registers` |
+| Locations | The founder's folder structure, one row per folder (Root, Entity or Subfolder) with Parent, Type (Input for context, Output for saving) and Drive link; agents resolve folders by Drive ID and never create them | `Locations` tab of the Pipeline workbook |
+| Domains | The domains and their entities, built from Locations; the only valid Domain values | `Domains` tab of the Pipeline workbook |
+| Templates, Registers | Template and register links, maintained by the founder | `Templates` and `Registers` tabs of the Pipeline workbook |
+| Decision Register | Founder decisions, evidence and rework instructions | Sheets in `05_Horology/04_Registers` |
+| Document Index | Which documents belong to which item, revisions, supersedes, Graph Inclusion | Sheets in `05_Horology/04_Registers` |
+| Agent Register | Agents, their platforms and prompt sources | Sheets in `05_Horology/04_Registers` |
+| Templates | Document structure and visual assets | Drive `05_Horology/05_Templates` |
+| Deliverables | Research, direction, plans and assessments | Output folders from the Locations tab |
 | Skills | Versioned agent instructions | `plugins/horology-workflows/skills/` (supervisor, capture and triage), `plugins/horology-specialists/skills/` (specialists) |
-| Decision applier | Moves an item on when its current decision is accepted, rework, parked or rejected | `google_appscript/pipeline-decisions/` (Apps Script) |
-| ClickUp sync (optional) | Mirrors register rows to ClickUp tasks, statuses and decision comments; a task moved out of `review` to open, blocked or rejected records accept, park or reject | `google_appscript/clickup-sync/` (Apps Script) |
+| Decision applier | Moves an item on when its current decision is accepted, rework, parked or rejected | `google_appscript/pipeline-decisions/` (Apps Script, bound to the Pipeline) |
+| Locations script | Folder tree view, and Locations Name and Parent kept in step with Drive | `google_appscript/pipeline-locations/` (Apps Script, bound to the Pipeline) |
+| ClickUp sync (optional) | Mirrors register rows to ClickUp tasks, statuses and decision comments; a task moved out of `review` to open, blocked or rejected records accept, park or reject | `google_appscript/clickup-sync/` (Apps Script, standalone) |
+
+The Apps Script projects are described in [Apps Script projects](apps-script.md). Agents get their instructions only from skills; the Drive guides are retired.
 
 Sheets is the operational record and Drive holds the detailed deliverables; ClickUp is only a review screen. The repository versions the skills and the sync code; it is not a copy of Drive or Sheets.
 
@@ -71,11 +75,11 @@ Claude sessions, cloud and local, load the skills and connectors from the founde
 
 ## ClickUp sync
 
-Apps Script syncs records; it never runs AI. Before each bounded batch it checks every selected Pipeline row: unmanaged blank-stage captures are skipped, invalid or conflicting rows are reported as blocked, and only eligible rows count against the batch. Eligible rows rotate by Pipeline ID, with the position kept in `_ClickUp Sync`. Preview changes nothing. The ClickUp token is kept only in Apps Script Script Properties; the repository holds sheet and list IDs, not credentials. Details: [`WORKFLOW.md`](../../../google_appscript/clickup-sync/WORKFLOW.md).
+Apps Script syncs records; it never runs AI. Before each bounded batch it checks every selected Pipeline row: unmanaged blank-stage captures are skipped, invalid or conflicting rows are reported as blocked, and only eligible rows count against the batch. Eligible rows rotate by Pipeline ID, with the position kept in `_ClickUp Sync`. Preview changes nothing. The ClickUp token, the Pipeline ID and each domain's list are Script Properties; the code holds no workspace IDs or credentials. Details: [Apps Script projects](apps-script.md#clickup-sync).
 
 ## Domains
 
-Pipeline and the registers cover Welladino, Article Aggregator, Newsletter, Ecommerce and Horology, spelled as in the sheet's dropdowns. Horology maps to ClickUp list `901820246905` in `DomainLists.js` and has no Entity. Repository access and Drive destinations are configured separately; the agent checks both before working.
+Domains are whatever the founder defines: each Root folder row in Locations is a domain, and its Entity folder rows are its entities (named businesses inside it). The Domains tab lists them, and skills read it rather than naming any domain. A domain is mirrored to ClickUp through its `LIST_<Domain>` Script Property. Repository access and Drive destinations are configured separately; the agent checks both before working.
 
 ## Skills and tools
 

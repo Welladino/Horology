@@ -1,6 +1,6 @@
 ---
 name: horology-supervisor
-description: Run Pipeline items that are Ready, and report on runs. Dispatch mode finds Ready rows for this platform, claims them and starts one session per item, locally or in the cloud. Item mode handles one item end to end — reads it, chooses the specialist skills, runs them, checks the results and saves. Status mode reports what is running, what finished and what it found, and answers questions about it. Use when asked to run the Ready items or a specific item, or what's happening, what ran or what a run found.
+description: Start here for any request about Pipeline work unless a specific skill is named — running, planning, scoping or continuing an item, or asking what ran and what it found. Dispatch mode finds Ready rows for this platform, claims them and starts one session per item, locally or in the cloud. Item mode handles one item end to end — reads it, chooses the specialist skills, runs them, checks the results and saves. Status mode reports what is running, what finished and what it found, and answers questions about it. Sends items that need scoping to the planner.
 ---
 
 # Supervisor
@@ -10,13 +10,14 @@ description: Run Pipeline items that are Ready, and report on runs. Dispatch mod
 - "Run the Ready items": **dispatch** mode.
 - "Run item 42", or a session started by dispatch for one item: **item** mode.
 - "What's happening?", "what's Ready?", "what did the runs find?", "how did item 42 go?": **status** mode. It only reads; it starts and changes nothing.
+- "Plan item 42", "scope this", "split it up": **planning**. With the founder's go-ahead in the conversation, set the item's Agent status to Plan and use the `horology-planner` skill on it.
+- Any other request to work on or continue a Pipeline item, when no skill is named: read the item, say which of these fits and why, then do it. If it isn't Ready to run, say what it needs (Ready to run, Plan to scope) and ask.
 
 The founder starts runs; nothing here runs on its own. The supervisor chooses and coordinates; the specialist `horology-*` skills do the work.
 
 ## Required context and locations
 
-- Read the current [Workflow Guide](https://docs.google.com/document/d/1CdytxCa2c-M7KroQ05JO52_mVhogQ5J_acBhRDRsF5I/edit) and [Pipeline Locations](https://docs.google.com/spreadsheets/d/1aL678ACs97YpLIGrGU5LbpXHc7jQBxl64ED-sLyehvI/edit#gid=2040100904).
-- Find destinations and templates in Pipeline Locations by Domain, Entity, Kind and Output type; Welladino rows are shared by every domain. Use the Drive ID in the row's Location, never a folder inferred from names or paths, and never create folders. If no row matches, more than one does, or Location is blank, ask the founder instead of saving elsewhere.
+- Read [domains, folders and templates](../horology-capture-triage/references/locations.md) before choosing a domain or entity, reading context or saving anything.
 - Read [routing rules](references/routing.md) before choosing specialists, and [runs](references/runs.md) before claiming or finishing a run.
 - Pipeline field rules are in the capture-triage skill's [records reference](../horology-capture-triage/references/records.md). Map live headers by name; columns move.
 - The document-graph connector is required: claims and run records go through it. If it isn't available, stop and say so. Use the `horology-document-graph` skill to check what already exists.
@@ -38,7 +39,7 @@ For exactly one Pipeline ID:
 2. Set the item's Status to **Researching**. Read the Pipeline row: Title, Domain, Type, Status, Stage, Next step / Research question, Current decision ID and the target (Link type, URL, GitHub branch).
 3. If Current decision ID is set, read that Decision Register row, including rework instructions. If Next step is a numbered list of steps, follow them in order.
 4. Search the document graph for earlier research, decisions, topics and entities on the subject. Note what is already answered.
-5. Choose the specialist skill(s) for the question, or for each step (see routing rules). If nothing fits, finish the run as failed with the reason and report it.
+5. Choose the specialist skill(s) for the question, or for each step (see routing rules). If the question is too vague or broad for one run, finish the run as failed, say so, and recommend Plan. If nothing fits, finish the run as failed with the reason and report it.
 6. Run each specialist as a subagent with the Pipeline ID, the bounded question and the instruction to follow its skill. Run independent ones side by side, dependent ones in order. Where subagents aren't available, follow the skills yourself one after another.
 7. Check each result (see routing rules). Send weak work back once with specific gaps, then report what remains.
 8. Confirm the specialists saved their Drive outputs, Document Index rows and proposed decision. When the work is ready for review, set Status **Awaiting decision**, Stage **Stage 2** and Review stage to the stage the work came from.

@@ -74,12 +74,15 @@ function workbooks() {
     ['D-1', '44', 'accepted', 'Stage 1', '', '2026-10-01'],
     ['D-3', '42', 'accepted', 'Stage 1', '', ''],
     ['D-4', '43', 'proposed', 'Stage 1', '', '']]);
-  const books = {P: pipeline, D: register};
+  const registers = sheet([['Register', 'Location', 'Use'],
+    ['Horology — Pipeline', 'https://docs.google.com/spreadsheets/d/P/edit', ''],
+    ['Horology — Decision Register', 'https://docs.google.com/spreadsheets/d/D/edit', '']]);
+  const books = {P: {Master: pipeline, Registers: registers}, D: {Master: register}};
+  const book = id => ({getId: () => id, getSheetByName: n => books[id][n] || null});
   const lock = {released: false, tryLock: () => true, releaseLock() { this.released = true; }};
-  const ctx = load({SpreadsheetApp: {openById: id => ({getSheetByName: n => n === 'Master' ? books[id] : null})},
+  const ctx = load({SpreadsheetApp: {openById: book, getActiveSpreadsheet: () => book('P')},
     LockService: {getScriptLock: () => lock}});
-  vm.runInContext("DECISIONS_CONFIG.PIPELINE_SHEET_ID='P'; DECISIONS_CONFIG.DECISIONS_SHEET_ID='D';", ctx);
-  return {ctx, pipeline, register, lock};
+  return {ctx, pipeline, register, registers, lock};
 }
 
 test('preview reports what would change and writes nothing', () => {
@@ -116,6 +119,19 @@ test('a missing column stops the run before any write', () => {
   assert.throws(() => w.ctx.applyDecisions(), /Missing column Current decision ID/);
   assert.deepEqual(w.pipeline.writes, []);
   assert.ok(w.lock.released);
+});
+
+test('the Decision Register is found on the bound Pipeline\'s Registers tab', () => {
+  const w = workbooks();
+  assert.deepEqual({...w.ctx.registerIds()}, {PIPELINE_ID: 'P', DECISIONS_ID: 'D'});
+});
+test('a missing or duplicated Decision Register row stops the run before any write', () => {
+  const w = workbooks();
+  w.registers.rows.push(['Old Decision Register', 'https://docs.google.com/spreadsheets/d/X/edit', '']);
+  assert.throws(() => w.ctx.applyDecisions(), /exactly one row/);
+  w.registers.rows.splice(2, 2);
+  assert.throws(() => w.ctx.applyDecisions(), /found 0/);
+  assert.deepEqual(w.pipeline.writes, []);
 });
 
 console.log(passed + ' tests passed');

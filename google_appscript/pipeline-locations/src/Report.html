@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_blank">
+  <style>
+    body { font: 13px/1.45 Arial, sans-serif; color: #202124; margin: 4px 8px; }
+    h3 { font-size: 13px; margin: 14px 0 4px; }
+    ul { margin: 0; padding-left: 18px; }
+    li { margin: 2px 0; }
+    a { color: #1a73e8; text-decoration: none; }
+    .none { color: #5f6368; }
+    .problems h3 { color: #b06000; }
+    .wait { display: flex; align-items: center; gap: 10px; margin-top: 18px; color: #5f6368; }
+    .spin { width: 16px; height: 16px; border: 2px solid #dadce0; border-top-color: #1a73e8; border-radius: 50%; animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .error { color: #c5221f; margin-top: 18px; }
+  </style>
+</head>
+<body>
+  <div id="out"><div class="wait"><div class="spin"></div><span id="status">Checking <?= count ?> folders against Drive…</span></div></div>
+  <script>
+    const out = document.getElementById('out');
+    const started = Date.now();
+    const tick = setInterval(() => {
+      document.getElementById('status').textContent = 'Checking <?= count ?> folders against Drive… ' + Math.round((Date.now() - started) / 1000) + 's';
+    }, 1000);
+
+    function section(title, items, render, cls) {
+      const box = document.createElement('div');
+      if (cls) box.className = cls;
+      box.appendChild(Object.assign(document.createElement('h3'), {textContent: title + ' (' + items.length + ')'}));
+      if (!items.length) { box.appendChild(Object.assign(document.createElement('div'), {className: 'none', textContent: 'None.'})); }
+      else {
+        const ul = document.createElement('ul');
+        items.forEach(i => { const li = document.createElement('li'); render(li, i); ul.appendChild(li); });
+        box.appendChild(ul);
+      }
+      out.appendChild(box);
+    }
+    const text = (el, t) => el.appendChild(document.createTextNode(t));
+
+    function render(data) {
+      clearInterval(tick);
+      out.textContent = '';
+      section('Updated in Locations', data.updates, (li, u) => text(li, u.field + ': ' + u.from + ' → ' + u.to));
+      section('Needs your attention', data.problems, (li, p) => text(li, p.message), 'problems');
+      section('In Drive but not in Locations', data.suggestions, (li, s) => {
+        const a = Object.assign(document.createElement('a'), {href: s.url, textContent: s.name});
+        li.appendChild(a);
+        text(li, ' in ' + s.parent + ' (' + [s.domain, s.entity].filter(Boolean).join(' / ') + '). Add it as a ' + s.kind + ' row if agents should use it.');
+      });
+    }
+
+    google.script.run
+      .withSuccessHandler(render)
+      .withFailureHandler(e => {
+        clearInterval(tick);
+        out.textContent = '';
+        out.appendChild(Object.assign(document.createElement('div'), {className: 'error', textContent: 'The check stopped: ' + (e && e.message ? e.message : e)}));
+      })
+      .runFolderCheck();
+  </script>
+</body>
+</html>

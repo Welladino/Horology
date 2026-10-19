@@ -1,6 +1,6 @@
 ---
 name: horology-planner
-description: Scope or split Pipeline items the founder has set to Agent status Plan — rewrite Next step as a bounded question, or break it into numbered steps there — then set the item back to No action for the founder to review. Use on a schedule or when asked to plan the Plan items or a specific item. Only touches Plan rows.
+description: Scope or split Pipeline items set to Agent status Plan (not marketing or content plans) — rewrite Next step as a bounded question, or break it into numbered steps there — then set the item back to No action for the founder to review. Runs on a schedule, when the supervisor hands it an item to scope, or when this skill is named. Only touches Plan rows.
 ---
 
 # Planner
@@ -11,8 +11,7 @@ A scheduled run, or when the founder asks to "plan the Plan items" or "plan item
 
 ## Required context and locations
 
-- Read the current [Workflow Guide](https://docs.google.com/document/d/1CdytxCa2c-M7KroQ05JO52_mVhogQ5J_acBhRDRsF5I/edit) and [Pipeline Locations](https://docs.google.com/spreadsheets/d/1aL678ACs97YpLIGrGU5LbpXHc7jQBxl64ED-sLyehvI/edit#gid=2040100904).
-- Find destinations and templates in Pipeline Locations by Domain, Entity, Kind and Output type; Welladino rows are shared by every domain. Use the Drive ID in the row's Location, never a folder inferred from names or paths, and never create folders. If no row matches, more than one does, or Location is blank, ask the founder instead of saving elsewhere.
+- Read [domains, folders and templates](../horology-capture-triage/references/locations.md) before choosing a domain or entity, reading context or saving anything.
 - Pipeline field rules are in the capture-triage skill's [records reference](../horology-capture-triage/references/records.md); claiming, finishing and the steps format in the supervisor skill's [runs reference](../horology-supervisor/references/runs.md). Map columns by header name.
 - Know the specialists: the installed specialist `horology-*` skills (research, technical assessment, security review, GTM, marketing strategy, content planner) and their descriptions.
 - The document-graph connector is required for claims; if it isn't available, stop and say so. Use the `horology-document-graph` skill to see what's already known.

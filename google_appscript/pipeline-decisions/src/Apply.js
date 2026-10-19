@@ -8,9 +8,9 @@ function run(live) {
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) { console.log('Another run is in progress.'); return []; }
   try {
-    const c = DECISIONS_CONFIG;
-    const pipeline = readMaster(c.PIPELINE_SHEET_ID, ['ID', 'Status', 'Stage', 'Review stage', 'Agent status', 'Agent type', 'Current decision ID']);
-    const register = readMaster(c.DECISIONS_SHEET_ID, ['Decision ID', 'Pipeline ID', 'Status', 'Review stage', 'Rework instructions']);
+    const ids = registerIds();
+    const pipeline = readMaster(ids.PIPELINE_ID, ['ID', 'Status', 'Stage', 'Review stage', 'Agent status', 'Agent type', 'Current decision ID']);
+    const register = readMaster(ids.DECISIONS_ID, ['Decision ID', 'Pipeline ID', 'Status', 'Review stage', 'Rework instructions']);
     const decisions = register.rows.map(r => r.data);
     const out = [];
     pipeline.rows.forEach(row => {

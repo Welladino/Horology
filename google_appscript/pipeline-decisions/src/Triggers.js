@@ -4,7 +4,7 @@ function installTriggers() {
   stopTriggers();
   ScriptApp.newTrigger('applyDecisions').timeBased().everyMinutes(DECISIONS_CONFIG.CHECK_EVERY_MINUTES).create();
   // Edit triggers fire for people's edits only, not for API or script writes; the timer covers those.
-  ScriptApp.newTrigger('applyDecisions').forSpreadsheet(DECISIONS_CONFIG.DECISIONS_SHEET_ID).onEdit().create();
+  ScriptApp.newTrigger('applyDecisions').forSpreadsheet(registerIds().DECISIONS_ID).onEdit().create();
   console.log('Installed: every ' + DECISIONS_CONFIG.CHECK_EVERY_MINUTES + ' minutes, and on Decision Register edits.');
 }
 

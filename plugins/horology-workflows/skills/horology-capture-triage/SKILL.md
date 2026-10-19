@@ -11,11 +11,10 @@ Capture, transfer, or triage thoughts the user asks to retain across Welladino's
 
 ## Required context and locations
 
-- Read the current [Workflow Guide](https://docs.google.com/document/d/1CdytxCa2c-M7KroQ05JO52_mVhogQ5J_acBhRDRsF5I/edit) and [Pipeline Locations](https://docs.google.com/spreadsheets/d/1aL678ACs97YpLIGrGU5LbpXHc7jQBxl64ED-sLyehvI/edit#gid=2040100904) for shared rules and verified destinations.
-- Find destinations and templates in Pipeline Locations by Domain, Entity, Kind and Output type; Welladino rows are shared by every domain. Use the Drive ID in the row's Location, never a folder inferred from names or paths, and never create folders. If no row matches, more than one does, or Location is blank, ask the founder instead of saving elsewhere.
+- Read [domains, folders and templates](references/locations.md) before choosing a domain or entity, reading context or saving anything.
 - Read [record fields](references/records.md) when writing a row. Configure connectors separately for each platform.
 - Pipeline owns proposals; Drive owns supporting documents; ClickUp presents Pipeline tasks and review status. Repo Markdown is temporary technical capture, not a maintained mirror.
-- Resolve domain and entity from the conversation and existing records. Newsletter and Ecommerce staging folders are not named businesses.
+- Resolve domain and entity from the conversation and existing records, using only the values in the Domains tab.
 
 ## Workflow
 
@@ -29,7 +28,7 @@ Edit Pipeline Master only; filter its table to see one domain. Resolve records b
 
 ## Decision and permission boundaries
 
-ID is permanent and unique across the whole Pipeline. Allocate the next unused numeric ID; never renumber after sorting or reuse a removed ID. External ID is optional and holds historical EPIC-NEWS or other source identifiers. Entity is only for named Newsletter or Ecommerce businesses; leave it empty for Article Aggregator, Welladino and Horology.
+ID is permanent and unique across the whole Pipeline. Allocate the next unused numeric ID; never renumber after sorting or reuse a removed ID. External ID is optional and holds historical EPIC-NEWS or other source identifiers. Domain and Entity come from the Domains tab: set Entity only when the domain lists entities.
 
 Agent status is No action, Plan or Ready; Agent type is Claude Code, Codex, Manual or Unassigned; Run location is Local or Cloud (blank means Local). Default new captures to No action and Unassigned unless the user selects otherwise. Ready selects the stated Next step / Research question but does not launch an automatic run. A user request or authorised schedule starts work; selection never implies acceptance of a recommendation or permission for unrelated implementation.
 

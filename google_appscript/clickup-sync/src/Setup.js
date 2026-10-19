@@ -2,7 +2,7 @@
 
 function initializeSheets() {
   // Run once manually. No ClickUp access. Existing rows stay intact.
-  const p=SYNC_CONFIG;
+  const p=sheetIds();
   addFields(SpreadsheetApp.openById(p.PIPELINE_SHEET_ID),['Stage','Review stage','Current decision ID','ClickUp Pipeline URL','Document count']);
   addFields(SpreadsheetApp.openById(p.DECISIONS_SHEET_ID),['Pipeline ID','Review stage','Rework instructions','Review source']);
 }

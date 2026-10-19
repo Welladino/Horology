@@ -29,7 +29,7 @@ function readDocumentIndex(book) {
 function refreshDocumentCounts() {
   const lock=LockService.getScriptLock();if(!lock.tryLock(1000)) throw Error('Sync already running.');
   try {
-    const p=SYNC_CONFIG,pt=readTable(SpreadsheetApp.openById(p.PIPELINE_SHEET_ID),['ID','Document count']);
+    const p=sheetIds(),pt=readTable(SpreadsheetApp.openById(p.PIPELINE_SHEET_ID),['ID','Document count']);
     unique(pt.rows,'ID');
     const documents=readDocumentIndex(SpreadsheetApp.openById(p.DOCUMENT_INDEX_SHEET_ID));
     pt.rows.forEach(row=>{const count=(documents[row.data.ID]||[]).length;

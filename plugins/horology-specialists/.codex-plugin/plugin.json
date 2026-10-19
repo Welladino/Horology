@@ -12,7 +12,7 @@
     "capabilities": []
   },
   "name": "horology-specialists",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Horology specialist agents for Pipeline items: research, technical assessment, security review, go-to-market, marketing strategy and content planning. Each saves its output to Drive and the registers for a founder decision.",
   "author": {
     "name": "Saravanaraj",

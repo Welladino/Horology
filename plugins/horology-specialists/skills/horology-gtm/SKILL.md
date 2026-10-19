@@ -1,6 +1,6 @@
 ---
 name: horology-gtm
-description: Go-to-market for a selected Pipeline item — who the customer is, positioning, which channels to use first and in what order, and what would make someone pay. Produces a recommendation for the founder to decide on. Use for the path from "product exists" to "people are paying", not for copy or campaign execution.
+description: Go-to-market for a selected Pipeline item — who the customer is, positioning, which channels to use first and in what order, and what would make someone pay. Produces a recommendation for the founder to decide on. Use for the path from "product exists" to "people are paying", not for copy or campaign execution. Usually run by horology-supervisor; use directly only when this skill is named.
 ---
 
 # Go-to-market
@@ -11,19 +11,19 @@ A Pipeline question about the path to paying customers: target segment, position
 
 ## Required context and locations
 
-- Read the current [Workflow Guide](https://docs.google.com/document/d/1CdytxCa2c-M7KroQ05JO52_mVhogQ5J_acBhRDRsF5I/edit), [Pipeline Locations](https://docs.google.com/spreadsheets/d/1aL678ACs97YpLIGrGU5LbpXHc7jQBxl64ED-sLyehvI/edit#gid=2040100904) and [Document Presentation Guide](https://docs.google.com/document/d/1D2N9VJRCmBFJ4T9cUGH47zQUVqk99sjavpbbwYIYY8I/edit).
-- Find destinations and templates in Pipeline Locations by Domain, Entity, Kind and Output type; Welladino rows are shared by every domain. Use the Drive ID in the row's Location, never a folder inferred from names or paths, and never create folders. If no row matches, more than one does, or Location is blank, ask the founder instead of saving elsewhere.
+- Read [domains, folders and templates](../horology-research/references/locations.md) before choosing a domain or entity, reading context or saving anything.
+- Follow the [presentation rules](../horology-research/references/presentation.md) when creating or filling documents.
 - Read [linking rules](../horology-research/references/linking.md) when saving outputs.
 - Resolve the permanent Pipeline ID, the bounded question and the domain or entity. Search the document graph for earlier GTM recommendations, research and decisions on the same business before starting.
 
 ## Workflow
 
-1. Gather what is actually known: the product, current customers or users, prior recommendations and decisions, and any evidence in Drive or the graph. List what is missing.
+1. Gather what is actually known: the product, current customers or users, prior recommendations and decisions, and any evidence in the domain's Input folders, Drive or the graph. List what is missing.
 2. If the item is too thin to recommend responsibly, say what is missing and stop rather than fill gaps with plausible assumptions.
 3. Define the target segment concretely: who, what problem, why now, and how you would reach them.
 4. Compare a small number of credible channel and positioning options against each other: expected reach, cost and effort, time to signal, and how you'd know it worked. Use primary sources for market and pricing claims and date them.
 5. Recommend one path with a first test: what to do, for whom, through which channel, what success looks like, and when to revisit. Say plainly if a proposed approach looks weak, and why.
-6. Copy the closest template from the Pipeline Locations tab (Direction or Plans) into the verified domain destination, fill it, and register it in the Document Index. If no template fits, create a plain Google Doc with the standard metadata and say so.
+6. Copy the closest template from the Templates tab (usually Direction or Plan) into the Output folder that fits, fill it, and register it in the Document Index.
 7. Set the Pipeline item to Awaiting decision when the recommendation is ready. Draft a proposed decision only when the requested workflow includes one.
 
 ## Decision and permission boundaries

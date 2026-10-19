@@ -46,7 +46,7 @@ Full setup detail (persona syncing, cron scripts, troubleshooting): [`docs/runbo
 
 | Path | What's there |
 |---|---|
-| `google_appscript/` | Subscription-agent workflow infrastructure; currently the portable Google Apps Script Sheets/ClickUp sync. See [its README](google_appscript/README.md). |
+| `google_appscript/` | The subscription-agent Apps Script projects: Pipeline decisions, Locations and the optional ClickUp sync. See the [Apps Script architecture](docs/architecture/subscription-agents/apps-script.md). |
 | `mcp-servers/` | The two purpose-built MCP servers (`document-graph`, `github-monitor`) — each its own Dockerfile, `requirements.txt`, and credential. |
 | `alembic/` | Postgres migrations for the document graph (Neon). Workflow: [`docs/runbook/db/alembic_workflow.md`](docs/runbook/db/alembic_workflow.md). |
 | `scripts/` | Cron `--script` files, copied into the Hermes container by hand (`docker cp`), plus docs and CI helpers. |

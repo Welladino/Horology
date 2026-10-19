@@ -1,6 +1,6 @@
 ---
 name: horology-content-planner
-description: Content plan and drafts for a selected Pipeline item — topics, formats, cadence and a calendar, briefs for each piece, and draft copy ready for the founder to edit. Use to turn an agreed marketing plan or a single content request into usable content.
+description: Content plan and drafts for a selected Pipeline item — topics, formats, cadence and a calendar, briefs for each piece, and draft copy ready for the founder to edit. Use to turn an agreed marketing plan or a single content request into usable content. Usually run by horology-supervisor; use directly only when this skill is named.
 ---
 
 # Content planner
@@ -11,10 +11,10 @@ Planning or drafting content: a content calendar, briefs for posts, newsletters,
 
 ## Required context and locations
 
-- Read the current [Workflow Guide](https://docs.google.com/document/d/1CdytxCa2c-M7KroQ05JO52_mVhogQ5J_acBhRDRsF5I/edit), [Pipeline Locations](https://docs.google.com/spreadsheets/d/1aL678ACs97YpLIGrGU5LbpXHc7jQBxl64ED-sLyehvI/edit#gid=2040100904) and [Document Presentation Guide](https://docs.google.com/document/d/1D2N9VJRCmBFJ4T9cUGH47zQUVqk99sjavpbbwYIYY8I/edit).
-- Find destinations and templates in Pipeline Locations by Domain, Entity, Kind and Output type; Welladino rows are shared by every domain. Use the Drive ID in the row's Location, never a folder inferred from names or paths, and never create folders. If no row matches, more than one does, or Location is blank, ask the founder instead of saving elsewhere.
+- Read [domains, folders and templates](../horology-research/references/locations.md) before choosing a domain or entity, reading context or saving anything.
+- Follow the [presentation rules](../horology-research/references/presentation.md) when creating or filling documents.
 - Read [linking rules](../horology-research/references/linking.md) when saving outputs.
-- Resolve the permanent Pipeline ID, the request and the domain or entity. Find the brand guide, the accepted marketing plan and earlier content for this business in the graph and the Document Index. Search the graph before drafting so you don't repeat published pieces.
+- Resolve the permanent Pipeline ID, the request and the domain or entity. Find the brand guide, the accepted marketing plan and earlier content for this business in its Input folders, the graph and the Document Index. Search the graph before drafting so you don't repeat published pieces.
 
 ## Workflow
 
@@ -23,7 +23,7 @@ Planning or drafting content: a content calendar, briefs for posts, newsletters,
 3. For each piece: write a brief (goal, audience, key message, proof points, call to action, length, sources) and then a draft.
 4. Write real copy, not descriptions of copy. Match the brand voice; avoid generic marketing language. Note anything that needs a fact check or the founder's input.
 5. Check drafts against the graph: flag near-duplicates of earlier content (a similarity of 0.90 or more) instead of presenting them as new.
-6. Save plans and drafts using the closest template from the Pipeline Locations tab (Plan, or a content template if one exists) in the verified domain destination, and register them in the Document Index.
+6. Save plans and drafts from the closest template in the Templates tab, in the Output folder that fits, and register them in the Document Index.
 7. Set the Pipeline item to Awaiting decision when the plan or drafts are ready for review.
 
 ## Decision and permission boundaries

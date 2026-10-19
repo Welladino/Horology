@@ -4,9 +4,7 @@ Read [architecture](../../architecture/subscription-agents/README.md) for respon
 
 ## Live records and instructions
 
-- [Workflow Guide](https://docs.google.com/document/d/1CdytxCa2c-M7KroQ05JO52_mVhogQ5J_acBhRDRsF5I/edit)
-- [Pipeline Locations](https://docs.google.com/spreadsheets/d/1aL678ACs97YpLIGrGU5LbpXHc7jQBxl64ED-sLyehvI/edit#gid=2040100904)
-- [Presentation Guide](https://docs.google.com/document/d/1D2N9VJRCmBFJ4T9cUGH47zQUVqk99sjavpbbwYIYY8I/edit)
+- [Pipeline Locations](https://docs.google.com/spreadsheets/d/1aL678ACs97YpLIGrGU5LbpXHc7jQBxl64ED-sLyehvI/edit#gid=2040100904): folders; Domains, Templates and Registers are tabs of the same workbook
 - [Pipeline](https://docs.google.com/spreadsheets/d/1aL678ACs97YpLIGrGU5LbpXHc7jQBxl64ED-sLyehvI/edit)
 - [Decision Register](https://docs.google.com/spreadsheets/d/1_megp_hD4gwRuF4wmk4g2vQGAWbLl4uNUpho-oLoygE/edit)
 - [Document Index](https://docs.google.com/spreadsheets/d/1kObhQNjsFhziS-wRzjaEIzr9j8jjbfvd-ZgvzuwQ-Jc/edit)
@@ -56,7 +54,7 @@ The supervisor claims each item through the document graph and starts one sessio
 
 ## Decide on an item
 
-In the Decision Register, set the current decision's Status to accepted, rework (with Rework instructions), parked or rejected. The [pipeline-decisions](../../../google_appscript/pipeline-decisions/README.md) script moves the Pipeline item on within 10 minutes, or straight away when you edit the register yourself. To check: run `previewDecisions` in its Apps Script project, or look at the item's Status.
+In the Decision Register, set the current decision's Status to accepted, rework (with Rework instructions), parked or rejected. The [Pipeline decisions](../../architecture/subscription-agents/apps-script.md#pipeline-decisions) script moves the Pipeline item on within 10 minutes, or straight away when you edit the register yourself. To check: use **Extensions → Horology — Pipeline decisions → Preview decisions** in the Pipeline, or look at the item's Status.
 
 ## Scheduled jobs
 
@@ -71,4 +69,4 @@ The scheduled session needs the skills (claude.ai skills for Claude, the install
 
 ## Maintain ClickUp integration
 
-Use the [clasp runbook](clasp.md) to connect, inspect, compare and publish Apps Script source. The [sync workflow](../../../google_appscript/clickup-sync/WORKFLOW.md) defines schema, status mapping, preview and apply behaviour.
+Use the [Apps Script runbook](clasp.md) to connect, compare and publish the Apps Script projects and set up ClickUp Sync. The [Apps Script architecture](../../architecture/subscription-agents/apps-script.md) describes their behaviour: decision rules, the Drive check, and the sync's status mapping, review and batching.

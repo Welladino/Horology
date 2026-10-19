@@ -21,7 +21,7 @@ Search first, so work builds on what exists instead of repeating it:
 3. Use `get_related_documents` on a key document to find its links: `supersedes` (newer version), `related_to` (similar content), and named links such as `informed_by` or `contradicts`.
 4. `list_documents` (optionally by `doc_type`) shows the newest documents when no search term fits.
 
-Results carry each document's `domain`, `business_entity` (the Document Index "Entity", e.g. a named newsletter or store) and `pipeline_id`. Pass `domain` to `search_documents` or `list_documents` to stay within one domain (any spelling: `Newsletter` or `newsletter`). Use `pipeline_id` to go from a result to its Pipeline item, decisions and other documents.
+Results carry each document's `domain`, `business_entity` (the Document Index "Entity", a named business inside a domain) and `pipeline_id`. Pass `domain` to `search_documents` or `list_documents` to stay within one domain (case doesn't matter); the valid domains are in the Pipeline's Domains tab. Use `pipeline_id` to go from a result to its Pipeline item, decisions and other documents.
 
 ## Topics
 

@@ -76,13 +76,33 @@ test('both-side status changes block approval',()=>{
 test('review ingestion is explicitly opt-in',()=>{
  const f=fixture();f.c.ALLOW_CLICKUP_REVIEW='false';f.run(true);f.task.status.status='open';assert.throws(()=>f.run(true),/ingestion disabled/);
 });
-test('configuration reads only the token from Script Properties',()=>{
- const f=fixture(),requested=[];
- f.ctx.PropertiesService={getScriptProperties:()=>({getProperty:k=>{requested.push(k);return 'test-token';},getProperties:()=>{throw Error('Bulk property reads forbidden');}})};
- vm.runInContext("SYNC_CONFIG.PILOT_PIPELINE_IDS=['18']; DOMAIN_LISTS.welladino='456';",f.ctx);
- const cfg=f.ctx.config();assert.deepEqual(requested,['CLICKUP_TOKEN']);
- assert.equal(cfg.lists.welladino,'456');assert.equal(cfg.ids[0],'18');assert.equal(cfg.max,5);
+// A fake Pipeline workbook with Registers and Domains tabs, and Script Properties.
+function workspace(f,props) {
+ const tabs={
+  Registers:[['Register','Location','Use'],['Horology — Pipeline','https://docs.google.com/spreadsheets/d/pipe/edit',''],
+   ['Horology — Decision Register','https://docs.google.com/spreadsheets/d/dec/edit',''],
+   ['Horology — Document Index','https://docs.google.com/spreadsheets/d/docs/edit','']],
+  Domains:[['Domain','Entities'],['Horology',''],['Shop','Caps'],['Notes','']]};
+ const requested=[];
+ f.ctx.SpreadsheetApp={openById:id=>{assert.equal(id,'pipe');return {getSheetByName:n=>tabs[n]&&{getDataRange:()=>({getDisplayValues:()=>tabs[n]})}};}};
+ f.ctx.PropertiesService={getScriptProperties:()=>({getProperty:k=>{requested.push(k);return props[k]||null;},getProperties:()=>{throw Error('Bulk property reads forbidden');}})};
+ return {tabs,requested};
+}
+test('configuration reads the token, Pipeline ID and list properties one by one',()=>{
+ const f=fixture(),w=workspace(f,{CLICKUP_TOKEN:'test-token',PIPELINE_SHEET_ID:'pipe',LIST_Horology:'901',LIST_Shop:' 902 '});
+ vm.runInContext("SYNC_CONFIG.PILOT_PIPELINE_IDS=['18'];",f.ctx);
+ const cfg=f.ctx.config();
+ assert.deepEqual(w.requested,['CLICKUP_TOKEN','PIPELINE_SHEET_ID','LIST_Horology','LIST_Shop','LIST_Notes']);
+ assert.deepEqual({...cfg.lists},{Horology:'901',Shop:'902'});
+ assert.deepEqual([cfg.PIPELINE_SHEET_ID,cfg.DECISIONS_SHEET_ID,cfg.DOCUMENT_INDEX_SHEET_ID],['pipe','dec','docs']);
+ assert.equal(cfg.ids[0],'18');assert.equal(cfg.max,5);
  assert.equal(cfg.ALLOW_CLICKUP_REVIEW,'false');
+});
+test('a missing Pipeline ID or register row fails explicitly',()=>{
+ const f=fixture();workspace(f,{CLICKUP_TOKEN:'t'});
+ assert.throws(()=>f.ctx.sheetIds(),/PIPELINE_SHEET_ID/);
+ const g=fixture(),w=workspace(g,{PIPELINE_SHEET_ID:'pipe'});w.tabs.Registers.splice(3,1);
+ assert.throws(()=>g.ctx.sheetIds(),/document index.*found 0/i);
 });
 test('write gate comes from Config.gs, without reading secret properties',()=>{
  const f=fixture();f.ctx.PropertiesService={getScriptProperties:()=>{throw Error('Should not read properties');}};

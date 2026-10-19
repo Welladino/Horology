@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_blank">
+  <style>
+    body { font: 13px/1.45 Arial, sans-serif; color: #202124; margin: 12px; }
+    .bar { display: flex; gap: 6px; margin-bottom: 10px; }
+    input { flex: 1; padding: 5px 7px; border: 1px solid #dadce0; border-radius: 4px; }
+    button { padding: 5px 9px; border: 1px solid #dadce0; border-radius: 4px; background: #fff; cursor: pointer; }
+    details { margin-left: 14px; }
+    .tree > details { margin-left: 0; }
+    summary { cursor: pointer; padding: 2px 0; list-style: none; }
+    summary::-webkit-details-marker { display: none; }
+    summary::before { content: '▸ '; color: #80868b; }
+    details[open] > summary::before { content: '▾ '; }
+    .leaf > summary::before { content: '  '; }
+    a { color: #1a73e8; text-decoration: none; }
+    .root > summary { font-weight: bold; }
+    .tag { font-size: 11px; padding: 0 5px; border-radius: 8px; margin-left: 4px; }
+    .Input { background: #e6f4ea; color: #137333; }
+    .Output { background: #e8f0fe; color: #174ea6; }
+    .entity { color: #5f6368; font-size: 11px; margin-left: 4px; }
+    .purpose { color: #5f6368; font-size: 12px; margin: 0 0 3px 20px; }
+    .hidden { display: none; }
+    h3 { font-size: 13px; margin: 14px 0 4px; color: #b06000; }
+  </style>
+</head>
+<body>
+  <div class="bar">
+    <input id="filter" placeholder="Filter folders">
+    <button id="open">Expand</button>
+    <button id="close">Collapse</button>
+  </div>
+  <div class="tree" id="tree"></div>
+  <script>
+    const data = <?!= data ?>;
+
+    function node(n) {
+      const d = document.createElement('details');
+      if (n.kind === 'Root folder') d.className = 'root';
+      if (!n.children.length) d.classList.add('leaf');
+      const s = document.createElement('summary');
+      const a = document.createElement(n.url ? 'a' : 'span');
+      a.textContent = n.name;
+      if (n.url) a.href = n.url;
+      s.appendChild(a);
+      if (n.kind === 'Entity folder') s.appendChild(span('entity', n.entity));
+      if (n.type) s.appendChild(span('tag ' + n.type, n.type));
+      d.appendChild(s);
+      if (n.purpose) d.appendChild(Object.assign(document.createElement('div'), {className: 'purpose', textContent: n.purpose}));
+      n.children.forEach(c => d.appendChild(node(c)));
+      d.dataset.text = (n.name + ' ' + n.purpose + ' ' + n.type).toLowerCase();
+      return d;
+    }
+    function span(cls, text) { return Object.assign(document.createElement('span'), {className: cls, textContent: text}); }
+
+    const tree = document.getElementById('tree');
+    data.roots.forEach(r => tree.appendChild(node(r)));
+    if (data.unplaced.length) {
+      tree.appendChild(Object.assign(document.createElement('h3'), {textContent: 'Rows whose parent is not found'}));
+      data.unplaced.forEach(r => tree.appendChild(node(r)));
+    }
+    tree.querySelectorAll('.root').forEach(d => d.open = true);
+
+    const all = () => tree.querySelectorAll('details');
+    document.getElementById('open').onclick = () => all().forEach(d => d.open = true);
+    document.getElementById('close').onclick = () => all().forEach(d => d.open = false);
+    document.getElementById('filter').oninput = e => {
+      const q = e.target.value.trim().toLowerCase();
+      all().forEach(d => {
+        const hit = !q || d.dataset.text.includes(q) || [...d.querySelectorAll('details')].some(c => c.dataset.text.includes(q));
+        d.classList.toggle('hidden', !hit);
+        if (q && hit) d.open = true;
+      });
+    };
+  </script>
+</body>
+</html>
