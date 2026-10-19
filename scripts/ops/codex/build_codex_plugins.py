@@ -25,7 +25,8 @@ def build(source, output):
         extension['apps'] = './.app.json'
     manifest['extensions'] = dict(legacy.get('extensions', {}))
     manifest['extensions']['com.openai'] = extension
-    assert len(extension['interface']['shortDescription']) <= 30
+    if len(extension['interface']['shortDescription']) > 30:
+        raise ValueError('Plugin short description exceeds 30 characters')
     files = {'plugin.json': (json.dumps(manifest, indent=2) + '\n').encode()}
     # Fixed root paths are required in portable uploads, not in our source tree.
     for name in ('mcp.json', 'apps.json'):
@@ -44,7 +45,8 @@ def build(source, output):
             files[path.relative_to(source).as_posix()] = path.read_bytes()
     expected = {p.parent.name for p in (source / 'skills').glob('*/SKILL.md')}
     actual = {Path(name).parent.name for name in files if name.startswith('skills/') and name.endswith('/SKILL.md')}
-    assert expected == actual, (expected, actual)
+    if expected != actual:
+        raise ValueError(f'Packaged skills differ: expected {expected}, got {actual}')
     output.mkdir(parents=True, exist_ok=True)
     archive = output / (source.name + '.zip')
     with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED) as package:
