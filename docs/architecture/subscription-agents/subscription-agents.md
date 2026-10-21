@@ -18,6 +18,7 @@ stateDiagram-v2
   Rework --> Researching: start-run · supervisor
   Approved --> Researching: start-run · supervisor
   Researching --> Awaiting: submit-for-review · supervisor · Stage 2
+  Researching --> Awaiting: synthesize-stage-3 · supervisor + synthesis specialist · Stage 4
   Awaiting --> Approved: accept-stage-1 · founder or sync · Stage 3, Ready
   Awaiting --> HandedOff: accept-stage-3 · founder or sync
   Awaiting --> Rework: rework · founder or sync · Ready
@@ -82,8 +83,9 @@ flowchart TB
 | Templates               | Document structure and visual assets                                                                                                                                                                             | Drive `05_Horology/05_Templates`                                                                                            |
 | Deliverables            | Research, direction, plans and assessments                                                                                                                                                                       | Output folders from the Locations tab                                                                                       |
 | Skills                  | Versioned agent instructions                                                                                                                                                                                     | `plugins/horology-workflows/skills/` (supervisor, capture and triage), `plugins/horology-specialists/skills/` (specialists) |
+| Horology workspace      | Review and record decisions, manage Pipeline items, browse folders, and explicitly reconcile Locations Name and Parent with Drive                                                                                 | `google_appscript/pipeline-decisions/` (Apps Script, bound to the Pipeline)                                                 |
 | Decision applier        | Moves an item on when its current decision is accepted, rework, parked or rejected                                                                                                                               | `google_appscript/pipeline-decisions/` (Apps Script, bound to the Pipeline)                                                 |
-| Locations script        | Folder tree view, and Locations Name and Parent kept in step with Drive                                                                                                                                          | `google_appscript/pipeline-locations/` (Apps Script, bound to the Pipeline)                                                 |
+| Legacy Locations script | Retained as a fallback for the old folder and item dialogs; it no longer adds an Extensions menu                                                                                                                 | `google_appscript/pipeline-locations/` (Apps Script, bound to the Pipeline)                                                 |
 | ClickUp sync (optional) | Mirrors register rows to ClickUp tasks, statuses and decision comments; a task moved out of `review` to open, blocked or rejected records accept, park or reject                                                 | `google_appscript/clickup-sync/` (Apps Script, standalone)                                                                  |
 
 The Apps Script projects are described in [Apps Script projects](apps-script.md). Agents get their instructions only from skills; the Drive guides are retired.
@@ -95,9 +97,10 @@ Sheets is the operational record and Drive holds the detailed deliverables; Clic
 * **Stage 0, capture.** `horology-capture-triage` records an idea, parked proposal or research request as a Pipeline row and checks for duplicates.
 * **Stage 1, investigation and proposal.** The question decides the form: research (`horology-research`), direction, a plan, or a technical assessment (`horology-technical-assessment`). These are not a fixed sequence. The deliverable is saved to Drive and listed in the Document Index.
 * **Stage 2, founder decision.** Approve, rework, park or reject, recorded in the Decision Register with feedback. The pipeline-decisions script then moves the item on (for example to Approved, Stage 3 and Ready) within about 10 minutes, or straight away when you edit the register yourself.
-* **Stage 3, specialist deliverable.** An approved scope becomes a detailed deliverable, then review. For code work this is a planning note in the repository, not automatic implementation.
+* **Stage 3, specialist deliverable.** An approved scope becomes a detailed deliverable. For code work this is a planning note in the repository, not automatic implementation.
+* **Stage 4, synthesis.** In the same Stage 3 run, the supervisor calls Horology Synthesis Artifacts to turn the investigation and specialist deliverable into a concise visual briefing. HTML is preferred when it can be saved and opened reliably; a visual Doc or Sheet can be used when better suited. The item then awaits founder review at Stage 4. No new prompt, selection or schedule is needed for synthesis.
 
-Stage and Review stage are separate fields, so a review can be told apart even when ClickUp statuses overlap.
+Stage and Review stage are separate fields. At Stage 2 the founder reviews the Investigation proposal; at Stage 4 the founder reviews the Specialist deliverable alongside its synthesis.
 
 ## IDs and records
 
@@ -107,7 +110,7 @@ The Pipeline's permanent numeric ID joins decisions and documents; each register
 
 `Agent status = Ready` marks the next bounded step for an AI agent; `Agent type` names the intended platform; `Manual` means founder-led. A sheet value alone launches nothing.
 
-Runs are always started by the founder, from a session: in Claude Code or Codex, "run the Ready items" or "run item 42". Nothing runs on a trigger or schedule. The **supervisor** (`horology-supervisor`) has three modes:
+Investigation and Stage 3 runs are started by the founder, from a session: in Claude Code or Codex, "run the Ready items" or "run item 42". Stage 4 runs automatically within the Stage 3 session. The **supervisor** (`horology-supervisor`) has three modes:
 
 *   **Dispatch:** finds rows with Agent status Ready whose **Agent type** is the platform it's running on (Claude Code or Codex; each platform runs only its own rows), claims each with `claim_item` (2-hour claim), and starts **one session per item** according to the row's **Run location**:
 

@@ -2,21 +2,18 @@
 <html>
 <head>
   <base target="_blank">
+  <?!= include('SharedUi') ?>
   <style>
     body { font: 13px/1.45 Arial, sans-serif; color: #202124; margin: 4px 6px 12px; }
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; }
     .wide { grid-column: 1 / -1; }
     label { display: block; margin: 8px 0 3px; font-weight: bold; font-size: 12px; }
     .hint { font-weight: normal; color: #5f6368; }
-    input, select, textarea { width: 100%; box-sizing: border-box; padding: 6px 7px; border: 1px solid #dadce0; border-radius: 4px; font: inherit; }
+    .h-input, .h-select, .h-textarea { padding: 6px 7px; }
     textarea { resize: vertical; }
     details { margin-top: 12px; }
     summary { cursor: pointer; color: #1a73e8; }
     .bar { display: flex; align-items: center; gap: 10px; margin-top: 16px; }
-    button { padding: 8px 16px; border-radius: 4px; font-weight: bold; cursor: pointer; font: inherit; }
-    #add { border: 0; background: #1a73e8; color: #fff; }
-    #add:disabled { background: #9aa0a6; cursor: default; }
-    #close { border: 1px solid #dadce0; background: #fff; color: #1a73e8; }
     .msg { padding: 7px 10px; border-radius: 4px; display: none; flex: 1; }
     .ok { display: block; background: #e6f4ea; color: #137333; }
     .err { display: block; background: #fce8e6; color: #a50e0e; }
@@ -90,14 +87,17 @@
     </details>
 
     <div class="bar">
-      <button id="add" type="submit">Add item</button>
-      <button id="close" type="button">Close</button>
+      <button id="add" class="h-button h-button--primary" type="submit">Add item</button>
+      <button id="close" class="h-button" type="button">Close</button>
       <div id="msg" class="msg"></div>
     </div>
   </form>
   <script>
     const data = <?!= data ?>;
     const $ = id => document.getElementById(id);
+    document.querySelectorAll('input,select,textarea').forEach(control =>
+      control.classList.add(control.tagName === 'INPUT' ? 'h-input' :
+        control.tagName === 'SELECT' ? 'h-select' : 'h-textarea'));
 
     function fill(select, values, blank) {
       select.textContent = '';

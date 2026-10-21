@@ -12,8 +12,8 @@
     "capabilities": []
   },
   "name": "welladino-workflows",
-  "version": "0.5.1",
-  "description": "Capture and triage Pipeline ideas; run Ready items with a supervisor that starts one session per item and hands each to the specialist skills in the Horology Specialists plugin; plan items marked Plan; and write a daily digest; set up domains, folders, templates and scheduled watchers.",
+  "version": "0.6.2",
+  "description": "Capture and triage Pipeline ideas; run Ready items with a supervisor that invokes visual Stage 4 synthesis after Stage 3; plan items marked Plan; write a daily digest; set up domains, folders, templates and scheduled watchers.",
   "author": {
     "name": "Saravanaraj",
     "email": "saravanaraj.subramaniam@welladino.com"

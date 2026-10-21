@@ -2,11 +2,12 @@
 <html>
 <head>
   <base target="_blank">
+  <?!= include('SharedUi') ?>
   <style>
-    body { font: 13px/1.45 Arial, sans-serif; color: #202124; margin: 12px; }
+    body { font: 13px/1.45 Arial, sans-serif; color: var(--h-ink); margin: 12px; }
     .bar { display: flex; gap: 6px; margin-bottom: 10px; }
-    input { flex: 1; padding: 5px 7px; border: 1px solid #dadce0; border-radius: 4px; }
-    button { padding: 5px 9px; border: 1px solid #dadce0; border-radius: 4px; background: #fff; cursor: pointer; }
+    .bar .h-input { flex: 1; padding: 5px 7px; }
+    .bar .h-button { padding: 5px 9px; }
     details { margin-left: 14px; }
     .tree > details { margin-left: 0; }
     summary { cursor: pointer; padding: 2px 0; list-style: none; }
@@ -30,9 +31,9 @@
 </head>
 <body>
   <div class="bar">
-    <input id="filter" placeholder="Filter folders or types">
-    <button id="open">Expand</button>
-    <button id="close">Collapse</button>
+    <input id="filter" class="h-input" placeholder="Filter folders or types">
+    <button id="open" class="h-button">Expand</button>
+    <button id="close" class="h-button">Collapse</button>
   </div>
   <div class="tree" id="tree"></div>
   <script>
@@ -55,7 +56,7 @@
       d.dataset.text = (n.name + ' ' + n.purpose + ' ' + n.type).toLowerCase();
       return d;
     }
-    function span(cls, text) { return Object.assign(document.createElement('span'), {className: cls, textContent: text}); }
+    function span(cls, text) { return HorologyUi.element('span', cls, text); }
 
     const tree = document.getElementById('tree');
     data.roots.forEach(r => tree.appendChild(node(r)));

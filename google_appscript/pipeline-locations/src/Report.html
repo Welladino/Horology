@@ -2,16 +2,17 @@
 <html>
 <head>
   <base target="_blank">
+  <?!= include('SharedUi') ?>
   <style>
-    body { font: 13px/1.45 Arial, sans-serif; color: #202124; margin: 4px 8px; }
+    body { font: 13px/1.45 Arial, sans-serif; color: var(--h-ink); margin: 4px 8px; }
     h3 { font-size: 13px; margin: 14px 0 4px; }
     ul { margin: 0; padding-left: 18px; }
     li { margin: 2px 0; }
-    a { color: #1a73e8; text-decoration: none; }
+    a { color: var(--h-green); text-decoration: none; }
     .none { color: #5f6368; }
     .problems h3 { color: #b06000; }
     .wait { display: flex; align-items: center; gap: 10px; margin-top: 18px; color: #5f6368; }
-    .spin { width: 16px; height: 16px; border: 2px solid #dadce0; border-top-color: #1a73e8; border-radius: 50%; animation: spin .8s linear infinite; }
+    .spin { width: 16px; height: 16px; border: 2px solid #dadce0; border-top-color: var(--h-green); border-radius: 50%; animation: spin .8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
     .error { color: #c5221f; margin-top: 18px; }
   </style>

@@ -38,6 +38,16 @@ Keep `"rootDir": "src"`. Status lists the files that would upload: only `src/` m
 
 ## Publish a change
 
+For `pipeline-decisions` or `pipeline-locations`, build the shared UI fragment first and use the package script to push it:
+
+```sh
+npm run ui:build
+npm test
+npm run clasp:push
+```
+
+The shared source is `google_appscript/shared-ui/`; each project's generated `src/SharedUi.html` must be current. `npm test` checks this. For `clickup-sync`, which has no HTML fragment, use the ordinary commands below.
+
 ```sh
 npm test
 git diff -- src
@@ -59,16 +69,11 @@ diff -ru src "$compare_dir/src"
 
 ## Pipeline decisions
 
-Bound to the Pipeline workbook. Reload the workbook after a push, then use **Extensions → Horology — Pipeline decisions**:
-
-1. **Preview decisions** and check the list (approve access the first time).
-2. **Install triggers**: every 10 minutes, and after each Decision Register edit.
-
-**Stop triggers** removes them. In a copied workbook, check its Registers tab links its own Decision Register, then run Install triggers.
+Bound to the Pipeline workbook. **Extensions → Horology — Pipeline decisions → Open Horology workspace** opens the private web app. The decision timer and edit trigger remain active. For a new copy, first check the Registers link and `WEB_PIPELINE_SHEET_ID`, then run `installTriggers` once in the Apps Script editor; `previewDecisions` and `stopTriggers` are administrator functions there, not menu items.
 
 ## Locations
 
-Bound to the Pipeline workbook. Reload the workbook after a push, then use **Extensions → Horology — Workbook → Show folder structure** or **Check folders against Drive** (approve access the first time).
+The active folder tree and **Check Drive & update Locations** action are in the Horology web workspace’s **Folders** view. The legacy `pipeline-locations` project no longer adds a workbook menu. The web app may ask the owner to authorize read-only Drive access after the Folders release.
 
 ## ClickUp Sync
 

@@ -83,12 +83,14 @@ def test_pipeline_decisions_script_matches_the_decision_transitions(wf):
     for status, decision in wf["decisions"].items():
         for tid in decision.get("triggers", []):
             review = transitions[tid]["from"].get("Review stage")
-            for stage in _as_list(review or ["Stage 1", "Stage 3"]):
+            for stage in _as_list(review or wf["fields"]["Review stage"]["values"]):
                 expected[f"{status}|{stage}"] = tid
     assert {k: v["transition"] for k, v in outcomes.items()} == expected
     for key, outcome in outcomes.items():
         to = transitions[outcome["transition"]]["to"]
         assert outcome["Status"] == to["Status"], key
         assert outcome["Agent status"] == to["Agent status"], key
-        stage = key.split("|")[1] if outcome["Stage"] == "REVIEW" else outcome["Stage"]
+        review_stage = key.split("|")[1]
+        stage = ({"Investigation proposal": "Stage 1", "Specialist deliverable": "Stage 3"}[review_stage]
+                 if outcome["Stage"] == "REVIEW" else outcome["Stage"])
         assert stage in _as_list(to["Stage"]), key

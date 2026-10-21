@@ -18,10 +18,10 @@ function decisionFingerprint(dr) {
 }
 
 function reviewOutcome(remote,reviewStage) {
-  if(remote==='open') return {decision:'accepted',status:reviewStage==='Stage 1'?'Approved':'Handed off',
-    stage:reviewStage==='Stage 1'?'Stage 3':'Stage 3',agent:reviewStage==='Stage 1'?'Ready':'No action'};
-  if(remote==='blocked') return {decision:'parked',status:'Parked',stage:'Stage 2',agent:'No action'};
-  if(remote==='rejected') return {decision:'rejected',status:'Rejected',stage:'Stage 2',agent:'No action'};
+  if(remote==='open') return {decision:'accepted',status:reviewStage==='Investigation proposal'?'Approved':'Handed off',
+    stage:reviewStage==='Investigation proposal'?'Stage 3':'Stage 4',agent:reviewStage==='Investigation proposal'?'Ready':'No action'};
+  if(remote==='blocked') return {decision:'parked',status:'Parked',stage:reviewStage==='Investigation proposal'?'Stage 2':'Stage 4',agent:'No action'};
+  if(remote==='rejected') return {decision:'rejected',status:'Rejected',stage:reviewStage==='Investigation proposal'?'Stage 2':'Stage 4',agent:'No action'};
   throw Error('Unsupported review status '+remote+'; use Decision Register for rework.');
 }
 

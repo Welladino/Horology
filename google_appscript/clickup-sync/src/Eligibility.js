@@ -10,10 +10,12 @@ function validateSyncRow(c,dt,row,s) {
   if(!/^\d+$/.test(String(listId||''))) throw Error('Configure list ID for domain '+d.Domain);
   if(s.pending) throw Error('Uncertain previous write: inspect _ClickUp Sync and reconcile before retry.');
   if(s.listId && String(s.listId)!==String(listId)) throw Error('Domain/list changed; reconcile task manually.');
-  if(!/^Stage [0-3]$/.test(d.Stage)) throw Error('Set Stage explicitly: Stage 0, Stage 1, Stage 2, Stage 3.');
+  if(!/^Stage [0-4]$/.test(d.Stage)) throw Error('Set Stage explicitly: Stage 0 through Stage 4.');
   if(!Object.prototype.hasOwnProperty.call(STATUS_MAP,norm(d.Status))) throw Error('Unknown Pipeline status '+d.Status);
   if(norm(d.Status)==='awaiting decision') {
-    if(d.Stage!=='Stage 2' || !['Stage 1','Stage 3'].includes(d['Review stage'])) throw Error('Set Stage 2 and the originating Review stage.');
+    if(!((d.Stage==='Stage 2' && d['Review stage']==='Investigation proposal') ||
+         (d.Stage==='Stage 4' && d['Review stage']==='Specialist deliverable')))
+      throw Error('Use Stage 2 for Investigation proposal review or Stage 4 for Specialist deliverable review.');
     const reviews=decisionRows(dt,d.ID).filter(r=>r.data['Decision ID']===d['Current decision ID']);
     if(reviews.length!==1 || reviews[0].data['Review stage']!==d['Review stage']) throw Error('Current decision ID must identify this item and review stage.');
     if(norm(reviews[0].data.Status)==='proposed') pendingDecision(dt,d.ID,d['Review stage']);

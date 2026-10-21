@@ -2,9 +2,9 @@
 
 function previewDecisions() { return run(false); }
 
-function applyDecisions() { return run(DECISIONS_CONFIG.ENABLE_WRITES); }
+function applyDecisions(onlyDecisionId) { return run(DECISIONS_CONFIG.ENABLE_WRITES, onlyDecisionId); }
 
-function run(live) {
+function run(live, onlyDecisionId) {
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) { console.log('Another run is in progress.'); return []; }
   try {
@@ -14,6 +14,7 @@ function run(live) {
     const decisions = register.rows.map(r => r.data);
     const out = [];
     pipeline.rows.forEach(row => {
+      if (onlyDecisionId && String(row.data['Current decision ID']).trim() !== String(onlyDecisionId).trim()) return;
       const result = decide(row.data, decisions);
       if (result.skip) return;
       if (result.error) { out.push({pipelineId: row.data['ID'], error: result.error}); return; }

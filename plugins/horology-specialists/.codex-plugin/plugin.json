@@ -7,13 +7,13 @@
     ],
     "developerName": "Saravanaraj",
     "displayName": "horology-specialists",
-    "longDescription": "Horology specialist agents for Pipeline items: research, technical assessment, security review, go-to-market, marketing strategy and content planning. Each saves its output to Drive and the registers for a founder decision. Requires separately connected Google Drive, Docs and Sheets, and read-only repository access for technical and security reviews.",
+    "longDescription": "Horology specialist agents for Pipeline items: research, technical assessment, security review, go-to-market, marketing strategy, content planning and visual Stage 4 synthesis artifacts. The supervisor runs synthesis immediately after Stage 3 in the same session, then presents the combined output for founder review. Requires separately connected Google Drive, Docs and Sheets, and read-only repository access for technical and security reviews.",
     "shortDescription": "Research and assessments",
     "capabilities": []
   },
   "name": "horology-specialists",
-  "version": "0.2.1",
-  "description": "Horology specialist agents for Pipeline items: research, technical assessment, security review, go-to-market, marketing strategy and content planning. Each saves its output to Drive and the registers for a founder decision.",
+  "version": "0.2.4",
+  "description": "Horology specialist agents for Pipeline items: research, assessment, strategy, content and visual Stage 4 synthesis artifacts. Each saves its output to Drive and the registers for founder review.",
   "author": {
     "name": "Saravanaraj",
     "email": "saravanaraj.subramaniam@welladino.com"

@@ -4,19 +4,22 @@ Three Google Apps Script projects support the subscription-agent workflow. None 
 
 | Project                       | Folder                | Attached to           | Does                                                           |
 | ----------------------------- | --------------------- | --------------------- | -------------------------------------------------------------- |
-| Horology — Pipeline decisions | `pipeline-decisions/` | The Pipeline workbook | Applies decided Decision Register rows to their Pipeline items |
-| Horology — Workbook           | `pipeline-locations/` | The Pipeline workbook | Folder tree view, and Name and Parent kept in step with Drive  |
+| Horology — Pipeline decisions | `pipeline-decisions/` | The Pipeline workbook | Serves the private workspace for decisions, Pipeline items and folders; applies decided rows to Pipeline items |
+| Horology — Workbook           | `pipeline-locations/` | The Pipeline workbook | Legacy folder code retained during the web-workspace migration; no Extensions menu  |
 | Horology — ClickUp Sync       | `clickup-sync/`       | Nothing (standalone)  | Optional mirror of Pipeline items and decisions to ClickUp     |
 
-The two core projects are bound to the Pipeline workbook, so copying the workbook (File → Make a copy) copies them too. ClickUp Sync is standalone: it's optional, and it holds a ClickUp API token that a copy of the workbook must not carry.
+The decisions project and the legacy Workbook project are bound to the Pipeline workbook, so copying the workbook (File → Make a copy) copies them too. ClickUp Sync is standalone: it's optional, and it holds a ClickUp API token that a copy of the workbook must not carry.
+
+The bound projects share UI source in `google_appscript/shared-ui/`. The active web workspace uses `pipeline-decisions/src/Review.html`; the older Workbook dialogs remain in source only as migration fallback.
 
 ## Where settings live
 
-No project has a workspace's sheet IDs or domain names in its code.
+The bound scripts discover their workbook from the open Pipeline. The decision web page has no open spreadsheet UI, so its project has the Pipeline workbook ID in `WEB_PIPELINE_SHEET_ID`; a copied workbook needs that setting changed before deploying its own page. The Decision Register still comes from the Pipeline's Registers tab.
 
 | Setting                              | Where                                                                                                                          |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
 | The Pipeline workbook                | The workbook a bound project lives in; for ClickUp Sync, the `PIPELINE_SHEET_ID` Script Property                               |
+| Decision workspace web page          | `WEB_PIPELINE_SHEET_ID` and `WEB_APP_URL` in Pipeline decisions `Config.js`; the latter is the Extensions menu link |
 | Decision Register and Document Index | Their links on the Pipeline's **Registers** tab, matched by name ("Decision Register", "Document Index"); exactly one row each |
 | Domains                              | The Pipeline's **Domains** tab, built from the Root folder rows in Locations                                                   |
 | ClickUp lists                        | ClickUp Sync Script Properties, one `LIST_<Domain>` per mirrored domain                                                        |
@@ -31,30 +34,40 @@ When the current decision for an item that is **Awaiting decision** is set to ac
 
 | Decision                           | Review stage | Pipeline becomes                  |
 | ---------------------------------- | ------------ | --------------------------------- |
-| accepted                           | Stage 1      | Approved, Stage 3, Ready          |
-| accepted                           | Stage 3      | Handed off, Stage 3, No action    |
-| rework (needs Rework instructions) | Stage 1 or 3 | Rework, back to that stage, Ready |
-| parked                             | either       | Parked, Stage 2, No action        |
-| rejected                           | either       | Rejected, Stage 2, No action      |
+| accepted                           | Investigation proposal | Approved, Stage 3, Ready          |
+| accepted                           | Specialist deliverable | Handed off, Stage 4, No action    |
+| rework (needs Rework instructions) | either | Rework, back to the reviewed stage, Ready |
+| parked                             | Investigation / Specialist | Parked, Stage 2 / Stage 4, No action |
+| rejected                           | Investigation / Specialist | Rejected, Stage 2 / Stage 4, No action |
 
-Only Claude Code and Codex rows are made Ready; Manual and Unassigned get No action. It also sets the item's Updated date and, if blank, the decision's Decision Date. The rules come from [`workflow.yaml`](https://github.com/Welladino/Horology/blob/main/plugins/horology-workflows/skills/horology-capture-triage/references/workflow.yaml); a unit test checks they agree.
+Only Claude Code and Codex rows are made Ready; Manual and Unassigned get No action. It also sets the item's Updated date and, if blank, the decision's Decision Date. The supervisor creates the Stage 4 synthesis immediately after Stage 3 and before this final review. The decision script preserves Stage 4 when the founder decides on the specialist deliverable. The rules come from [`workflow.yaml`](https://github.com/Welladino/Horology/blob/main/plugins/horology-workflows/skills/horology-capture-triage/references/workflow.yaml); a unit test checks they agree.
 
 * It acts only on items still Awaiting decision, using the decision named in Current decision ID, so a decision is never applied twice and old accepted decisions are never replayed. It keeps no state of its own.
 * Proposed decisions are skipped. Problems (no Current decision ID, a decision for another item or stage, rework without instructions) are reported and that item is left unchanged.
 * To change your mind after a decision was applied, edit the Pipeline row; editing the decision again does nothing.
 * It runs every 10 minutes (`CHECK_EVERY_MINUTES`) and straight after a person edits the Decision Register. Edit triggers don't fire for API writes, so decisions written by an AI session are picked up by the timer.
 
-Functions: `previewDecisions` (reports, writes nothing), `applyDecisions` (a preview while `ENABLE_WRITES` is false), `installTriggers`, `stopTriggers`. The same four are under **Extensions → Horology — Pipeline decisions**.
+Functions: `previewDecisions` (reports, writes nothing), `applyDecisions` (a preview while `ENABLE_WRITES` is false), `installTriggers`, `stopTriggers`. They remain available to administrators in the Apps Script editor, while **Open Horology workspace** is the only entry under **Extensions → Horology — Pipeline decisions**.
+
+### Founder review web page
+
+The [private Horology workspace](https://script.google.com/a/macros/welladino.com/s/AKfycbz3M-ONEZF3ox378oBdoecMb0wV7WdJNZX0jQgrq7NAEDqRZbs0OVCuYPgob7qrPWrr2Q/exec) is an Apps Script HTML web app in the same project. Its deployment executes as the owner and is restricted to the owner's account. The Extensions menu uses this domain-scoped link. It adds no Sheets tab and needs no Cloud Run change.
+
+The Decisions view shows expandable rows only; opening a decision shows its options and input form. It lists proposed decisions only when they are the current decision of a Pipeline item still Awaiting decision, and displays decided records read-only. It shows the question, proposal and reason, evidence links, and option codes mentioned in the proposal text. Those codes are presentation hints: the Decision Register still stores options as prose, so the founder checks and may edit the final decision wording. Choosing an alternative requires a short founder reason, not a rework cycle.
+
+The **Pipeline** view reads every row with an ID from Pipeline Master. It offers cards, rows, search, and client-side filters for Domain, Status, Entity, Type, Agent status, Agent type, Run location and Stage. The Entity choices narrow with Domain; blank values can be filtered. Review stage is left to the Decisions view. Opening an item shows its scope, next step, revisit trigger, status and links. **Edit item** saves Title, Type, Summary / Why, Next step / Research question, Revisit trigger, Agent status, Agent type and Run location by permanent ID after checking that the row has not changed since it was opened. Domain, Entity, Status and Stage are visible but not directly editable. A valid Inbox selection of Ready moves Stage 0 to Stage 1; other Agent status changes follow the workflow rules. The page refreshes the view after a decision or item is saved or an item is added.
+
+The Decisions view groups all recorded decisions by Pipeline ID. A Pipeline item awaiting review appears once in **Needs your review**, with its earlier decisions inside the same expandable entry. Other items appear in **Decision history**. Each decision opens its own review or read-only detail page.
+
+On save, the server re-reads both Master sheets by permanent IDs, checks that the proposal has not changed, writes the decision wording/reason or rework instructions, records the review source and date, and writes Status last. It immediately applies that one decision to the Pipeline using the existing rules. If the Pipeline update fails, the page says the decision is saved and the scheduled check can retry. The page never creates a new decision row.
+
+The **Add Pipeline item** view writes a new Master row. It reads Domain and Entity choices from the Pipeline's Domains tab and dropdown choices from Master, uses the same validation as the former workbook dialog, and allocates the next permanent ID under a script lock. A normal capture starts in Inbox/Stage 0; choosing Ready starts at Stage 1 and requires an agent and a Next step.
 
 ## Locations
 
-Under **Extensions → Horology — Workbook** (the project was called Horology — Locations before it also held the item form):
+The workspace **Folders** view presents Locations as a searchable path browser: roots, the current folder level, and selected-folder details. Breadcrumbs navigate deeper paths; colored chips distinguish folder roles. Rows whose parent cannot be found appear under **Parent not found**. Browsing is read-only.
 
-* **Add Pipeline item:** a pop-up form for new Master rows, which stays open to add several. It fills the next ID, Created and Updated, and the capture values (Inbox, Stage 0, No action, Unassigned), or Stage 1 when the item is marked Ready; Domain comes from the Domains tab and Entity from that domain's entities, and the other dropdowns from Master's own.
-* **Show folder structure:** a sidebar drawing the Locations tab as a collapsible tree, with Input and Output marked, a filter and links to each folder. Rows whose parent can't be found are listed separately rather than hidden.
-* **Check folders against Drive:** opens each folder by the ID in its Location link and updates **Name** and **Parent** to match Drive. It reports folders that are trashed, can't be opened, moved out of the listed folders, or moved into another domain or entity, and lists subfolders in Drive that aren't in Locations as suggestions. The report opens at once with a progress message; the check itself takes a few seconds, reading all listed folders and their subfolders in batched Drive API queries (advanced Drive service, v3, including shared drives).
-
-It reads Drive and the Locations tab, writes only Name and Parent cells, never adds rows, and never creates, moves or renames anything in Drive. Scopes: this spreadsheet, Drive read-only, and the sidebar and dialog. A row's parent is the row in the same Domain whose Name matches its Parent, in the same Entity, except that an Entity folder's parent is the Root folder.
+**Check Drive & update Locations** is an explicit button in that view. It opens each listed folder by its Location link, updates only **Name** and **Parent** cells to match Drive, then reports updates, inaccessible or moved folders, and unlisted subfolders. It never creates, moves or renames anything in Drive. The web app uses the advanced Drive service v3 with read-only Drive access, including shared drives. The older Workbook script remains temporarily as a migration fallback and no longer adds an Extensions menu.
 
 ## ClickUp Sync
 

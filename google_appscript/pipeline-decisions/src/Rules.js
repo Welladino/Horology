@@ -1,18 +1,18 @@
 /* What each founder decision does to its Pipeline item.
  * Mirrors the decision transitions in workflow.yaml (horology-capture-triage
- * references); a Python test checks the two agree. "REVIEW" means the item's
- * Review stage. Agent status Ready applies only to agent rows (see AGENT_TYPES).
+ * references); a Python test checks the two agree. "REVIEW" means the Pipeline
+ * stage corresponding to Review stage. Agent status Ready applies only to agent rows.
  */
 
 const OUTCOMES = {
-  "accepted|Stage 1": {"transition": "accept-stage-1", "Status": "Approved", "Stage": "Stage 3", "Agent status": "Ready"},
-  "accepted|Stage 3": {"transition": "accept-stage-3", "Status": "Handed off", "Stage": "Stage 3", "Agent status": "No action"},
-  "rework|Stage 1": {"transition": "rework", "Status": "Rework", "Stage": "REVIEW", "Agent status": "Ready"},
-  "rework|Stage 3": {"transition": "rework", "Status": "Rework", "Stage": "REVIEW", "Agent status": "Ready"},
-  "parked|Stage 1": {"transition": "decide-park", "Status": "Parked", "Stage": "Stage 2", "Agent status": "No action"},
-  "parked|Stage 3": {"transition": "decide-park", "Status": "Parked", "Stage": "Stage 2", "Agent status": "No action"},
-  "rejected|Stage 1": {"transition": "decide-reject", "Status": "Rejected", "Stage": "Stage 2", "Agent status": "No action"},
-  "rejected|Stage 3": {"transition": "decide-reject", "Status": "Rejected", "Stage": "Stage 2", "Agent status": "No action"}
+  "accepted|Investigation proposal": {"transition": "accept-stage-1", "Status": "Approved", "Stage": "Stage 3", "Agent status": "Ready"},
+  "accepted|Specialist deliverable": {"transition": "accept-stage-3", "Status": "Handed off", "Stage": "Stage 4", "Agent status": "No action"},
+  "rework|Investigation proposal": {"transition": "rework", "Status": "Rework", "Stage": "REVIEW", "Agent status": "Ready"},
+  "rework|Specialist deliverable": {"transition": "rework", "Status": "Rework", "Stage": "REVIEW", "Agent status": "Ready"},
+  "parked|Investigation proposal": {"transition": "decide-park", "Status": "Parked", "Stage": "Stage 2", "Agent status": "No action"},
+  "parked|Specialist deliverable": {"transition": "decide-park", "Status": "Parked", "Stage": "Stage 4", "Agent status": "No action"},
+  "rejected|Investigation proposal": {"transition": "decide-reject", "Status": "Rejected", "Stage": "Stage 2", "Agent status": "No action"},
+  "rejected|Specialist deliverable": {"transition": "decide-reject", "Status": "Rejected", "Stage": "Stage 4", "Agent status": "No action"}
 };
 
 // Only these Agent types can be made Ready; Manual and Unassigned never are.
@@ -46,7 +46,8 @@ function decide(item, decisions) {
     ? 'No action' : outcome['Agent status'];
   return {decision: id, transition: outcome.transition, set: {
     'Status': outcome['Status'],
-    'Stage': outcome['Stage'] === 'REVIEW' ? stage : outcome['Stage'],
+    'Stage': outcome['Stage'] === 'REVIEW'
+      ? (stage === 'Investigation proposal' ? 'Stage 1' : 'Stage 3') : outcome['Stage'],
     'Agent status': agent
   }};
 }

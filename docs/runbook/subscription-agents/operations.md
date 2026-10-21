@@ -52,11 +52,19 @@ The supervisor claims each item through the document graph and starts one sessio
 
 ## Decide on an item
 
-In the Decision Register, set the current decision's Status to accepted, rework (with Rework instructions), parked or rejected. The [Pipeline decisions](https://github.com/Welladino/Horology/blob/main/docs/architecture/subscription-agents/apps-script.md#pipeline-decisions) script moves the Pipeline item on within 10 minutes, or straight away when you edit the register yourself. To check: use **Extensions → Horology — Pipeline decisions → Preview decisions** in the Pipeline, or look at the item's Status.
+Open the [Horology workspace](https://script.google.com/a/macros/welladino.com/s/AKfycbz3M-ONEZF3ox378oBdoecMb0wV7WdJNZX0jQgrq7NAEDqRZbs0OVCuYPgob7qrPWrr2Q/exec) while signed into the Google account that owns the Pipeline Apps Script, or use **Extensions → Horology — Pipeline decisions → Open Horology workspace** and click its link. In **Decisions**, expand a Pipeline row and open a decision to compare the options and evidence and choose an outcome. For a different option, edit **Decision to record** so its conditions are accurate, then give a short reason. **Save decision** writes to Decision Register Master and applies that item's Pipeline transition immediately; the page reports if the Pipeline update is pending.
+
+Use **Pipeline** to browse all Master rows as Cards or Rows. Search the text or filter by Domain and Status. Expand **More filters** for Entity, Type, Agent status, Agent type, Run location and Stage; **Clear filters** resets the search and filters. Open an item to see its next step, revisit trigger and links. Choose **Edit item** to change its title, type, summary, next step, revisit trigger or agent assignment, then **Save item**. Domain, Entity, Status and Stage are displayed without edit controls. If another writer changed the item, refresh it before saving.
+
+In **Decisions**, expand a Pipeline item to see its decisions, then choose a decision to review it or read its recorded outcome and reason.
+
+To capture new work, choose **Add Pipeline item** in the same page. Fill Title and Domain, then optionally add the reason, next step, revisit trigger and target. Ready items need an agent and a Next step. **Add item** writes the next permanent ID to Pipeline Master. The old Add Pipeline item entry is no longer in the Workbook Extensions menu.
+
+The existing sheet route also works: in the Decision Register, set the current decision's Status to accepted, rework (with Rework instructions), parked or rejected. The [Pipeline decisions](https://github.com/Welladino/Horology/blob/main/docs/architecture/subscription-agents/apps-script.md#pipeline-decisions) script moves the Pipeline item within 10 minutes, or straight away when you edit the register yourself. To check, inspect the item’s Status in the Pipeline or run `previewDecisions` from the Apps Script editor as an administrator.
 
 ## Scheduled jobs
 
-Create these on any platform's scheduler (Claude Code routine or desktop scheduled task, Cowork, Codex automation). They report or prepare; they never run items.
+Create the oversight jobs below on a platform scheduler. Investigation and Stage 3 runs remain founder-started. During a Stage 3 run, the supervisor invokes Horology Synthesis Artifacts immediately after saving the deliverable, then presents both outputs for review. No Stage 4 schedule or second founder prompt is needed.
 
 | Job | When | Prompt |
 |---|---|---|

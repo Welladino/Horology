@@ -116,11 +116,11 @@ The same tab holds the other agents you can run on a schedule, each marked in it
 
 ## Your part, day to day
 
-1. **Add work** with **Extensions → Horology — Workbook → Add Pipeline item**, by typing a row into Master, or by asking an agent to capture it.
+1. **Add work** with **Horology workspace → Add Pipeline item**, by typing a row into Master, or by asking an agent to capture it.
 2. **Mark what's next:** Plan for items that need scoping, Ready for items to run.
 3. **Start a run:** "run the Ready items" in Claude Code or Codex.
 4. **Read the results** in your Agent output folders, or ask the supervisor for a summary.
 5. **Decide** in the Decision Register. Rework needs instructions; the item goes back to Ready with them.
-6. **Keep your material current:** put the documents you want agents to use in Agent reference folders, and add new folders to Locations (then **Extensions → Horology — Workbook → Check folders against Drive**).
+6. **Keep your material current:** put the documents you want agents to use in Agent reference folders, and add new folders to Locations (then **Horology workspace → Folders → Check Drive & update Locations**).
 
 The daily digest tells you what finished and what's waiting on you, so you don't need to check the sheets for that. Watcher reports land in their report folders on their own schedule.

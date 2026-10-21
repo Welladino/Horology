@@ -4,8 +4,8 @@ const sourceDir=require('node:path').join(__dirname,'../src');
 const source=fs.readdirSync(sourceDir).filter(n=>/\.(gs|js)$/.test(n)).sort().map(n=>fs.readFileSync(sourceDir+'/'+n,'utf8')).join('\n');
 function fixture() {
  const c={PIPELINE_SHEET_ID:'sheet',DECISIONS_SHEET_ID:'decisions',lists:{welladino:'123'},ALLOW_CLICKUP_REVIEW:'true'};
- const row={row:2,data:{ID:'1',Title:'Test',Domain:'welladino',Status:'Awaiting decision',Stage:'Stage 2','Review stage':'Stage 1','Current decision ID':'d1','Agent type':'Codex','Agent status':'No action','ClickUp Pipeline URL':'https://app.clickup.com/t/abc'}};
- const dr={row:2,data:{'Decision ID':'d1','Pipeline ID':'1','Review stage':'Stage 1',Status:'proposed','Rework instructions':''}};
+ const row={row:2,data:{ID:'1',Title:'Test',Domain:'welladino',Status:'Awaiting decision',Stage:'Stage 2','Review stage':'Investigation proposal','Current decision ID':'d1','Agent type':'Codex','Agent status':'No action','ClickUp Pipeline URL':'https://app.clickup.com/t/abc'}};
+ const dr={row:2,data:{'Decision ID':'d1','Pipeline ID':'1','Review stage':'Investigation proposal',Status:'proposed','Rework instructions':''}};
  const dt={headers:Object.keys(dr.data),rows:[dr],sheet:{getSheetId:()=>2}};
  const pt={headers:Object.keys(row.data),rows:[row],sheet:{getSheetId:()=>1}};
  const records={},calls=[],out=[];
@@ -45,8 +45,8 @@ test('Stage 1 approval authorises Stage 3 once',()=>{
  f.row.data['Agent status']='No action';f.run(true);assert.equal(f.row.data['Agent status'],'No action');
 });
 test('Stage 3 approval hands off, does not queue implementation',()=>{
- const f=fixture();f.row.data['Review stage']='Stage 3';f.dr.data['Review stage']='Stage 3';f.run(true);f.task.status.status='open';f.run(true);
- assert.equal(f.row.data.Status,'Handed off');assert.equal(f.row.data['Agent status'],'No action');assert.equal(f.task.status.status,'closed');
+ const f=fixture();f.row.data.Stage='Stage 4';f.row.data['Review stage']='Specialist deliverable';f.dr.data['Review stage']='Specialist deliverable';f.run(true);f.task.status.status='open';f.run(true);
+ assert.equal(f.row.data.Status,'Handed off');assert.equal(f.row.data.Stage,'Stage 4');assert.equal(f.row.data['Agent status'],'No action');assert.equal(f.task.status.status,'closed');
 });
 test('sheet decisions are left to the pipeline-decisions script',()=>{
  const f=fixture();f.run(true);f.dr.data.Status='rework';f.dr.data['Rework instructions']='Compare the managed option cost';

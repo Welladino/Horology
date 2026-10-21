@@ -10,7 +10,7 @@ flowchart TB
     s3["<b>3. Describe your folders</b><br/>Create Drive folders, one Locations row each,<br/>mark Agent reference and Agent output"]
   end
   subgraph g2["In the Pipeline workbook"]
-    s4["<b>4. Turn on the scripts</b><br/>Extensions menu: authorise,<br/>Install triggers, Check folders"]
+    s4["<b>4. Turn on the scripts</b><br/>Open Horology workspace,<br/>authorise and install triggers"]
   end
   subgraph g3["With the Horology operator and your AI tools"]
     s5["<b>5. Get access</b><br/>Operator adds you, your workspace<br/>and your register IDs"]
@@ -66,14 +66,10 @@ flowchart LR
   registers --> dr
   registers --> di
   registers --> ar
-  subgraph scripts["Scripts attached to the workbook"]
-    decisions["<b>Pipeline decisions</b><br/>Applies your decisions to Master"]
-    locscript["<b>Workbook</b><br/>Add item form, folder tree,<br/>check against Drive"]
-  end
-  decisions -. "reads the link" .-> registers
-  decisions -- "updates" --> master
-  locscript -- "adds items" --> master
-  locscript -- "updates Name and Parent" --> locations
+  workspace["<b>Horology web workspace</b><br/>Decisions, Pipeline items,<br/>folders and Drive check"]
+  workspace -. "reads the link" .-> registers
+  workspace -- "applies decisions and adds items" --> master
+  workspace -- "updates Name and Parent" --> locations
   agents["<b>Agents</b><br/>Read Domains, Locations and Templates;<br/>save to Agent output folders"]
   agents --> domains
   agents --> locations
@@ -135,14 +131,13 @@ Red rows are duplicates, orange rows break the folder structure (a missing paren
 
 ## 4. Turn on the scripts
 
-Reload your Pipeline copy. The **Extensions** menu should show two entries: **Horology — Pipeline decisions** and **Horology — Workbook**.
+Reload your Pipeline copy. **Extensions → Horology — Pipeline decisions → Open Horology workspace** is the everyday entry point. Configure `WEB_PIPELINE_SHEET_ID` and deploy the copied project’s private web app before using it.
 
-1. **Extensions → Horology — Pipeline decisions → Install triggers.** Approve access when asked, then click Install triggers again. From now on, a decision you record in the Decision Register moves its Pipeline item on within 10 minutes. **Preview decisions** shows what it would do.
-2. **Extensions → Horology — Workbook → Check folders against Drive.** Approve access, then run it. It should report no problems; it fixes Name and Parent cells that differ from Drive, and lists Drive folders you haven't added.
-3. **Extensions → Horology — Workbook → Show folder structure** draws your folders as a tree.
-4. **Extensions → Horology — Workbook → Add Pipeline item** opens a form for new work items (step 7).
+1. In the copied project’s Apps Script editor, run `installTriggers` once and approve access. Decisions entered directly in the register then move their Pipeline items within 10 minutes or after an edit.
+2. Open **Folders** in the web workspace to browse Locations. Press **Check Drive & update Locations** when you want to reconcile Name and Parent cells with Drive; authorize read-only Drive access if asked.
+3. Use **Add Pipeline item** in the web workspace to capture new work.
 
-If the two entries are missing after a reload, the copy didn't bring the scripts. Create them from this repository instead, with your Pipeline's ID:
+If the workspace menu is missing after a reload, the copy did not bring the decisions script. Create it from this repository with your Pipeline ID:
 
 ```sh
 cd google_appscript/pipeline-decisions
@@ -150,13 +145,7 @@ clasp create --title "Horology — Pipeline decisions" --parentId YOUR_PIPELINE_
 clasp push
 ```
 
-```sh
-cd google_appscript/pipeline-locations
-clasp create --title "Horology — Workbook" --parentId YOUR_PIPELINE_ID --rootDir src
-clasp push
-```
-
-Then reload the Pipeline and do steps 1–4.
+Then reload the Pipeline, configure the private web app and run the steps above. The separate legacy Workbook project is not required for new copies.
 
 ## 5. Get access to the MCP services
 
@@ -178,7 +167,7 @@ The operator adds you as a test user, creates the workspace with those IDs and g
 
 ## 7. Run your first item
 
-1. Open **Extensions → Horology — Workbook → Add Pipeline item**. Give it a Title and a Domain, write the question in **Next step / Research question**, set **Agent type** to Claude Code or Codex and **Agent status** to **Ready**, then **Add item**. The form fills the ID, dates, Status (Inbox) and Stage (Stage 1 for a Ready item). You can also type the row into Master yourself, or ask an agent: "capture this idea in the Pipeline".
+1. Open **Extensions → Horology — Pipeline decisions → Open Horology workspace**, then **Add Pipeline item**. Give it a Title and a Domain, write the question in **Next step / Research question**, set **Agent type** to Claude Code or Codex and **Agent status** to **Ready**, then **Add item**. The form fills the ID, dates, Status (Inbox) and Stage (Stage 1 for a Ready item). You can also type the row into Master yourself, or ask an agent: "capture this idea in the Pipeline".
 2. In a Claude Code or Codex session: "run the Ready items". The supervisor claims the item, runs the specialists and saves their documents in your Agent output folders.
 3. When the item reaches **Awaiting decision**, read the documents, then record your decision in the Decision Register (accepted, rework with instructions, parked or rejected). The script applies it.
 

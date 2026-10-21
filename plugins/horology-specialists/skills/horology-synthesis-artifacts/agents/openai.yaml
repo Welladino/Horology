@@ -1,0 +1,4 @@
+interface:
+  display_name: Horology Synthesis Artifacts
+  short_description: Make a visual Stage 4 briefing after Stage 3
+  default_prompt: "Use $horology-synthesis-artifacts to create the Stage 4 visual briefing for this Pipeline item's completed Stage 3 deliverable."

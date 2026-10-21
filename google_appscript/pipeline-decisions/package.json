@@ -3,9 +3,10 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "test": "node tests/test-decisions.cjs",
+    "test": "node ../shared-ui/build.mjs pipeline-decisions --check && node tests/test-decisions.cjs && node tests/test-folders.cjs",
+    "ui:build": "node ../shared-ui/build.mjs pipeline-decisions",
     "clasp:status": "clasp status",
-    "clasp:push": "clasp push"
+    "clasp:push": "node ../shared-ui/build.mjs pipeline-decisions && clasp push"
   },
   "devDependencies": {
     "@google/clasp": "3.4.1"

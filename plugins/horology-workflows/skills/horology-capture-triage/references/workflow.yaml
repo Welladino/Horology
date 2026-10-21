@@ -2,7 +2,7 @@
 # Skills, the Apps Scripts and the digest's health checks follow this file.
 # Changing a rule means changing it here first. Validated by tests/unit/workflow/.
 
-version: 1
+version: 2
 
 # Who may change things.
 actors:
@@ -10,6 +10,7 @@ actors:
   capture: horology-capture-triage, recording new or updated items.
   planner: horology-planner, acting only on Agent status Plan rows.
   supervisor: horology-supervisor (dispatch and item modes) and the specialists it runs.
+  synthesis: horology-synthesis-artifacts, invoked by the supervisor in the same Stage 3 run.
   sync: The pipeline-decisions Apps Script applying recorded decisions (or the ClickUp sync, when ClickUp review is enabled).
 
 # Pipeline Master fields that drive the workflow, with their allowed values.
@@ -17,9 +18,9 @@ fields:
   Status:
     values: [Inbox, Parked, Researching, Awaiting decision, Approved, Rework, Handed off, Rejected]
   Stage:
-    values: [Stage 0, Stage 1, Stage 2, Stage 3]
+    values: [Stage 0, Stage 1, Stage 2, Stage 3, Stage 4]
   Review stage:
-    values: [Stage 1, Stage 3]
+    values: [Investigation proposal, Specialist deliverable]
   Agent status:
     values: [No action, Plan, Ready]
     default: No action
@@ -35,19 +36,20 @@ fields:
 
 statuses:
   Inbox: {meaning: Captured; not yet scoped or selected, stages: [Stage 0, Stage 1]}
-  Parked: {meaning: Deliberately deferred, with a revisit trigger, stages: [Stage 0, Stage 1, Stage 2]}
+  Parked: {meaning: Deliberately deferred, with a revisit trigger, stages: [Stage 0, Stage 1, Stage 2, Stage 4]}
   Researching: {meaning: An authorised investigation or deliverable is in progress, stages: [Stage 1, Stage 3]}
-  Awaiting decision: {meaning: Work is ready for the founder's review, stages: [Stage 2]}
+  Awaiting decision: {meaning: Work is ready for the founder's review, stages: [Stage 2, Stage 4]}
   Approved: {meaning: The founder accepted a Stage 1 proposal; the Stage 3 deliverable is next, stages: [Stage 3]}
   Rework: {meaning: The founder asked for changes; instructions are on the decision, stages: [Stage 1, Stage 3]}
-  Handed off: {meaning: The Stage 3 deliverable was accepted; workflow complete, stages: [Stage 3]}
-  Rejected: {meaning: Not pursued; history kept, stages: [Stage 2]}
+  Handed off: {meaning: The Stage 4 briefing and specialist deliverable were accepted; workflow complete, stages: [Stage 4]}
+  Rejected: {meaning: Not pursued; history kept, stages: [Stage 2, Stage 4]}
 
 stages:
   Stage 0: Capture
   Stage 1: Investigation and proposal (research, direction, plan or assessment)
   Stage 2: Founder decision
   Stage 3: Specialist deliverable
+  Stage 4: Visual synthesis of the investigation and Stage 3 deliverable, before final review
 
 # Allowed moves. "from"/"to" give the fields that change; unlisted fields stay as they are.
 # "when" is the trigger. Moves not listed here are unexpected and the digest reports them.
@@ -96,9 +98,15 @@ transitions:
 
   - id: submit-for-review
     actor: supervisor
-    from: {Status: Researching}
-    to: {Status: Awaiting decision, Stage: Stage 2, Review stage: [Stage 1, Stage 3], Agent status: No action}
-    when: Outputs are saved to Drive and the Document Index and a proposed decision exists. Review stage is the stage the work came from.
+    from: {Status: Researching, Stage: Stage 1}
+    to: {Status: Awaiting decision, Stage: Stage 2, Review stage: Investigation proposal, Agent status: No action}
+    when: The investigation is saved and its proposed decision is ready for the founder.
+
+  - id: synthesize-stage-3
+    actor: [supervisor, synthesis]
+    from: {Status: Researching, Stage: Stage 3}
+    to: {Status: Awaiting decision, Stage: Stage 4, Review stage: Specialist deliverable, Agent status: No action}
+    when: In the same Stage 3 run, the specialist deliverable and visual synthesis are saved to the Document Index. The founder reviews the combined output afterward; no further selection or schedule is needed.
 
   - id: run-failed
     actor: supervisor
@@ -108,32 +116,32 @@ transitions:
 
   - id: accept-stage-1
     actor: [founder, sync]
-    from: {Status: Awaiting decision, Review stage: Stage 1}
+    from: {Status: Awaiting decision, Review stage: Investigation proposal}
     to: {Status: Approved, Stage: Stage 3, Agent status: Ready}
     when: The decision is accepted. Manual items get No action instead of Ready.
 
   - id: accept-stage-3
     actor: [founder, sync]
-    from: {Status: Awaiting decision, Review stage: Stage 3}
-    to: {Status: Handed off, Stage: Stage 3, Agent status: No action}
-    when: The Stage 3 deliverable is accepted.
+    from: {Status: Awaiting decision, Stage: Stage 4, Review stage: Specialist deliverable}
+    to: {Status: Handed off, Stage: Stage 4, Agent status: No action}
+    when: The founder accepts the Stage 3 deliverable after seeing its Stage 4 synthesis.
 
   - id: rework
     actor: [founder, sync]
     from: {Status: Awaiting decision}
     to: {Status: Rework, Stage: [Stage 1, Stage 3], Agent status: Ready}
-    when: The decision is marked rework with instructions. Stage returns to the Review stage. Manual items get No action.
+    when: The decision is marked rework with instructions. Stage returns to Stage 1 for Investigation proposal or Stage 3 for Specialist deliverable. Manual items get No action.
 
   - id: decide-park
     actor: [founder, sync]
     from: {Status: Awaiting decision}
-    to: {Status: Parked, Stage: Stage 2, Agent status: No action}
+    to: {Status: Parked, Stage: [Stage 2, Stage 4], Agent status: No action}
     when: The decision is parked.
 
   - id: decide-reject
     actor: [founder, sync]
     from: {Status: Awaiting decision}
-    to: {Status: Rejected, Stage: Stage 2, Agent status: No action}
+    to: {Status: Rejected, Stage: [Stage 2, Stage 4], Agent status: No action}
     when: The decision is rejected.
 
   - id: reject

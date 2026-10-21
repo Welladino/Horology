@@ -13,7 +13,7 @@ description: Start here for any request about Pipeline work unless a specific sk
 - "Plan item 42", "scope this", "split it up": **planning**. With the founder's go-ahead in the conversation, set the item's Agent status to Plan and use the `horology-planner` skill on it.
 - Any other request to work on or continue a Pipeline item, when no skill is named: read the item, say which of these fits and why, then do it. If it isn't Ready to run, say what it needs (Ready to run, Plan to scope) and ask.
 
-The founder starts runs; nothing here runs on its own. The supervisor chooses and coordinates; the specialist `horology-*` skills do the work.
+The founder starts investigation and Stage 3 runs. Within each Stage 3 run, the supervisor invokes the `horology-synthesis-artifacts` specialist immediately after the deliverable is saved. No new founder prompt, Ready selection or schedule starts Stage 4. The supervisor chooses and coordinates the specialists.
 
 ## Required context and locations
 
@@ -42,8 +42,9 @@ For exactly one Pipeline ID:
 5. Choose the specialist skill(s) for the question, or for each step (see routing rules). If the question is too vague or broad for one run, finish the run as failed, say so, and recommend Plan. If nothing fits, finish the run as failed with the reason and report it.
 6. Run each specialist as a subagent with the Pipeline ID, the bounded question and the instruction to follow its skill. Run independent ones side by side, dependent ones in order. Where subagents aren't available, follow the skills yourself one after another.
 7. Check each result (see routing rules). Send weak work back once with specific gaps, then report what remains.
-8. Confirm the specialists saved their Drive outputs, Document Index rows and proposed decision. When the work is ready for review, set Status **Awaiting decision**, Stage **Stage 2** and Review stage to the stage the work came from.
-9. Set Agent status back to **No action**, whether the run finished or failed, so the item isn't run again. Then call `finish_run`: done or failed, skills used, steps done and notes. Status changes and outputs are recorded from the sheets.
+8. Confirm the specialists saved their Drive outputs, Document Index rows and proposed decision. For Stage 1, set Status **Awaiting decision**, Stage **Stage 2** and Review stage **Investigation proposal**.
+9. For Stage 3, invoke `horology-synthesis-artifacts` in this same run after the specialist output is verified. Pass the Pipeline ID, run ID and source links. Verify the visual artifact in the Synthesis folder and its Document Index row; then set Status **Awaiting decision**, Stage **Stage 4** and Review stage **Specialist deliverable**. Return the Stage 3 output and Stage 4 visual briefing together for founder review. If synthesis fails, leave the Stage at **Stage 3**, report the error and finish the run as failed; do not silently present Stage 3 as the finished result.
+10. Set Agent status back to **No action** when the run ends. Then call `finish_run`: done or failed, skills used including synthesis when run, steps done and notes. Status changes and outputs are recorded from the sheets.
 
 The allowed moves are defined in [workflow.yaml](../horology-capture-triage/references/workflow.yaml); don't make others.
 
@@ -66,6 +67,7 @@ Skills used, steps done and notes are reported by the session itself; outputs an
 
 - The founder decides. Never accept, reject or park a proposal, and never record a decision as accepted.
 - Only run rows that are Ready. Never set an item to Ready, and never change Agent type or Run location. Always return a run item to No action when its run ends.
+- Stage 4 synthesis is the final specialist in a Stage 3 run. It does not make an item Ready or change a founder decision.
 - Ready selects work; it doesn't authorise implementation or anything beyond the stated next step.
 - Don't edit the Agent Register.
 

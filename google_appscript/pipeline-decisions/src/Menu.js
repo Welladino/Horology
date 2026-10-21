@@ -1,31 +1,18 @@
-/* The Extensions menu, so a copy of the workbook can be set up without opening the editor. */
+/* The workbook keeps one entry point into the web workspace. */
 
 function onOpen() {
   SpreadsheetApp.getUi().createAddonMenu()
-    .addItem('Preview decisions', 'previewFromMenu')
-    .addItem('Apply decisions now', 'applyFromMenu')
-    .addSeparator()
-    .addItem('Install triggers', 'installFromMenu')
-    .addItem('Stop triggers', 'stopFromMenu')
+    .addItem('Open Horology workspace', 'openHorologyWorkspace')
     .addToUi();
 }
 
-function previewFromMenu() { report('Preview: nothing was written', previewDecisions()); }
-
-function applyFromMenu() { report('Decisions applied', applyDecisions()); }
-
-function installFromMenu() {
-  installTriggers();
-  SpreadsheetApp.getUi().alert('Decisions are now applied every ' + DECISIONS_CONFIG.CHECK_EVERY_MINUTES +
-    ' minutes, and after each edit of the Decision Register.');
-}
-
-function stopFromMenu() {
-  stopTriggers();
-  SpreadsheetApp.getUi().alert('Triggers removed. Decisions are no longer applied automatically.');
-}
-
-function report(title, out) {
-  const lines = out.map(o => 'Item ' + o.pipelineId + ': ' + (o.error ? o.error : o.decision + ' → ' + JSON.stringify(o.set)));
-  SpreadsheetApp.getUi().alert(title, lines.length ? lines.join('\n') : 'Nothing to apply.', SpreadsheetApp.getUi().ButtonSet.OK);
+function openHorologyWorkspace() {
+  const page = HtmlService.createHtmlOutput(
+    '<div style="font:15px Arial,sans-serif;padding:18px;color:#1b3037">' +
+    '<p>Review decisions, Pipeline items, and folders in the Horology workspace.</p>' +
+    '<p><a href="' + DECISIONS_CONFIG.WEB_APP_URL +
+    '" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:11px 16px;' +
+    'background:#151819;color:white;border-radius:8px;text-decoration:none">Open workspace ↗</a></p>' +
+    '</div>').setWidth(390).setHeight(150);
+  SpreadsheetApp.getUi().showModalDialog(page, 'Open Horology workspace');
 }

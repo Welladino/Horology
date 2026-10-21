@@ -1,16 +1,11 @@
-/* Entry points: the Extensions menu, the Add Pipeline item form (Items.js), the
- * folder view and the Drive check. Reads Drive and the workbook; writes new Master
- * rows, and Name and Parent cells in Locations. It never creates, moves or renames
- * anything in Drive.
+/* Entry points for the folder view and Drive check. Pipeline item capture now
+ * lives in the private Horology web page. This project reads Drive and the
+ * workbook, and writes Name and Parent cells in Locations only.
  */
 
-function onOpen() {
-  SpreadsheetApp.getUi().createAddonMenu()
-    .addItem('Add Pipeline item', 'showItemForm')
-    .addSeparator()
-    .addItem('Show folder structure', 'showFolders')
-    .addItem('Check folders against Drive', 'checkFolders')
-    .addToUi();
+function include(name) {
+  if (name !== 'SharedUi') throw Error('Unknown HTML fragment.');
+  return HtmlService.createHtmlOutputFromFile(name).getContent();
 }
 
 function showFolders() {

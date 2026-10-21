@@ -1,0 +1,1261 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <base target="_blank">
+  <meta charset="utf-8">
+  <?!= include('SharedUi') ?>
+  <style>
+    :root { color-scheme:light; --ink:var(--h-ink); --muted:var(--h-muted); --line:var(--h-line);
+      --paper:var(--h-paper); --white:#fff; --green:var(--h-green); --pale:var(--h-pale);
+      --blue:#eef5f8; --gold:#fff1d5; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--paper); color:var(--ink); font:15px/1.48 Arial,sans-serif; }
+    button,select,textarea,input { font:inherit; }
+    button { cursor:pointer; }
+    button:focus-visible,a:focus-visible {
+      outline:3px solid #9ac9bb; outline-offset:2px; }
+    .top { background:#19353b; color:white; }
+    .top-inner { max-width:1260px; margin:auto; padding:20px 28px 0; }
+    .brandbar { display:flex; justify-content:space-between; align-items:center; gap:16px; }
+    .brand { display:flex; align-items:center; gap:14px; }
+    .mark { width:42px; height:42px; border:1px solid #8db1a7; border-radius:12px;
+      display:grid; place-items:center; font-size:21px; font-weight:700; }
+    .brand h1 { margin:0; font-size:21px; letter-spacing:-.03em; }
+    .brand p { margin:1px 0 0; color:#d0e2dc; font-size:12px; }
+    .sheet-link { color:#e3f4ee; text-decoration:none; font-size:13px; }
+    .nav { display:flex; gap:4px; margin-top:21px; }
+    .nav button { color:#cee1dc; background:transparent; border:0; border-bottom:3px solid transparent;
+      padding:11px 17px 12px; font-weight:700; }
+    .nav button.active { color:white; border-color:#8cd1ac; }
+    .wrap { max-width:1260px; margin:auto; padding:34px 28px 80px; }
+    .hero { display:flex; justify-content:space-between; align-items:flex-end; gap:20px; margin-bottom:25px; }
+    .eyebrow { color:var(--green); text-transform:uppercase; letter-spacing:.14em; font-size:11px;
+      font-weight:700; }
+    h2 { font-size:clamp(27px,3.2vw,42px); line-height:1.14; letter-spacing:-.04em;
+      margin:8px 0 8px; }
+    .lead { color:var(--muted); margin:0; max-width:670px; }
+    .toggle { display:flex; background:white; border:1px solid var(--line); border-radius:11px;
+      padding:3px; flex-shrink:0; }
+    .toggle button { border:0; background:transparent; border-radius:8px; padding:8px 13px;
+      color:var(--muted); font-size:13px; }
+    .toggle button.active { background:#e5f0e9; color:var(--green); font-weight:700; }
+    .search-bar { display:flex; align-items:end; gap:12px; flex-wrap:wrap; margin:0 0 18px; }
+    .search-field { flex:2 1 280px; max-width:420px; }
+    .filter-field { flex:1 1 190px; max-width:245px; }
+    .filter-field label { display:block; color:var(--muted); font-size:12px; font-weight:700;
+      margin-bottom:4px; }
+    .filter-actions { display:flex; align-items:end; gap:8px; }
+    .filter-panel { border:1px solid var(--line); border-radius:12px; background:white;
+      padding:0 17px 15px; margin-bottom:18px; }
+    .filter-panel summary { cursor:pointer; padding:13px 0; color:var(--green); font-weight:700; }
+    .filter-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; }
+    .group-title { display:flex; justify-content:space-between; align-items:baseline;
+      border-bottom:1px solid var(--line); margin:34px 0 16px; padding-bottom:10px; }
+    .group-title h3 { margin:0; font-size:18px; }
+    .count { color:var(--muted); font-size:13px; }
+    .collection.cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(275px,1fr)); gap:14px; }
+    .collection.rows { display:grid; gap:8px; }
+    .record { width:100%; border:1px solid var(--line); border-radius:16px; background:white;
+      padding:20px; text-align:left; color:var(--ink); box-shadow:0 3px 14px #17323808; }
+    .record:hover { border-color:#7aaf94; box-shadow:0 6px 18px #17323816; }
+    .decision-group { border:1px solid var(--line); border-radius:16px; background:white;
+      box-shadow:0 3px 14px #17323808; overflow:hidden; }
+    .decision-group[open] { border-color:#92b7a3; }
+    .decision-group summary { cursor:pointer; list-style:none; }
+    .decision-group summary::-webkit-details-marker { display:none; }
+    .decision-group summary.h-row strong { margin:0; }
+    .decision-group[open] .h-row__chevron { transform:rotate(180deg); }
+    .decision-group .subrows { border-top:1px solid var(--line); padding:7px; }
+    .decision-subrow { display:flex; align-items:center; justify-content:space-between; gap:15px;
+      width:100%; padding:13px; text-align:left; background:white; color:var(--ink);
+      border:0; border-radius:9px; }
+    .decision-subrow:hover { background:var(--pale); }
+    .decision-subrow strong { display:block; }
+    .decision-subrow small { display:block; color:var(--muted); margin-top:3px; }
+    .record .id { color:var(--green); font-size:11px; letter-spacing:.09em; font-weight:700;
+      text-transform:uppercase; }
+    .record strong { display:block; font-size:18px; line-height:1.3; margin:10px 0; }
+    .record .question { display:block; color:var(--muted); font-size:13px; margin-bottom:15px;
+      overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+    .record .foot { display:flex; gap:7px; flex-wrap:wrap; align-items:center; }
+    .record.h-row { padding:14px 18px; }
+    .record.h-row strong,.record.h-row .question { margin:0; }
+    .record.h-row .question { display:block; white-space:nowrap; text-overflow:ellipsis; }
+    .h-pill.pending { background:var(--gold); color:#745317; }
+    .empty { background:white; border:1px dashed var(--line); border-radius:15px;
+      padding:23px; color:var(--muted); }
+    .back { display:inline-flex; align-items:center; gap:7px; background:transparent;
+      border:0; color:var(--green); font-weight:700; padding:0 0 20px; }
+    .panel { background:white; border:1px solid var(--line); border-radius:20px;
+      overflow:hidden; box-shadow:0 8px 28px #1732380b; }
+    .panel-head { padding:clamp(23px,4vw,43px); border-bottom:1px solid var(--line); }
+    .panel-head h2 { max-width:910px; }
+    .meta { display:flex; flex-wrap:wrap; gap:8px; }
+    .panel-body { padding:clamp(23px,4vw,43px); display:grid; gap:31px; }
+    .section h3 { margin:0 0 10px; font-size:18px; letter-spacing:-.02em; }
+    .section p.hint { color:var(--muted); font-size:13px; margin:0 0 13px; }
+    .proposal { padding:19px 21px; border-radius:0 12px 12px 0;
+      border-left:4px solid var(--green); background:var(--pale); white-space:pre-wrap; }
+    .details { border:1px solid var(--line); border-radius:12px; background:#fbfcfa; }
+    .details summary { cursor:pointer; padding:14px 17px; font-weight:700; color:#315960; }
+    .details .inside { padding:1px 17px 18px; white-space:pre-wrap; color:#39525a; }
+    .choices { display:grid; grid-template-columns:repeat(auto-fit,minmax(225px,1fr)); gap:11px; }
+    .choice { position:relative; display:block; border:1.5px solid var(--line); border-radius:14px;
+      min-height:112px; padding:17px; cursor:pointer; }
+    .choice:has(input:checked),.choice:focus-within {
+      border-color:var(--green); background:#f1f8f3; }
+    .choice input[type="radio"] { position:absolute; right:17px; top:18px;
+      width:19px; height:19px; margin:0; padding:0; border:0; border-radius:50%;
+      background:transparent; box-shadow:none; outline:none; accent-color:var(--green); }
+    .choice strong { display:block; padding-right:29px; }
+    .choice span { display:block; color:var(--muted); font-size:13px; margin-top:7px; }
+    .choice em { display:block; margin-top:10px; color:var(--green); font-size:11px;
+      font-style:normal; font-weight:700; text-transform:uppercase; letter-spacing:.08em; }
+    .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:17px 20px; }
+    .wide { grid-column:1/-1; }
+    .field label { display:block; font-weight:700; font-size:13px; margin-bottom:7px; }
+    .field small { display:block; color:var(--muted); margin:4px 0 7px; font-size:12px; }
+    input:not([type="radio"]):not(.h-input),select:not(.h-select),textarea:not(.h-textarea) { width:100%; border:0;
+      border-bottom:1px solid #aac5b9; border-radius:0; color:var(--ink);
+      background:#f7faf8; padding:10px 12px; }
+    input:not([type="radio"]):not(.h-input):focus,select:not(.h-select):focus,textarea:not(.h-textarea):focus {
+      outline:none; border-bottom:2px solid var(--green); }
+    textarea { min-height:88px; resize:vertical; }
+    .more { border:1px solid var(--line); border-radius:12px; padding:0 18px 18px; }
+    .more summary { padding:15px 0; cursor:pointer; font-weight:700; color:#315960; }
+    .links { display:flex; flex-wrap:wrap; gap:9px; }
+    .links a { display:inline-block; padding:8px 11px; border-radius:9px; background:var(--blue);
+      color:#185a80; font-size:13px; text-decoration:none; font-weight:700; }
+    .actions { display:flex; align-items:center; flex-wrap:wrap; gap:14px; padding-top:3px; }
+    .message { font-size:13px; color:var(--muted); }
+    .message.ok { color:var(--green); }
+    .message.error { color:#a7352b; }
+    .loading { padding:35px; color:var(--muted); }
+    @media(max-width:760px) { .top-inner,.wrap { padding-left:17px; padding-right:17px; }
+      .hero { align-items:flex-start; flex-direction:column; } .grid { grid-template-columns:1fr; }
+      .wide { grid-column:auto; } .sheet-link { display:none; } }
+    /* Workspace dark theme: black canvas, grey cards, clear controls. */
+    :root { color-scheme:dark; --ink:#f4f5f5; --muted:#adb5b8; --line:#495155;
+      --paper:#0e1011; --white:#2a2f32; --green:#e8ebec; --pale:#343a3e;
+      --blue:#343e44; --gold:#394146; }
+    body { background:var(--paper); color:var(--ink); }
+    .top { position:fixed; inset:0 auto 0 0; width:202px; z-index:2;
+      background:#08090a; border-right:1px solid #34383b; }
+    .top-inner { padding:25px 16px; }
+    .brandbar,.brand { align-items:flex-start; flex-direction:column; }
+    .brand { gap:12px; }
+    .mark { border-color:#8e999e; color:var(--ink); }
+    .brand h1 { font-size:17px; }
+    .brand p { color:var(--muted); }
+    .sheet-link { display:block; margin-top:20px; color:var(--muted); line-height:1.35; }
+    .nav { display:flex; flex-direction:column; align-items:stretch; margin-top:30px; gap:5px; }
+    .nav button { text-align:left; color:#c3cbce; border:0; border-radius:10px;
+      padding:11px 12px; }
+    .nav button.active { color:#101214; background:#f4f5f5; }
+    .wrap { max-width:1430px; margin-left:202px; margin-right:auto; padding:32px 30px 80px; }
+    .eyebrow,.record .id { color:var(--muted); }
+    .lead,.count,.field small,.decision-subrow small { color:var(--muted); }
+    .group-title { border-color:var(--line); }
+    .toggle { background:#1b1e20; border-color:var(--line); }
+    .toggle button { color:var(--muted); }
+    .toggle button.active { background:#f4f5f5; color:#101214; }
+    .record,.decision-group,.panel,.empty { background:#2a2f32; color:var(--ink);
+      border-color:var(--line); box-shadow:none; }
+    .record:hover,.decision-group:hover { border-color:#8b969b; box-shadow:none; }
+    .decision-group.expanded { border-color:#8b969b; }
+    .decision-group .h-row { grid-template-columns:110px minmax(160px,1fr)
+      minmax(180px,1.5fr) auto; }
+    .decision-group__head { padding:15px 18px; }
+    .decision-group__head strong { margin:0; }
+    .decision-group .subrows { border-color:var(--line); background:#252a2d; }
+    .decision-subrow { background:transparent; color:var(--ink); }
+    .decision-subrow:hover { background:#343b3e; }
+    .h-row__id { color:var(--muted); }
+    .h-row__support { color:var(--muted); }
+    .h-row__chevron { color:var(--ink); border:1px solid var(--line);
+      border-radius:10px; width:36px; height:36px; }
+    .h-pill { background:#3c4448; color:var(--ink); }
+    .h-pill.pending { background:#e8ebec; color:#101214; }
+    .icon-button { display:inline-grid; place-items:center; width:38px; height:38px;
+      flex:none; padding:0; border:1px solid var(--line); border-radius:10px;
+      background:#1b1e20; color:var(--ink); font-size:23px; line-height:1; }
+    .icon-button:hover { background:#41494d; }
+    .decision-expand { margin-left:2px; }
+    .decision-expand[aria-expanded="true"] { background:#e8ebec; color:#101214; }
+    .decision-expand[aria-expanded="true"] { transform:rotate(180deg); }
+    .back { padding:0; }
+    .detail-toolbar { display:flex; align-items:center; justify-content:space-between;
+      gap:12px; margin-bottom:17px; }
+    .edit-action { display:inline-flex; align-items:center; gap:8px;
+      padding:11px 16px; }
+    .edit-glyph { font-size:21px; line-height:1; }
+    .panel-head,.panel-body { border-color:var(--line); }
+    .panel-head,.panel-body { padding:clamp(21px,3vw,36px); }
+    .proposal { background:#343a3e; border-color:#dfe3e4; }
+    .details,.filter-panel,.more { border:1px solid var(--line); border-radius:14px;
+      background:#2a2f32; }
+    .details summary,.filter-panel summary,.more summary { color:var(--ink); }
+    .details .inside { color:var(--muted); }
+    .filter-panel,.more { padding:14px 17px; }
+    .filter-panel summary,.more summary { display:flex; align-items:center;
+      justify-content:center; width:max-content; max-width:100%; margin:0 auto;
+      padding:10px 18px; border:1px solid #899398; border-radius:999px;
+      background:#1b1e20; font-weight:700; list-style:none; }
+    .filter-panel summary::-webkit-details-marker,.more summary::-webkit-details-marker { display:none; }
+    .filter-panel summary::after,.more summary::after { content:'⌄'; font-size:20px;
+      line-height:.7; margin-left:9px; transition:transform .15s; }
+    .filter-panel[open] summary::after,.more[open] summary::after { transform:rotate(180deg); }
+    .filter-grid,.more .grid { margin-top:17px; }
+    .choice { border-color:var(--line); background:#252a2d; }
+    .choice:has(input:checked),.choice:focus-within { border-color:#dfe3e4; background:#383f42; }
+    .choice input[type="radio"] { accent-color:#e8ebec; }
+    .choice em { color:#e8ebec; }
+    .filter-field label,.field label { color:var(--ink); }
+    .h-input,.h-select,.h-textarea,
+    input:not([type="radio"]):not(.h-input),select:not(.h-select),textarea:not(.h-textarea) {
+      background:#1b1e20; color:var(--ink); border:1px solid var(--line);
+      border-radius:9px; }
+    .h-input:focus,.h-select:focus,.h-textarea:focus,
+    input:not([type="radio"]):not(.h-input):focus,select:not(.h-select):focus,
+    textarea:not(.h-textarea):focus { outline:2px solid #a6b3b8; outline-offset:1px;
+      border-color:#a6b3b8; }
+    input::placeholder,textarea::placeholder { color:#939da2; }
+    .h-button { background:#2a2f32; border-color:var(--line); color:var(--ink); }
+    .h-button--primary { background:#e8ebec; border-color:#e8ebec; color:#101214; }
+    .h-button:hover { filter:brightness(1.15); }
+    .links a { background:#364044; color:#ecf1f3; }
+    .message.ok { color:#c5dbd0; }
+    .message.error { color:#ffafa5; }
+    button:focus-visible,a:focus-visible,summary:focus-visible { outline:2px solid #aab7bc;
+      outline-offset:2px; }
+    @media(max-width:760px) {
+      .top { position:static; width:auto; border-right:0; border-bottom:1px solid #34383b; }
+      .top-inner { padding:17px 18px 12px; }
+      .brandbar { display:block; }
+      .brand { flex-direction:row; align-items:center; }
+      .brand p { display:none; }
+      .mark { width:34px; height:34px; font-size:18px; }
+      .nav { flex-direction:row; flex-wrap:nowrap; margin-top:14px; gap:3px; }
+      .nav button { flex:1 1 0; text-align:center; font-size:12px; padding:9px 4px; }
+      .wrap { margin:0; padding:24px 17px 65px; }
+      .decision-group .h-row { display:grid; grid-template-columns:1fr; gap:6px;
+        padding:16px; }
+      .decision-group .h-row__id,.decision-group .h-row__title,
+      .decision-group .h-row__support,.decision-group .h-row__badges { grid-column:1; grid-row:auto; }
+      .decision-group .h-row__support { white-space:normal; }
+      .decision-group .h-row__badges { margin-top:7px; }
+      .record.h-row { grid-template-columns:1fr auto; gap:6px 10px; }
+      .record.h-row .h-row__id,.record.h-row .h-row__title,
+      .record.h-row .h-row__support,.record.h-row .h-row__badges { grid-column:1; grid-row:auto; }
+      .record.h-row .h-row__chevron { grid-column:2; grid-row:1/5; align-self:center; }
+      .filter-panel summary,.more summary { width:100%; }
+      .search-field,.filter-field { max-width:none; }
+    }
+    /* Black canvas with white content surfaces and grey secondary controls. */
+    html,body { background:#0e1011; overscroll-behavior-y:none; }
+    html { min-height:100%; }
+    body { min-height:100vh; }
+    .record,.decision-group,.panel,.empty,.filter-panel,.more,.toggle {
+      --ink:#151819; --muted:#606a6e; --line:#d7dddf; --green:#151819;
+      --pale:#f1f3f4; background:#fff; color:var(--ink); border-color:var(--line); }
+    .record:hover,.decision-group:hover,.decision-group.expanded { border-color:#8b969b; }
+    .decision-group .subrows { background:#f2f4f4; border-color:var(--line); }
+    .decision-subrow:hover { background:#e8ebec; }
+    .record .id,.h-row__id { color:#566064; }
+    .h-row__support,.record .question,.decision-subrow small { color:#606a6e; }
+    .h-pill { background:#e9ecec; color:#151819; }
+    .h-pill.pending { background:#e9ecec; color:#151819; border:1px solid #b9c1c4; }
+    .toggle button { color:#606a6e; }
+    .toggle button.active { background:#171a1b; color:#fff; }
+    .icon-button { background:#fff; color:#151819; border-color:#b7c0c3; }
+    .icon-button:hover { background:#eef0f0; }
+    .decision-expand[aria-expanded="true"] { background:#e9ecec; color:#151819; }
+    .h-row__chevron { color:#151819; }
+    .detail-toolbar { min-height:38px; margin-bottom:25px; }
+    .panel .eyebrow { color:#566064; }
+    .panel .section h3,.panel .field label,.panel .filter-field label { color:#151819; }
+    .panel .section p.hint,.panel .field small { color:#606a6e; }
+    .panel-body > form { display:grid; gap:32px; }
+    .plain-copy { margin:0; white-space:pre-wrap; overflow-wrap:anywhere;
+      color:#343b3e; line-height:1.62; }
+    .filter-panel,.more { border-color:#d7dddf; }
+    .filter-panel summary,.more summary { background:#fff; color:#151819;
+      border-color:#9da8ac; }
+    .filter-panel summary::after,.more summary::after { content:none; }
+    .choice { background:#f7f8f8; border-color:#bfc7ca; color:#151819; }
+    .choice:has(input:checked),.choice:focus-within { background:#eef1f1;
+      border-color:#151819; }
+    .choice span { color:#606a6e; }
+    .choice em { color:#343b3e; }
+    .choice input[type="radio"] { accent-color:#151819; }
+    .h-input,.h-select,.h-textarea,
+    input:not([type="radio"]):not(.h-input),select:not(.h-select),textarea:not(.h-textarea) {
+      background:#fff; color:#151819; border:1px solid #bfc7ca; }
+    .h-input:focus,.h-select:focus,.h-textarea:focus,
+    input:not([type="radio"]):not(.h-input):focus,select:not(.h-select):focus,
+    textarea:not(.h-textarea):focus { border-color:#151819; outline-color:#606a6e; }
+    input::placeholder,textarea::placeholder { color:#717b7f; }
+    .filter-field label { color:#f4f5f5; }
+    .filter-panel .filter-field label { color:#151819; }
+    .h-button { background:#fff; color:#151819; border-color:#b7c0c3; }
+    .h-button--primary { background:#fff; color:#151819; border:2px solid #151819; }
+    .links a { background:#edf0f0; color:#151819; }
+    .message.ok { color:#326448; }
+    .message.error { color:#aa3b30; }
+    /* Actions are black on white surfaces; controls on the black canvas stay white. */
+    .panel .h-button,.panel .h-button--primary,
+    .filter-panel summary,.more summary { background:#151819; color:#fff;
+      border-color:#151819; }
+    .panel .h-button:hover,.filter-panel summary:hover,.more summary:hover {
+      background:#303638; border-color:#303638; filter:none; }
+    .decision-expand,.decision-expand[aria-expanded="true"] {
+      background:#151819; color:#fff; border-color:#151819; transform:none; }
+    .decision-expand:hover { background:#303638; border-color:#303638; }
+    .decision-expand svg { display:block; width:20px; height:20px;
+      transition:transform .15s ease; }
+    .decision-expand[aria-expanded="true"] svg { transform:rotate(180deg); }
+    .h-pill.tone-neutral { background:#e9ecee; color:#303a3e; }
+    .h-pill.tone-review { background:#fff0c2; color:#684900; border:0; }
+    .h-pill.tone-success { background:#dcf4e6; color:#155d3b; }
+    .h-pill.tone-warning { background:#ffead7; color:#82420c; }
+    .h-pill.tone-danger { background:#ffe0dd; color:#8b2924; }
+    .h-pill.tone-stage { background:#ece5ff; color:#54378d; }
+    .h-pill.tone-info { background:#dfeeff; color:#26517c; }
+    /* Folder path browser uses the existing sidebar and shared chip colors. */
+    .folder-controls { display:flex; flex-wrap:wrap; align-items:end; gap:10px;
+      margin:23px 0 17px; }
+    .folder-controls .search-field { flex:1 1 270px; }
+    .folder-controls .h-button { min-height:43px; }
+    .folder-path { display:flex; flex-wrap:wrap; align-items:center; gap:7px;
+      margin:0 0 14px; color:#bac4c8; }
+    .folder-crumb { border:0; background:transparent; color:#d5dddf;
+      padding:5px 2px; font-weight:700; }
+    .folder-crumb:hover { text-decoration:underline; }
+    .folder-crumb[aria-current="page"] { color:#fff; }
+    .folder-browser { display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      align-items:stretch; gap:11px; }
+    .folder-column,.folder-detail,.folder-results { --ink:#151819;
+      border:1px solid #d7dddf; border-radius:14px; background:#fff;
+      color:var(--ink); padding:17px; min-width:0; }
+    .folder-column { display:flex; flex-direction:column; height:420px; overflow:hidden; }
+    .folder-column-scroll { flex:1; min-height:0; overflow-y:auto;
+      overscroll-behavior:contain; scrollbar-gutter:stable; padding-right:4px; }
+    .folder-column h3,.folder-results h3 { margin:0 0 13px; color:#606a6e;
+      font-size:11px; letter-spacing:.1em; text-transform:uppercase; flex:none; }
+    .folder-group-label { margin:17px 0 7px; color:#82420c; font-size:11px;
+      font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+    .folder-row { display:flex; align-items:center; gap:8px; width:100%;
+      min-height:43px; padding:10px; border:0; border-radius:9px;
+      background:transparent; color:#263034; text-align:left; }
+    .folder-row:hover,.folder-row.selected { background:#eef0f1; }
+    .folder-row.selected { font-weight:700; }
+    .folder-row-name { flex:1; min-width:0; overflow-wrap:anywhere; }
+    .folder-row-arrow { color:#687579; font-size:20px; line-height:1; }
+    .folder-column .empty { border:0; padding:10px; }
+    .folder-detail { grid-column:1/-1; }
+    .folder-detail .eyebrow { color:#606a6e; }
+    .folder-detail-head { display:flex; align-items:flex-start;
+      justify-content:space-between; flex-wrap:wrap; gap:15px; }
+    .folder-detail h3 { margin:5px 0 0; font-size:clamp(24px,2.5vw,32px);
+      line-height:1.2; overflow-wrap:anywhere; }
+    .folder-detail .h-button { background:#151819; color:#fff;
+      border-color:#151819; text-decoration:none; }
+    .folder-detail .h-button:hover { background:#303638; }
+    .folder-chips { display:flex; flex-wrap:wrap; gap:7px; margin:20px 0 24px; }
+    .folder-info { display:grid; grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:18px; border-top:1px solid #e1e5e6; padding-top:18px; }
+    .folder-info small { color:#667176; }
+    .folder-info p { margin:5px 0 0; overflow-wrap:anywhere; }
+    .folder-results { grid-column:1/-1; }
+    .folder-results .folder-row { border-top:1px solid #eef0f1;
+      border-radius:0; }
+    .folder-result-path { display:block; color:#606a6e; font-size:12px; }
+    .folder-report a { color:#215482; text-decoration:underline;
+      text-underline-offset:2px; font-weight:700; }
+    .folder-error { color:#ffb4a9; }
+    .folder-report { --ink:#151819; margin-top:26px; padding:24px;
+      border:1px solid #d7dddf; border-radius:15px; background:#fff; color:var(--ink); }
+    .folder-report h3 { margin:0 0 18px; font-size:20px; }
+    .folder-report h4 { margin:16px 0 6px; font-size:15px; }
+    .folder-report p { color:#606a6e; }
+    .folder-report ul { margin:0; padding-left:22px; }
+    .folder-report li { margin:5px 0; overflow-wrap:anywhere; }
+    .folder-report li a { margin-left:7px; }
+    @media(max-width:760px) {
+      .nav { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .nav button { width:100%; }
+      .folder-controls .search-field { flex-basis:100%; }
+    }
+    @media(max-width:570px) {
+      .folder-browser { grid-template-columns:1fr; }
+      .folder-column { height:320px; }
+      .folder-detail { grid-column:1; }
+      .folder-info { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header class="top"><div class="top-inner">
+    <div class="brandbar"><div class="brand"><div class="mark" aria-hidden="true">H</div>
+      <div><h1>Horology workspace</h1><p>Review decisions and manage Pipeline work</p></div></div>
+      <a class="sheet-link" href="https://docs.google.com/spreadsheets/d/1aL678ACs97YpLIGrGU5LbpXHc7jQBxl64ED-sLyehvI/edit" target="_blank" rel="noopener noreferrer">Open Pipeline sheet ↗</a>
+    </div>
+    <nav class="nav" aria-label="Workspace">
+      <button id="nav-decisions" class="active" type="button">Decisions</button>
+      <button id="nav-pipeline" type="button">Pipeline</button>
+      <button id="nav-folders" type="button">Folders</button>
+      <button id="nav-add" type="button">Add Pipeline item</button>
+    </nav>
+  </div></header>
+  <main id="app" class="wrap"><div class="loading">Loading workspace…</div></main>
+  <script>
+    const $ = id => document.getElementById(id);
+    const app = $('app');
+    let page = 'decisions', pipelineMode = 'cards',
+      dashboard = {pending:[],recent:[]}, pipelineRows = null, pipelineQuery = '',
+      pipelineFilters = {'Domain':'','Status':'','Entity':'','Type':'',
+        'Agent status':'','Agent type':'','Run location':'','Stage':''},
+      filtersExpanded = false, folderData = null, folderPath = [], folderQuery = '',
+      folderScroll = {roots:0,children:0},
+      selectedId = '', selectedPipelineId = '', formData = null, notice = '';
+    function chipTone(value) {
+      const label = String(value || '').trim().toLowerCase();
+      if (/(?:^|:\s)(needs review|awaiting decision)$/.test(label)) return 'tone-review';
+      if (/(?:^|:\s)(accepted|approved|ready|completed)$/.test(label)) return 'tone-success';
+      if (/(?:^|:\s)(rework|parked|plan)$/.test(label)) return 'tone-warning';
+      if (/(?:^|:\s)(rejected|blocked|failed)$/.test(label)) return 'tone-danger';
+      if (/^(stage\s*\d|investigation proposal|specialist deliverable)/.test(label)) return 'tone-stage';
+      if (/(?:^|:\s)inbox$/.test(label)) return 'tone-info';
+      return 'tone-neutral';
+    }
+    const node = (tag,className,value) => {
+      const element = HorologyUi.element(tag,className,value);
+      if (tag === 'span' && /\bh-pill\b/.test(className || ''))
+        element.classList.add(chipTone(value));
+      return element;
+    };
+    function chevronIcon() {
+      const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+      svg.setAttribute('viewBox','0 0 24 24');
+      svg.setAttribute('aria-hidden','true');
+      const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.setAttribute('d','m6 9 6 6 6-6');
+      path.setAttribute('fill','none');
+      path.setAttribute('stroke','currentColor');
+      path.setAttribute('stroke-width','2.4');
+      path.setAttribute('stroke-linecap','round');
+      path.setAttribute('stroke-linejoin','round');
+      svg.appendChild(path); return svg;
+    }
+    const append = (parent,...children) => children.forEach(child => parent.appendChild(child));
+    const section = (parent,title,hint) => {
+      const box = node('section','section'); box.appendChild(node('h3','',title));
+      if (hint) box.appendChild(node('p','hint',hint));
+      parent.appendChild(box); return box;
+    };
+    const safeLink = raw => {
+      try { const url = new URL(raw); return url.protocol === 'https:' ? url.href : ''; }
+      catch (_) { return ''; }
+    };
+    const filterMatches = (value,selected) =>
+      !selected || (selected === '__blank__' ? !value : value === selected);
+    function filteredPipelineRows(rows,query,filters) {
+      const text = query.trim().toLowerCase();
+      return rows.filter(item => Object.keys(filters).every(key =>
+        filterMatches(item[key],filters[key])) &&
+        (!text || ['ID','Title','Domain','Entity','Type','Status','Stage',
+          'Agent status','Agent type','Run location','Summary / Why',
+          'Next step / Research question'].some(key =>
+          String(item[key] || '').toLowerCase().includes(text))));
+    }
+    function header(eyebrow,title,lead) {
+      const hero = node('div','hero'), copy = node('div');
+      append(copy,node('div','eyebrow',eyebrow),node('h2','',title),node('p','lead',lead));
+      hero.appendChild(copy); app.appendChild(hero); return hero;
+    }
+    function showNotice(text,kind) {
+      if (!text) return;
+      const box = node('p','message ' + (kind || 'ok'),text);
+      app.prepend(box);
+    }
+    function navigate(to) {
+      page = to; selectedId = ''; selectedPipelineId = '';
+      $('nav-decisions').classList.toggle('active',to === 'decisions');
+      $('nav-pipeline').classList.toggle('active',to === 'pipeline');
+      $('nav-folders').classList.toggle('active',to === 'folders');
+      $('nav-add').classList.toggle('active',to === 'add');
+      if (to === 'pipeline' && !pipelineRows) {
+        app.replaceChildren(node('div','loading','Loading Pipeline items…'));
+        google.script.run.withSuccessHandler(rows => {
+          pipelineRows = rows; renderPipelineList();
+        }).withFailureHandler(error => app.replaceChildren(node('div','loading',
+          'Could not load Pipeline items: ' + (error.message || String(error))))).getPipelineOverview();
+      } else if (to === 'pipeline') renderPipelineList();
+      else if (to === 'folders' && !folderData) {
+        app.replaceChildren(node('div','loading','Loading folders…'));
+        google.script.run.withSuccessHandler(data => {
+          folderData = data; folderPath = defaultFolderPath(); renderFolders();
+        }).withFailureHandler(error => app.replaceChildren(node('div','loading',
+          'Could not load folders: ' + (error.message || String(error))))).getFolderOverview();
+      } else if (to === 'folders') renderFolders();
+      else if (to === 'add' && !formData) {
+        app.replaceChildren(node('div','loading','Loading Pipeline fields…'));
+        google.script.run.withSuccessHandler(data => { formData = data; renderAdd(); })
+          .withFailureHandler(error => app.replaceChildren(node('div','loading',
+            'Could not load the form: ' + (error.message || String(error))))).getPipelineFormData();
+      } else if (to === 'add') renderAdd();
+      else renderList();
+      window.scrollTo(0,0);
+    }
+    function renderList() {
+      app.replaceChildren();
+      header('Decision register','What needs your decision?',
+        'Open an item to compare options, record your choice, or request rework.');
+      const groups = decisionGroups();
+      renderGroup('Needs your review',groups.pending,true);
+      renderGroup('Decision history',groups.history,false);
+      showNotice(notice); notice = '';
+    }
+    function decisionGroups() {
+      const byItem = new Map();
+      [...dashboard.pending,...dashboard.recent].forEach(record => {
+        if (!byItem.has(record.pipelineId)) byItem.set(record.pipelineId,[]);
+        byItem.get(record.pipelineId).push(record);
+      });
+      const pending = [], history = [];
+      byItem.forEach(records => {
+        records.sort((a,b) => Number(b.id) - Number(a.id));
+        (records.some(record => record.editable) ? pending : history).push(records);
+      });
+      pending.sort((a,b) => Number(b[0].id) - Number(a[0].id));
+      history.sort((a,b) => Number(b[0].id) - Number(a[0].id));
+      return {pending,history};
+    }
+    function renderGroup(title,groups,pending) {
+      const heading = node('div','group-title');
+      append(heading,node('h3','',title),node('span','count',groups.length +
+        (groups.length === 1 ? ' item' : ' items')));
+      app.appendChild(heading);
+      if (!groups.length) {
+        app.appendChild(node('div','empty',pending ? 'Nothing is awaiting a decision.' : 'No recorded decisions.'));
+        return;
+      }
+      const list = node('div','collection rows'); app.appendChild(list);
+      groups.forEach(records => {
+        const latest = records[0], current = records.find(r => r.editable);
+        const card = node('div','decision-group'), summary = node('div','h-row decision-group__head');
+        append(summary,node('span','h-row__id','Pipeline ' + latest.pipelineId),
+          node('strong','h-row__title',latest.title),
+          node('span','h-row__support',latest.question || 'Open decision history'));
+        const foot = node('span','h-row__badges');
+        append(foot,node('span','h-pill' + (current ? ' pending' : ''),
+          current ? 'Needs review' : latest.status),
+          node('span','h-pill',records.length + (records.length === 1 ? ' decision' : ' decisions')));
+        const expand = node('button','icon-button decision-expand');
+        expand.appendChild(chevronIcon());
+        expand.type = 'button'; expand.setAttribute('aria-label','Show decisions for Pipeline ' + latest.pipelineId);
+        expand.setAttribute('aria-expanded','false');
+        foot.appendChild(expand); append(summary,foot); card.appendChild(summary);
+        const children = node('div','subrows'); children.hidden = true;
+        records.forEach(record => {
+          const button = node('button','decision-subrow'); button.type = 'button';
+          const label = node('span');
+          append(label,node('strong','','Decision ' + record.id + ' · ' + record.stage),
+            node('small','',record.question || 'Open decision details'));
+          append(button,label,node('span','h-pill' + (record.editable ? ' pending' : ''),
+            record.editable ? 'Needs review' : record.status));
+          button.onclick = () => { selectedId = record.id; renderDetail(); window.scrollTo(0,0); };
+          children.appendChild(button);
+        });
+        expand.onclick = () => {
+          children.hidden = !children.hidden;
+          expand.setAttribute('aria-expanded',String(!children.hidden));
+          expand.setAttribute('aria-label',(children.hidden ? 'Show' : 'Hide') +
+            ' decisions for Pipeline ' + latest.pipelineId);
+          card.classList.toggle('expanded',!children.hidden);
+        };
+        card.appendChild(children); list.appendChild(card);
+      });
+    }
+    function renderPipelineList() {
+      app.replaceChildren();
+      const hero = header('Pipeline','All Pipeline items',
+        'Browse every Pipeline row. Open one to see its work, status, next step and revisit trigger.');
+      const searchBar = node('div','search-bar'), searchWrap = node('div','filter-field search-field');
+      const searchLabel = node('label','','Search');
+      const search = node('input','h-input'); search.id = 'pipeline-search';
+      searchLabel.htmlFor = search.id;
+      search.type = 'search'; search.placeholder = 'Search items'; search.value = pipelineQuery;
+      append(searchWrap,searchLabel,search); searchBar.appendChild(searchWrap);
+      const toggle = node('div','toggle');
+      for (const label of ['Cards','Rows']) {
+        const button = node('button',pipelineMode === label.toLowerCase() ? 'active' : '',label);
+        button.type = 'button';
+        button.setAttribute('aria-pressed',String(pipelineMode === label.toLowerCase()));
+        button.onclick = () => { pipelineMode = label.toLowerCase(); renderPipelineList(); };
+        toggle.appendChild(button);
+      }
+      hero.appendChild(toggle);
+      const filterControls = {};
+      function addFilter(key,parent,rows) {
+        const wrap = node('div','filter-field'), label = node('label','',key);
+        const select = node('select','h-select');
+        select.id = 'filter-' + key.toLowerCase().replace(/\s+/g,'-');
+        label.htmlFor = select.id;
+        append(wrap,label,select); parent.appendChild(wrap);
+        filterControls[key] = select;
+        const values = [...new Set(rows.map(item => item[key] || ''))]
+          .sort((a,b) => a.localeCompare(b));
+        const all = node('option','','All ' + key.toLowerCase()); all.value = '';
+        select.appendChild(all);
+        values.forEach(value => {
+          const option = node('option','',value || 'No ' + key.toLowerCase());
+          option.value = value || '__blank__'; select.appendChild(option);
+        });
+        if (![...select.options].some(option => option.value === pipelineFilters[key]))
+          pipelineFilters[key] = '';
+        select.value = pipelineFilters[key];
+        select.onchange = () => {
+          pipelineFilters[key] = select.value;
+          if (key === 'Domain') {
+            pipelineFilters.Entity = '';
+            const entity = filterControls.Entity;
+            if (entity) {
+              const subset = (pipelineRows || []).filter(item =>
+                !pipelineFilters.Domain || filterMatches(item.Domain,pipelineFilters.Domain));
+              entity.replaceChildren();
+              const allEntity = node('option','','All entity'); allEntity.value = '';
+              entity.appendChild(allEntity);
+              [...new Set(subset.map(item => item.Entity || ''))]
+                .sort((a,b) => a.localeCompare(b)).forEach(value => {
+                  const option = node('option','',value || 'No entity');
+                  option.value = value || '__blank__'; entity.appendChild(option);
+                });
+            }
+          }
+          updateResults();
+        };
+      }
+      addFilter('Domain',searchBar,pipelineRows || []);
+      addFilter('Status',searchBar,pipelineRows || []);
+      const clear = node('button','h-button','Clear filters'); clear.type = 'button';
+      clear.onclick = () => {
+        pipelineQuery = ''; Object.keys(pipelineFilters).forEach(key => { pipelineFilters[key] = ''; });
+        renderPipelineList();
+      };
+      const actions = node('div','filter-actions'); actions.appendChild(clear); searchBar.appendChild(actions);
+      app.appendChild(searchBar);
+      const more = node('details','filter-panel'), moreLabel = node('summary','','More filters');
+      more.open = filtersExpanded;
+      more.ontoggle = () => { filtersExpanded = more.open; };
+      const filterGrid = node('div','filter-grid');
+      append(more,moreLabel,filterGrid); app.appendChild(more);
+      const entityRows = (pipelineRows || []).filter(item =>
+        filterMatches(item.Domain,pipelineFilters.Domain));
+      addFilter('Entity',filterGrid,entityRows);
+      for (const key of ['Type','Agent status','Agent type','Run location','Stage'])
+        addFilter(key,filterGrid,pipelineRows || []);
+      const heading = node('div','group-title'), count = node('span','count');
+      append(heading,node('h3','','Pipeline items'),count); app.appendChild(heading);
+      const list = node('div','collection ' + pipelineMode); app.appendChild(list);
+      function updateResults() {
+        const rows = filteredPipelineRows(pipelineRows || [],pipelineQuery,pipelineFilters);
+        const active = Object.entries(pipelineFilters)
+          .filter(([key,value]) => !['Domain','Status'].includes(key) && value).length;
+        moreLabel.textContent = 'More filters' + (active ? ' · ' + active + ' active' : '');
+        count.textContent = rows.length + ' of ' + (pipelineRows || []).length + ' items';
+        list.className = 'collection ' + pipelineMode;
+        list.replaceChildren();
+        if (!rows.length) {
+          list.appendChild(node('div','empty','No Pipeline items match your search.'));
+          return;
+        }
+        rows.forEach(item => {
+          const rowMode = pipelineMode === 'rows';
+          const button = node('button','record' + (rowMode ? ' h-row' : '')); button.type = 'button';
+          append(button,node('span',rowMode ? 'id h-row__id' : 'id','Pipeline ' + item.ID),
+            node('strong',rowMode ? 'h-row__title' : '',item.Title || 'Untitled item'),
+            node('span',rowMode ? 'question h-row__support' : 'question',
+              item['Summary / Why'] || item['Next step / Research question'] ||
+              'Open item details'));
+          const foot = node('span',rowMode ? 'foot h-row__badges' : 'foot');
+          append(foot,node('span','h-pill',item.Status || 'No status'),
+            node('span','h-pill',item.Stage || 'No stage'),
+            node('span','h-pill',item.Domain || 'No domain'));
+          button.appendChild(foot);
+          if (rowMode) button.appendChild(node('span','h-row__chevron','›'));
+          button.onclick = () => {
+            selectedPipelineId = item.ID; renderPipelineDetail(); window.scrollTo(0,0);
+          };
+          list.appendChild(button);
+        });
+      }
+      search.oninput = () => { pipelineQuery = search.value; updateResults(); };
+      updateResults();
+    }
+    function renderPipelineDetail() {
+      const item = (pipelineRows || []).find(row => row.ID === selectedPipelineId);
+      if (!item) { renderPipelineList(); return; }
+      app.replaceChildren();
+      const back = node('button','back icon-button','←'); back.type = 'button';
+      back.setAttribute('aria-label','Back to all Pipeline items'); back.title = 'All Pipeline items';
+      back.onclick = renderPipelineList;
+      const toolbar = node('div','detail-toolbar'); toolbar.appendChild(back); app.appendChild(toolbar);
+      const panel = node('article','panel'); app.appendChild(panel);
+      const head = node('div','panel-head');
+      append(head,node('div','eyebrow','Pipeline ' + item.ID + ' · ' + item.Domain),
+        node('h2','',item.Title || 'Untitled item'));
+      const meta = node('div','meta');
+      for (const value of [item.Status,item.Stage,item['Review stage'],item['Agent status']])
+        if (value) meta.appendChild(node('span','h-pill',value));
+      head.appendChild(meta);
+      const edit = node('button','h-button h-button--primary edit-action'); edit.type = 'button';
+      append(edit,node('span','edit-glyph','✎'),node('span','','Edit item'));
+      edit.onclick = () => {
+        if (formData) { renderPipelineEdit(); return; }
+        app.replaceChildren(node('div','loading','Loading edit fields…'));
+        google.script.run.withSuccessHandler(data => {
+          formData = data; renderPipelineEdit();
+        }).withFailureHandler(error => app.replaceChildren(node('div','loading',
+          'Could not load edit fields: ' + (error.message || String(error))))).getPipelineFormData();
+      };
+      toolbar.appendChild(edit); panel.appendChild(head);
+      const body = node('div','panel-body'); panel.appendChild(body);
+      for (const pair of [
+        ['Summary / Why',item['Summary / Why']],
+        ['Next step / Research question',item['Next step / Research question']],
+        ['Revisit trigger',item['Revisit trigger']]
+      ]) {
+        if (!pair[1]) continue;
+        const block = section(body,pair[0]);
+        block.appendChild(node('p','plain-copy',pair[1]));
+      }
+      const context = section(body,'Details');
+      const facts = node('div','meta');
+      for (const pair of [
+        ['Type',item.Type],['Entity',item.Entity],['Agent',item['Agent type']],
+        ['Run location',item['Run location']],
+        ['Current decision',item['Current decision ID'] ? '#' + item['Current decision ID'] : ''],
+        ['Created',item.Created],['Updated',item.Updated]
+      ]) if (pair[1]) facts.appendChild(node('span','h-pill',pair[0] + ': ' + pair[1]));
+      context.appendChild(facts);
+      const links = section(body,'Open records');
+      const linkRow = node('div','links');
+      for (const pair of [
+        ['Open Pipeline row ↗',item.sheetUrl],
+        ['Open work target ↗',item.URL],
+        ['Open ClickUp task ↗',item['ClickUp Pipeline URL']]
+      ]) {
+        const href = safeLink(pair[1]); if (!href) continue;
+        const a = node('a','',pair[0]); a.href = href; a.target = '_blank';
+        a.rel = 'noopener noreferrer'; linkRow.appendChild(a);
+      }
+      links.appendChild(linkRow);
+    }
+    function renderPipelineEdit() {
+      const item = (pipelineRows || []).find(row => row.ID === selectedPipelineId);
+      if (!item) { renderPipelineList(); return; }
+      app.replaceChildren();
+      const back = node('button','back icon-button','←'); back.type = 'button';
+      back.setAttribute('aria-label','Back to Pipeline item'); back.title = 'Pipeline item';
+      back.onclick = renderPipelineDetail;
+      const toolbar = node('div','detail-toolbar'); toolbar.appendChild(back); app.appendChild(toolbar);
+      const panel = node('article','panel'), head = node('div','panel-head');
+      append(head,node('div','eyebrow','Pipeline ' + item.ID),
+        node('h2','','Edit ' + (item.Title || 'item')));
+      const readOnly = node('div','meta');
+      for (const pair of [['Domain',item.Domain],['Entity',item.Entity],
+        ['Status',item.Status],['Stage',item.Stage]])
+        if (pair[1]) readOnly.appendChild(node('span','h-pill',pair[0] + ': ' + pair[1]));
+      head.appendChild(readOnly); panel.appendChild(head); app.appendChild(panel);
+      const form = node('form','panel-body'); panel.appendChild(form);
+      const work = section(form,'The work','Domain and Entity stay with the original item.');
+      const workGrid = node('div','grid'); work.appendChild(workGrid);
+      const title = field(workGrid,'Title','edit-title','input','wide');
+      title.control.value = item.Title; title.control.required = true; title.control.maxLength = 240;
+      const type = field(workGrid,'Type','edit-type','select');
+      fill(type.control,formData.options.Type,true); type.control.value = item.Type;
+      const summary = field(workGrid,'Summary / Why','edit-summary','textarea','wide');
+      summary.control.value = item['Summary / Why']; summary.control.rows = 3; summary.control.maxLength = 4000;
+      const next = field(workGrid,'Next step / Research question','edit-next','textarea','wide');
+      next.control.value = item['Next step / Research question']; next.control.rows = 3;
+      next.control.maxLength = 4000;
+      const trigger = field(workGrid,'Revisit trigger','edit-trigger','input','wide');
+      trigger.control.value = item['Revisit trigger']; trigger.control.maxLength = 2000;
+      const assignment = section(form,'Who works next',
+        'Changing to Ready selects the next step. Stage updates automatically when required.');
+      const agentGrid = node('div','grid'); assignment.appendChild(agentGrid);
+      const agentStatus = field(agentGrid,'Agent status','edit-agent-status','select');
+      const agentType = field(agentGrid,'Agent type','edit-agent-type','select');
+      const runLocation = field(agentGrid,'Run location','edit-run-location','select');
+      const currentStatus = item['Agent status'] || 'No action';
+      const allowed = [currentStatus];
+      if (['Inbox','Rework','Approved'].includes(item.Status)) {
+        if (currentStatus === 'No action') allowed.push('Plan','Ready');
+        else if (currentStatus === 'Plan') allowed.push('Ready');
+      }
+      fill(agentStatus.control,allowed,false); agentStatus.control.value = currentStatus;
+      fill(agentType.control,formData.options['Agent type'],false);
+      agentType.control.value = item['Agent type'] || 'Unassigned';
+      fill(runLocation.control,formData.options['Run location'],true);
+      runLocation.control.value = item['Run location'];
+      const bar = node('div','actions'), save = node('button','h-button h-button--primary','Save item');
+      save.type = 'submit'; const message = node('span','message');
+      append(bar,save,message); form.appendChild(bar);
+      form.onsubmit = event => {
+        event.preventDefault(); save.disabled = true;
+        message.className = 'message'; message.textContent = 'Saving…';
+        const payload = {pipelineId:item.ID,version:item.version,fields:{
+          'Title':title.control.value,'Type':type.control.value,
+          'Summary / Why':summary.control.value,
+          'Next step / Research question':next.control.value,
+          'Revisit trigger':trigger.control.value,
+          'Agent status':agentStatus.control.value,
+          'Agent type':agentType.control.value,
+          'Run location':runLocation.control.value
+        }};
+        google.script.run.withSuccessHandler(result => {
+          google.script.run.withSuccessHandler(rows => {
+            pipelineRows = rows; renderPipelineDetail();
+            showNotice(result.changed ? 'Pipeline item saved.' : 'No changes to save.');
+          }).withFailureHandler(error => {
+            message.className = 'message error';
+            message.textContent = 'Saved, but could not refresh: ' + (error.message || String(error));
+            save.disabled = false;
+          }).getPipelineOverview();
+        }).withFailureHandler(error => {
+          message.className = 'message error';
+          message.textContent = error.message || String(error); save.disabled = false;
+        }).updatePipelineItemFromWeb(payload);
+      };
+    }
+    function defaultWording(record,code) {
+      if (code === 'OTHER') return '';
+      const option = record.options.find(o => o.code === code);
+      if (code === 'PROPOSAL' || (option && option.recommended))
+        return record.proposal.replace(/^\s*Proposed\s*:/i,'Accepted:').trim();
+      return option ? 'Accepted: ' + option.context.replace(/[.;]+$/,'') +
+        ' (Option ' + code + ').' : '';
+    }
+    function renderDetail() {
+      const r = [...dashboard.pending,...dashboard.recent].find(x => x.id === selectedId);
+      if (!r) { renderList(); return; }
+      app.replaceChildren();
+      const back = node('button','back icon-button','←'); back.type = 'button';
+      back.setAttribute('aria-label','Back to all decisions'); back.title = 'All decisions';
+      back.onclick = renderList;
+      const toolbar = node('div','detail-toolbar'); toolbar.appendChild(back); app.appendChild(toolbar);
+      const panel = node('article','panel'); app.appendChild(panel);
+      const head = node('div','panel-head');
+      append(head,node('div','eyebrow','Decision ' + r.id + ' · ' + r.domain),
+        node('h2','',r.question || r.title));
+      const meta = node('div','meta');
+      append(meta,node('span','h-pill' + (r.editable ? ' pending' : ''),r.editable ? 'Needs review' : r.status),
+        node('span','h-pill',r.stage),node('span','h-pill','Pipeline ' + r.pipelineId));
+      head.appendChild(meta); panel.appendChild(head);
+      const body = node('div','panel-body'); panel.appendChild(body);
+
+      const saved = section(body,r.editable ? 'Proposal' : 'Recorded decision');
+      saved.appendChild(node('p','plain-copy',r.proposal || 'No decision text recorded.'));
+      const why = section(body,'Reason');
+      why.appendChild(node('p','plain-copy',r.reason || 'No reason recorded.'));
+      if (r.reviewTrigger) {
+        const revisit = section(body,'Revisit trigger');
+        revisit.appendChild(node('p','plain-copy',r.reviewTrigger));
+      }
+      if (r.editable) renderDecisionForm(body,r);
+      if (r.links.length) {
+        const sources = section(body,'Evidence');
+        const links = node('div','links');
+        r.links.forEach((raw,i) => {
+          const href = safeLink(raw); if (!href) return;
+          const a = node('a','',r.links.length === 1 ? 'Open evidence ↗' : 'Evidence ' + (i+1) + ' ↗');
+          a.href = href; a.target = '_blank'; a.rel = 'noopener noreferrer'; links.appendChild(a);
+        });
+        sources.appendChild(links);
+      }
+    }
+    function renderDecisionForm(body,r) {
+      const form = node('form'); body.appendChild(form);
+      const choices = section(form,'Choose an option',
+        'The model suggestion is marked. You can select another option without requesting rework.');
+      const choiceGrid = node('div','choices'); choices.appendChild(choiceGrid);
+      const listed = r.options.length ? r.options : [{code:'PROPOSAL',context:'Use the proposal',recommended:true}];
+      [...listed,{code:'OTHER',context:'Describe a different choice',recommended:false}].forEach(o => {
+        const label = node('label','choice'), input = node('input');
+        input.type = 'radio'; input.name = 'option'; input.value = o.code;
+        if (o.recommended) input.checked = true;
+        append(label,input,node('strong','',o.code === 'OTHER' ? 'Another option' :
+          o.code === 'PROPOSAL' ? 'Use proposal' : 'Option ' + o.code),
+          node('span','',o.context));
+        if (o.recommended) label.appendChild(node('em','','Model suggests'));
+        choiceGrid.appendChild(label);
+      });
+      const action = section(form,'Record your decision');
+      const grid = node('div','grid'); action.appendChild(grid);
+      const outcomeField = field(grid,'Outcome','outcome','select');
+      const outcome = outcomeField.control;
+      [['accepted','Approve chosen option'],['rework','Request rework'],
+        ['parked','Park for now'],['rejected','Reject']].forEach(pair => {
+          const option = node('option','',pair[1]); option.value = pair[0]; outcome.appendChild(option);
+        });
+      const wordingField = field(grid,'Decision to record','wording','textarea','wide');
+      wordingField.control.rows = 4; wordingField.control.maxLength = 4000;
+      wordingField.hint.textContent = 'Edit the wording if your choice has conditions or limits.';
+      const noteField = field(grid,'Your reason or instructions','note','textarea','wide');
+      noteField.control.rows = 3; noteField.control.maxLength = 3000;
+      noteField.control.placeholder = 'One or two sentences are enough.';
+      const bar = node('div','actions'), save = node('button','h-button h-button--primary','Save decision');
+      save.type = 'submit'; const message = node('span','message');
+      append(bar,save,message); form.appendChild(bar);
+      const checked = () => form.querySelector('input[name="option"]:checked');
+      function update() {
+        const accepting = outcome.value === 'accepted';
+        choices.hidden = !accepting; wordingField.wrap.hidden = !accepting;
+        noteField.label.textContent = outcome.value === 'rework' ? 'Rework instructions' :
+          accepting ? 'Your reason (required for a different option)' : 'Why this outcome?';
+        if (accepting && checked()) wordingField.control.value = defaultWording(r,checked().value);
+      }
+      form.querySelectorAll('input[name="option"]').forEach(el => el.onchange = update);
+      outcome.onchange = update; update();
+      form.onsubmit = event => {
+        event.preventDefault(); save.disabled = true;
+        message.className = 'message'; message.textContent = 'Saving…';
+        const chosen = checked();
+        const payload = {decisionId:r.id,version:r.version,action:outcome.value,
+          optionCode:chosen ? chosen.value : '',wording:wordingField.control.value,
+          note:noteField.control.value};
+        google.script.run.withSuccessHandler(result => {
+          pipelineRows = null;
+          notice = result.warning || (result.applied ?
+            'Decision saved and Pipeline updated.' : 'Decision saved.');
+          loadDashboard(() => renderList());
+        }).withFailureHandler(error => {
+          message.className = 'message error';
+          message.textContent = error && error.message ? error.message : String(error);
+          save.disabled = false;
+        }).submitDecisionReview(payload);
+      };
+    }
+    function field(parent,labelText,id,type,extra) {
+      const wrap = node('div','field' + (extra ? ' ' + extra : ''));
+      const label = node('label','',labelText); label.htmlFor = id;
+      const hint = node('small');
+      const control = node(type,type === 'input' ? 'h-input' :
+        type === 'select' ? 'h-select' : 'h-textarea'); control.id = id;
+      append(wrap,label,hint,control); parent.appendChild(wrap);
+      return {wrap,label,hint,control};
+    }
+    function fill(select,values,blank) {
+      select.replaceChildren();
+      (blank ? [''] : []).concat(values || []).forEach(value => {
+        const option = node('option','',value || '—'); option.value = value; select.appendChild(option);
+      });
+    }
+    function renderAdd() {
+      app.replaceChildren();
+      header('Pipeline capture','Add a Pipeline item',
+        'Capture the work here. The item is written to Pipeline Master with a permanent ID.');
+      const panel = node('div','panel'), form = node('form','panel-body');
+      panel.appendChild(form); app.appendChild(panel);
+      const essentials = section(form,'The work','Start with the idea and why it matters.');
+      const eGrid = node('div','grid'); essentials.appendChild(eGrid);
+      const title = field(eGrid,'Title','item-title','input','wide'); title.control.required = true; title.control.maxLength = 240;
+      const domain = field(eGrid,'Domain','item-domain','select'); domain.control.required = true;
+      const entity = field(eGrid,'Entity','item-entity','select');
+      const type = field(eGrid,'Type','item-type','select');
+      const summary = field(eGrid,'Summary / Why','item-summary','textarea','wide');
+      summary.control.rows = 3; summary.control.maxLength = 4000;
+      fill(domain.control,Object.keys(formData.domains),true);
+      fill(type.control,formData.options.Type,true);
+      function updateEntities() {
+        fill(entity.control,formData.domains[domain.control.value] || [],true);
+        entity.wrap.hidden = !(formData.domains[domain.control.value] || []).length;
+      }
+      domain.control.onchange = updateEntities; updateEntities();
+      const next = section(form,'What happens next',
+        'Choose Ready only if an agent can start from the question below.');
+      const nGrid = node('div','grid'); next.appendChild(nGrid);
+      const agentStatus = field(nGrid,'Agent status','item-agent-status','select');
+      const agentType = field(nGrid,'Agent type','item-agent-type','select');
+      const runLocation = field(nGrid,'Run location','item-run-location','select');
+      const question = field(nGrid,'Next step / Research question','item-question','textarea','wide');
+      question.control.rows = 3; question.control.maxLength = 4000;
+      fill(agentStatus.control,formData.options['Agent status'],false);
+      fill(agentType.control,formData.options['Agent type'],false);
+      fill(runLocation.control,formData.options['Run location'],true);
+      agentStatus.control.value = 'No action'; agentType.control.value = 'Unassigned';
+      function updateReady() {
+        question.hint.textContent = agentStatus.control.value === 'Ready' ?
+          'Required for a Ready item.' : 'Optional at capture.';
+      }
+      agentStatus.control.onchange = updateReady; updateReady();
+      const more = node('details','more');
+      more.appendChild(node('summary','','Work target and revisit trigger'));
+      const mGrid = node('div','grid'); more.appendChild(mGrid);
+      const trigger = field(mGrid,'Revisit trigger','item-trigger','input','wide');
+      const linkType = field(mGrid,'Link type','item-link-type','select');
+      const url = field(mGrid,'URL','item-url','input'); url.control.type = 'url';
+      const branch = field(mGrid,'GitHub branch','item-branch','input','wide');
+      fill(linkType.control,formData.options['Link type'],true);
+      form.appendChild(more);
+      const bar = node('div','actions'), save = node('button','h-button h-button--primary','Add item');
+      save.type = 'submit'; const message = node('span','message');
+      append(bar,save,message); form.appendChild(bar);
+      form.onsubmit = event => {
+        event.preventDefault(); save.disabled = true;
+        message.className = 'message'; message.textContent = 'Adding…';
+        const payload = {'Title':title.control.value,'Domain':domain.control.value,
+          'Entity':entity.control.value,'Type':type.control.value,
+          'Summary / Why':summary.control.value,
+          'Next step / Research question':question.control.value,
+          'Revisit trigger':trigger.control.value,
+          'Agent status':agentStatus.control.value,'Agent type':agentType.control.value,
+          'Run location':runLocation.control.value,'Link type':linkType.control.value,
+          'URL':url.control.value,'GitHub branch':branch.control.value};
+        google.script.run.withSuccessHandler(result => {
+          pipelineRows = null;
+          form.reset(); agentStatus.control.value = 'No action'; agentType.control.value = 'Unassigned';
+          updateEntities(); updateReady();
+          message.className = 'message ok';
+          message.textContent = 'Added Pipeline item ' + result.id + ' · ' + result.title +
+            ' (' + result.stage + '). You can add another.';
+          save.disabled = false; title.control.focus();
+        }).withFailureHandler(error => {
+          message.className = 'message error';
+          message.textContent = error && error.message ? error.message : String(error);
+          save.disabled = false;
+        }).addPipelineItemFromWeb(payload);
+      };
+    }
+    function folderChip(value,tone) {
+      const chip = node('span','',value);
+      chip.className = 'h-pill ' + tone;
+      return chip;
+    }
+    function folderTypeTone(type) {
+      if (type === 'Agent output') return 'tone-success';
+      if (type === 'Agent reference') return 'tone-info';
+      if (type === 'Hub' || type === 'Node') return 'tone-stage';
+      return 'tone-neutral';
+    }
+    function folderRoots() {
+      return [...(folderData.tree.roots || []),...(folderData.tree.unplaced || [])];
+    }
+    function defaultFolderPath() {
+      const root = folderRoots()[0];
+      return root ? [root,...(root.children || []).slice(0,1)] : [];
+    }
+    function renderFolderBrowser() {
+      const browser = $('folder-browser');
+      browser.replaceChildren();
+      const pathBar = $('folder-path');
+      pathBar.replaceChildren();
+      const crumb = (label,path,current) => {
+        const button = node('button','folder-crumb',label);
+        button.type = 'button';
+        if (current) button.setAttribute('aria-current','page');
+        button.onclick = () => { folderPath = path; folderQuery = '';
+          $('folder-search').value = ''; renderFolderBrowser(); };
+        return button;
+      };
+      pathBar.appendChild(crumb('All folders',[],!folderPath.length));
+      folderPath.forEach((item,index) => {
+        append(pathBar,node('span','','›'),
+          crumb(item.name || 'Unnamed folder',folderPath.slice(0,index + 1),
+            index === folderPath.length - 1));
+      });
+      const roots = folderRoots();
+      if (folderQuery) {
+        const results = node('section','folder-results');
+        results.appendChild(node('h3','','Search results'));
+        let count = 0;
+        function visit(item,path) {
+          const next = [...path,item];
+          const text = [item.name,item.purpose,item.type,item.domain,item.entity,item.kind]
+            .join(' ').toLowerCase();
+          if (text.includes(folderQuery)) {
+            count++;
+            const button = node('button','folder-row'); button.type = 'button';
+            const copy = node('span','folder-row-name');
+            append(copy,node('strong','',item.name || 'Unnamed folder'),
+              node('span','folder-result-path',next.map(part => part.name).join(' › ')));
+            append(button,copy,node('span','folder-row-arrow','›'));
+            button.onclick = () => { folderPath = next; folderQuery = '';
+              $('folder-search').value = ''; renderFolderBrowser(); };
+            results.appendChild(button);
+          }
+          (item.children || []).forEach(child => visit(child,next));
+        }
+        roots.forEach(root => visit(root,[]));
+        if (!count) results.appendChild(node('p','empty','No matching folders.'));
+        browser.appendChild(results); return;
+      }
+      const column = (title,key) => {
+        const panel = node('section','folder-column');
+        const list = node('div','folder-column-scroll');
+        list.setAttribute('role','region');
+        list.setAttribute('aria-label',title);
+        append(panel,node('h3','',title),list);
+        browser.appendChild(panel);
+        list.onscroll = () => { folderScroll[key] = list.scrollTop; };
+        return list;
+      };
+      function folderRow(item,selected,onClick) {
+        const button = node('button','folder-row' + (selected ? ' selected' : ''));
+        button.type = 'button';
+        if (selected) button.setAttribute('aria-current','true');
+        append(button,node('span','folder-row-name',item.name || 'Unnamed folder'),
+          node('span','folder-row-arrow',(item.children || []).length ? '›' : ''));
+        button.onclick = onClick;
+        return button;
+      }
+      const domains = column('Domains and roots','roots');
+      (folderData.tree.roots || []).forEach(root => domains.appendChild(
+        folderRow(root,folderPath[0] === root,() => {
+          folderPath = [root]; folderScroll.children = 0;
+          renderFolderBrowser(); })));
+      if ((folderData.tree.unplaced || []).length) {
+        domains.appendChild(node('p','folder-group-label','Parent not found'));
+        folderData.tree.unplaced.forEach(root => domains.appendChild(
+          folderRow(root,folderPath[0] === root,() => {
+            folderPath = [root]; folderScroll.children = 0;
+            renderFolderBrowser(); })));
+      }
+      if (!roots.length) domains.appendChild(node('p','empty','No folders are listed in Locations.'));
+      const selected = folderPath[folderPath.length - 1];
+      const parent = folderPath[folderPath.length - 2];
+      const listingParent = selected && (selected.children || []).length ? selected : parent;
+      const children = column(listingParent ? 'Inside ' + (listingParent.name || 'folder') :
+        'Choose a folder','children');
+      if (listingParent) {
+        listingParent.children.forEach(child => children.appendChild(
+          folderRow(child,selected === child,() => {
+            if ((child.children || []).length) folderScroll.children = 0;
+            folderPath = listingParent === selected ? [...folderPath,child] :
+              [...folderPath.slice(0,-1),child];
+            renderFolderBrowser(); })));
+      }
+      if (!listingParent || !listingParent.children.length)
+        children.appendChild(node('p','empty',selected ? 'No subfolders recorded.' :
+          'Select a root folder to browse its contents.'));
+      domains.scrollTop = folderScroll.roots;
+      children.scrollTop = folderScroll.children;
+      const detail = node('section','folder-detail'); browser.appendChild(detail);
+      if (!selected) {
+        detail.appendChild(node('p','empty','Select a folder to see its details.'));
+        return;
+      }
+      const head = node('div','folder-detail-head');
+      const title = node('div');
+      append(title,node('span','eyebrow','Selected folder'),
+        node('h3','',selected.name || 'Unnamed folder'));
+      head.appendChild(title);
+      const href = safeLink(selected.url);
+      if (href) {
+        const link = node('a','h-button','Open in Drive ↗');
+        link.href = href; link.target = '_blank'; link.rel = 'noopener noreferrer';
+        head.appendChild(link);
+      }
+      detail.appendChild(head);
+      const chips = node('div','folder-chips');
+      if (selected.type) chips.appendChild(folderChip(selected.type,folderTypeTone(selected.type)));
+      if (selected.kind) chips.appendChild(folderChip(selected.kind,'tone-neutral'));
+      if (selected.entity) chips.appendChild(folderChip(selected.entity,'tone-info'));
+      detail.appendChild(chips);
+      const info = node('div','folder-info');
+      const fact = (label,value) => {
+        const box = node('div');
+        append(box,node('small','',label),node('p','',value || '—'));
+        info.appendChild(box);
+      };
+      fact('Purpose',selected.purpose);
+      fact('Parent',parent ? parent.name : 'Drive');
+      fact('Domain',selected.domain);
+      fact('Entity',selected.entity);
+      detail.appendChild(info);
+    }
+    function renderFolders() {
+      app.replaceChildren();
+      header('Locations','Folder structure',
+        'Browse the folders recorded in Pipeline Locations and open them in Drive.');
+      const controls = node('div','folder-controls');
+      const searchWrap = node('div','filter-field search-field');
+      const label = node('label','','Search folders');
+      const search = node('input','h-input'); search.type = 'search';
+      search.id = 'folder-search'; search.placeholder = 'Name, purpose or type';
+      search.value = folderQuery;
+      label.htmlFor = search.id; append(searchWrap,label,search);
+      const check = node('button','h-button','Check Drive & update Locations'); check.type = 'button';
+      append(controls,searchWrap,check); app.appendChild(controls);
+      const pathBar = node('nav','folder-path'); pathBar.id = 'folder-path';
+      pathBar.setAttribute('aria-label','Folder path'); app.appendChild(pathBar);
+      const browser = node('div','folder-browser'); browser.id = 'folder-browser';
+      app.appendChild(browser);
+      renderFolderBrowser();
+      search.oninput = () => { folderQuery = search.value.trim().toLowerCase();
+        renderFolderBrowser(); };
+      check.onclick = () => {
+        check.disabled = true; check.textContent = 'Checking Drive…';
+        google.script.run.withSuccessHandler(result => {
+          folderData = {count:result.count,tree:result.tree};
+          folderPath = defaultFolderPath(); folderQuery = '';
+          renderFolders(); renderFolderReport(result);
+        }).withFailureHandler(error => {
+          check.disabled = false; check.textContent = 'Check Drive & update Locations';
+          const message = node('p','folder-error',
+            'Folder check stopped: ' + (error.message || String(error)));
+          controls.after(message);
+        }).checkFoldersAgainstDrive();
+      };
+    }
+    function renderFolderReport(result) {
+      const report = node('section','folder-report');
+      report.appendChild(node('h3','','Drive check results'));
+      function list(title,items,describe) {
+        const group = node('div','folder-report-group');
+        group.appendChild(node('h4','',title + ' (' + items.length + ')'));
+        if (!items.length) group.appendChild(node('p','','None.'));
+        else {
+          const ul = node('ul');
+          items.forEach(item => {
+            const li = node('li','',describe(item));
+            if (item.url) {
+              const href = safeLink(item.url);
+              if (href) {
+                const a = node('a','','Open folder ↗');
+                a.href = href; a.target = '_blank'; a.rel = 'noopener noreferrer';
+                li.appendChild(a);
+              }
+            }
+            ul.appendChild(li);
+          });
+          group.appendChild(ul);
+        }
+        report.appendChild(group);
+      }
+      list('Updated in Locations',result.updates,
+        item => item.field + ': ' + item.from + ' → ' + item.to);
+      list('Needs your attention',result.problems,item => item.message);
+      list('In Drive but not in Locations',result.suggestions,
+        item => item.name + ' in ' + item.parent + ' (' +
+          [item.domain,item.entity].filter(Boolean).join(' / ') + ').');
+      app.appendChild(report);
+    }
+    function loadDashboard(done) {
+      google.script.run.withSuccessHandler(result => {
+        dashboard = result; done();
+      }).withFailureHandler(error => {
+        app.replaceChildren(node('div','loading','Could not load decisions: ' +
+          (error && error.message ? error.message : String(error))));
+      }).getReviewDashboard();
+    }
+    $('nav-decisions').onclick = () => navigate('decisions');
+    $('nav-pipeline').onclick = () => navigate('pipeline');
+    $('nav-folders').onclick = () => navigate('folders');
+    $('nav-add').onclick = () => navigate('add');
+    loadDashboard(renderList);
+  </script>
+</body>
+</html>

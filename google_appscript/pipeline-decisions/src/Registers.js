@@ -3,7 +3,10 @@
  */
 
 function registerIds() {
-  const pipeline = SpreadsheetApp.getActiveSpreadsheet();
+  // A bound spreadsheet is active from the menu and triggers. A web-app
+  // invocation has no open spreadsheet UI, so use the configured workbook.
+  const pipeline = SpreadsheetApp.getActiveSpreadsheet() ||
+    SpreadsheetApp.openById(DECISIONS_CONFIG.WEB_PIPELINE_SHEET_ID);
   const tab = pipeline.getSheetByName('Registers');
   if (!tab) throw Error('The Pipeline has no Registers tab.');
   return {PIPELINE_ID: pipeline.getId(), DECISIONS_ID: registerIdFrom(tab.getDataRange().getDisplayValues(), /decision register/i)};
