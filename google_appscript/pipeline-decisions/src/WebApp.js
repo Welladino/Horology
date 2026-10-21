@@ -180,12 +180,12 @@ function submitDecisionReview(request) {
     lock.releaseLock();
   }
   // Apps Script writes do not fire edit triggers. Apply immediately, then report any
-  // pending transition honestly; the existing timer remains a recovery path.
+  // pending transition honestly; the owner can retry applyDecisions in the editor.
   try {
     const result = applyDecisions(id).find(r => r.pipelineId === pipelineId && r.decision === id);
     return {saved: true, applied: !!(result && result.applied), warning:
       result && result.error ? result.error : result && result.applied ? '' :
-        'Decision saved; the Pipeline transition is pending. The scheduled decision check will retry.'};
+        'Decision saved; the Pipeline transition is pending. Ask the owner to run applyDecisions.'};
   } catch (error) {
     return {saved: true, applied: false, warning:
       'Decision saved; the Pipeline transition is pending: ' + error.message};

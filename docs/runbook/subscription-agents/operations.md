@@ -75,4 +75,4 @@ The scheduled session needs the skills (claude.ai skills for Claude, the install
 
 ## Maintain ClickUp integration
 
-Use the [Apps Script runbook](clasp.md) to connect, compare and publish the Apps Script projects and set up ClickUp Sync. The [Apps Script architecture](https://github.com/Welladino/Horology/blob/main/docs/architecture/subscription-agents/apps-script.md) describes their behaviour: decision rules, the Drive check, and the sync's status mapping, review and batching.
+Use the [Apps Script runbook](clasp.md) to connect, compare and publish the Apps Script projects and set up ClickUp Sync. The [Apps Script architecture](https://github.com/Welladino/Horology/blob/main/docs/architecture/subscription-agents/apps-script.md) describes decision rules, the Drive check, and one-way ClickUp status and milestone comments.

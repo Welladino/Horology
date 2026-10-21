@@ -6,8 +6,8 @@ const shared = path.dirname(fileURLToPath(import.meta.url));
 const root = path.dirname(shared);
 const name = process.argv[2];
 const check = process.argv.includes('--check');
-if (!['pipeline-decisions', 'pipeline-locations'].includes(name)) {
-  throw Error('Usage: node shared-ui/build.mjs pipeline-decisions|pipeline-locations [--check]');
+if (name !== 'pipeline-decisions') {
+  throw Error('Usage: node shared-ui/build.mjs pipeline-decisions [--check]');
 }
 const css = ['theme.css', 'controls.css'].map(file =>
   fs.readFileSync(path.join(shared, file), 'utf8').trimEnd()).join('\n\n');

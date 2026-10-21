@@ -13,7 +13,7 @@ Capture, transfer, or triage thoughts the user asks to retain across Welladino's
 
 - Read [domains, folders and templates](references/locations.md) before choosing a domain or entity, reading context or saving anything.
 - Read [record fields](references/records.md) when writing a row. Configure connectors separately for each platform.
-- Pipeline owns proposals; Drive owns supporting documents; ClickUp presents Pipeline tasks and review status. Repo Markdown is temporary technical capture, not a maintained mirror.
+- Pipeline owns proposals; Drive owns supporting documents; optional ClickUp tasks are a planning notebook. The ClickUp updater sends status and milestone comments to confirmed task links but never imports ClickUp changes. Repo Markdown is temporary technical capture, not a maintained mirror.
 - Resolve domain and entity from the conversation and existing records, using only the values in the Domains tab.
 
 ## Workflow

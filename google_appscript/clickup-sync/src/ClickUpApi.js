@@ -11,16 +11,6 @@ function api(c,path,method,payload) {
   return JSON.parse(res.getContentText()||'{}');
 }
 
-function listTasks(c,listId) {
-  let all=[];
-  for(let page=0;page<20;page++) {
-    const r=api(c,'list/'+listId+'/task?include_closed=true&subtasks=false&page='+page);
-    const tasks=r.tasks||[];all=all.concat(tasks);
-    if(tasks.length<100 || r.last_page===true) return all;
-  }
-  throw Error('List exceeds bounded scan; narrow list before syncing.');
-}
-
 function testClickUpConnection() {
   const token = PropertiesService.getScriptProperties()
     .getProperty('CLICKUP_TOKEN');

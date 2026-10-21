@@ -63,15 +63,15 @@ Start with:
 ## Decision and permission boundaries
 
 - This is the only skill that creates folders, and only the folders in a tree the founder has just approved. Never move, rename, delete or share Drive folders or files.
-- To rename a folder or domain, ask the founder to rename it in Drive, then run **Extensions → Horology — Workbook → Check folders against Drive**, which updates Name and Parent. A domain or entity renamed in Locations also needs the same change on its existing Pipeline Master, Decision Register and Document Index rows: list those rows and offer to update them, and change them only after a yes. If ClickUp Sync mirrors the domain, its `LIST_<Domain>` Script Property needs the new name too; the founder changes that in the ClickUp Sync project.
+- To rename a folder or domain, ask the founder to rename it in Drive, then run **Horology workspace → Folders → Check Drive & update Locations**, which updates Name and Parent. A domain or entity renamed in Locations also needs the same change on its existing Pipeline Master, Decision Register and Document Index rows: list those rows and offer to update them, and change them only after a yes. Existing ClickUp task links remain attached to their Pipeline IDs.
 - Don't create Pipeline items or change their status.
 
 ## Output requirements
 
 - The tree as created, with links, and the rows added to Locations, Templates or Registers.
 - Reminders, as they apply:
-  - run **Extensions → Horology — Workbook → Check folders against Drive** to confirm the rows match Drive
-  - update the Domain name on existing rows, and in ClickUp Sync, after a rename
+  - run **Horology workspace → Folders → Check Drive & update Locations** to confirm the rows match Drive
+  - update the Domain name on existing rows after a rename
   - put the material agents should read into the new Agent reference folders
 
 ## Verification before finishing

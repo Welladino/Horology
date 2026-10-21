@@ -25,7 +25,7 @@ flowchart TB
   subgraph records["Subscription-agent records"]
     sheets["<b>Drive and Sheets</b><br/>Pipeline, registers, Locations and deliverables"]
     apps["<b>Apps Script</b><br/>Applies decisions, checks Locations, optional ClickUp Sync"]
-    clickup["<b>ClickUp</b><br/>Optional review screen"]
+    clickup["<b>ClickUp</b><br/>Optional planning notebook"]
   end
   subs --> sheets
   gsync --> sheets
@@ -46,7 +46,7 @@ Both reach the outside world only through two MCP services: the **gateway** (cap
 | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | [Hermes](hermes/hermes-agents.md)                                  | Containers, kanban dispatch, profiles and personas, tools and limits                                      |
 | [Subscription agents](subscription-agents/subscription-agents.md) | Stages, registers and IDs, ClickUp sync, skills and connectors                                            |
-| [Apps Script projects](subscription-agents/apps-script.md)        | Pipeline decisions, the Locations script and the ClickUp sync: what each does and where its settings live |
+| [Apps Script projects](subscription-agents/apps-script.md)        | Pipeline workspace and linked ClickUp updates: what each does and where settings live |
 | [MCP services](mcp/mcp-services.md)                                | What the two services share: sign-in, local and cloud copies, logging and errors                          |
 | ↳ [Gateway](mcp/gateway.md)                                        | Tools, shared policy, credit budgets, provider boundaries                                                 |
 | ↳ [Document graph](mcp/document-graph.md)                          | Documents, passage search, topics, entities, the sync job                                                 |
@@ -64,7 +64,7 @@ Both reach the outside world only through two MCP services: the **gateway** (cap
 | `jobs/document-graph-sync/`             | Document Index sync job                                                                                                                                          |
 | `shared-runtime/`                       | Database pool, Google sign-in, settings, logging and errors for every service                                                                                    |
 | `alembic/`                              | Database migrations                                                                                                                                              |
-| `google_appscript/`                     | Apps Script projects: Pipeline decisions, Locations, ClickUp Sync                                                                                                |
+| `google_appscript/`                     | Apps Script projects: Pipeline decisions and ClickUp Sync |
 | `cloudbuild.yaml`, `.github/workflows/` | Release and CI gates                                                                                                                                             |
 | `ops/gcp/`                              | IAM, monitoring and Artifact Registry clean-up configuration                                                                                                     |
 

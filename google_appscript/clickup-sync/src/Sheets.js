@@ -1,8 +1,7 @@
 /* Master reads and precise writes. */
 
-const PIPE_FIELDS = ['ID','Title','Domain','Status','Agent status','Agent type',
-  'Stage','ClickUp Pipeline URL','Current decision ID','Document count'];
-const DEC_FIELDS = ['Decision ID','Status','Pipeline ID','Review stage','Rework instructions'];
+const PIPE_FIELDS = ['ID','Title','Status','Stage','ClickUp Pipeline URL'];
+const DEC_FIELDS = ['Decision ID','Status','Pipeline ID','Review stage','Question','Decision'];
 
 function readTable(book, required) {
   const sheet = book.getSheetByName('Master');

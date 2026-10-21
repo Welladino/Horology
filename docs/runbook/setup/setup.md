@@ -17,7 +17,7 @@ flowchart TB
     s6["<b>6. Install the skills and connectors</b><br/>Claude: skill zips and two connectors<br/>Codex: four plugins"]
   end
   s7["<b>7. Run your first item</b><br/>Capture it, set Ready,<br/>ask the supervisor to run it"]
-  s8["<b>Optional: ClickUp Sync</b><br/>Standalone script with your token<br/>and one list per domain"]
+  s8["<b>Optional: ClickUp updates</b><br/>Standalone script with your token<br/>and confirmed task links"]
   s9["<b>8. Optional: watchers</b><br/>Scheduled agents that check something<br/>regularly and write a report"]
   s1 --> s2 --> s3 --> s4 --> s5 --> s6 --> s7
   s4 -.-> s8
@@ -30,7 +30,7 @@ flowchart TB
 - A Claude subscription (Claude Code or claude.ai), a Codex subscription, or both.
 - The Horology operator, who adds you to the MCP services ([access runbook](../mcp/access.md)).
 - To change scripts or skills: Node.js 22 and clasp 3.4.1 ([Apps Script runbook](../subscription-agents/clasp.md)), and this repository.
-- Optional: a ClickUp workspace and API token, to review work in ClickUp.
+- Optional: a ClickUp workspace and API token, to update linked planning tasks.
 
 ## 1. Copy the starter registers
 
@@ -145,7 +145,7 @@ clasp create --title "Horology — Pipeline decisions" --parentId YOUR_PIPELINE_
 clasp push
 ```
 
-Then reload the Pipeline, configure the private web app and run the steps above. The separate legacy Workbook project is not required for new copies.
+Then reload the Pipeline, configure the private web app and run the steps above.
 
 ## 5. Get access to the MCP services
 
@@ -181,7 +181,7 @@ The same skill schedules the other agents that suit a timer, each marked by its 
 
 ## Optional: ClickUp Sync
 
-To review items in ClickUp, set up the standalone ClickUp Sync with your token, your Pipeline ID and one list per domain: [Apps Script runbook → ClickUp Sync](../subscription-agents/clasp.md#clickup-sync).
+To send status and milestone comments to existing ClickUp planning tasks, link each confirmed task URL in Pipeline and set up the standalone ClickUp Sync with your token and Pipeline ID: [Apps Script runbook → ClickUp Sync](../subscription-agents/clasp.md#clickup-sync).
 
 ## Checklist
 

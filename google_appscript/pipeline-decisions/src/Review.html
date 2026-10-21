@@ -60,11 +60,6 @@
     .record:hover { border-color:#7aaf94; box-shadow:0 6px 18px #17323816; }
     .decision-group { border:1px solid var(--line); border-radius:16px; background:white;
       box-shadow:0 3px 14px #17323808; overflow:hidden; }
-    .decision-group[open] { border-color:#92b7a3; }
-    .decision-group summary { cursor:pointer; list-style:none; }
-    .decision-group summary::-webkit-details-marker { display:none; }
-    .decision-group summary.h-row strong { margin:0; }
-    .decision-group[open] .h-row__chevron { transform:rotate(180deg); }
     .decision-group .subrows { border-top:1px solid var(--line); padding:7px; }
     .decision-subrow { display:flex; align-items:center; justify-content:space-between; gap:15px;
       width:100%; padding:13px; text-align:left; background:white; color:var(--ink);
@@ -94,11 +89,6 @@
     .panel-body { padding:clamp(23px,4vw,43px); display:grid; gap:31px; }
     .section h3 { margin:0 0 10px; font-size:18px; letter-spacing:-.02em; }
     .section p.hint { color:var(--muted); font-size:13px; margin:0 0 13px; }
-    .proposal { padding:19px 21px; border-radius:0 12px 12px 0;
-      border-left:4px solid var(--green); background:var(--pale); white-space:pre-wrap; }
-    .details { border:1px solid var(--line); border-radius:12px; background:#fbfcfa; }
-    .details summary { cursor:pointer; padding:14px 17px; font-weight:700; color:#315960; }
-    .details .inside { padding:1px 17px 18px; white-space:pre-wrap; color:#39525a; }
     .choices { display:grid; grid-template-columns:repeat(auto-fit,minmax(225px,1fr)); gap:11px; }
     .choice { position:relative; display:block; border:1.5px solid var(--line); border-radius:14px;
       min-height:112px; padding:17px; cursor:pointer; }
@@ -191,11 +181,9 @@
     .edit-glyph { font-size:21px; line-height:1; }
     .panel-head,.panel-body { border-color:var(--line); }
     .panel-head,.panel-body { padding:clamp(21px,3vw,36px); }
-    .proposal { background:#343a3e; border-color:#dfe3e4; }
-    .details,.filter-panel,.more { border:1px solid var(--line); border-radius:14px;
+    .filter-panel,.more { border:1px solid var(--line); border-radius:14px;
       background:#2a2f32; }
-    .details summary,.filter-panel summary,.more summary { color:var(--ink); }
-    .details .inside { color:var(--muted); }
+    .filter-panel summary,.more summary { color:var(--ink); }
     .filter-panel,.more { padding:14px 17px; }
     .filter-panel summary,.more summary { display:flex; align-items:center;
       justify-content:center; width:max-content; max-width:100%; margin:0 auto;

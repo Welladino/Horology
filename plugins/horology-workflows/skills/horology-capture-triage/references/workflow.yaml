@@ -11,7 +11,7 @@ actors:
   planner: horology-planner, acting only on Agent status Plan rows.
   supervisor: horology-supervisor (dispatch and item modes) and the specialists it runs.
   synthesis: horology-synthesis-artifacts, invoked by the supervisor in the same Stage 3 run.
-  sync: The pipeline-decisions Apps Script applying recorded decisions (or the ClickUp sync, when ClickUp review is enabled).
+  sync: The pipeline-decisions Apps Script applying recorded decisions.
 
 # Pipeline Master fields that drive the workflow, with their allowed values.
 fields:

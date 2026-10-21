@@ -1,11 +1,10 @@
 # Apps Script projects: setup and publishing
 
-Three projects, each in its own folder under `google_appscript/`; what they do is in the [Apps Script architecture](https://github.com/Welladino/Horology/blob/main/docs/architecture/subscription-agents/apps-script.md). Run each project's commands from its folder.
+Two projects, each in its own folder under `google_appscript/`; what they do is in the [Apps Script architecture](https://github.com/Welladino/Horology/blob/main/docs/architecture/subscription-agents/apps-script.md). Run each project's commands from its folder.
 
 | Project | Folder | Script ID | Attached to |
 |---|---|---|---|
 | [Horology — Pipeline decisions](https://script.google.com/d/16wWrpPS5GnmZck7ZSKXPV61by7_Vy8vXjAj-ddSAt5N7pDtMnxv5m5Iy/edit) | `pipeline-decisions/` | `16wWrpPS5GnmZck7ZSKXPV61by7_Vy8vXjAj-ddSAt5N7pDtMnxv5m5Iy` | Pipeline workbook |
-| [Horology — Workbook](https://script.google.com/d/1kG83_A4JUJ00QryyZHEV4oxVJKr6_-bBIcbvCWJZ6hdxwLfL_A4yKpKj/edit) | `pipeline-locations/` | `1kG83_A4JUJ00QryyZHEV4oxVJKr6_-bBIcbvCWJZ6hdxwLfL_A4yKpKj` | Pipeline workbook |
 | [Horology — ClickUp Sync](https://script.google.com/d/1SHh-DazeGYhF5LrHl1m5itQTqYblyQ6k8HmiVRekSMgYR0VjY1Ks6pyG/edit) | `clickup-sync/` | `1SHh-DazeGYhF5LrHl1m5itQTqYblyQ6k8HmiVRekSMgYR0VjY1Ks6pyG` | Standalone |
 
 ## Set up clasp
@@ -38,7 +37,7 @@ Keep `"rootDir": "src"`. Status lists the files that would upload: only `src/` m
 
 ## Publish a change
 
-For `pipeline-decisions` or `pipeline-locations`, build the shared UI fragment first and use the package script to push it:
+For `pipeline-decisions`, build the UI fragment first and use the package script to push it:
 
 ```sh
 npm run ui:build
@@ -46,7 +45,7 @@ npm test
 npm run clasp:push
 ```
 
-The shared source is `google_appscript/shared-ui/`; each project's generated `src/SharedUi.html` must be current. `npm test` checks this. For `clickup-sync`, which has no HTML fragment, use the ordinary commands below.
+The UI source is `google_appscript/shared-ui/`; its generated `src/SharedUi.html` must be current. `npm test` checks this. For `clickup-sync`, which has no HTML fragment, use the ordinary commands below.
 
 ```sh
 npm test
@@ -69,11 +68,11 @@ diff -ru src "$compare_dir/src"
 
 ## Pipeline decisions
 
-Bound to the Pipeline workbook. **Extensions → Horology — Pipeline decisions → Open Horology workspace** opens the private web app. The decision timer and edit trigger remain active. For a new copy, first check the Registers link and `WEB_PIPELINE_SHEET_ID`, then run `installTriggers` once in the Apps Script editor; `previewDecisions` and `stopTriggers` are administrator functions there, not menu items.
+Bound to the Pipeline workbook. **Extensions → Horology — Pipeline decisions → Open Horology workspace** opens the private web app. The founder removed its time trigger; web decisions apply immediately, while the edit trigger can process direct human edits if still installed. Apps Script/API writers must call `applyDecisions` explicitly. `installTriggers` would recreate both the edit and time triggers, so do not run it unless that behavior is wanted.
 
 ## Locations
 
-The active folder tree and **Check Drive & update Locations** action are in the Horology web workspace’s **Folders** view. The legacy `pipeline-locations` project no longer adds a workbook menu. The web app may ask the owner to authorize read-only Drive access after the Folders release.
+The folder path browser and **Check Drive & update Locations** action are in the Horology web workspace’s **Folders** view. The web app may ask the owner to authorize read-only Drive access.
 
 ## ClickUp Sync
 
@@ -83,20 +82,19 @@ Standalone. In the project's **Project Settings → Script Properties**:
 |---|---|
 | `CLICKUP_TOKEN` | Your personal ClickUp API token (ClickUp settings → Apps). Type it here only. |
 | `PIPELINE_SHEET_ID` | The Pipeline workbook ID: `1aL678ACs97YpLIGrGU5LbpXHc7jQBxl64ED-sLyehvI` |
-| `LIST_<Domain>` | One per mirrored domain, spelled as on the Domains tab, e.g. `LIST_Horology` = `901820246905`, `LIST_Article Aggregator` = `901816729049` |
 
-To find list IDs, run `discoverClickUpLists`, or take the number after `/li/` in the list's URL.
+Map an existing task by placing its full `https://app.clickup.com/t/...` URL in that Pipeline row's **ClickUp Pipeline URL** cell. AI can suggest a match, but confirm the task before saving its URL. Unlinked rows are ignored; this script does not create tasks.
 
 Then, in the editor:
 
-1. `initializeSheets`, once per workbook: adds any missing fields; no ClickUp access.
-2. `previewSync`: check the Execution log lists the items, task changes and comments you expect. Writes nothing.
-3. `applySync` once, and check the tasks and comments in ClickUp. Run it again to confirm nothing is duplicated.
-4. `installHourlyTrigger` to run every hour. `stopSync` removes it.
+1. `previewSync`: inspect the linked task IDs and proposed status changes in the Execution log. Writes nothing.
+2. `applySync` once to align status and establish the baseline. It does not repost historical decisions or documents.
+3. Make a small test change to a linked Pipeline row or its indexed documents, run `previewSync`, then `applySync`. Check that one comment appears and that repeating the run posts nothing.
+4. Keep the existing hourly `applySync` trigger. If it is missing, `installHourlyTrigger` creates one; it leaves an existing trigger alone. `stopSync` removes it.
 
 To pause: `stopSync`, or `ENABLE_WRITES: false` in `src/Config.js` and push.
 
-To add a domain: add its Root folder row in Locations, then its `LIST_<Domain>` property. To stop one: delete the property.
+The previous `LIST_<Domain>` Script Properties are ignored. They may be removed after the new version is verified.
 
 ## Troubleshooting
 
@@ -108,8 +106,8 @@ To add a domain: add its Root folder row in Locations, then its `LIST_<Domain>` 
 | Unexpected upload files | `.clasp.json` rootDir, `.claspignore`, `clasp status` |
 | A menu is missing in the workbook | Reload the workbook; the menus are added when it opens |
 | "Registers tab needs exactly one row matching…" | The Registers tab has one row named like the register, with a Google Sheets link |
-| ClickUp item blocked "Missing or duplicate domain mapping" | A `LIST_<Domain>` property spelled as on the Domains tab |
-| ClickUp item blocked "Domain/list changed" | Move the task in ClickUp, then fix its entry in the `_ClickUp Sync` tab |
+| ClickUp item blocked "Task link conflicts with existing sync state" | Confirm the Pipeline URL, then reconcile the old task ID in `_ClickUp Sync` |
+| ClickUp item blocked "Uncertain previous ClickUp write" | Inspect ClickUp for the comment before clearing the pending state; avoid duplicates |
 | Remote edits differ | Compare as above before pushing |
 
 Runtime errors are in each project's **Executions** view. `clasp run` needs extra API setup and isn't used here.
