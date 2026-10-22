@@ -28,7 +28,7 @@ For each Pipeline row with Agent status Plan (or the one item you were given, if
    - **A split:** it needs several distinct pieces of work, often for different specialists or in an order.
    - **Nothing more:** it's already well scoped, or the graph already answers it. Say so in the `finish_run` notes.
 5. For a sharper question, rewrite Next step / Research question as one bounded question with what "answered" looks like. Keep the old wording for the `finish_run` notes.
-6. For a split, rewrite Next step / Research question as a numbered list: one bounded question or task per line, in order, ending with the suggested specialist in brackets where one clearly fits. Keep the old wording for the notes. Usually 2–5 steps; if it needs more, it should probably be separate Pipeline items, so say that instead.
+6. For a split, rewrite Next step / Research question as a numbered list with actual cell line breaks: one bounded question or task per line, in order, ending with the suggested specialist in brackets where one clearly fits. Do not join the steps into a paragraph or store literal `\n` characters. Keep the old wording for the notes. Usually 2–5 steps; if it needs more, it should probably be separate Pipeline items, so say that instead.
 7. Set Planner output to **Yes** (unless nothing changed), Agent status to **No action**, and Updated to today. Call `finish_run` as done, with the old wording and a one-line reason in notes.
 
 ## Decision and permission boundaries

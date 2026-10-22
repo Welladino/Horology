@@ -19,7 +19,8 @@ function linkedSyncRows(c,rows,st,out) {
       reason='ClickUp task also linked to Pipeline '+taskOwners[task].filter(other=>other!==id).join(', ')+'.';
     else if(prior.pending) reason='Uncertain previous ClickUp write; reconcile _ClickUp Sync first.';
     else if(prior.taskId && prior.taskId!==task) reason='Task link conflicts with existing sync state.';
-    else if(!Object.prototype.hasOwnProperty.call(STATUS_MAP,norm(d.Status)))
+    else if(!Object.prototype.hasOwnProperty.call(STATUS_MAP,norm(d.Status)) &&
+        !Object.prototype.hasOwnProperty.call(COMMENT_ONLY_STATUSES,norm(d.Status)))
       reason='Unknown Pipeline status '+d.Status+'.';
     if(reason) {out.push({pipelineId:id,status:'blocked',reason});counts.blocked++;return;}
     linked.push({row,task,prior});

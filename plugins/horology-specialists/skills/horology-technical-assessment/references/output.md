@@ -16,6 +16,8 @@ Generate the top summary and JSON from the same evidence and written reasons. Di
 
 Read live sheet metadata and headers before saving. Pipeline Master is the editable record. Resolve by permanent numeric ID, not row position or External ID. Agent type includes Manual; automated selection skips Manual. Link type/URL/GitHub branch identify the work target, while Document Index associates documents with Pipeline ID.
 
+When writing Pipeline Summary / Why, Next step / Research question or Revisit trigger, or Decision Register Question, Decision, Reason or Rework instructions, use actual cell line breaks between distinct points. Put numbered steps on separate lines rather than in a run-on paragraph or literal `\n` text. Keep a short single thought on one line, preserve founder-written formatting, and read back multiline cells to verify the breaks.
+
 Upsert [Document Index](https://docs.google.com/spreadsheets/d/1kObhQNjsFhziS-wRzjaEIzr9j8jjbfvd-ZgvzuwQ-Jc/edit) by Drive file ID/URL, preserving its document ID. Allocate permanent numeric Document IDs from live records and match dropdowns. Record the assessment as research, Draft, with Related Pipeline URL. Domain and Entity come from the Domains tab; set Entity only when the domain lists entities. Graph Inclusion is the founder's choice; rows set TRUE are copied into the document graph by the sync job.
 
 In [Pipeline](https://docs.google.com/spreadsheets/d/1aL678ACs97YpLIGrGU5LbpXHc7jQBxl64ED-sLyehvI/edit), update the specific next decision/question; record document links in Document Index. Set Awaiting decision when ready for founder review, not when evidence still blocks the assessment.

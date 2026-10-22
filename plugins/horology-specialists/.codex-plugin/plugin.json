@@ -12,7 +12,7 @@
     "capabilities": []
   },
   "name": "horology-specialists",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Horology specialist agents for Pipeline items: research, assessment, strategy, content and visual Stage 4 synthesis artifacts. Each saves its output to Drive and the registers for founder review.",
   "author": {
     "name": "Saravanaraj",

@@ -3,11 +3,14 @@ const SYNC_CONFIG = {
   PILOT_PIPELINE_IDS: [], // Optional temporary scope, e.g. ['37'].
   MAX_ITEMS_PER_RUN: 50,
   ENABLE_WRITES: true,
-  SYNC_ALL: true // true + empty pilot IDs considers every linked Pipeline row.
+  SYNC_ALL: true, // true + empty pilot IDs considers every linked Pipeline row.
+  WORKSPACE_URL: 'https://script.google.com/a/macros/welladino.com/s/AKfycbxNK7mEVHiTBH-X_Upl8dOYA5sD6ATfEWCnyHrw8u5_fZzxyQuCMm4maiHUn1qJGD4Z2A/exec'
 };
-const STATUS_MAP = {inbox:'backlogs', park:'blocked', parked:'blocked', researching:'open',
+const STATUS_MAP = {inbox:'backlogs', parked:'blocked', researching:'open',
   'awaiting decision':'review', approved:'open', rework:'backlogs',
-  'hand off':'closed', 'handed off':'closed', reject:'rejected', rejected:'rejected'};
+  rejected:'rejected'};
+// Completed still posts notebook updates; the founder closes the ClickUp task.
+const COMMENT_ONLY_STATUSES = {completed:true};
 
 function config() {
   const p = Object.assign({}, SYNC_CONFIG);

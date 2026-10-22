@@ -9,13 +9,14 @@ function syncRow(c,pt,item,st,live,out) {
   const task=api(c,'task/'+item.task);
   if(String(task.id)!==item.task) throw Error('ClickUp returned a different task ID.');
   const desired=STATUS_MAP[norm(row.data.Status)],remote=norm(task.status&&task.status.status);
-  if(remote!==desired) {
+  if(desired && remote!==desired) {
     out.push({pipelineId:id,action:'update task status',taskId:item.task,from:remote,to:desired});
     if(live) api(c,'task/'+item.task,'put',{status:desired});
   }
   const update=notebookUpdate(c,pt,row,s.notebook,item.snapshot);
   if(update) {
-    out.push({pipelineId:id,action:'post milestone comment',taskId:item.task});
+    out.push({pipelineId:id,action:'post milestone comment',taskId:item.task,
+      ...(!live ? {comment:update} : {})});
     if(live) {
       s.pending='comment';s.pendingHash=hash(update);st.save(key,s);
       const result=api(c,'task/'+item.task+'/comment','post',{comment_text:update,notify_all:false});
@@ -25,7 +26,7 @@ function syncRow(c,pt,item,st,live,out) {
   }
   if(live) {
     s.taskId=item.task;s.notebook=item.snapshot;
-    s.remote=desired;s.sheetStatus=row.data.Status;s.stage=row.data.Stage;
+    s.remote=desired||remote;s.sheetStatus=row.data.Status;s.stage=row.data.Stage;
     st.save(key,s);
   }
 }

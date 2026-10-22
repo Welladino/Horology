@@ -9,7 +9,7 @@ The workflow's states, field values and allowed moves (with who may make each) a
 ```mermaid
 stateDiagram-v2
   state "Awaiting decision" as Awaiting
-  state "Handed off" as HandedOff
+  state "Completed" as Completed
   [*] --> Inbox: capture · capture skill · Stage 0
   Inbox --> Parked: park · founder
   Rework --> Parked: park · founder
@@ -20,14 +20,14 @@ stateDiagram-v2
   Researching --> Awaiting: submit-for-review · supervisor · Stage 2
   Researching --> Awaiting: synthesize-stage-3 · supervisor + synthesis specialist · Stage 4
   Awaiting --> Approved: accept-stage-1 · founder or sync · Stage 3, Ready
-  Awaiting --> HandedOff: accept-stage-3 · founder or sync
+  Awaiting --> Completed: accept-stage-3 · founder or sync
   Awaiting --> Rework: rework · founder or sync · Ready
   Awaiting --> Parked: decide-park · founder or sync
   Awaiting --> Rejected: decide-reject · founder or sync
   Inbox --> Rejected: reject · founder
   Parked --> Rejected: reject · founder
   Rejected --> Inbox: reopen · founder
-  HandedOff --> [*]
+  Completed --> [*]
 ```
 
 **Agent status** (whether an agent should act on it):

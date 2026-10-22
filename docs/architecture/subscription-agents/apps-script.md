@@ -34,7 +34,7 @@ When the current decision for an item that is **Awaiting decision** is set to ac
 | Decision                           | Review stage | Pipeline becomes                  |
 | ---------------------------------- | ------------ | --------------------------------- |
 | accepted                           | Investigation proposal | Approved, Stage 3, Ready          |
-| accepted                           | Specialist deliverable | Handed off, Stage 4, No action    |
+| accepted                           | Specialist deliverable | Completed, Stage 4, No action     |
 | rework (needs Rework instructions) | either | Rework, back to the reviewed stage, Ready |
 | parked                             | Investigation / Specialist | Parked, Stage 2 / Stage 4, No action |
 | rejected                           | Investigation / Specialist | Rejected, Stage 2 / Stage 4, No action |
@@ -50,7 +50,7 @@ Functions: `previewDecisions` (reports, writes nothing), `applyDecisions` (a pre
 
 ### Founder review web page
 
-The [private Horology workspace](https://script.google.com/a/macros/welladino.com/s/AKfycbz3M-ONEZF3ox378oBdoecMb0wV7WdJNZX0jQgrq7NAEDqRZbs0OVCuYPgob7qrPWrr2Q/exec) is an Apps Script HTML web app in the same project. Its deployment executes as the owner and is restricted to the owner's account. The Extensions menu uses this domain-scoped link. It adds no Sheets tab and needs no Cloud Run change.
+The [private Horology workspace](https://script.google.com/a/macros/welladino.com/s/AKfycbxNK7mEVHiTBH-X_Upl8dOYA5sD6ATfEWCnyHrw8u5_fZzxyQuCMm4maiHUn1qJGD4Z2A/exec) is an Apps Script HTML web app in the same project. Its deployment executes as the owner and is restricted to the owner's account. The Extensions menu uses this domain-scoped link. It adds no Sheets tab and needs no Cloud Run change.
 
 The Decisions view shows expandable rows only; opening a decision shows its options and input form. It lists proposed decisions only when they are the current decision of a Pipeline item still Awaiting decision, and displays decided records read-only. It shows the question, proposal and reason, evidence links, and option codes mentioned in the proposal text. Those codes are presentation hints: the Decision Register still stores options as prose, so the founder checks and may edit the final decision wording. Choosing an alternative requires a short founder reason, not a rework cycle.
 
@@ -74,15 +74,15 @@ This optional standalone Apps Script updates ClickUp tasks already linked in Pip
 
 ### Status and comments
 
-Pipeline status maps one way to ClickUp: Inbox and Rework → backlogs; Parked → blocked; Researching and Approved → open; Awaiting decision → review; Handed off → closed; Rejected → rejected. The ClickUp list must support those statuses. A later Pipeline change can replace a status set manually in ClickUp.
+Pipeline status maps one way to ClickUp: Inbox and Rework → backlogs; Parked → blocked; Researching and Approved → open; Awaiting decision → review; Rejected → rejected. **Completed does not change ClickUp status**; the founder closes the task manually. The ClickUp list must support the mapped statuses. A later mapped Pipeline change can replace a status set manually in ClickUp.
 
-The run compares Pipeline status and stage, Decision Register records, and Document Index links with the last successful snapshot. It posts one concise combined comment per linked task when milestones or indexed documents change. The first run establishes a baseline and aligns status without reposting historical decisions and documents. Unindexed Drive files are not detected; task descriptions and personal comments are left alone.
+The run compares Pipeline status and stage, Decision Register records, and Document Index links with the last successful snapshot. It posts one combined "Horology updates:" comment per linked task when milestones or indexed documents change, with a Horology workspace link and the Pipeline sheet row. Completed can still produce this comment. The first run establishes a baseline and aligns mapped statuses without reposting historical decisions and documents. Unindexed Drive files are not detected; task descriptions and personal comments are left alone.
 
 ### Selection and recovery
 
-Unlinked rows are skipped. Invalid URLs, duplicate task mappings, conflicting old task IDs and uncertain writes block the item. Duplicate Pipeline or Decision IDs, missing headers and invalid Document Index data stop the run. Only changed or new baselines call ClickUp. Each run handles up to `MAX_ITEMS_PER_RUN` (50) pending items with an ID cursor; preview writes nothing.
+Unlinked rows are skipped. Invalid URLs, duplicate task mappings, conflicting old task IDs and uncertain writes block the item. Duplicate Pipeline or Decision IDs, missing headers and invalid Document Index data stop the run. Only changed or new baselines call ClickUp. Each run handles up to `MAX_ITEMS_PER_RUN` (50) pending items with an ID cursor; preview writes nothing and includes the exact proposed comment in its output.
 
-The Pipeline's **`_ClickUp Sync`** tab holds task IDs, snapshots, pending comment markers and the cursor. A timeout after a comment request leaves a pending marker to prevent a duplicate; inspect ClickUp and reconcile the state before retrying. The script locks runs, paces API calls and never logs the token or comment body. `CLICKUP_TOKEN` and `PIPELINE_SHEET_ID` are its only required Script Properties; old `LIST_<Domain>` properties are ignored.
+The Pipeline's **`_ClickUp Sync`** tab holds task IDs, snapshots, pending comment markers and the cursor. A timeout after a comment request leaves a pending marker to prevent a duplicate; inspect ClickUp and reconcile the state before retrying. The script locks runs and paces API calls; preview output includes the proposed comment, so avoid sharing its logs externally. `CLICKUP_TOKEN` and `PIPELINE_SHEET_ID` are its only required Script Properties; old `LIST_<Domain>` properties are ignored.
 
 Public functions: `previewSync`, `applySync`, `installHourlyTrigger`, `stopSync`, `testClickUpConnection`, `initializeSheets`, and `refreshDocumentCounts`. The last refreshes Document count separately; ClickUp sync itself does not write that field.
 

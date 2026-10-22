@@ -71,8 +71,9 @@ def test_statuses_match_clickup_sync_status_map(wf):
     config = (CLICKUP_SYNC / "src" / "Config.js").read_text()
     block = re.search(r"STATUS_MAP\s*=\s*\{(.*?)\};", config, re.S).group(1)
     keys = {m.strip("'\" ") for m in re.findall(r"([\w' ]+):", block)}
-    # The sync also accepts verb spellings (park, hand off, reject); every workflow status must be mapped.
-    assert {s.lower() for s in wf["statuses"]} <= keys
+    # Completed sends a comment without changing the ClickUp task status.
+    assert {s.lower() for s in wf["statuses"] if s != "Completed"} == keys
+    assert "completed:true" in config
 
 
 def test_pipeline_decisions_script_matches_the_decision_transitions(wf):

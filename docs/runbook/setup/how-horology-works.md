@@ -64,7 +64,7 @@ flowchart TB
   decide["<b>6. You decide</b><br/>In the Decision Register: accepted, rework (with<br/>instructions), parked or rejected"]
   apply["<b>7. Applied</b><br/>The decisions script moves the item on<br/>within 10 minutes"]
   stage3["<b>Accepted at Stage 1</b><br/>Approved and Ready for the detailed<br/>Stage 3 deliverable, then review again"]
-  done["<b>Accepted at Stage 3</b><br/>Handed off: done"]
+  done["<b>Accepted at Stage 3</b><br/>Completed: done"]
   capture --> plan --> ready
   capture --> ready
   ready --> run --> results --> decide --> apply

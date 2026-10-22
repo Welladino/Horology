@@ -12,6 +12,7 @@ function fixture(rows) {
   const tasks={abc:{id:'abc',status:{status:'backlogs'},name:'Personal plan',description:'My own notes'},
     def:{id:'def',status:{status:'backlogs'},name:'Second plan',description:'Private checklist'}};
   const c={PIPELINE_SHEET_ID:'pipe',DECISIONS_SHEET_ID:'dec',DOCUMENT_INDEX_SHEET_ID:'docs',
+    WORKSPACE_URL:'https://script.google.com/a/macros/welladino.com/s/workspace/exec',
     CLICKUP_TOKEN:'token',ids:[],max:50};
   const ctx=vm.createContext({Date,JSON,Object,Array,String,Number,Set,Error,
     console:{log:value=>logs.push(value)},
@@ -80,6 +81,8 @@ test('changed status and decision produce one concise comment, once',()=>{
   assert.equal(posts.length,1);
   assert.match(posts[0].payload.comment_text,/Pipeline: Stage 3 · Approved/);
   assert.match(posts[0].payload.comment_text,/Decision 4 · accepted/);
+  assert.match(posts[0].payload.comment_text,/^Horology updates:/);
+  assert.match(posts[0].payload.comment_text,/Horology workspace: https:\/\/script\.google\.com\/a\/macros\/welladino\.com\/s\/workspace\/exec/);
   assert.equal(f.tasks.abc.status.status,'open');
   assert.equal(f.tasks.abc.description,'My own notes');
 });
@@ -90,10 +93,37 @@ test('new indexed document produces a linked comment and no duplicate',()=>{
   const posts=f.calls.filter(x=>x.method==='post');
   assert.equal(posts.length,1);assert.match(posts[0].payload.comment_text,/Assessment.*doc1\/edit/);
 });
+test('Completed posts a comment but leaves ClickUp status for the founder to close',()=>{
+  const f=fixture();f.run(true);
+  f.pt.rows[0].data.Status='Completed';f.pt.rows[0].data.Stage='Stage 4';
+  f.tasks.abc.status.status='review';
+  f.run(true);f.run(true);
+  assert.equal(f.tasks.abc.status.status,'review');
+  assert.equal(f.calls.filter(x=>x.method==='put').length,0);
+  const posts=f.calls.filter(x=>x.method==='post');
+  assert.equal(posts.length,1);
+  assert.match(posts[0].payload.comment_text,/Pipeline: Stage 4 · Completed/);
+});
+test('old verb spellings are not accepted as Pipeline statuses',()=>{
+  for(const status of ['Park','Reject','Hand off','Handed off']) {
+    const f=fixture([pipeline('1',{Status:status})]);
+    assert.equal(f.run(true).at(-1).blocked,1);
+    assert.equal(f.calls.length,0);
+  }
+});
 test('preview reads the linked task but writes neither service',()=>{
   const f=fixture();f.run(false);
   assert(f.calls.every(x=>x.method==='get'));
   assert.deepEqual(f.records,{});
+});
+test('preview shows the exact pending comment without posting it',()=>{
+  const f=fixture();f.run(true);f.pt.rows[0].data.Stage='Stage 2';
+  const out=f.run(false);
+  const comment=out.find(x=>x.action==='post milestone comment').comment;
+  assert.match(comment,/^Horology updates:/);
+  assert.match(comment,/Pipeline: Stage 2 · Inbox/);
+  assert(f.calls.every(x=>x.method!=='post'));
+  assert.equal(f.records['task:1'].notebook.stage,'Stage 0');
 });
 test('both rows sharing one task are blocked',()=>{
   const f=fixture([pipeline('1'),pipeline('2',{'ClickUp Pipeline URL':'https://app.clickup.com/t/abc'})]);

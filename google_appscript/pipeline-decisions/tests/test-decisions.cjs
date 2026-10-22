@@ -23,9 +23,9 @@ test('accepting a Stage 1 review approves the item and makes it Ready', () => {
   assert.equal(r.transition, 'accept-stage-1');
   assert.deepEqual({...r.set}, {'Status': 'Approved', 'Stage': 'Stage 3', 'Agent status': 'Ready'});
 });
-test('accepting a Stage 3 review hands it off without queuing more work', () => {
+test('accepting a Stage 3 review completes it without queuing more work', () => {
   const r = decide(item({'Stage': 'Stage 4', 'Review stage': 'Specialist deliverable'}), [decision({'Review stage': 'Specialist deliverable'})]);
-  assert.deepEqual({...r.set}, {'Status': 'Handed off', 'Stage': 'Stage 4', 'Agent status': 'No action'});
+  assert.deepEqual({...r.set}, {'Status': 'Completed', 'Stage': 'Stage 4', 'Agent status': 'No action'});
 });
 test('rework returns to the reviewed stage and needs instructions', () => {
   assert.match(decide(item(), [decision({'Status': 'rework'})]).error, /Rework instructions/);
@@ -148,7 +148,7 @@ function webWorkbooks() {
     ['ID','Title','Status','Stage','Review stage','Agent status','Agent type','Current decision ID','Updated',
       'Next step / Research question','Domain','Entity','Type','Run location','Summary / Why','Revisit trigger'],
     ['14','TF-IDF and SERP-grounded drafting','Awaiting decision','Stage 2','Investigation proposal','No action','Codex','1','','','Article Aggregator','','Research','Local','',''],
-    ['22','Audience lists','Handed off','Stage 4','Specialist deliverable','No action','Codex','4','','','Article Aggregator','','Direction','Local','','']]);
+    ['22','Audience lists','Completed','Stage 4','Specialist deliverable','No action','Codex','4','','','Article Aggregator','','Direction','Local','','']]);
   const register = sheet([
     ['Decision ID','Pipeline ID','Pipeline title','Domain','Review stage','Question','Decision','Reason',
       'Status','Decision Date','Research Links','Rework instructions','Review source'],
@@ -231,7 +231,7 @@ test('Pipeline overview includes every Master row with a direct link and makes n
   const w = webWorkbooks(), rows = w.ctx.getPipelineOverview();
   assert.equal(rows.length,2);
   assert.equal(rows[0].ID,'14');
-  assert.equal(rows[1].Status,'Handed off');
+  assert.equal(rows[1].Status,'Completed');
   assert.match(rows[0].sheetUrl,/gid=2040100901&range=A2$/);
   assert.equal(w.pipeline.writes.length,0);
 });

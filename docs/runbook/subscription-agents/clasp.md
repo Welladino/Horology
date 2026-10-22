@@ -87,9 +87,9 @@ Map an existing task by placing its full `https://app.clickup.com/t/...` URL in 
 
 Then, in the editor:
 
-1. `previewSync`: inspect the linked task IDs and proposed status changes in the Execution log. Writes nothing.
+1. `previewSync`: inspect the linked task IDs, proposed status changes and exact proposed comment in the Execution log. Writes nothing.
 2. `applySync` once to align status and establish the baseline. It does not repost historical decisions or documents.
-3. Make a small test change to a linked Pipeline row or its indexed documents, run `previewSync`, then `applySync`. Check that one comment appears and that repeating the run posts nothing.
+3. Make a small test change to a linked Pipeline row or its indexed documents, run `previewSync`, then `applySync`. Check that one comment appears and that repeating the run posts nothing. Completed posts a comment without changing the ClickUp status; close that task manually.
 4. Keep the existing hourly `applySync` trigger. If it is missing, `installHourlyTrigger` creates one; it leaves an existing trigger alone. `stopSync` removes it.
 
 To pause: `stopSync`, or `ENABLE_WRITES: false` in `src/Config.js` and push.

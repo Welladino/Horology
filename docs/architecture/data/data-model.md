@@ -1,6 +1,6 @@
 # Data model
 
-Horology keeps its own state in one Neon Postgres database. Business deliverables from subscription agents live in Drive and Sheets instead; Hermes' own session and kanban state stays in the gitignored `hermes-data/`.
+Horology keeps its own state in one Neon Postgres database. Business deliverables from subscription agents live in Drive and Sheets instead; Hermes' own session and kanban state stays in the gitignored `hermes-data/`. See [Agent data flow](agent-data-flow.md) for when agent runs, Sheet changes and documents reach Neon.
 
 ```mermaid
 flowchart TB

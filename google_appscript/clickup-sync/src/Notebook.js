@@ -57,6 +57,6 @@ function notebookUpdate(c,pt,row,prior,now) {
   if(!lines.length) return '';
   const pipeline='https://docs.google.com/spreadsheets/d/'+c.PIPELINE_SHEET_ID+
     '/edit#gid='+pt.sheet.getSheetId()+'&range=A'+row.row;
-  return 'Horology update · Pipeline '+row.data.ID+'\n\n'+lines.join('\n\n')+
-    '\n\nPipeline: '+pipeline;
+  return 'Horology updates:\nPipeline '+row.data.ID+'\n\n'+lines.join('\n\n')+
+    '\n\nHorology workspace: '+c.WORKSPACE_URL+'\nPipeline sheet: '+pipeline;
 }

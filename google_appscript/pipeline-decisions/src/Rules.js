@@ -6,7 +6,7 @@
 
 const OUTCOMES = {
   "accepted|Investigation proposal": {"transition": "accept-stage-1", "Status": "Approved", "Stage": "Stage 3", "Agent status": "Ready"},
-  "accepted|Specialist deliverable": {"transition": "accept-stage-3", "Status": "Handed off", "Stage": "Stage 4", "Agent status": "No action"},
+  "accepted|Specialist deliverable": {"transition": "accept-stage-3", "Status": "Completed", "Stage": "Stage 4", "Agent status": "No action"},
   "rework|Investigation proposal": {"transition": "rework", "Status": "Rework", "Stage": "REVIEW", "Agent status": "Ready"},
   "rework|Specialist deliverable": {"transition": "rework", "Status": "Rework", "Stage": "REVIEW", "Agent status": "Ready"},
   "parked|Investigation proposal": {"transition": "decide-park", "Status": "Parked", "Stage": "Stage 2", "Agent status": "No action"},

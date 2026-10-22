@@ -16,7 +16,7 @@ def test_workflow_values_come_from_workflow_yaml():
     ("Status", "Ready", "Researching", True),  # start-run has no Status in "from"
     ("Status", "Researching", "Awaiting decision", True),
     ("Status", "Awaiting decision", "Approved", True),
-    ("Status", "Inbox", "Handed off", False),  # skips the review
+    ("Status", "Inbox", "Completed", False),  # skips the review
     ("Status", "Awaiting decision", "Inbox", False),  # capture creates items; it isn't a move
     ("Status", "Parked", "Inbox", True),  # unpark
     ("Agent status", "Plan", "No action", True),  # planned

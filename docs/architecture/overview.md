@@ -50,6 +50,7 @@ Both reach the outside world only through two MCP services: the **gateway** (cap
 | [MCP services](mcp/mcp-services.md)                                | What the two services share: sign-in, local and cloud copies, logging and errors                          |
 | ↳ [Gateway](mcp/gateway.md)                                        | Tools, shared policy, credit budgets, provider boundaries                                                 |
 | ↳ [Document graph](mcp/document-graph.md)                          | Documents, passage search, topics, entities, the sync job                                                 |
+| [Agent data flow](data/agent-data-flow.md)                           | When agent work reaches Sheets, Drive and Neon; what waits for graph sync                                 |
 | [Data model](data/data-model.md)                                   | The Neon database: schemas, logins and migrations                                                         |
 | [Cloud infrastructure](cloud/cloud-infrastructure.md)             | GCP project, Cloud Run, identities, secrets, release gates                                                |
 
