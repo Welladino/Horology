@@ -15,4 +15,6 @@ def gateway_consent(policy):
         if any(t.startswith(prefix) for t in tools):
             budget = policy["budgets"][provider]
             sections.append((label, f'{provider.title()}: {budget["daily"]} credits daily, {budget["monthly"]} monthly. No per-session call cap.'))
+    if "publish_synthesis" in tools:
+        sections.append(("Synthesis publishing", "Publish static HTML and images to a Pipeline-specific Cloudflare Pages branch in your configured workspace."))
     return sections, tools

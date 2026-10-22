@@ -44,7 +44,8 @@
       "firecrawl_alibaba_product",
       "firecrawl_trends",
       "tavily_extract_pages",
-      "tavily_advanced_search"
+      "tavily_advanced_search",
+      "publish_synthesis"
     ],
     "schemas": [
       "public"

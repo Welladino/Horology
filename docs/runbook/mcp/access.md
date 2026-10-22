@@ -29,7 +29,7 @@ Run from the repository root:
 .venv/bin/dotenv run -- .venv/bin/python scripts/ops/access.py grant person@example.com gateway
 ```
 
-A person in several workspaces picks one when connecting; to use another, they reconnect (or add a second connection).
+Current operating rule: one email belongs to one workspace. The database can hold multiple memberships for future use, but private Pages publishing refuses an email with zero or multiple active memberships. The document graph still has its workspace picker for such accounts.
 
 ## Remove a person
 
@@ -46,6 +46,8 @@ Both servers refuse them within 5 minutes. To cut the gateway off at once, also 
 ```
 
 Names are lowercase letters, digits and hyphens. Share the spreadsheets with the sync job as described in the [deployment runbook](../gcp/mcp_deployment.md#add-a-workspace). The sync job syncs every active workspace with a Document Index; `workspace set` changes the sheet IDs, `workspace disable` stops it.
+
+Private synthesis publishing is a separate setup: the administrator must protect the workspace's Pages project and both hostnames with Cloudflare Access, then register and enable its mapping with `scripts/ops/pages.py`. See the [workspace Pages note](../../planning/notes/2026-10-22_workspace-pages-publishing_note.md). A new workspace without that setup can still use its other tools; `publish_synthesis` returns an administrator-contact message instead of uploading.
 
 ## Add an MCP server
 

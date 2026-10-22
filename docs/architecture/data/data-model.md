@@ -1,6 +1,6 @@
 # Data model
 
-Horology keeps its own state in one Neon Postgres database. Business deliverables from subscription agents live in Drive and Sheets instead; Hermes' own session and kanban state stays in the gitignored `hermes-data/`. See [Agent data flow](agent-data-flow.md) for when agent runs, Sheet changes and documents reach Neon.
+Horology keeps its own state in one Neon Postgres database. Business deliverables from subscription agents live in Drive and Sheets instead; Hermes' own session and kanban state stays in the gitignored `hermes-data/`. See [Agent data flow](agent-data-flow.md) for when agent runs, Sheet changes and documents reach Neon, and [MCP agent and database flow](mcp-agent-data-flow.md) for identity, tool calls and quota records.
 
 ```mermaid
 flowchart TB
@@ -42,13 +42,13 @@ Each service connects through Neon's pooled endpoint with its own login, granted
 | `public` | `graph_runs` | Sync and rebuild runs, one at a time per workspace |
 | `public` | `run_log`, `run_outputs` | Execution history: one row per agent run (claim, status, self-reported skills, steps and notes) and the outputs linked to it. The service login can't delete runs. |
 | `public` | `pipeline_items`, `pipeline_events`, `decisions`, `document_index` | Copies of Pipeline Master, the Decision Register and the Document Index, kept by the sync job's records pass, and every field change between copies (attributed to the run active at the time) |
-| `access` | `mcp_servers`, `workspaces`, `users`, `workspace_members`, `user_mcp_access` | Who may use which MCP server and which workspaces each person can open; each workspace's spreadsheets. Both service logins only read them; [`scripts/ops/access.py`](https://github.com/Welladino/Horology/blob/main/docs/runbook/mcp/access.md) changes them with the owner connection. |
+| `access` | `mcp_servers`, `workspaces`, `users`, `workspace_members`, `user_mcp_access`, `workspace_pages` | Who may use which MCP server and workspace, each workspace's spreadsheets and its optional private Pages mapping. Service logins have read-only access where needed; owner-run scripts change the records. |
 | `graph_auth` | `records` | Document-graph OAuth clients, codes and tokens (hashed) |
 | `gateway_quotas` | `reservations`, `reservation_lock`, `cache` | Credit reservations, the lock that makes them atomic, one-hour response cache |
 | `gateway_auth` | `records` | Gateway OAuth clients, codes and tokens (hashed) |
 
 ## Migrations
 
-Root Alembic (`alembic/`, `alembic.ini`) owns every change; services never create tables at start-up. Revisions are named `YYYYMMDD_NNN_description` and run in order; the current head is `20261016_008` (users, workspaces and MCP access). Migrations that create logins read their passwords from the environment (for example `GATEWAY_DB_PASSWORD`), so passwords never enter the repository. Downgrading the gateway migrations destroys quota accounting. Workflow: [Alembic runbook](https://github.com/Welladino/Horology/blob/main/docs/runbook/db/alembic_workflow.md).
+Root Alembic (`alembic/`, `alembic.ini`) owns every change; services never create tables at start-up. Revisions are named `YYYYMMDD_NNN_description` and run in order; the source head is `20261022_009` (workspace Pages mappings), which must be applied before deploying the updated gateway. Migrations that create logins read their passwords from the environment (for example `GATEWAY_DB_PASSWORD`), so passwords never enter the repository. Downgrading the gateway migrations destroys quota accounting. Workflow: [Alembic runbook](https://github.com/Welladino/Horology/blob/main/docs/runbook/db/alembic_workflow.md).
 
 Every driver is Psycopg 3: the services, the sync job, Alembic (`postgresql+psycopg`), CI and tests.

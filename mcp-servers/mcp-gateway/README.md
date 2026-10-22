@@ -13,6 +13,7 @@ One service with narrow provider adapters, based on [Agent Register → MCP](htt
 | 18 Tavily extraction | `tavily_extract_pages` | 1–5 public HTTPS URLs (internal addresses denied), basic depth, bounded content, 1-credit reservation; no automatic upgrade |
 | 7 Firecrawl basic scrape | `firecrawl_scrape_page` | Any public HTTPS URL; shared public-address check; no crawl/actions/PDF parsing/premium options |
 | Policy inspection | `gateway_status` | Shared policy permissions, no credentials |
+| Stage 4 publishing | `publish_synthesis` | Verified Google email with one workspace; registered private Pages project; static HTML and up to 24 image/CSS assets; Pipeline-specific preview branch |
 
 Provider credentials are required for real calls and are **not copied from installed plugins**. Tests use mocks and real local MCP transport, without paid calls. Supabase, Tavily and Firecrawl have passed bounded live checks. GitHub and Google adapters are parked.
 
@@ -42,6 +43,10 @@ Provider setup, performed by the operator in `.env.local`:
 | `SUPABASE_METADATA_DSN` | TLS connection for project `pyywbjossvjngoxocdxk`, dedicated `horology_agents` role, no table SELECT/DML, no ownership or elevated memberships; verify-full needs a trusted certificate chain |
 | `TAVILY_API_KEY` | Gateway-only key; provider dashboard limit as additional protection |
 | `FIRECRAWL_API_KEY` | Gateway-only key; JSON firecrawl.url_policy must be public_https; tool permission and budgets still apply |
+| `CLOUDFLARE_PAGES_API_TOKEN` | Pages Read/Write and Access Apps/Policies Read for the Horology account's registered workspace projects; held by the gateway, never sent to agents |
+| `CLOUDFLARE_ACCESS_API_TOKEN` | Optional separate token with Access Apps/Policies Read. If unset, the gateway uses the Pages token for the private-hostname checks. Local bearer tokens cannot publish. |
+
+The Pages and Access tokens are required only for `publish_synthesis`. Provision them as runtime secrets before releasing the new gateway image. The tool is not active on the existing Cloud Run revision until the database migration runs and that revision is rebuilt and deployed. Do not put tokens in policy JSON or the repository. An administrator registers each protected workspace project and its two Access application IDs with `scripts/ops/pages.py`; see the [workspace Pages note](../../docs/planning/notes/2026-10-22_workspace-pages-publishing_note.md). Before every upload, the gateway checks the live Pages project and exact-email Access policies for both `<project>.pages.dev` and `*.<project>.pages.dev`. A missing or unsafe setup returns `needs_admin_setup` and no upload. Each call replaces only its `pipeline-<ID>` preview branch with the supplied `index.html` and assets. A returned URL means Cloudflare reported deployment success; the recipient should still check sign-in and images.
 
 The official public Supabase CA is tracked at `certs/supabase-prod-ca-2021.crt`. The Dockerfile packages it at `/certs/supabase-ca.crt` and sets `PGSSLROOTCERT` to that path, so local Compose and future cloud deployments use the same image without a host certificate mount. Only this public certificate is allowed into the build context; private configuration remains excluded. The adapter retains `sslmode=verify-full` for certificate-chain and hostname verification. This file is a public CA certificate, not a private key or database credential. Its provenance and fingerprint are recorded in the [CA relocation note](../../docs/planning/notes/2026-10-11_gateway-supabase-tls_note.md). Native clients need `PGSSLROOTCERT` pointing to the repository certificate’s absolute host path.
 
@@ -81,7 +86,7 @@ Provider calls are mocked. Quota/OAuth persistence checks require disposable Pos
 
 ## Code layout
 
-`server.py` assembles the authenticated MCP server. Each integration registers its tools through `tools.py`; `shared/access.py` applies shared JSON authorization through `policy.py` and awaits the quota repository. Fixed provider operations and provider-specific scope checks live in each integration’s `client.py`. Package `__init__.py` files contain only package descriptions. `shared/http.py` bounds transport responses and disables redirects and environment proxies; `shared/text.py` sanitizes bounded output. The three active provider integrations ship in one Docker image and use one MCP endpoint. GitHub/Google adapters are parked outside this runtime.
+`server.py` assembles the authenticated MCP server. Each integration registers its tools through `tools.py`; `shared/access.py` applies shared JSON authorization through `policy.py` and awaits the quota repository. Fixed provider operations and provider-specific scope checks live in each integration’s `client.py`. Package `__init__.py` files contain only package descriptions. `shared/http.py` bounds transport responses and disables redirects and environment proxies; `shared/text.py` sanitizes bounded output. The provider integrations ship in one Docker image and use one MCP endpoint. GitHub/Google adapters are parked outside this runtime.
 
 Runtime policy examples and private local/cloud policy candidates live under `config/`; private manual-test clients live under `tests/manual/gateway/fixtures/private/`; the initializer lives under `scripts/`; tests live under the repository’s `tests/unit/mcp_servers/gateway/` and `tests/integration/mcp_servers/gateway/`, and the MCP smoke client under `tests/manual/gateway/`. Docker files and `.env.local` remain at the gateway root.
 
@@ -134,7 +139,7 @@ The standalone Compose project and container are `horology-mcp-gateway`; its loc
 
 GitHub and Google Drive/Docs/Sheets adapters were removed on 2026-10-13 in favour of native platform connectors, whose permissions are outside this gateway's policy. The code, tests, authorization helper and unshipped migration remain in Git history (`git show d643223:placeholders/connectors/README.md`).
 
-The active gateway exposes 13 tools: status, Supabase metadata/performance, capped Tavily search/extraction and fixed Firecrawl scrape/Alexandria reads. Google-backed MCP identity OAuth remains active; it grants no Google document access. The retired adapters' local credentials were deleted on 16 October 2026. Their Google grant was issued to the same OAuth client as MCP sign-in, so revoke it through the Google Account's third-party access page, not by deleting the client.
+The currently deployed gateway exposes 13 tools: status, Supabase metadata/performance, capped Tavily search/extraction and fixed Firecrawl scrape/Alexandria reads. The source also includes `publish_synthesis`, which requires its Cloudflare credential and a new gateway deployment before use. Google-backed MCP identity OAuth remains active; it grants no Google document access. The retired adapters' local credentials were deleted on 16 October 2026. Their Google grant was issued to the same OAuth client as MCP sign-in, so revoke it through the Google Account's third-party access page, not by deleting the client.
 
 Tests live at `tests/unit/mcp_servers/gateway/` and `tests/integration/mcp_servers/gateway/` in the repository root, and the local MCP smoke helper at `tests/manual/gateway/`.
 

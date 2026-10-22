@@ -25,7 +25,7 @@ async def run(url, token):
             await session.initialize()
             tools = await session.list_tools()
             names = {tool.name for tool in tools.tools}
-            assert names == {'tavily_search', 'tavily_extract_pages', 'gateway_status', 'supabase_performance_summary', 'firecrawl_alibaba_product', 'firecrawl_trends', 'firecrawl_scrape_page', 'firecrawl_shopify_search', 'firecrawl_alibaba_search', 'firecrawl_discover_tools', 'supabase_list_schema', 'supabase_describe_table', 'firecrawl_shopify_product'}
+            assert names == {'tavily_search', 'tavily_extract_pages', 'gateway_status', 'supabase_performance_summary', 'firecrawl_alibaba_product', 'firecrawl_trends', 'firecrawl_scrape_page', 'firecrawl_shopify_search', 'firecrawl_alibaba_search', 'firecrawl_discover_tools', 'supabase_list_schema', 'supabase_describe_table', 'firecrawl_shopify_product', 'publish_synthesis'}
             assert 'github_create_planning_note' not in names
             removed = await session.call_tool('github_create_planning_note', {})
             assert removed.is_error

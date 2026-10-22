@@ -10,6 +10,7 @@ Specialist skills the supervisor (`horology-supervisor`, in `plugins/horology-wo
 | `horology-gtm` | Target customers, positioning, first channels and order |
 | `horology-marketing-strategy` | A marketing plan from an agreed GTM direction |
 | `horology-content-planner` | Content plans, briefs and draft copy |
+| `horology-synthesis-artifacts` | Visual Stage 4 briefing with sourced images or Python-made charts; optional private Pages viewing copy |
 
 To add a specialist: add `skills/<name>/SKILL.md` (and `agents/openai.yaml` for ChatGPT/Codex display), bump the versions in both OpenAI/Codex manifests, upload it to claude.ai, and add a row to the Agent Register.
 

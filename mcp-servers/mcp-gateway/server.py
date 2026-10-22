@@ -11,6 +11,7 @@ from mcp.server.mcpserver import MCPServer
 from integrations.supabase import tools as supabase_tools
 from integrations.tavily import tools as tavily_tools
 from integrations.firecrawl import tools as firecrawl_tools
+from integrations.cloudflare import tools as cloudflare_tools
 from shared.access import ToolAccess, current_client_id
 from horology_runtime.operations import TraceMiddleware, observe
 from horology_runtime.settings import http_server_options, gateway_public_url
@@ -19,10 +20,12 @@ from contextlib import asynccontextmanager
 from database.connection import Database
 from database.repositories.quotas import QuotaRepository
 from database.repositories.cache import CacheRepository
+from database.repositories.workspace_pages import WorkspacePagesRepository
 from horology_runtime.oauth.store import OAuthRepository
 from shared.consent import NOTE, gateway_consent
 
 def build_server(policy, database, tokens, oauth_config=None):
+    directory = None
     class Verifier:
         async def verify_token(self, token):
             digest = hashlib.sha256(token.encode()).hexdigest()
@@ -70,6 +73,7 @@ def build_server(policy, database, tokens, oauth_config=None):
 
     for integration in (supabase_tools, firecrawl_tools, tavily_tools):
         integration.register_tools(mcp, access)
+    cloudflare_tools.register_tools(mcp, access, directory, WorkspacePagesRepository(database))
     return mcp
 
 def database_app(mcp, database, **options):
