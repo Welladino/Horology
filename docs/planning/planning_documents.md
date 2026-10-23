@@ -1,4 +1,4 @@
-# Planning Workspace
+# Planning documents
 
 Working area for research and implementation notes on Horology itself, including Hermes and subscription-agent infrastructure. Business outputs remain outside this repo: Hermes uses the Neon document graph; subscription agents use Drive and Sheets.
 

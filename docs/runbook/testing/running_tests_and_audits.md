@@ -2,7 +2,17 @@
 
 ## Test suite
 
-Tests are grouped by kind: `tests/unit/`, `tests/integration/`, `tests/system/`. What each kind needs and where a new test goes: [`tests/README.md`](https://github.com/Welladino/Horology/blob/main/tests/README.md).
+Tests are grouped first by what they need, then by the repository component:
+
+| Folder | Needs | Behavior |
+| --- | --- | --- |
+| `tests/unit/` | Nothing external | Fast tests with fakes and mocks |
+| `tests/integration/` | Disposable PostgreSQL or a local HTTP server started by the test | Database tests skip when their explicit test URLs are absent |
+| `tests/system/` | The real Docker Compose stack and populated private environment | Skips when Docker is unavailable |
+| `tests/manual/` | An operator-prepared local service | Smoke helpers, not collected by pytest |
+| `tests/support/` | — | Shared helpers; contains no tests |
+
+Inside each kind, folders mirror components such as `document_graph_core/`, `jobs/`, `mcp_servers/` and `shared_runtime/`. Any test that touches a real database belongs in integration, even when most of the surrounding feature can be unit-tested. Keep test filenames unique across the entire tree. Property-based failures should also gain a plain regression example.
 
 Install the shared packages into the development environment first:
 

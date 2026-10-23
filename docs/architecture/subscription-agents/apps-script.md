@@ -50,7 +50,7 @@ Functions: `previewDecisions` (reports, writes nothing), `applyDecisions` (a pre
 
 ### Founder review web page
 
-The [private Horology workspace](https://script.google.com/a/macros/welladino.com/s/AKfycbxNK7mEVHiTBH-X_Upl8dOYA5sD6ATfEWCnyHrw8u5_fZzxyQuCMm4maiHUn1qJGD4Z2A/exec) is an Apps Script HTML web app in the same project. Its deployment executes as the owner and is restricted to the owner's account. The Extensions menu uses this domain-scoped link. It adds no Sheets tab and needs no Cloud Run change.
+The private Horology workspace is an Apps Script HTML web app in the same project. Its deployment executes as the owner and is restricted to the owner's account. The Extensions menu opens that workspace's private deployment URL. Public documentation must not embed it. The app adds no Sheets tab and needs no Cloud Run change.
 
 The Decisions view shows expandable rows only; opening a decision shows its options and input form. It lists proposed decisions only when they are the current decision of a Pipeline item still Awaiting decision, and displays decided records read-only. It shows the question, proposal and reason, evidence links, and option codes mentioned in the proposal text. Those codes are presentation hints: the Decision Register still stores options as prose, so the founder checks and may edit the final decision wording. Choosing an alternative requires a short founder reason, not a rework cycle.
 

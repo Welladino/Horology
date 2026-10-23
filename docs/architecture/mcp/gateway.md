@@ -14,9 +14,9 @@ The gateway (`mcp-servers/mcp-gateway/`) gives agents a few external capabilitie
 | Firecrawl | `firecrawl_scrape_page` | One public HTTPS URL; no crawl, browser actions or PDF parsing | 1 |
 | Firecrawl Alexandria | `firecrawl_discover_tools` | Reads the published contracts | free |
 | Firecrawl Alexandria | `firecrawl_shopify_search`, `firecrawl_shopify_product`, `firecrawl_alibaba_search`, `firecrawl_alibaba_product`, `firecrawl_trends` | Fixed read-only contracts; one ISO country code per call (`WORLDWIDE` for trends only); product IDs must come from the same client's search within an hour | 5 |
-| Cloudflare Pages (source, pending gateway release) | `publish_synthesis` | Verified email resolves one workspace; a registered project and exact-email Access rules for main and preview hostnames are checked before any static upload | free |
+| Cloudflare Pages | `publish_synthesis` | Verified email resolves one workspace; a registered project and exact-email Access rules for main and preview hostnames are checked before any static upload | free |
 
-The currently deployed `gateway_status` lists 14 names: 13 tools plus the `tavily_advanced_search` permission. The source includes `publish_synthesis`; it becomes available after the database migration and gateway release.
+The deployed `gateway_status` lists 14 callable tools plus the `tavily_advanced_search` permission, including `publish_synthesis`.
 
 ## Policy
 
@@ -58,4 +58,4 @@ Pages publishing is a separate write capability. The verified Google email must 
 | `config/` | Policy files |
 | `scripts/` | Local set-up and `revoke_email.py` |
 
-Database tables: [Data](../data/data-model.md). Setup and local use: the [gateway README](https://github.com/Welladino/Horology/blob/main/mcp-servers/mcp-gateway/README.md).
+Database tables: [Data](../data/data-model.md). Setup and local use: the [gateway runbook](../../runbook/mcp/gateway_server.md).

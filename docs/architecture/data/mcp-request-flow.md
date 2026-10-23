@@ -1,6 +1,6 @@
-# MCP agent and database data flow
+# MCP request and database flow
 
-This page shows how an agent reaches Horology's two MCP services and what each service writes to Neon. It complements [Agent data flow](agent-data-flow.md), which follows a Pipeline item through Sheets, Drive and the document graph.
+This page shows how an agent reaches Horology's two MCP services and what each service writes to Neon. It complements [Workspace data flow](workspace-data-flow.md), which follows a Pipeline item through Sheets, Drive and the document graph.
 
 ## Identity and workspace
 
@@ -52,7 +52,7 @@ The two MCP services have separate token tables and scopes. A token for one serv
 
 Gateway tool operation logs go to structured application logs with tool, integration, outcome, duration, request ID and `client_id`. They do not put tool arguments, results, email or workspace in those logs. The Neon reservation ledger is the durable usage record; it is not a complete record of the agent's reasoning or every request denied before reservation.
 
-Agents do not receive Neon credentials. They call the MCP tools; each service uses its own restricted database login. An agent can separately edit Sheets or save a Drive deliverable through those platforms' connectors. Those edits are not gateway writes and reach the graph's Sheet copies only on a later sync. See [Agent data flow](agent-data-flow.md) for that sequence.
+Agents do not receive Neon credentials. They call the MCP tools; each service uses its own restricted database login. An agent can separately edit Sheets or save a Drive deliverable through those platforms' connectors. Those edits are not gateway writes and reach the graph's Sheet copies only on a later sync. See [Workspace data flow](workspace-data-flow.md) for that sequence.
 
 ## Local Docker difference
 

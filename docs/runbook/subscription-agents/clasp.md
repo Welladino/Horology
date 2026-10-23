@@ -2,17 +2,33 @@
 
 Two projects, each in its own folder under `google_appscript/`; what they do is in the [Apps Script architecture](https://github.com/Welladino/Horology/blob/main/docs/architecture/subscription-agents/apps-script.md). Run each project's commands from its folder.
 
-| Project | Folder | Script ID | Attached to |
-|---|---|---|---|
-| [Horology — Pipeline decisions](https://script.google.com/d/16wWrpPS5GnmZck7ZSKXPV61by7_Vy8vXjAj-ddSAt5N7pDtMnxv5m5Iy/edit) | `pipeline-decisions/` | `16wWrpPS5GnmZck7ZSKXPV61by7_Vy8vXjAj-ddSAt5N7pDtMnxv5m5Iy` | Pipeline workbook |
-| [Horology — ClickUp Sync](https://script.google.com/d/1SHh-DazeGYhF5LrHl1m5itQTqYblyQ6k8HmiVRekSMgYR0VjY1Ks6pyG/edit) | `clickup-sync/` | `1SHh-DazeGYhF5LrHl1m5itQTqYblyQ6k8HmiVRekSMgYR0VjY1Ks6pyG` | Standalone |
+| Project | Folder | Attached to |
+|---|---|---|
+| Horology — Pipeline decisions | `pipeline-decisions/` | The user's Pipeline workbook |
+| Horology — ClickUp Sync | `clickup-sync/` | A standalone private Apps Script project |
 
 ## Set up clasp
 
-Each project pins clasp 3.4.1. Install it globally too:
+Node.js, npm and clasp are general development tools, so the normal Horology setup installs them once for the user rather than once per Apps Script project. Node.js 22 includes npm.
+
+Check the existing installation first:
+
+```sh
+node --version
+npm --version
+clasp --version
+```
+
+If Node.js or npm is missing, install Node.js 22 with the user's normal system or Node version manager. If clasp is missing or is not version 3.4.1, install the pinned version globally so it remains available to other projects:
 
 ```sh
 npm install -g @google/clasp@3.4.1
+```
+
+Then change to the Apps Script project before signing in or running project commands:
+
+```sh
+cd google_appscript/pipeline-decisions
 ```
 
 Enable the Apps Script API at [Apps Script settings](https://script.google.com/home/usersettings), then sign in:
@@ -24,9 +40,33 @@ clasp show-authorized-user
 
 Without a local browser callback, use `clasp login --no-localhost`. Credentials stay in clasp's own store, never in the repo.
 
+For ClickUp Sync, change projects before running its commands:
+
+```sh
+cd ../clickup-sync
+clasp show-authorized-user
+```
+
+If you opened a new terminal, start at the repository root and use `cd google_appscript/clickup-sync`. The login is shared by clasp, but `.clasp.json`, package scripts and upload roots are project-specific.
+
+### Optional: keep clasp inside each project
+
+Both Apps Script `package.json` files pin clasp 3.4.1. A user who prefers project-local tools can install that dependency inside each project instead of installing clasp globally:
+
+```sh
+cd google_appscript/pipeline-decisions
+npm install --no-package-lock
+npx clasp login
+npx clasp show-authorized-user
+```
+
+`node_modules/` is ignored by Git. The `--no-package-lock` option avoids creating a new lockfile in this repository. When clasp is installed locally, `npm run clasp:status` and `npm run clasp:push` automatically use that local copy. Repeat the local install inside `google_appscript/clickup-sync/` if that project should also be self-contained.
+
+The remaining examples use the globally available `clasp` command. With a project-local installation, replace it with `npx clasp` or use the matching npm script.
+
 ## Connect a project
 
-Each folder needs a `.clasp.json` (ignored by Git). Copy the template and put in the script ID from the table:
+Each folder needs a `.clasp.json` (ignored by Git). Copy the template and add the Script ID from that user's Apps Script project settings:
 
 ```sh
 cp .clasp.example.json .clasp.json
@@ -81,7 +121,7 @@ Standalone. In the project's **Project Settings → Script Properties**:
 | Property | Value |
 |---|---|
 | `CLICKUP_TOKEN` | Your personal ClickUp API token (ClickUp settings → Apps). Type it here only. |
-| `PIPELINE_SHEET_ID` | The Pipeline workbook ID: `1aL678ACs97YpLIGrGU5LbpXHc7jQBxl64ED-sLyehvI` |
+| `PIPELINE_SHEET_ID` | The user's Pipeline workbook ID, found between `/d/` and `/edit` in its URL |
 
 Map an existing task by placing its full `https://app.clickup.com/t/...` URL in that Pipeline row's **ClickUp Pipeline URL** cell. AI can suggest a match, but confirm the task before saving its URL. Unlinked rows are ignored; this script does not create tasks.
 

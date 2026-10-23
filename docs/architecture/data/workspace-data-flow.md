@@ -1,6 +1,6 @@
-# Agent data flow
+# Workspace data flow
 
-This page follows one subscription-agent Pipeline item from capture through review and into Neon. [Pipeline Master](../subscription-agents/subscription-agents.md) and the registers are the operational records; Drive holds finished deliverables. Neon holds the agent run history and a searchable copy of selected documents and Sheet records. Agents reach Neon through the document-graph connector, not a database connection.
+This page follows one subscription-agent Pipeline item from capture through review and into Neon. [Pipeline Master](../subscription-agents/workflow.md) and the registers are the operational records; Drive holds finished deliverables. Neon holds the agent run history and a searchable copy of selected documents and Sheet records. Agents reach Neon through the document-graph connector, not a database connection.
 
 ## The short version
 
@@ -48,7 +48,7 @@ sequenceDiagram
 | 3 — Specialist deliverable | A new authorised deliverable is saved to Drive and Document Index under the same Pipeline ID. Earlier documents remain unless a replacement is explicitly marked as superseding them. |
 | 4 — Synthesis | The supervisor calls the synthesis specialist in the same Stage 3 run. Its visual briefing is saved and indexed before the item returns for founder review. |
 
-The Pipeline ID joins an item to its decisions, indexed documents and run history. Decision IDs, Document IDs, Drive file IDs and optional ClickUp task URLs are separate identifiers. See the [workflow states](../subscription-agents/subscription-agents.md#stages) for the allowed status moves.
+The Pipeline ID joins an item to its decisions, indexed documents and run history. Decision IDs, Document IDs, Drive file IDs and optional ClickUp task URLs are separate identifiers. See the [workflow stages](../subscription-agents/workflow.md#stages) for the allowed status moves.
 
 ## What enters the document graph
 

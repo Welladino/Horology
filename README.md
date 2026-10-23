@@ -1,62 +1,90 @@
 # Horology
 
-A solo founder's personal "AI co-founder" system: **Second-Soul**, a supervisor agent, dispatches recurring business work (GTM strategy, marketing content, codebase/security monitoring, and more over time) to named specialist subagents. You talk only to Second-Soul — it decides which subagent handles what.
+Horology is an operating system for an individual or a small trusted group that wants AI agents to do useful, repeatable work without building a multi-user software platform.
 
-Built on [Hermes Agent](https://github.com/NousResearch/hermes-agent) (Nous Research) as the runtime, with subagents as Hermes *profiles* dispatched via kanban tasks, and purpose-built MCP servers (no arbitrary API/SQL access) for anything external.
+It uses subscriptions you may already pay for—Claude, ChatGPT and Codex—and gives those agents a shared workflow, carefully scoped tools and durable memory. Google Sheets is the everyday control surface and workflow database. Google Drive holds source material and deliverables. Apps Script provides a small, usable web interface. Neon Postgres holds protected machine-facing data such as search indexes, run history, access records and shared usage controls.
+
+Horology is not a hosted SaaS product, an autonomous company, or a replacement for human decisions. It is a repository of skills, services and operating conventions that you configure for your own workspace.
+
+## How it fits together
+
+```mermaid
+flowchart LR
+  person["<b>You</b><br/>Capture work and make decisions"]
+  sheets["<b>Google Sheets</b><br/>Pipeline and registers"]
+  agents["<b>Subscription agents</b><br/>Claude, ChatGPT and Codex"]
+  drive["<b>Google Drive</b><br/>References, templates and deliverables"]
+  apps["<b>Apps Script</b><br/>Workspace UI and small automations"]
+  mcp["<b>Restricted MCP services</b><br/>Tools and searchable memory"]
+  neon[("<b>Neon Postgres</b><br/>Run history, graph, access and quotas")]
+  person --> sheets
+  sheets --> agents
+  agents --> drive
+  agents --> mcp
+  apps --> sheets
+  mcp --> neon
+  person --> apps
+```
+
+The normal loop is simple:
+
+1. Add an idea or question to the Pipeline.
+2. Mark it for Claude or Codex and ask the supervisor to run it.
+3. The supervisor chooses the right specialist skills, reads existing context and creates deliverables in Drive.
+4. Review the proposed decision in the Decision Register. Accept it, request rework, park it or reject it.
+5. Selected documents can later be copied into the document graph so future work starts with what is already known.
+
+Nothing starts merely because a row exists. A person selects the work, starts the agent session and accepts the decision.
+
+## The workspace you control
+
+The Pipeline workbook is more than a task list. Its tabs configure the workspace:
+
+- **Master** is the work queue and lifecycle record.
+- **Locations** describes your own Drive folder tree. Folder names are not built into Horology; agents follow the Drive links and folder types in this tab.
+- **Domains** is derived from the root and entity folders in Locations.
+- **Templates** lists the documents agents may copy.
+- **Registers** points to the Decision Register, Document Index and Agent Register.
+
+The related workbooks have separate jobs: the Decision Register preserves each review round, the Document Index records deliverables and graph-sync state, and the Agent Register describes scheduled agents and the MCP tools they may use. See [Workspace records](docs/architecture/subscription-agents/workspace-records.md) for every workbook and tab.
+
+## Why there is still a database
+
+Sheets and Drive stay understandable and editable by a non-developer. Neon handles data that is safer or more useful behind a service boundary:
+
+- document passages, embeddings, topics and entity relationships;
+- agent claims, completion records and synchronized change history;
+- workspace membership and hashed OAuth records;
+- shared provider budgets, cache entries and publishing configuration.
+
+Agents do not receive a general database login. They use fixed MCP tools with workspace checks, bounded inputs and safe outputs. Provider credentials and other secrets stay in Secret Manager or private environment files, not in Sheets, skills or the repository.
+
+## Who this is for
+
+Horology is a good fit when one person—or a small group with shared trust—wants a visible queue, reusable agent skills and retained research while continuing to use ordinary AI subscriptions.
+
+It is not currently designed for unrelated customers sharing one installation. Setup still needs an operator; each AI platform installs skills differently; some skill references are still workspace-specific; Sheet changes reach Neon on a later sync; and Hermes does not yet perform the complete Sheets-and-Drive workflow used by subscription agents. Cloudflare Pages publishing also needs administrator provisioning before a workspace can use it. See [Security and trust boundaries](docs/architecture/security.md) for the guarantees and gaps.
 
 ## Start here
 
-Read in this order:
+- New user: [How Horology works](docs/runbook/setup/how-horology-works.md), then [Set up a workspace](docs/runbook/setup/setup.md).
+- Operator: [Architecture overview](docs/architecture/overview.md), then [Run all local services](docs/runbook/docker/running_all_services.md).
+- Workflow operator: [Operate the subscription-agent workflow](docs/runbook/subscription-agents/workflow_operations.md).
+- Contributor: [Repository documentation rules](CLAUDE.md) and [tests and audits](docs/runbook/testing/running_tests_and_audits.md).
 
-1. **[`docs/architecture/overview.md`](docs/architecture/overview.md)** — how the system actually works: the system map, Hermes and subscription agents, the two MCP services, data and cloud. Read this before touching anything.
-2. **[`CLAUDE.md`](CLAUDE.md)** — how this repo's *own documentation* is organized (research vs. notes vs. architecture vs. runbook), and the conventions subagents follow when writing business documents.
-3. **[`docs/planning/README.md`](docs/planning/README.md)** — the planning-doc workflow, if you're going to make a design decision and want to know where to write it up.
+## Repository map
 
-## Getting it running locally
+| Path | Purpose |
+| --- | --- |
+| `plugins/` | Source for the workflow, specialist and MCP-access skills distributed to Claude and Codex |
+| `google_appscript/` | Pipeline workspace, decision handling and optional ClickUp synchronization |
+| `mcp-servers/` | Restricted gateway and document-graph services |
+| `document-graph-core/` | Graph, search, entity, topic and run logic shared by the service and sync job |
+| `jobs/document-graph-sync/` | On-demand Sheets/Drive-to-Neon synchronization |
+| `shared-runtime/` | Common authentication, database, logging, error and URL-safety code |
+| `alembic/` | Neon database migrations |
+| `docs/architecture/` | Current system design and trust boundaries |
+| `docs/runbook/` | Step-by-step operating instructions |
+| `docs/planning/` | Dated research and implementation history |
 
-You'll need your own credentials — nothing here is shared. Real secrets never leave `.env` (gitignored) and are never committed; `.env.example` is the template.
-
-```bash
-git clone https://github.com/Welladino/Horology.git && cd Horology
-cp .env.example .env
-```
-
-Fill in `.env`: dashboard login, `PUID`/`PGID` (`id -u` / `id -g`), your own Neon Postgres connection strings, your own GitHub fine-grained PAT (read-only, scoped to one repo), your own OpenRouter key. Each field in `.env.example` explains where it comes from and why it's separate from the others — read the comments, they matter (e.g. provider/model keys go through `hermes-data/.env`, *not* the root `.env`).
-
-One-time provider setup (only if `hermes-data/` is empty):
-
-```bash
-docker run -it --rm -v "$(pwd)/hermes-data:/opt/data" nousresearch/hermes-agent setup
-```
-
-Then bring up the stack:
-
-```bash
-docker compose up -d
-docker compose ps
-```
-
-Dashboard: [http://localhost:9119](http://localhost:9119) (login = your `DASHBOARD_USERNAME`/`DASHBOARD_PASSWORD`).
-
-Full setup detail (persona syncing, cron scripts, troubleshooting): [`docs/runbook/docker/hermes_setup.md`](docs/runbook/docker/hermes_setup.md) and [`docs/runbook/docker/running_all_services.md`](docs/runbook/docker/running_all_services.md).
-
-**Before running Docker commands, keep this repo out of any folder your terminal/editor doesn't already trust with real files** — macOS gates read access to `~/Documents`, `~/Desktop`, etc. per-application, and `docker compose` inherits whichever app's terminal you run it from.
-
-## Finding your way around the code
-
-| Path | What's there |
-|---|---|
-| `google_appscript/` | The subscription-agent Apps Script projects: Pipeline decisions, Locations and the optional ClickUp sync. See the [Apps Script architecture](docs/architecture/subscription-agents/apps-script.md). |
-| `mcp-servers/` | The two purpose-built MCP servers (`document-graph`, `github-monitor`) — each its own Dockerfile, `requirements.txt`, and credential. |
-| `alembic/` | Postgres migrations for the document graph (Neon). Workflow: [`docs/runbook/db/alembic_workflow.md`](docs/runbook/db/alembic_workflow.md). |
-| `scripts/` | Cron `--script` files, copied into the Hermes container by hand (`docker cp`), plus docs and CI helpers. |
-| `tests/` | By kind: `tests/unit/` (no database or Docker), `tests/integration/` (a disposable migrated Postgres; skipped without it) and `tests/system/` (the real Compose stack; skipped without Docker). See [`tests/README.md`](tests/README.md). Run before shipping any change to an MCP server or `docker-compose.yml`: `python3 -m pytest tests/ -v`. See [`docs/runbook/testing/running_tests_and_audits.md`](docs/runbook/testing/running_tests_and_audits.md). |
-| `docs/architecture/` | Standing reference, current state, no history — start here (see above). |
-| `docs/planning/notes/` & `docs/planning/research/` | Dated trail of *why* the system looks the way it does — check here before assuming something is arbitrary. |
-| `docs/runbook/` | Copy-paste-ready commands for everything operational. Setting up a new workspace: [`docs/runbook/setup/setup.md`](docs/runbook/setup/setup.md). |
-
-## A few things that aren't obvious from the code
-
-- **Hermes reverts direct edits to `hermes-data/config.yaml` while it's running** — use `hermes config set` (or equivalent CLI) instead of hand-editing the file on disk.
-- **The two MCP servers are not reachable from the host** — only from `hermes`, over the internal Compose network, by service name. This is deliberate (see `docs/runbook/mcp/`).
-- **Documentation (including Hermes's own) has been wrong before** — if a design decision depends on how something actually behaves, verify it hands-on rather than trusting the docs.
+The local Docker stack is optional and split into three Compose projects: Hermes, the document graph and the gateway. Root `docker compose up -d` starts Hermes only. Follow the [complete runbook](docs/runbook/docker/running_all_services.md) to start, verify or stop all three.

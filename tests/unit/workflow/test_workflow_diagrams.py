@@ -6,7 +6,7 @@ import yaml
 
 from support.paths import REPO, WORKFLOW
 
-PAGE = REPO / "docs" / "architecture" / "subscription-agents" / "subscription-agents.md"
+PAGE = REPO / "docs" / "architecture" / "subscription-agents" / "workflow.md"
 
 
 @pytest.fixture(scope="module")

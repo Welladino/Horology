@@ -34,7 +34,7 @@ flowchart TB
 
 ## 1. Copy the starter registers
 
-The [starter pack](https://drive.google.com/drive/folders/14zEFgzre8-xSq3cRNJHat9FiQTPz8zxG) (`05_Horology/06_Starter_Pack`) holds empty copies of everything a workspace needs: the four registers in `01_Registers` and the five document templates in `02_Templates`. The operator shares it with you as Viewer.
+No public starter-pack link is published yet. Until clean shareable copies are available, ask the operator for them. The pack contains the four registers and the document templates. Do not copy another person's live workspace: its rows, links, scripts and sharing settings are private configuration.
 
 | File | What it is |
 |---|---|
@@ -46,7 +46,7 @@ The [starter pack](https://drive.google.com/drive/folders/14zEFgzre8-xSq3cRNJHat
 
 In your Drive, make a workspace folder with a registers folder and a templates folder inside it, for example `01_Horology/01_Registers` and `01_Horology/02_Templates`. Then for each file: open it, **File → Make a copy**, put it in the right folder and drop "(starter)" and "Copy of" from the name.
 
-Copy the Pipeline with File → Make a copy in the browser, not through another tool: that's what brings its two scripts along.
+Copy the Pipeline with **File → Make a copy** in the browser, not through another tool: that preserves its bound Apps Script project.
 
 ## 2. Link the registers together
 
@@ -163,7 +163,7 @@ The operator adds you as a test user, creates the workspace with those IDs and g
 - **Codex:** install the four plugins: [Codex plugins and connections](../subscription-agents/codex_setup.md).
 - Both: connect Google Drive and Sheets in the platform's own connector settings.
 
-> **Note:** the skills currently link the founder's Pipeline, Decision Register and Document Index directly, so a new workspace needs skill packages built with its own links; ask the operator. This will change: the plan is for skills to ask the document graph for the signed-in workspace's register links (the IDs you send in step 5 are already stored with your workspace), fall back to a Pipeline link in your own instructions, and otherwise ask you.
+Some current skill sources still contain operator-workspace register references, while other paths resolve the signed-in workspace through the document graph. Before sharing a package with another workspace, replace those references with the clean copied registers or complete workspace discovery and rebuild the package. Never distribute a person's live workbook links in a public skill package.
 
 ## 7. Run your first item
 

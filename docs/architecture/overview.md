@@ -1,74 +1,86 @@
 # Architecture
 
-How Horology works today. These pages are updated in place when the system changes; the reasons behind each change are in [`docs/planning/`](https://github.com/Welladino/Horology/blob/main/docs/planning/README.md), and the commands to run things are in [`docs/runbook/`](../runbook/). To set up a new workspace, follow [Set up Horology](https://github.com/Welladino/Horology/blob/main/docs/runbook/setup/setup.md).
+Horology combines human-readable workspace records with subscription agents and narrowly scoped backend services. The primary workflow runs in Claude, ChatGPT or Codex using versioned skills. Hermes is an optional local agent runtime with one default agent; it is not currently the orchestrator for the full Sheets-and-Drive workflow.
 
 ```mermaid
-flowchart TB
-  founder["<b>Founder</b><br/>Asks Second-Soul for work or starts a subscription-agent session, and makes the decisions"]
-  hermes["<b>Hermes agents</b><br/>Second-Soul dispatches kanban tasks to subagent profiles. Local Docker."]
-  subs["<b>Subscription agents</b><br/>Claude, ChatGPT and Codex sessions following the Horology skills"]
-  founder --> hermes
-  founder --> subs
-  subgraph mcp["MCP services · Cloud Run, plus local containers for Hermes"]
-    gateway["<b>MCP gateway</b><br/>Capped tools: Supabase metadata, Tavily, Firecrawl. Shared policy and credit budgets."]
-    dg["<b>Document graph</b><br/>Passage search, topics, entities, links, writes and run history"]
-    gsync["<b>Graph sync job</b><br/>Imports Document Index rows marked TRUE, embeds changed files"]
-  end
-  hermes -- "MCP over HTTP" --> mcp
-  subs -- "MCP over HTTP, Google sign-in in the cloud" --> mcp
-  subgraph services["Data and AI services"]
-    neon[("<b>Neon Postgres</b><br/>Documents, embeddings, topics, entities, budgets, OAuth records")]
-    openrouter["<b>OpenRouter</b><br/>Embeddings, entity extraction, topic naming"]
-    providers["<b>Providers</b><br/>Supabase, Tavily, Firecrawl, only through the gateway"]
-  end
-  mcp --> services
-  subgraph records["Subscription-agent records"]
-    sheets["<b>Drive and Sheets</b><br/>Pipeline, registers, Locations and deliverables"]
-    apps["<b>Apps Script</b><br/>Applies decisions, checks Locations, optional ClickUp Sync"]
-    clickup["<b>ClickUp</b><br/>Optional planning notebook"]
-  end
-  subs --> sheets
-  gsync --> sheets
-  apps --> sheets
-  apps --> clickup
+flowchart LR
+  person["You or your small group<br/>Select work and make decisions"]
+  workspace["Sheets and Apps Script<br/>Visible workflow and lightweight UI"]
+  agents["Subscription agents<br/>Claude, ChatGPT and Codex skills"]
+  drive["Google Drive<br/>References, templates and deliverables"]
+  services["Restricted MCP services<br/>Gateway and document graph"]
+  hermes["Hermes<br/>Optional local runtime"]
+  syncjob["Graph sync job<br/>Selected Sheets and Drive content"]
+  providers["External providers<br/>Supabase metadata, Tavily, Firecrawl, Cloudflare"]
+  neon[("Neon Postgres<br/>Graph, runs, access, quotas and cache")]
+
+  person --> workspace --> agents
+  agents --> drive
+  agents --> services
+  hermes --> services
+  services --> providers
+  services --> neon
+  workspace --> syncjob
+  drive --> syncjob
+  syncjob --> neon
+
+  classDef human fill:#e6f4ea,stroke:#137333,color:#137333
+  classDef workspaceStyle fill:#e8f0fe,stroke:#1a73e8,color:#174ea6
+  classDef runtime fill:#f3e8fd,stroke:#9334e6,color:#681da8
+  classDef service fill:#fef7e0,stroke:#f9ab00,color:#7a4f01
+  classDef storage fill:#e0f2f1,stroke:#00796b,color:#00695c
+  class person human
+  class workspace,drive workspaceStyle
+  class agents,hermes runtime
+  class services,syncjob service
+  class providers,neon storage
 ```
 
-Horology has two ways of working, which share the same services:
+The diagram intentionally shows the major path rather than every connection. The tables and linked pages below contain the precise component boundaries.
 
-* **Hermes agents** run locally in Docker. Second-Soul, the supervisor, hands work to named subagent profiles through kanban tasks.
-* **Subscription agents** are Claude, ChatGPT and Codex sessions on personal subscriptions. They follow the Horology skills (uploaded to claude.ai for Claude, plugins for Codex) and keep their records in Drive and Sheets.
+## Component responsibilities
 
-Both reach the outside world only through two MCP services: the **gateway** (capped provider tools) and the **document graph** (what has been researched and decided). Neither exposes arbitrary SQL or API access.
+| Component | Responsibility |
+| --- | --- |
+| Sheets | Live workflow state and understandable registers. The Pipeline's Locations tab defines each user's Drive structure. |
+| Drive | Canonical source material, templates and finished deliverables. |
+| Apps Script | A small private UI for adding and editing items, reviewing decisions and reconciling folder metadata. |
+| Skills | Reusable instructions that tell a subscription agent how to plan, supervise, research and produce a deliverable. |
+| Gateway | Fixed external tools, shared budgets, URL/output limits and protected Pages publishing. |
+| Document graph | Workspace discovery, run claims/history and searchable retained knowledge. |
+| Neon | Protected machine-facing persistence; it is not the everyday UI or the canonical Drive file store. |
+| Hermes | Optional local runtime for direct agent work and experimentation. It currently has one default agent rather than the retired profile/kanban design. |
+
+Agents never receive general database or provider credentials. Sheets and Drive access comes from native platform connectors; those connector permissions are separate from gateway policy. See [Security and trust boundaries](security.md).
 
 ## Pages
 
-| Area                                                              | What it covers                                                                                            |
-| ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| [Hermes](hermes/hermes-agents.md)                                  | Containers, kanban dispatch, profiles and personas, tools and limits                                      |
-| [Subscription agents](subscription-agents/subscription-agents.md) | Stages, registers and IDs, ClickUp sync, skills and connectors                                            |
-| [Apps Script projects](subscription-agents/apps-script.md)        | Pipeline workspace and linked ClickUp updates: what each does and where settings live |
-| [MCP services](mcp/mcp-services.md)                                | What the two services share: sign-in, local and cloud copies, logging and errors                          |
-| ↳ [Gateway](mcp/gateway.md)                                        | Tools, shared policy, credit budgets, provider boundaries                                                 |
-| ↳ [Document graph](mcp/document-graph.md)                          | Documents, passage search, topics, entities, the sync job                                                 |
-| [Agent data flow](data/agent-data-flow.md)                           | When agent work reaches Sheets, Drive and Neon; what waits for graph sync                                 |
-| [Data model](data/data-model.md)                                   | The Neon database: schemas, logins and migrations                                                         |
-| [Cloud infrastructure](cloud/cloud-infrastructure.md)             | GCP project, Cloud Run, identities, secrets, release gates                                                |
+| Area | What it covers |
+| --- | --- |
+| [Workspace records](subscription-agents/workspace-records.md) | Every workbook and tab, including user-configurable Locations |
+| [Subscription-agent workflow](subscription-agents/workflow.md) | Workflow states, stages, skills and human review |
+| [Apps Script](subscription-agents/apps-script.md) | Private workspace interface and optional ClickUp updates |
+| [Workspace data flow](data/workspace-data-flow.md) | When work reaches Sheets, Drive and Neon |
+| [MCP request flow](data/mcp-request-flow.md) | Identity, tool calls and service writes to Neon |
+| [Data model](data/data-model.md) | Neon schemas, roles and migrations |
+| [MCP services](mcp/mcp-services.md) | Shared service behavior, sign-in, logging and errors |
+| [Gateway](mcp/gateway.md) | Provider tools, policies, budgets and publishing |
+| [Document graph](mcp/document-graph.md) | Search, documents, entities, topics and sync |
+| [Hermes](hermes/hermes-agents.md) | Optional local runtime and its current limits |
+| [Cloud infrastructure](cloud/cloud-infrastructure.md) | Cloud Run, IAM, secrets and release gates |
 
-## Where the code lives
+## Code map
 
-| Path                                    | Component                                                                                                                                                        |
-| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `plugins/`                              | Skill source in four folders (`horology-tools`, `horology-document-graph`, `horology-workflows`, `horology-specialists`), with the OpenAI/Codex plugin manifests |
-| `mcp-servers/mcp-gateway/`              | Gateway service                                                                                                                                                  |
-| `mcp-servers/document-graph/`           | Document-graph service                                                                                                                                           |
-| `document-graph-core/`                  | Graph logic shared by the document-graph service and the sync job                                                                                                |
-| `jobs/document-graph-sync/`             | Document Index sync job                                                                                                                                          |
-| `shared-runtime/`                       | Database pool, Google sign-in, settings, logging and errors for every service                                                                                    |
-| `alembic/`                              | Database migrations                                                                                                                                              |
-| `google_appscript/`                     | Apps Script projects: Pipeline decisions and ClickUp Sync |
-| `cloudbuild.yaml`, `.github/workflows/` | Release and CI gates                                                                                                                                             |
-| `ops/gcp/`                              | IAM, monitoring and Artifact Registry clean-up configuration                                                                                                     |
+| Path | Component |
+| --- | --- |
+| `plugins/` | Workflow, specialist and MCP-access skill sources |
+| `google_appscript/` | Pipeline workspace and optional ClickUp sync |
+| `mcp-servers/` | Gateway and document-graph entry points |
+| `document-graph-core/` | Shared graph domain services and repositories |
+| `jobs/document-graph-sync/` | On-demand workbook and document sync |
+| `shared-runtime/` | Common database, OAuth, settings, logging and safe errors |
+| `alembic/` | Database schema and least-privilege roles |
+| `cloudbuild.yaml`, `.github/workflows/` | CI and release gates |
+| `ops/gcp/` | IAM, monitoring and cleanup configuration |
 
-## Diagrams
-
-Diagrams are [Mermaid](https://mermaid.js.org/) blocks inside the pages, edited in place with the text around them. GitHub renders them; so does GitBook with its Mermaid integration enabled.
+Standing pages describe current behavior. Dated reasoning lives in [planning documents](../planning/planning_documents.md), and commands belong in the [runbooks](../runbook/).

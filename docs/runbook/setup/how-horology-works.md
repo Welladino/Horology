@@ -28,6 +28,7 @@ flowchart TB
   scripts["<b>Apps Scripts</b><br/>Apply your decisions, add items by form,<br/>keep folders in step"]
   you --> pipeline
   you --> decisions
+  pipeline -- "Ready work" --> supervisor
   supervisor --> specialists
   agents -- "read" --> reference
   agents -- "copy" --> templates
@@ -39,6 +40,19 @@ flowchart TB
   watchers -- "report" --> output
   scripts -- "move items on" --> pipeline
   decisions --> scripts
+
+  classDef human fill:#e6f4ea,stroke:#137333,color:#137333
+  classDef record fill:#e8f0fe,stroke:#1a73e8,color:#174ea6
+  classDef file fill:#e0f2f1,stroke:#00796b,color:#00695c
+  classDef agent fill:#f3e8fd,stroke:#9334e6,color:#681da8
+  classDef automation fill:#fef7e0,stroke:#f9ab00,color:#7a4f01
+  classDef memory fill:#f1f3f4,stroke:#5f6368,color:#202124
+  class you human
+  class pipeline,decisions,index record
+  class reference,output,templates file
+  class supervisor,specialists,helpers,setup,watchers agent
+  class scripts automation
+  class dg memory
 ```
 
 | Piece                       | What it is                                                                                                                                                                                                                                                            | Who changes it                                                       |
@@ -56,24 +70,41 @@ flowchart TB
 
 ```mermaid
 flowchart TB
-  capture["<b>1. Capture</b><br/>You or the capture agent add a Pipeline row.<br/>Status Inbox, Stage 0."]
-  plan["<b>2. Scope it (optional)</b><br/>Set Agent status to Plan. The planner rewrites<br/>the question or splits it into steps."]
-  ready["<b>3. Select it</b><br/>Set Agent status to Ready and choose<br/>Claude Code or Codex. Stage 1."]
-  run["<b>4. Run it</b><br/>Ask a session to run the Ready items. The supervisor<br/>claims each, picks specialists and checks their work."]
-  results["<b>5. Results</b><br/>Docs in your Agent output folders, rows in the Document<br/>Index, a proposed decision. Status Awaiting decision."]
-  decide["<b>6. You decide</b><br/>In the Decision Register: accepted, rework (with<br/>instructions), parked or rejected"]
-  apply["<b>7. Applied</b><br/>The decisions script moves the item on<br/>within 10 minutes"]
-  stage3["<b>Accepted at Stage 1</b><br/>Approved and Ready for the detailed<br/>Stage 3 deliverable, then review again"]
-  done["<b>Accepted at Stage 3</b><br/>Completed: done"]
+  capture["<b>Capture · Stage 0</b><br/>Add the idea or question.<br/>Nothing runs yet."]
+  plan["<b>Scope · optional</b><br/>The planner sharpens the question<br/>or turns it into numbered steps."]
+  ready["<b>Select · Stage 1</b><br/>Choose Claude or Codex<br/>and set Agent status Ready."]
+  investigate["<b>Investigation run</b><br/>The supervisor claims the item,<br/>selects specialists and checks the work."]
+  proposal["<b>Review · Stage 2</b><br/>Evidence, recommendation and<br/>a proposed decision are ready."]
+  decision{"<b>Your decision</b><br/>What should happen next?"}
+  deliverable["<b>Specialist deliverable · Stage 3</b><br/>The accepted proposal becomes<br/>the detailed piece of work."]
+  synthesis["<b>Visual synthesis · Stage 4</b><br/>Created in the same run and<br/>returned with the deliverable."]
+  revise["<b>Rework</b><br/>Your instructions return<br/>the item to Ready."]
+  stopped["<b>Parked or rejected</b><br/>No agent action"]
+  done["<b>Completed</b><br/>You accepted the specialist<br/>deliverable after Stage 4 review."]
+
   capture --> plan --> ready
   capture --> ready
-  ready --> run --> results --> decide --> apply
-  apply --> stage3 --> run
-  apply -- "rework: Ready again" --> run
-  apply --> done
+  ready --> investigate --> proposal --> decision
+  decision -->|Accept proposal| deliverable --> synthesis --> decision
+  decision -->|Rework| revise --> ready
+  decision -->|Park or reject| stopped
+  decision -->|Accept specialist deliverable| done
+
+  classDef captureStyle fill:#f1f3f4,stroke:#5f6368,color:#202124
+  classDef selected fill:#e8f0fe,stroke:#1a73e8,color:#174ea6
+  classDef agent fill:#f3e8fd,stroke:#9334e6,color:#681da8
+  classDef review fill:#fef7e0,stroke:#f9ab00,color:#7a4f01
+  classDef success fill:#e6f4ea,stroke:#137333,color:#137333
+  classDef reviseStyle fill:#fce8e6,stroke:#c5221f,color:#a50e0e
+  class capture,plan,stopped captureStyle
+  class ready selected
+  class investigate,deliverable,synthesis agent
+  class proposal,decision review
+  class done success
+  class revise reviseStyle
 ```
 
-Work goes through four stages:
+Work uses five numbered stages, from capture at Stage 0 through synthesis at Stage 4:
 
 | Stage                                | What happens                                                                                                                                                                   |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -81,6 +112,7 @@ Work goes through four stages:
 | **Stage 1, investigate and propose** | Agents research the question, or write a direction, plan or technical assessment, and propose what to do.                                                                      |
 | **Stage 2, your decision**           | You review the documents and record a decision.                                                                                                                                |
 | **Stage 3, the deliverable**         | For an accepted proposal, agents produce the detailed piece: a go-to-market plan, a marketing plan, content drafts, or a planning note for code. Then you review it once more. |
+| **Stage 4, visual synthesis**        | In the same Stage 3 run, the supervisor creates a concise visual artifact that makes the deliverable easier to review. The deliverable and synthesis return together for your decision. |
 
 Nothing runs by itself. A row marked Ready only says what should be done next; work starts when you ask a Claude Code or Codex session to "run the Ready items" or "run item 42". Agents never accept their own proposals, and approving research doesn't approve building anything.
 

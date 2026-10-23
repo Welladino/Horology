@@ -1,4 +1,4 @@
-"""Integration tests run against a disposable migrated Postgres; see tests/README.md."""
+"""Integration tests use disposable PostgreSQL; see docs/runbook/testing/running_tests_and_audits.md."""
 import os
 
 import pytest

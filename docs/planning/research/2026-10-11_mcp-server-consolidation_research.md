@@ -15,7 +15,7 @@ Can github-monitor be retired in favour of the restricted gateway, and should do
 - mcp-servers/github-monitor/server.py
 - mcp-servers/mcp-gateway/integrations/github/client.py and tools.py
 - personas/subagents/code-sentinel.md
-- docker-compose.yml and docs/runbook/mcp/README.md
+- docker-compose.yml and docs/runbook/mcp/mcp_servers.md
 - mcp-servers/document-graph/server.py
 - tests/mcp_servers/test_github_monitor.py and tests/test_docker_stack.py
 

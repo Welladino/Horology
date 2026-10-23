@@ -42,7 +42,7 @@ The system tests check the exact `127.0.0.1` binding: [running tests](../testing
 
 ## Connecting clients
 
-Hermes, per profile (connections aren't shared between profiles). The `printf` answers "requires authentication?" (no) and "enable all tools?" (yes):
+For the current default Hermes agent, the `printf` answers "requires authentication?" (no) and "enable all tools?" (yes):
 
 ```bash
 printf "n\ny\n" | docker exec -i horology-hermes hermes mcp add document-graph --url http://document-graph-mcp:8765/mcp
@@ -56,7 +56,22 @@ A laptop client such as Codex uses `http://127.0.0.1:8765/mcp`.
 
 ## Running the sync job locally
 
-See the [document-graph README](https://github.com/Welladino/Horology/blob/main/mcp-servers/document-graph/README.md#sign-in-and-the-document-index-sync).
+Complete an Application Default Credentials login with Sheets and read-only Drive scopes:
+
+```bash
+gcloud auth application-default login --scopes=openid,https://www.googleapis.com/auth/userinfo.email,https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/spreadsheets,https://www.googleapis.com/auth/drive.readonly
+gcloud auth application-default set-quota-project YOUR_GCP_PROJECT
+```
+
+The normal path reads workbook IDs from the active workspace row in Neon:
+
+```bash
+PYTHONPATH=mcp-servers/document-graph:jobs/document-graph-sync .venv/bin/dotenv -f mcp-servers/document-graph/.env run -- .venv/bin/python -m graph_sync
+```
+
+For a one-off local workspace, set `GRAPH_SYNC_WORKBOOKS` to a JSON map containing its `index`, `pipeline` and `decisions` spreadsheet IDs. Keep that value in the shell or another private configuration source; do not add live workbook IDs to documentation or Git.
+
+Only Document Index rows with Graph Inclusion TRUE are imported. The job writes sync state back to the Sheet and embeds only new or changed revisions.
 
 ## Dependency pinning
 

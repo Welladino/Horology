@@ -23,7 +23,7 @@ A suite that runs in seconds with no setup is far more likely to be run before a
 
 ## Impact
 
-- The tests have since been reorganised into `tests/unit/`, `tests/integration/` (disposable PostgreSQL) and `tests/system/` (the Docker stack), and both MCP images now run as a non-root user (UID 10001). Where a new test goes: [`tests/README.md`](../../../tests/README.md). How to run tests and audits: [runbook](../../runbook/testing/running_tests_and_audits.md).
+- The tests have since been reorganised into `tests/unit/`, `tests/integration/` (disposable PostgreSQL) and `tests/system/` (the Docker stack), and both MCP images now run as a non-root user (UID 10001). Where a new test goes and how to run it: [runbook](../../runbook/testing/running_tests_and_audits.md).
 - The same tests and audits now gate every release in Cloud Build and GitHub Actions ([Cloud](../../architecture/cloud/cloud-infrastructure.md#release)).
 
 ## Follow-Ups

@@ -27,4 +27,4 @@
 ## Follow-Ups
 - **Check a real cloud run** picks up the skills and connectors: a Ready item with Run location Cloud.
 - **Codex** still installs the skills as plugins or local copies; unchanged here.
-- **Agent Register** source pointers still name removed prompts ([horology plugin runbook](../../runbook/subscription-agents/horology_plugin.md)).
+- **Agent Register** source pointers still name removed prompts ([Codex plugin maintenance](../../runbook/subscription-agents/codex_plugin_maintenance.md)).

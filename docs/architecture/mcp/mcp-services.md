@@ -12,7 +12,7 @@ Two MCP services connect agents to anything outside them. Each exposes a fixed s
 The same image runs in two places:
 
 - **Cloud Run** for subscription agents. Public HTTPS; every MCP tool needs Google sign-in. See [Cloud](../cloud/cloud-infrastructure.md).
-- **Local Docker** for Hermes. Bound to localhost and the Hermes network. The gateway uses a local bearer credential; the document graph has no sign-in and serves workspace `welladino`. See [Hermes](../hermes/hermes-agents.md#containers).
+- **Local Docker** for Hermes. Bound to localhost and the Hermes network. The gateway uses a local bearer credential; the document graph has no sign-in and serves the configured local workspace. See [Hermes runtime connections](../hermes/hermes-agents.md#runtime-connections).
 
 ## Sign-in
 
@@ -57,6 +57,16 @@ Google is asked only for `openid email`, so sign-in grants no Gmail or Drive acc
 | `operations.py`, `logging.py`, `error_handling.py` | Structured operation logs and safe error categories |
 | `urls.py` | Public-address checks for URLs agents supply |
 
+For native development, install the shared packages from the repository root:
+
+```bash
+.venv/bin/python -m pip install --no-deps -e shared-runtime -e document-graph-core
+```
+
+Both MCP Dockerfiles install these packages from the repository-root build context. Rebuild both consuming images after changing shared runtime behavior.
+
 ## Logs and errors
 
 Each tool call is logged to stdout as JSON with the operation, integration, duration, outcome and a correlation ID. Arguments, documents, credentials and raw exception messages are never logged. Callers get only an error category and a request ID. Neon calls time out after 5 seconds to connect, 10 seconds per statement and 3 seconds per lock. The services don't retry automatically; the document graph's AI calls are the exception (up to two retries on timeouts, 429s and 5xx). Uvicorn access logs are off, and a logging-sink exclusion keeps OAuth callback codes out of retained request URLs.
+
+For local operation, deployment links and the checklist for adding another restricted server, see [Operate and extend the MCP servers](../../runbook/mcp/mcp_servers.md).

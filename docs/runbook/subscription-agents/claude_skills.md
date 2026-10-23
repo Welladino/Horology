@@ -33,13 +33,13 @@ Upload each changed zip: Customize (desktop app sidebar) or claude.ai skills set
 open plugins/dist/claude
 ```
 
-There are 12 skills: supervisor, planner, digest and capture-triage (`horology-workflows`); research, technical assessment, security review, GTM, marketing strategy and content planner (`horology-specialists`); `horology-mcp-access` (`horology-tools`); and `horology-document-graph`.
+There are 16 skills: seven workflows (supervisor, planner, digest, capture-triage, template, watcher-setup and workspace-setup); seven specialists (research, technical assessment, security review, GTM, marketing strategy, content planner and synthesis artifacts); `horology-mcp-access`; and `horology-document-graph`.
 
 ## Check
 
 In a new cloud session (or a new local Claude Code session, where they show as `anthropic-skills:horology-*`):
 
 - The `horology-*` skills are listed.
-- With both connectors on: `gateway_status` (14 names: 13 tools plus the `tavily_advanced_search` permission) and `list_documents`. Neither makes paid calls. The document graph lists 19 tools.
+- With both connectors on: `gateway_status` (14 callable tools plus the `tavily_advanced_search` permission) and `list_documents`. Neither makes paid calls. The document graph lists 19 tools.
 
 If a tool or skill appears twice, an old Horology plugin is still installed on your account: remove it under Customize → Plugins.
