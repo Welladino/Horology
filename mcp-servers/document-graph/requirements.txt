@@ -4,7 +4,7 @@
 mcp==2.2.0
 psycopg[binary]==3.3.6
 psycopg-pool==3.3.3
-certifi==2026.7.22
+certifi==2026.10.19
 httpx==0.28.1
 networkx==3.7
 # Reads workflow.yaml (the Pipeline workflow) to check values and flag unexpected changes.
