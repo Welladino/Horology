@@ -2,15 +2,24 @@ name: horology-hermes
 
 services:
   hermes:
-    image: nousresearch/hermes-agent:latest
+    build:
+      context: .
+      dockerfile: ops/hermes/Dockerfile
+      args:
+        HERMES_VERSION: v0.22.5
+    image: horology-hermes:v0.22.5-modal
     container_name: horology-hermes
     restart: unless-stopped
-    command: gateway run
+    # Hermes v0.22+ runs one host-wide gateway that multiplexes every profile.
+    # Operator remains the normal dashboard profile; Explorer stays isolated
+    # by its Modal execution backend rather than a separate gateway process.
+    command: ["hermes", "gateway", "run"]
     ports:
       - "127.0.0.1:8642:8642"   # OpenAI-compatible API + health endpoint (localhost only — no auth on this port)
       - "127.0.0.1:9119:9119"   # Web dashboard (localhost only)
     volumes:
       - ./hermes-data:/opt/data
+      - hermes-workspace:/workspace
     environment:
       - HERMES_DASHBOARD=1
       - HERMES_DASHBOARD_HOST=0.0.0.0
@@ -25,6 +34,12 @@ services:
       # into the cron script's subprocess environment, see
       # docs/planning/research/2026-08-07_cron-script-security-pattern_research.md.
       - CRON_SWEEP_RO_DATABASE_URL=${CRON_SWEEP_RO_DATABASE_URL:?set CRON_SWEEP_RO_DATABASE_URL in .env}
+
+# Docker-managed storage for repositories explicitly trusted to run inside
+# the Hermes container. This is not a bind mount to the host checkout.
+volumes:
+  hermes-workspace:
+    name: horology-hermes-workspace
 
 # Shared network is managed independently of the Hermes project.
 networks:
