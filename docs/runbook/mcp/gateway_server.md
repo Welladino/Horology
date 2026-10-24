@@ -2,7 +2,7 @@
 
 The gateway exposes fixed, policy-controlled Supabase metadata, Tavily, Firecrawl/Alexandria and private Pages publishing tools. It never receives a general provider API or SQL operation. Architecture and current tool boundaries: [Gateway](../../architecture/mcp/gateway.md).
 
-This page is the gateway-specific setup and troubleshooting guide. Use [Run all local services](../docker/running_all_services.md) for the normal three-project start/stop sequence; return here when creating gateway credentials, changing policy, applying its database migration or running its smoke test.
+This page is the gateway-specific setup and troubleshooting guide. Use [Run the local services](../docker/running_all_services.md) for the normal document-graph and gateway start/stop sequence; return here when creating gateway credentials, changing policy, applying its database migration or running its smoke test.
 
 ## First-time setup
 

@@ -1,6 +1,6 @@
 # Cloud infrastructure
 
-The two MCP services and the sync job run on Google Cloud, in project `horology-dev` (Console name `horology`), region `us-central1`. Hermes is not deployed; it runs only on the founder's laptop.
+The two MCP services and the sync job run on Google Cloud, in project `horology-dev` (Console name `horology`), region `us-central1`. Hermes is a separate Watchmaker deployment and is not part of this Google Cloud stack; it may run locally or on a dedicated VM.
 
 ## Services
 

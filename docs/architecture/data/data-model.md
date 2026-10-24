@@ -1,6 +1,6 @@
 # Data model
 
-Horology keeps its own state in one Neon Postgres database. Business deliverables from subscription agents live in Drive and Sheets instead; Hermes' own local session and runtime state stays in the gitignored `hermes-data/`. See [Workspace data flow](workspace-data-flow.md) for when agent runs, Sheet changes and documents reach Neon, and [MCP request and database flow](mcp-request-flow.md) for identity, tool calls and quota records.
+Horology keeps its own state in one Neon Postgres database. Business deliverables from subscription agents live in Drive and Sheets instead; Hermes' private sessions and runtime state stay in Watchmaker's ignored `runtime/hermes-data/`. See [Workspace data flow](workspace-data-flow.md) for when agent runs, Sheet changes and documents reach Neon, and [MCP request and database flow](mcp-request-flow.md) for identity, tool calls and quota records.
 
 ```mermaid
 flowchart TB
@@ -30,7 +30,7 @@ Each service connects through Neon's pooled endpoint with its own login, granted
 |---|---|---|
 | `horology_graph` | Document-graph service and sync job | Graph tables in `public`, `graph_auth`; read-only on `access` |
 | `horology_gateway` | Gateway | `gateway_quotas`, `gateway_auth`, read-only on `access`. It can add reservations but not delete or reset quota history. |
-| `horology_cron_sweep_ro` | Unembedded-documents check (`scripts/check_unembedded_documents.py`) | SELECT on `documents` and `document_embeddings` |
+| `horology_cron_sweep_ro` | Watchmaker's unembedded-documents check | SELECT on `documents` and `document_embeddings` |
 
 ## Schemas
 

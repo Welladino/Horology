@@ -68,7 +68,7 @@ It is not currently designed for unrelated customers sharing one installation. S
 ## Start here
 
 - New user: [How Horology works](docs/runbook/setup/how-horology-works.md), then [Set up a workspace](docs/runbook/setup/setup.md).
-- Operator: [Architecture overview](docs/architecture/overview.md), then [Run all local services](docs/runbook/docker/running_all_services.md).
+- Operator: [Architecture overview](docs/architecture/overview.md), then [Run the local MCP services](docs/runbook/docker/running_all_services.md).
 - Workflow operator: [Operate the subscription-agent workflow](docs/runbook/subscription-agents/workflow_operations.md).
 - Contributor: [Repository documentation rules](CLAUDE.md) and [tests and audits](docs/runbook/testing/running_tests_and_audits.md).
 
@@ -87,4 +87,4 @@ It is not currently designed for unrelated customers sharing one installation. S
 | `docs/runbook/` | Step-by-step operating instructions |
 | `docs/planning/` | Dated research and implementation history |
 
-The local Docker stack is optional and split into three Compose projects: Hermes, the document graph and the gateway. Root `docker compose up -d` starts Hermes only. Follow the [complete runbook](docs/runbook/docker/running_all_services.md) to start, verify or stop all three.
+The optional local stack in this repository contains the document graph and restricted gateway as separate Compose projects. The always-on Hermes deployment is maintained separately in the private Watchmaker repository and joins these services through the external `horology_default` Docker network. Follow the [local-services runbook](docs/runbook/docker/running_all_services.md) to start, verify or stop the MCP services.
