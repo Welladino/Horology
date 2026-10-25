@@ -11,8 +11,9 @@ services:
     container_name: horology-hermes
     restart: unless-stopped
     # Hermes v0.22+ runs one host-wide gateway that multiplexes every profile.
-    # Operator remains the normal dashboard profile; Explorer stays isolated
-    # by its Modal execution backend rather than a separate gateway process.
+    # Coordinator (the protected default profile) is the dashboard front door.
+    # Operator handles non-code work; Explorer stays isolated by its Modal
+    # execution backend rather than a separate gateway process.
     command: ["hermes", "gateway", "run"]
     ports:
       - "127.0.0.1:8642:8642"   # OpenAI-compatible API + health endpoint (localhost only — no auth on this port)
@@ -20,6 +21,8 @@ services:
     volumes:
       - hermes-data:/opt/data
       - hermes-workspace:/workspace
+      # Durable deliverables exposed to macOS without exposing the repository.
+      - ./hermes/hermes-output:/workspace/output
     environment:
       - HERMES_DASHBOARD=1
       - HERMES_DASHBOARD_HOST=0.0.0.0

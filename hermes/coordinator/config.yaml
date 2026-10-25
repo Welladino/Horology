@@ -1,0 +1,29 @@
+model:
+  provider: openrouter
+  default: deepseek/deepseek-v4-flash-0731
+database:
+  journal_mode: delete
+stt:
+  enabled: false
+dashboard:
+  theme: default
+platform_toolsets:
+  cli:
+    - clarify
+    - file
+    - kanban
+    - memory
+    - session_search
+    - skills
+    - todo
+mcp_servers:
+  document-graph:
+    url: http://document-graph-mcp:8765/mcp
+    enabled: false
+  mcp-gateway:
+    url: http://horology-mcp-gateway:8767/mcp
+    enabled: false
+  Github MCP:
+    url: https://api.githubcopilot.com/mcp/readonly
+    enabled: false
+_config_version: 51

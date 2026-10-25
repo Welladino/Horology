@@ -10,6 +10,11 @@
 # Hermes container state: API keys, sessions, memories. Never commit.
 hermes-data/
 
+# Local copies of Hermes research, reports and datasets. Back up separately;
+# selectively force-add a reviewed deliverable only when it belongs in Git.
+hermes/hermes-output/*
+!hermes/hermes-output/.gitkeep
+
 # Reviewed Hermes configuration is tracked under hermes/. Local credentials are not.
 hermes/.env
 hermes/*/.env

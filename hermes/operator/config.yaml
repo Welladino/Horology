@@ -173,8 +173,8 @@ session_reset:
 group_sessions_per_user: true
 platform_toolsets:
   cli:
+    - browser
     - clarify
-    - code_execution
     - connections
     - cronjob
     - delegation
@@ -182,7 +182,6 @@ platform_toolsets:
     - memory
     - session_search
     - skills
-    - terminal
     - todo
     - web
   telegram:
