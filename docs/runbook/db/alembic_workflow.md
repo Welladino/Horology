@@ -54,7 +54,7 @@ Most migrations only need `DATABASE_URL`. `20260807_001_add_readonly_role_for_cr
 CRON_SWEEP_RO_PASSWORD="$(python3 -c 'import secrets; print(secrets.token_urlsafe(24))')" alembic upgrade head
 ```
 
-After running it, build the connection string by hand (Neon's pooled hostname, same host/db as `DATABASE_URL_POOLED` but with the new role's name/password). If the Watchmaker document-completeness sweep is enabled, store the value as `CRON_SWEEP_RO_DATABASE_URL` in Watchmaker's ignored `.env`; its `.env.example` shows the shape. The migration stores only the role and password in Postgres, so the operator must save the generated password like any other credential.
+After running it, build the connection string by hand (Neon's pooled hostname, same host/db as `DATABASE_URL_POOLED` but with the new role's name/password) and add it to `.env` as `CRON_SWEEP_RO_DATABASE_URL` — see `.env.example` for the exact shape. This is not stored anywhere by the migration itself (only the role/password exist in Postgres after `upgrade`) — you're responsible for saving the password you generated, same as any other credential.
 
 ## Creating a new migration
 

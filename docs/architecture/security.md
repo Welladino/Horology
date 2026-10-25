@@ -28,7 +28,7 @@ Horology is designed for one person or a small trusted group, but it still separ
 
 ## Operator checklist
 
-1. Keep private files out of Git and build contexts. Watchmaker's live `runtime/hermes-data/` is ignored in its own repository.
+1. Keep private files and `hermes-data/` out of Git and build contexts.
 2. Grant only the required Google account, workspace and MCP service access.
 3. Use the dedicated runtime database roles; run Alembic with the owner connection only.
 4. Keep local MCP ports on loopback and Cloud Run services behind their configured OAuth flow.

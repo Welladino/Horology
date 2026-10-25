@@ -1,55 +1,63 @@
 # Hermes agent architecture
 
-Hermes is the optional always-on agent runtime used alongside Horology. Its deployment is maintained in the private Watchmaker repository, not in this repository. Horology supplies the shared workflow, canonical skills and restricted MCP services; Watchmaker turns selected parts of that system into a persistent Operator and an isolated Explorer.
+Hermes runs locally in Docker with Operator for trusted Horology work and Explorer for isolated execution. Hermes v0.22's single host-wide gateway serves both profiles. Operator's specialist behavior comes from Horology skills loaded as needed; Explorer executes unfamiliar code in ephemeral Modal sandboxes without mounting Operator's repository volume or forwarding host credentials. The old persistent specialist profiles and kanban persona dispatch were retired on 23 October 2026; their state is preserved in a local archive under `hermes-data/archives/`.
 
 ```mermaid
-flowchart LR
-  user["User"] --> operator["Operator<br/>trusted persistent work"]
-  user --> explorer["Explorer<br/>isolated experiments"]
-  operator --> skills["Adapted Horology skills"]
-  operator --> graph["Document graph MCP"]
-  operator --> gateway["Restricted gateway MCP"]
-  operator --> workspace["Approved repositories<br/>Docker volume"]
-  explorer --> modal["Ephemeral Modal sandbox"]
-  graph --> neon[("Neon document history")]
-  gateway --> providers["Permitted provider tools"]
-  subscriptions["Claude, ChatGPT and Codex"] --> sheets["Pipeline, Sheets and Drive"]
-  sheets --> sync["Graph sync"] --> neon
+flowchart LR;
+  founder[Founder];
+  hermes[Operator];
+  explorer[Explorer];
+  modal[Ephemeral Modal sandbox];
+  skills[Horology skill copies];
+  docGraph[Document graph MCP];
+  gateway[Restricted gateway MCP];
+  neon[(Neon document history)];
+  providers[Permitted provider tools];
+  codex[Codex and Claude];
+  sheets[Pipeline and Drive];
+  sync[Graph sync];
+  founder --> hermes;
+  founder --> explorer;
+  explorer --> modal;
+  hermes --> skills;
+  hermes --> docGraph;
+  hermes --> gateway;
+  docGraph --> neon;
+  gateway --> providers;
+  codex --> sheets;
+  sheets --> sync;
+  sync --> neon;
 ```
 
-## Repository boundary
+## Where state lives
 
-| Concern | Owner | Meaning |
-| --- | --- | --- |
-| Pipeline contract and canonical skills | Horology | Shared definitions used by subscription agents and adapted for Hermes |
-| Apps Script, document graph and restricted gateway | Horology | Human-facing workflow plus controlled service access |
-| Hermes image, Compose deployment and operations | Watchmaker | Versioned runtime configuration for the always-on agent |
-| Operator and Explorer templates | Watchmaker | Reviewed identities, context, adapted skills and example configuration |
-| Live Hermes sessions, credentials and machine settings | Watchmaker's ignored `runtime/hermes-data/` | Private state that must never enter Git |
-| Approved repository checkouts | Docker volume `horology-hermes-workspace` | Persistent agent workspace with no host-repository bind mount |
+| State | Location | Meaning |
+|---|---|---|
+| Live Pipeline stages, decisions and finished Drive files | Google Sheets and Drive | Authoritative Horology workflow records |
+| Searchable documents, links, item history and run claims | Document graph in Neon | Shared history; Sheet-derived changes arrive after sync |
+| Operator identity and global operating rules | `hermes-data/profiles/operator/SOUL.md` and `.hermes.md` | Local Hermes identity and project context |
+| Explorer configuration and secrets | `hermes-data/profiles/explorer/` | Local control plane for ephemeral Modal execution; secrets are not forwarded into sandboxes |
+| Hermes preferences, sessions, skills, MCP settings and secrets | `hermes-data/` bind mount | Local agent state; Git-ignored and not copied automatically from plugins |
+| Approved repository checkouts | `horology-hermes-workspace` Docker volume mounted at `/workspace` | Persistent trusted workspace; not a host-repository bind mount |
 
-The Watchmaker checkout existing on a Mac or VM does not give Hermes access to that machine's other folders. The container receives only two explicit mounts: its ignored runtime directory at `/opt/data` and the Docker-managed workspace volume at `/workspace`. It does not receive the Docker socket or a host home-directory mount.
+Hermes memory is personal continuity, not a replacement for graph documents or Sheet records. The local graph MCP has no application OAuth and serves only workspace `welladino`; the local gateway authenticates Hermes by bearer credential and applies its client policy. A separate read-only GitHub MCP supplies GitHub information, and Git can clone, fetch and pull approved repositories into `/workspace` with the same repository-scoped credential. These connections do not supply Google Sheets/Drive editing or GitHub write access. Hermes may investigate and draft with available tools but cannot complete a Pipeline stage until those integrations and a Hermes execution route are configured and tested.
 
-## Operator and Explorer
+## Runtime connections
 
-**Operator** handles trusted, persistent work. It can read adapted Horology skills, connect to approved MCP servers, use its controlled Chromium browser and work on repositories explicitly cloned into `/workspace`. Browser sessions are headless and use a fresh, unauthenticated profile unless the user deliberately configures otherwise.
+Open the local Hermes dashboard at **[http://localhost:9119](http://localhost:9119)** when the container is running. The OpenAI-compatible API is at `http://localhost:8642`; both are bound to localhost.
 
-**Explorer** handles unfamiliar code and dependency experiments in ephemeral Modal sandboxes. Its sandbox does not inherit Operator's repository volume or credentials. The user selects Operator or Explorer when assigning work; automatic cross-profile delegation is not assumed.
-
-## Service connections
-
-Watchmaker and Horology's two local MCP projects join the external `horology_default` Docker network:
-
-| Container | Host port | Container-to-container address |
-| --- | ---: | --- |
-| `horology-hermes` | 8642 API, 9119 dashboard | — |
+| Container | Local port | Hermes connection |
+|---|---:|---|
+| `horology-hermes` | 8642 API, 9119 dashboard | One multiplexed gateway serving Operator and Explorer |
 | `horology-document-graph-mcp` | 8765 | `http://document-graph-mcp:8765/mcp` |
-| `horology-mcp-gateway` | 8767 | `http://horology-mcp-gateway:8767/mcp` |
+| `horology-mcp-gateway` | 8767 | `http://horology-mcp-gateway:8767/mcp` with bearer token |
 
-All published ports stay bound to `127.0.0.1`. The local document graph serves the configured workspace. The gateway uses a bearer credential and its own client policy. GitHub access is repository-scoped and separate from the Horology gateway. None of these connections automatically grants Google Sheets or Drive access.
+The three Compose projects share the private `horology_default` Docker network. Their host ports are bound to localhost. At the 23 October 2026 connection check, the graph exposed 19 tools and the gateway exposed 14, of which 13 were selected for Hermes. `publish_synthesis` was excluded from the Hermes filter. The old GitHub gateway tools no longer exist. The old document-graph embedding-sweep cron job is paused.
 
 ## Skills and update responsibility
 
-Horology remains the source for the cross-platform workflow and specialist skills under `plugins/`. Watchmaker keeps reviewed Hermes adaptations under `profiles/operator/skills/`; a sync script copies only those maintained files into the ignored live runtime. Updating a Horology plugin does not automatically overwrite an adapted Hermes skill because the two runtimes can have different tools and safety boundaries.
+Operator's identity lives in Hermes' standard `hermes-data/profiles/operator/SOUL.md` file. The filename is part of Hermes' identity system; the `# Operator` heading and file contents define this agent's actual name and posture. Stable operating rules live beside it in `.hermes.md`, while task-specific workflow rules remain in the relevant skills.
 
-Hermes memory provides local continuity, not the shared system of record. Pipeline state and decisions belong in Sheets and Drive; searchable documents and run history belong in the document graph. Detailed setup, upgrades, profile synchronization, browser testing and recovery procedures live in Watchmaker's `README.md` and `docs/operations.md`.
+The maintained Horology skill instructions live in the repository's `plugins/horology-*` packages. Adapted copies are installed below `hermes-data/profiles/operator/skills/`. **Those runtime copies are Git-ignored snapshots. Updating a plugin, pulling Git changes, or pulling a new Hermes image does not update them.** The Hermes supervisor is intentionally different from the Codex/Claude supervisor, and the other installed copies contain Hermes-specific tool boundaries. Explorer intentionally has no bundled skill set.
+
+After any Horology plugin skill change, follow the comparison, merge and verification checklist in [Hermes setup and upkeep](../../runbook/docker/hermes_setup.md#refresh-horology-skills-after-a-plugin-update). That runbook also records the recoverable profile archive and the MCP test commands. No Git commit or Cloud Run deployment is needed to refresh local Hermes skills.
