@@ -1,0 +1,97 @@
+model:
+  provider: openrouter
+  default: deepseek/deepseek-v4-flash-0731
+terminal:
+  backend: modal
+  modal_mode: direct
+  cwd: /root
+  container_persistent: false
+browser:
+  cloud_provider: local
+  use_gateway: false
+stt:
+  enabled: false
+moa:
+  presets:
+    default:
+      reference_models:
+        - provider: openrouter
+          model: deepseek/deepseek-v4-flash-0731
+          enabled: true
+        - provider: openrouter
+          model: qwen/qwen3.8-flash
+          enabled: true
+      aggregator:
+        model: deepseek/deepseek-v4-flash-0731
+      degraded_reference_policy: loud
+      fanout: user_turn
+  reference_models:
+    - provider: openrouter
+      model: deepseek/deepseek-v4-flash-0731
+      enabled: true
+    - provider: openrouter
+      model: qwen/qwen3.8-flash
+      enabled: true
+  aggregator:
+    provider: openrouter
+    model: deepseek/deepseek-v4-flash-0731
+  degraded_reference_policy: loud
+  max_tokens: 4096
+  fanout: user_turn
+  enabled: true
+_config_version: 51
+platform_toolsets:
+  cli:
+    - browser
+    - clarify
+    - code_execution
+    - computer_use
+    - connections
+    - cronjob
+    - delegation
+    - file
+    - image_gen
+    - kanban
+    - memory
+    - session_search
+    - skills
+    - terminal
+    - todo
+    - vision
+known_plugin_toolsets:
+  cli:
+    - a2a
+    - spotify
+known_builtin_toolsets:
+  cli:
+    - browser
+    - clarify
+    - code_execution
+    - computer_use
+    - connections
+    - context_engine
+    - cronjob
+    - delegation
+    - discord
+    - discord_admin
+    - file
+    - homeassistant
+    - image_gen
+    - memory
+    - session_search
+    - skills
+    - spotify
+    - stt
+    - terminal
+    - todo
+    - tts
+    - video
+    - video_gen
+    - vision
+    - web
+    - x_search
+    - yuanbao
+database:
+  journal_mode: delete
+dashboard:
+  theme: default

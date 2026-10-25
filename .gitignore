@@ -10,6 +10,12 @@
 # Hermes container state: API keys, sessions, memories. Never commit.
 hermes-data/
 
+# Reviewed Hermes configuration is tracked under hermes/. Local credentials are not.
+hermes/.env
+hermes/*/.env
+!hermes/.env.example
+!hermes/*/.env.example
+
 # Live check: OAuth tokens and local reports (scripts/ops/live_check.py, scripts/security, scripts/testing).
 .auth/
 reports/
