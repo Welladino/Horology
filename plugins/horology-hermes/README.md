@@ -4,7 +4,7 @@ This package contains skills used only by the Hermes deployment. They are not
 part of the Claude or Codex subscription-agent distributions.
 
 - `horology-coordinator` gives Hermes' protected `default` profile its
-  planning, routing, approval and review logic.
+  planning, Kanban routing, approval and review logic.
 - `horology-composio-reader` gives Coordinator bounded, read-only access to
   live Pipeline, Locations, registers, Drive metadata and linked Docs.
 - `horology-composio-guide` gives Operator the maintained Composio MCP

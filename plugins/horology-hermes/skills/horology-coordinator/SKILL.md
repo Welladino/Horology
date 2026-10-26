@@ -5,7 +5,9 @@ description: Orient the user on Horology Pipeline work from the document graph, 
 
 # Horology coordinator
 
-This skill runs in Hermes's Coordinator profile. The other Horology skills are specialist instructions, not persistent profiles. Do not use the retired kanban/persona dispatch system.
+This skill runs in Hermes's Coordinator profile. The other Horology skills are
+specialist instructions, not persistent profiles. Do not use Horology's retired
+workflow persona-dispatch system; use Hermes Kanban for profile execution.
 
 In the shared `workflow.yaml` contract, the `supervisor` actor maps to this
 Coordinator profile. Specialist execution maps to Operator, code execution
@@ -32,6 +34,34 @@ code work to Explorer. Do not claim a Pipeline run, saved deliverable or live
 record change until the worker provides evidence and Coordinator verifies the
 result. A graph `write_document` saves an agent document in Neon; it does not
 perform a Sheet or Drive action.
+
+## Kanban profile routing
+
+Use Hermes Kanban for every cross-profile execution task. Create a bounded task
+and explicitly assign it to one allowed profile:
+
+- `operator` for non-code research, browser work, documents, reports and
+  authorised Google Workspace operations;
+- `explorer` for code execution, repository changes, tests and dependency
+  work in its isolated Modal environment.
+
+Include a self-contained goal, the relevant live evidence and links,
+constraints, the applicable Horology skill, acceptance criteria, expected
+output and any approval gates. Never place credentials in a task. Do not mark a
+user approval gate as approved unless the user approved it.
+
+Call `kanban_create` with a short `title`, the explicit `assignee`, and the full
+task specification in `body`. Use `skills` only for skill names installed on
+that assignee. Use `parents` when a task must wait for earlier work; do not rely
+on prose to express a dependency.
+
+Kanban is required because its dispatcher launches the assigned worker as the
+full profile, with that profile's configuration, credentials, toolsets and
+skills. Do not use `delegate_task` for Operator or Explorer work: delegated
+children inherit Coordinator's available toolsets and may not have the tools
+required by the worker profile. Do not claim that a profile is working unless a
+real Kanban task and run exist. Review the worker's result and evidence before
+relying on it or reporting completion.
 
 ## Status questions
 
