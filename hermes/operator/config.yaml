@@ -3,6 +3,9 @@ model:
   provider: openrouter
   base_url: https://openrouter.ai/api/v1
   api_mode: chat_completions
+fallback_providers:
+  - provider: openrouter
+    model: z-ai/glm-5.3-flash
 database:
   journal_mode: delete
 agent:
@@ -107,26 +110,6 @@ memory:
   flush_min_turns: 6
 delegation:
   max_iterations: 250
-moa:
-  presets:
-    default:
-      reference_models:
-        - provider: openrouter
-          model: deepseek/deepseek-v4-pro
-          enabled: true
-      degraded_reference_policy: loud
-      fanout: user_turn
-  reference_models:
-    - provider: openrouter
-      model: deepseek/deepseek-v4-pro
-      enabled: true
-  aggregator:
-    provider: openrouter
-    model: anthropic/claude-opus-4.8
-  degraded_reference_policy: loud
-  max_tokens: 4096
-  fanout: user_turn
-  enabled: true
 skills:
   creation_nudge_interval: 15
   disabled:
@@ -269,9 +252,6 @@ mcp_servers:
     headers:
       x-api-key: ${COMPOSIO_HOROLOGY}
     enabled: true
-fallback_model:
-  provider: openrouter
-  model: z-ai/glm-5.2
 plugins:
   enabled: []
   disabled:
