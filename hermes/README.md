@@ -28,8 +28,9 @@ again. The script will:
 2. create Operator and Explorer if they are missing;
 3. install the tracked profile identities, descriptions and configuration;
 4. install the shared Horology skills for Coordinator and Operator, remove the
-   subscription-agent supervisor from both, and install the Hermes-only
-   Coordinator skill for Coordinator;
+   subscription-agent supervisor from both, install the Hermes-only
+   Coordinator and read-only Composio skills for Coordinator, and install the
+   write-capable Composio guide for Operator;
 5. copy the local ignored credentials into the appropriate profiles; and
 6. select Coordinator and restart Hermes.
 
@@ -55,7 +56,8 @@ After intentionally changing a tracked profile file, rerun the bootstrap to
 apply it. Coordinator maps to `/opt/data`; named profiles map below
 `/opt/data/profiles/`.
 
-The shared skill sources remain under `plugins/horology-*`. Coordinator's
-Hermes-only routing skill is maintained at
-`plugins/horology-hermes/skills/horology-coordinator/SKILL.md`. It is excluded
-from the Claude and Codex subscription-agent distributions.
+The shared skill sources remain under `plugins/horology-*`. Hermes-only
+profile skills are maintained under `plugins/horology-hermes/skills/`:
+`horology-coordinator` and `horology-composio-reader` are installed for
+Coordinator, while `horology-composio-guide` is installed for Operator. They
+are excluded from the Claude and Codex subscription-agent distributions.

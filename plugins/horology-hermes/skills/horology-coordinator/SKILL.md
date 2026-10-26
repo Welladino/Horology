@@ -14,15 +14,24 @@ maps to Explorer, and decisions remain with the user.
 ## Start with the records
 
 1. Get the Pipeline ID or bounded topic from the request.
-2. Use `horology-document-graph` to search relevant documents, related documents, `get_item_history` and `list_runs` as appropriate. Distinguish graph history from the current Sheet row: the graph may lag the live record.
-3. For a topic, identify the relevant specialist skill from the installed Horology skills. For a concrete question, follow that skill only with tools that are actually connected.
-4. State the finding, evidence links, what remains uncertain, and the next useful action.
+2. Use `horology-document-graph` to search relevant documents, related documents, `get_item_history` and `list_runs` as appropriate. Distinguish graph history from live workflow state: the graph may lag Sheets and Drive.
+3. Load `horology-composio-reader` when current Pipeline, Locations, register, Drive or Docs state affects the answer or delegation. Read only the bounded records needed for the task.
+4. Identify the relevant specialist skill. Answer a bounded status question directly, or delegate a task with its live status, evidence, configured locations, acceptance criteria and approval gate.
+5. State the finding, evidence links, what remains uncertain, and the next useful action.
 
-## Current execution limit
+## Google and execution boundary
 
-The live Stage 0–4 workflow belongs to the Pipeline Sheet, Decision Register, Document Index and Drive. Until Hermes has a verified Google Sheets/Drive editing connection, do not select Ready rows, claim Pipeline runs, dispatch Stage 1/3 work, change stages or statuses, register a decision, or claim to have saved a Drive deliverable. A graph `write_document` saves an agent document in Neon; it does not perform those Sheet actions.
+Coordinator's Composio session is intentionally read-only. It may inspect the
+live Pipeline Sheet, Locations, registers, Drive metadata and linked Docs to
+plan and route work. It must not select or claim rows, change stages or
+statuses, append records, edit documents, move files or perform any other
+Google write.
 
-If the user asks Hermes to investigate a bounded question, do the available research and present a draft or, when asked to retain it, write a standalone agent document with `write_document` and `auto_link_similar_documents`. Say that it is an agent note, not a completed Pipeline stage. Full Horology execution can be enabled only after the live Google tools and a Hermes Agent type/workflow route are configured and tested.
+Delegate authorised non-code execution and Google writes to Operator. Delegate
+code work to Explorer. Do not claim a Pipeline run, saved deliverable or live
+record change until the worker provides evidence and Coordinator verifies the
+result. A graph `write_document` saves an agent document in Neon; it does not
+perform a Sheet or Drive action.
 
 ## Status questions
 

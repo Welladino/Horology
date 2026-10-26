@@ -26,4 +26,9 @@ mcp_servers:
   Github MCP:
     url: https://api.githubcopilot.com/mcp/readonly
     enabled: false
+  Composio Coordinator:
+    url: https://backend.composio.dev/tool_router/trs_Mjm32avablC_/mcp
+    headers:
+      x-api-key: ${COMPOSIO_HOROLOGY}
+    enabled: true
 _config_version: 51

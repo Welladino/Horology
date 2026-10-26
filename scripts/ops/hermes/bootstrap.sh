@@ -136,10 +136,16 @@ for profile_root in /opt/data /opt/data/profiles/operator; do
     rm -rf "${profile_root}/skills/horology-workflows/horology-supervisor"
 done
 
-note "Installing the Hermes-only Coordinator skill..."
+note "Installing Hermes profile-specific skills..."
 copy_skill_group \
-  "${REPO_ROOT}/plugins/horology-hermes/skills" \
-  "/opt/data/skills/horology-hermes"
+  "${REPO_ROOT}/plugins/horology-hermes/skills/horology-coordinator" \
+  "/opt/data/skills/horology-hermes/horology-coordinator"
+copy_skill_group \
+  "${REPO_ROOT}/plugins/horology-hermes/skills/horology-composio-reader" \
+  "/opt/data/skills/horology-hermes/horology-composio-reader"
+copy_skill_group \
+  "${REPO_ROOT}/plugins/horology-hermes/skills/horology-composio-guide" \
+  "/opt/data/profiles/operator/skills/horology-hermes/horology-composio-guide"
 
 note "Normalising ownership and selecting Coordinator..."
 docker exec --user root "${CONTAINER}" sh -lc \

@@ -264,6 +264,11 @@ mcp_servers:
     headers:
       Authorization: Bearer ${GITHUB_MCP_TOKEN}
     enabled: true
+  Composio Operator:
+    url: https://backend.composio.dev/tool_router/trs_5ExexbFhlTrd/mcp
+    headers:
+      x-api-key: ${COMPOSIO_HOROLOGY}
+    enabled: true
 fallback_model:
   provider: openrouter
   model: z-ai/glm-5.2
