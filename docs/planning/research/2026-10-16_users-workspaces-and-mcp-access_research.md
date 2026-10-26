@@ -37,7 +37,7 @@
 - `horology_runtime/access.py`: one lookup per email returns active status, active granted servers and active workspaces; cached 5 minutes, 10,000 entries, misses 60 seconds. `check(email, workspace)` raises unless the account is active, holds this server, and (for workspace-scoped servers) is a member of that workspace.
 - The OAuth provider awaits the check, and asks a workspace-scoped service for the account's workspaces: none refuses sign-in, one is chosen silently, several show a picker. The chosen workspace is stored on the code, refresh and access tokens.
 - The gateway checks `gateway`; the document graph checks `document-graph` and reads the workspace from the token; the sync job reads `workspaces` (`GRAPH_SYNC_WORKBOOKS` stays as a local override).
-- `scripts/ops/access.py` for users, workspaces, members, grants and servers. After deploying, seed it from today's settings, then remove `DOCUMENT_GRAPH_WORKSPACES` and `GRAPH_SYNC_WORKBOOKS` from Cloud Run.
+- `scripts/ops/mcp/access.py` for users, workspaces, members, grants and servers. After deploying, seed it from today's settings, then remove `DOCUMENT_GRAPH_WORKSPACES` and `GRAPH_SYNC_WORKBOOKS` from Cloud Run.
 
 ## Open Questions
 - Instant revocation: a change takes up to 5 minutes (or a token's lifetime for tokens already cached). Should the admin script also revoke a disabled person's live tokens on both services? Today only the gateway has `revoke_email.py`.

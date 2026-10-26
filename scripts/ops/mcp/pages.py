@@ -3,6 +3,8 @@
 Uses the owner DATABASE_URL. This script never creates an unprotected project
 or changes Cloudflare Access. The gateway checks the live Cloudflare setup on
 every publish and refuses to upload when it is incomplete.
+
+Run from the repository root as scripts/ops/mcp/pages.py.
 """
 import argparse
 import os

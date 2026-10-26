@@ -235,13 +235,14 @@ known_builtin_toolsets:
     - x_search
     - yuanbao
 mcp_servers:
-  document-graph:
-    url: http://document-graph-mcp:8765/mcp
+  document-graph-https:
+    url: https://document-graph-366292507424.us-central1.run.app/mcp
+    auth: oauth
     enabled: true
-  mcp-gateway:
-    url: http://horology-mcp-gateway:8767/mcp
-    headers:
-      Authorization: Bearer ${MCP_MCP_GATEWAY_API_KEY}
+
+  mcp-gateway-https:
+    url: https://mcp-gateway-366292507424.us-central1.run.app/mcp
+    auth: oauth
     enabled: true
     tools:
       include:

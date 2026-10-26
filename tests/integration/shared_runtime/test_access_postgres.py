@@ -19,7 +19,7 @@ WS_A, WS_B, SERVER = f"ws-a-{TAG}", f"ws-b-{TAG}", f"test-server-{TAG}"
 
 
 def load_admin():
-    spec = importlib.util.spec_from_file_location("access_admin", REPO / "scripts" / "ops" / "access.py")
+    spec = importlib.util.spec_from_file_location("access_admin", REPO / "scripts" / "ops" / "mcp" / "access.py")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module

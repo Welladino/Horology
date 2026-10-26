@@ -87,4 +87,4 @@ It is not currently designed for unrelated customers sharing one installation. S
 | `docs/runbook/` | Step-by-step operating instructions |
 | `docs/planning/` | Dated research and implementation history |
 
-The local Docker stack is optional and split into three Compose projects: Hermes, the document graph and the gateway. Root `docker compose up -d` starts Hermes only. Follow the [complete runbook](docs/runbook/docker/running_all_services.md) to start, verify or stop all three.
+The local Docker stack is optional and split into three Compose projects: Hermes, the document graph and the gateway. Root `docker compose up -d` starts Hermes only. For a fresh machine, use the [reproducible Hermes bootstrap](hermes/README.md). Follow the [complete runbook](docs/runbook/docker/running_all_services.md) to start, verify or stop all three.

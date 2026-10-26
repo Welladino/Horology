@@ -4,7 +4,7 @@ Uses the owner connection, DATABASE_URL, like migrations; the services only
 read these tables. Changes reach the running services within 5 minutes
 (their access cache). From the repository root:
 
-    .venv/bin/dotenv run -- .venv/bin/python scripts/ops/access.py user list
+    .venv/bin/dotenv run -- .venv/bin/python scripts/ops/mcp/access.py user list
 
 Commands:
     server list | server add ID "Display name" | server enable ID | server disable ID

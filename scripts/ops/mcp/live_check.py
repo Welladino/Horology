@@ -4,9 +4,9 @@ Signs in as a real MCP client (Google sign-in, once per service; tokens kept in
 the git-ignored .auth/ folder), calls free tools twice to show cold and warm
 timing, then lines up each call with the services' own Cloud Run and tool logs.
 
-    .venv/bin/python scripts/ops/live_check.py            # free calls only
-    .venv/bin/python scripts/ops/live_check.py --search   # + one paid embedding
-    .venv/bin/python scripts/ops/live_check.py --sync     # + start the sheet sync job
+    .venv/bin/python scripts/ops/mcp/live_check.py            # free calls only
+    .venv/bin/python scripts/ops/mcp/live_check.py --search   # + one paid embedding
+    .venv/bin/python scripts/ops/mcp/live_check.py --sync     # + start the sheet sync job
 
 Results print as a table and append to reports/live-checks.jsonl (git-ignored).
 Log matching uses `gcloud --configuration=horology-view` (read-only). On another
@@ -34,7 +34,7 @@ from mcp.client.auth import OAuthClientProvider, TokenStorage
 from mcp.client.streamable_http import streamable_http_client
 from mcp.shared.auth import AuthorizationCodeResult, OAuthClientInformationFull, OAuthClientMetadata, OAuthToken
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 AUTH_DIR = ROOT / ".auth"
 REPORT = ROOT / "reports" / "live-checks.jsonl"
 PROJECT, REGION = "horology-dev", "us-central1"

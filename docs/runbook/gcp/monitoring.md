@@ -146,12 +146,12 @@ Open **Error Reporting** in your selected project to see uncaught exceptions and
 
 ## Live end-to-end check
 
-`scripts/ops/live_check.py` signs in as a real MCP client and calls free tools twice, to show cold and warm timing. It then matches each call to the services' tool logs. The first run opens a browser sign-in for each service; tokens stay in the git-ignored `.auth/` folder (owner-only files) and refresh on later runs. Results append to the git-ignored `reports/live-checks.jsonl`.
+`scripts/ops/mcp/live_check.py` signs in as a real MCP client and calls free tools twice, to show cold and warm timing. It then matches each call to the services' tool logs. The first run opens a browser sign-in for each service; tokens stay in the git-ignored `.auth/` folder (owner-only files) and refresh on later runs. Results append to the git-ignored `reports/live-checks.jsonl`.
 
 The script currently contains this repository operator's project, region and service URLs. It is an operator diagnostic, not a portable installer. Change those constants to your deployment before using it; do not expect it to discover another project automatically.
 
 ```bash
-.venv/bin/python scripts/ops/live_check.py
+.venv/bin/python scripts/ops/mcp/live_check.py
 ```
 
 Add `--search` (one paid embedding) or `--sync` (starts the sheet sync job) to include those calls. In the table:

@@ -29,4 +29,4 @@ One driver means one set of behaviour to know and audit. With a 0.2-second round
 
 ## Follow-Ups
 
-- After each deploy, run `scripts/ops/live_check.py` and the latency queries and compare with the 2026-10-13 baseline.
+- After each deploy, run `scripts/ops/mcp/live_check.py` and the latency queries and compare with the 2026-10-13 baseline.

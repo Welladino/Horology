@@ -58,7 +58,7 @@ gcloud --configuration=horology run services update document-graph --project=hor
 gcloud --configuration=horology-admin run jobs update document-graph-sync --project=horology-dev --region=us-central1 --image=us-central1-docker.pkg.dev/horology-dev/mcp-servers/document-graph@sha256:DIGEST
 ```
 
-6. **Verify** with the [post-deploy checks](operator_checks.md#after-a-deploy), then `gateway_status` and `list_documents` from a connected client. Compare latency with the baseline: `scripts/ops/live_check.py`.
+6. **Verify** with the [post-deploy checks](operator_checks.md#after-a-deploy), then `gateway_status` and `list_documents` from a connected client. Compare latency with the baseline: `scripts/ops/mcp/live_check.py`.
 7. **Protect the deployed images** by moving `deployed-current` ([Cloud Build](cloud_build.md)).
 
 ## Roll back

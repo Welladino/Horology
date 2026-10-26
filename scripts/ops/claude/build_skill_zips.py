@@ -1,4 +1,4 @@
-"""Build one zip per skill under plugins/*/skills/, for uploading to claude.ai.
+"""Build one zip per shareable skill for uploading to claude.ai.
 
 claude.ai keeps each skill on its own, so a link into another skill's folder
 (../horology-research/references/linking.md) would break. Those files are
@@ -21,6 +21,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[3]
 OUT = REPO / 'plugins' / 'dist' / 'claude'
+EXCLUDED_PLUGINS = {'horology-hermes'}
 CROSS = re.compile(r'\]\(\.\./([\w-]+)/references/([^)#\s]+)\)')
 SIBLING = re.compile(r'\]\(([\w.-]+\.(?:md|yaml))\)')
 
@@ -60,7 +61,11 @@ def main():
     parser = argparse.ArgumentParser(description='Build claude.ai skill zips.')
     parser.add_argument('names', nargs='*', help='skills to build (default: all)')
     args = parser.parse_args()
-    skills = {p.parent.name: p.parent for p in REPO.glob('plugins/*/skills/*/SKILL.md')}
+    skills = {
+        p.parent.name: p.parent
+        for p in REPO.glob('plugins/*/skills/*/SKILL.md')
+        if p.relative_to(REPO / 'plugins').parts[0] not in EXCLUDED_PLUGINS
+    }
     unknown = set(args.names) - set(skills)
     if unknown:
         sys.exit(f'Unknown skills: {", ".join(sorted(unknown))}')

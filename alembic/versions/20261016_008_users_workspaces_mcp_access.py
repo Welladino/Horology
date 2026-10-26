@@ -12,7 +12,7 @@ USAGE on "access" and SELECT on its tables, nothing more.
 - access.users: a permanent id; email is a unique lowercase lookup.
 - access.workspace_members: several workspaces per person, with a role.
 - access.user_mcp_access: which MCP servers each person may use.
-The services only read these tables; scripts/ops/access.py changes them
+The services only read these tables; scripts/ops/mcp/access.py changes them
 with the owner connection. No users are seeded: emails stay out of the repo.
 """
 from alembic import op

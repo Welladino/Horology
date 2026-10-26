@@ -1,71 +1,90 @@
 # Hermes setup and upkeep
 
-Hermes runs locally in Docker with two maintained profiles: Operator for trusted Horology work and Explorer for isolated Modal execution. Hermes v0.22 serves both through one host-wide gateway. Its dashboard is **[http://localhost:9119](http://localhost:9119)** when the container is running; use the credentials in the root `.env`. Start and stop the three Compose projects using [Running Horology services](running_all_services.md). The current architecture is in [Hermes agents](../../architecture/hermes/hermes-agents.md).
+Hermes runs locally in Docker with three maintained roles: Coordinator for user-facing routing, Operator for trusted non-code work and Explorer for isolated Modal execution. Hermes v0.22 serves all profiles through one host-wide gateway. Its dashboard is **[http://localhost:9119](http://localhost:9119)** when the container is running; use the credentials in the root `.env`. Start and stop the three Compose projects using [Running Horology services](running_all_services.md). The current architecture is in [Hermes agents](../../architecture/hermes/hermes-agents.md).
 
-## Current local setup (24 October 2026)
+## Install from a fresh clone
+
+Install Git and Docker Desktop with Docker Compose v2, clone this repository,
+then run from its root:
+
+```bash
+./scripts/ops/hermes/bootstrap.sh
+```
+
+The first run creates the four ignored local credential files (`.env` and the
+three files below `hermes/`) from their tracked examples and stops. Fill them,
+then run the command again. It builds the pinned Hermes image, creates the
+profiles, applies the reviewed identities and tool configuration, installs the
+Horology skills, selects Coordinator and restarts the gateway.
+
+You do not need to clone Hermes source. Docker pulls the pinned upstream image.
+OAuth logins, PATs, API keys, Modal credentials, sessions and browser cookies
+are not restored from Git; authenticate them on the new machine after the
+bootstrap completes. See [`hermes/README.md`](../../../hermes/README.md) for the
+exact file boundaries.
+
+## Current local setup (26 October 2026)
 
 - `docker-compose.yml` builds `horology-hermes:v0.22.5-modal` from `ops/hermes/Dockerfile`. It pins upstream Hermes **v0.22.5** and installs the release's required optional dependency, `modal==1.5.5`.
-- Operator has the maintained Horology skills, trusted repository workspace, MCP connections and provider credentials. Its identity is defined in Hermes' standard `hermes-data/profiles/operator/SOUL.md` file.
-- Explorer uses the direct Modal backend, starts in `/root`, and has `terminal.container_persistent: false`. Its Modal and model credentials live only in `hermes-data/profiles/explorer/.env`; they are not forwarded into the sandbox.
-- Hermes v0.22 uses one multiplexed root gateway for all profiles. The protected `default` profile remains as Hermes' host root; select Operator for normal work and Explorer only for isolated work.
+- The protected `default` profile is presented as Coordinator. Operator handles non-code work; Explorer handles code execution in Modal.
+- The reviewed profile files are tracked below `hermes/coordinator/`, `hermes/operator/` and `hermes/explorer/`. The bootstrap copies them into the live `horology-hermes-data` volume.
+- Explorer uses the direct Modal backend, starts in `/root`, and has `terminal.container_persistent: false`. Its Modal and model credentials live only in its ignored `.env`; they are not forwarded into the sandbox by default.
+- Hermes v0.22 uses one multiplexed root gateway for all profiles.
 - The old `gtm-manager`, `marketing-executive`, `code-sentinel` and empty `turns-test` profiles, plus their persona index, were moved out of Hermes' active profile directory. The recoverable local archive is `hermes-data/archives/retired-profiles-20261023-172653/`.
-- Operator's `hermes-data/profiles/operator/config.yaml` connects to the local document graph and MCP gateway. On 23 October, `hermes mcp test` discovered 19 graph tools and 14 gateway tools; the gateway filter selects 13. `publish_synthesis` is not selected for Hermes.
+- Operator connects to the HTTPS document graph and MCP gateway using OAuth. Its gateway filter selects 13 tools; `publish_synthesis` is excluded.
 - Operator also has a read-only GitHub MCP connection. GitHub MCP is used for GitHub information; Git is used for repository checkout operations. The bundled GitHub skill remains disabled until a maintained replacement is selected.
 - A Docker-managed volume named `horology-hermes-workspace` is mounted at `/workspace`. It currently contains the approved `Welladino/Horology` checkout and is not a bind mount to a host repository.
-- Operator's CLI toolsets include `terminal` and `code_execution`. Terminal commands start in `/workspace`; repository-specific commands must change to the selected checkout, such as `/workspace/Horology`.
-- All live Hermes `state.db` files use SQLite `delete` journal mode because `hermes-data/` is a macOS bind mount; WAL mode is unsafe across Docker Desktop's VM filesystem boundary.
+- Operator intentionally has no terminal or code-execution tool. Explorer owns those capabilities through Modal.
+- All tracked profile configurations use SQLite `delete` journal mode.
 - The old document-graph embedding-sweep cron job remains paused.
 
-`hermes-data/`, including **identity, context, skills, MCP settings, credentials, sessions and the archive, is Git-ignored and exists only on this laptop**. A Git pull, plugin update or Docker image update does **not** refresh its adapted skill copies automatically. The bind mount in `docker-compose.yml` preserves the directory when the container is recreated, but deleting `hermes-data/` would remove this local state. Do not put its credentials or archived profiles in Git.
+The Docker-managed `horology-hermes-data` volume holds live credentials, OAuth tokens, sessions, memories, caches and generated state. It survives container recreation but is not restored by cloning Git. Do not delete it with `docker compose down --volumes` unless you intend to erase the local Hermes installation. Reviewed identities, configuration and profile metadata are tracked under `hermes/`; the Coordinator skill is tracked under `plugins/horology-hermes/`. Rerun the bootstrap to apply them.
 
 ## Edit Operator identity and global context
 
 The maintained identity and runtime-wide rules are deliberately separate:
 
-- `hermes-data/profiles/operator/SOUL.md` contains Operator's identity, tone and general posture. `SOUL.md` is Hermes' standard identity filename; `# Operator` is the agent name.
-- `hermes-data/profiles/operator/.hermes.md` contains stable Horology operating rules that apply across Operator tasks.
+- `hermes/operator/SOUL.md` contains Operator's reviewed identity, tone and general posture. `SOUL.md` is Hermes' standard identity filename; `# Operator` is the agent name.
+- `hermes/operator/.hermes.md` contains stable Horology operating rules that apply across Operator tasks.
 - Horology skills contain task-specific procedures, workflow fields and output requirements.
 
-Edit these local files directly or use the dashboard's **Edit SOUL** control for the identity. Start a new Hermes session after changing either file so the updated identity and project context are loaded.
+Edit the tracked files and rerun `./scripts/ops/hermes/bootstrap.sh`. Start a new Hermes session after changing identity or context so the update is loaded.
 
 ## Refresh Horology skills after a plugin update
 
-The maintained source skills are in `plugins/horology-workflows/skills/`, `plugins/horology-specialists/skills/`, `plugins/horology-document-graph/skills/` and `plugins/horology-tools/skills/`. Operator reads local copies below `hermes-data/profiles/operator/skills/` (mounted below `/opt/data/profiles/operator/skills/` in the container).
+The maintained shared skills are in `plugins/horology-workflows/skills/`, `plugins/horology-specialists/skills/`, `plugins/horology-document-graph/skills/` and `plugins/horology-tools/skills/`. The bootstrap installs them for Coordinator and Operator, except for the subscription-agent `horology-supervisor`. Coordinator's separate routing skill is `plugins/horology-hermes/skills/horology-coordinator/SKILL.md`; Operator receives neither supervisor nor coordinator.
 
-**Whenever those plugin skills change, review and merge the changes into the Hermes copies. There is no automatic sync.** In particular, the Hermes `horology-supervisor` is deliberately rewritten for the single-agent setup; do not replace it wholesale with the Codex/Claude supervisor. Every copied workflow and specialist skill has a Hermes runtime-boundary paragraph. The graph and gateway copies also explain local workspace and bearer-token behavior. Preserve those adaptations when merging.
+After changing a source skill, review whether the Hermes Coordinator skill or global Operator context also needs adjustment, then rerun the bootstrap. Operator's `.hermes.md` enforces the runtime and Google-workflow boundaries globally; do not install the Claude/Codex supervisor in Hermes.
 
 From the Horology repository root:
 
-1. Compare the changed source skill with its Hermes copy. For example:
+1. Put shared task instructions in the source plugin skill. Put Hermes-wide rules in `hermes/operator/.hermes.md`; put Hermes-only routing in `plugins/horology-hermes/skills/horology-coordinator/`.
+2. Review `hermes/operator/config.yaml` if the update changes tool requirements. Do not add a tool name to the gateway filter unless the server exposes it and its policy permits it.
+3. Apply the reviewed files:
 
    ```bash
-   diff -u plugins/horology-specialists/skills/horology-research/SKILL.md hermes-data/profiles/operator/skills/horology-specialists/horology-research/SKILL.md
+   ./scripts/ops/hermes/bootstrap.sh
    ```
 
-2. Merge relevant new instructions into the Hermes `SKILL.md`, keeping the Hermes runtime boundary. Copy changed reference files or assets from the source skill's directory as needed. For a new Horology skill, copy its whole directory into the matching `hermes-data/profiles/operator/skills/horology-*/` category, then add the runtime boundary where its steps require tools Hermes does not have.
-3. Put agent-wide rules in `hermes-data/profiles/operator/.hermes.md`. Put task-specific rules in the relevant maintained skill and merge them into its Hermes copy. Review `hermes-data/profiles/operator/config.yaml` if the update changes tool requirements. Do not add a tool name to the gateway filter unless the server exposes it and its policy permits it.
-4. With Hermes running, check the installed skills and the two MCP connections:
+4. Check the installed skills and MCP connections:
 
    ```bash
-   docker exec horology-hermes hermes -p operator skills list
-   docker exec horology-hermes hermes -p operator mcp test document-graph
-   docker exec horology-hermes hermes -p operator mcp test mcp-gateway
+   docker exec --user hermes horology-hermes /opt/hermes/.venv/bin/hermes -p operator skills list
+   docker exec --user hermes horology-hermes /opt/hermes/.venv/bin/hermes -p operator mcp list
    ```
 
    Open a new Hermes session or run `/reload-skills` after skill edits; use `/reload-mcp` after MCP configuration edits. Confirm the changed skill appears and its reference links still resolve.
 
-A Docker image update changes Hermes itself, not these copied Horology skills. If the source plugins gain a new version, repeat this checklist even when Docker is already current.
+A Docker image update changes Hermes itself; rerunning the bootstrap also refreshes the project-owned skills.
 
 ## Trusted repository workspace
 
-Operator starts terminal work in `/workspace`, a Docker named volume declared in `docker-compose.yml`. Docker stores it independently of the container and host checkout:
+`/workspace` is a Docker named volume declared in `docker-compose.yml`. Docker stores it independently of the container and host checkout. Operator may inspect explicitly approved files through its file tools, but it has no local terminal or code-execution tool:
 
 - `docker compose down` and container recreation preserve it.
 - `docker compose down --volumes` or deleting `horology-hermes-workspace` deletes it.
 - It is for repositories the user explicitly chooses to trust in the Hermes container. The initial allowlist contains only `Welladino/Horology`.
-- Unknown repositories, forks, pull requests, new dependencies and unfamiliar build or installation scripts belong in the future isolated Explorer environment, not this volume.
-
-The ignored `/opt/data/.gitconfig` points GitHub HTTPS authentication to `/opt/data/bin/git-credential-hermes-github`. That helper reads `GITHUB_TOKEN`, falling back to the existing `GITHUB_MCP_TOKEN`, without storing the token in Git configuration, a credential store or the repository remote. The fine-grained token remains restricted to its selected repositories and read-only Contents permission.
+- Unknown repositories, forks, pull requests, new dependencies and unfamiliar build or installation scripts belong in Explorer's isolated Modal environment, not this volume.
 
 Check the workspace and clean remote URL with:
 
@@ -75,11 +94,9 @@ docker exec --user hermes horology-hermes git -C /workspace/Horology remote get-
 docker exec --user hermes horology-hermes git -C /workspace/Horology status --short
 ```
 
-The removed bundled GitHub and Google Workspace skills must not be restored accidentally during a skill refresh. Maintained replacements will be linked to Operator later.
-
 ## MCP connections and workflow limits
 
-The local document graph is `http://document-graph-mcp:8765/mcp` on the private `horology_default` network. It has no application sign-in in local mode and is fixed to workspace `welladino`. Keep its host port bound to `127.0.0.1`. The gateway is `http://horology-mcp-gateway:8767/mcp` on the same network and uses a bearer credential from `hermes-data/.env`; the server's client record and shared policy determine the actual tools and budgets.
+Operator's document graph and gateway connections use their deployed HTTPS MCP endpoints with interactive OAuth. Their server policies determine the actual workspace, tools and budgets. Operator also has the read-only GitHub MCP configured with a fine-grained PAT from its ignored `.env`.
 
 These connections let Hermes inspect graph history and use permitted gateway tools. The separately configured GitHub MCP supplies read-only GitHub information, while Git supplies clone, fetch and pull access to approved repositories in `/workspace`; neither supplies GitHub write access. Hermes still has no live Google Sheets/Drive editing route. Until Google access and a Hermes Pipeline execution route are configured and tested, Hermes must not claim a Pipeline run, move Stage 0–4, record a founder decision or say it saved a Drive deliverable. The Horology skill copies make that boundary explicit. A graph agent document is separate from the Sheet's Document Index.
 
@@ -87,13 +104,7 @@ The dashboard can add or test MCP connections and guide interactive OAuth sign-i
 
 ## Provider and dashboard setup
 
-Only if `hermes-data/` is empty, or to reconfigure the model/provider, run the one-shot wizard from the repository root:
-
-```bash
-docker run -it --rm -v "$(pwd)/hermes-data:/opt/data" nousresearch/hermes-agent setup
-```
-
-The wizard writes `hermes-data/.env` (Hermes secrets) and `hermes-data/config.yaml`. Root `.env` is separate: Docker Compose reads its `DASHBOARD_USERNAME`, `DASHBOARD_PASSWORD`, `PUID`, `PGID` and other service settings. To set it up, copy `.env.example` to `.env`, fill the required values, then run `docker compose up -d`.
+Use `./scripts/ops/hermes/bootstrap.sh` for both first installation and reviewed configuration updates. Root `.env` is for Docker Compose. The ignored profile files under `hermes/` hold model, Modal and connector credentials and are copied into the Docker data volume without entering Git.
 
 With Hermes running, the dashboard is at [http://localhost:9119](http://localhost:9119). Its login comes from root `.env`. The OpenAI-compatible API is at localhost port `8642` and has no dashboard basic auth; keep it bound to localhost. Recreate the container with `docker compose up -d` after changing root `.env`.
 
@@ -102,7 +113,7 @@ With Hermes running, the dashboard is at [http://localhost:9119](http://localhos
 Hermes is pinned through `ops/hermes/Dockerfile`; do not change the Compose image back to floating `latest`. Before changing `HERMES_VERSION` or the pinned Modal dependency:
 
 1. Read the upstream release notes and confirm the Modal extra required by that release.
-2. Stop Hermes and back up both `hermes-data/` and the `horology-hermes-workspace` named volume. Local pre-v0.22.5 rollback archives are under the Git-ignored `hermes-data/backups/pre-v0.22.5-2026-10-24/` directory.
+2. Stop Hermes and back up both the `horology-hermes-data` and `horology-hermes-workspace` named volumes. A Git clone restores reviewed configuration, not runtime state or credentials.
 3. Build and inspect the replacement image before recreating the service:
 
    ```bash
@@ -111,13 +122,13 @@ Hermes is pinned through `ops/hermes/Dockerfile`; do not change the Compose imag
    ```
 
 4. Recreate Hermes, inspect `docker compose logs hermes`, and verify Operator, Explorer, the trusted checkout and a disposable Modal command.
-5. If Hermes reports a WAL database on the macOS bind mount, stop every Hermes process and use `hermes sessions set-journal-mode delete` for every live profile. Keep `database.journal_mode: delete` in each profile configuration.
+5. Keep `database.journal_mode: delete` in each tracked profile configuration unless a later Hermes migration explicitly requires otherwise.
 
 Hermes v0.22 uses a single multiplexed host gateway. Do not restore the old per-profile gateway command; Compose must run `hermes gateway run`.
 
 ## Cron scripts
 
-Cron `--script` files are maintained under repository `scripts/`, then copied to `hermes-data/scripts/` (`/opt/data/scripts/` in the container). There is no automatic sync. After changing one:
+Cron `--script` files are maintained under repository `scripts/`, then copied to `/opt/data/scripts/` in the container. The bootstrap does not install cron scripts. After changing one:
 
 ```bash
 docker cp scripts/check_unembedded_documents.py horology-hermes:/opt/data/scripts/check_unembedded_documents.py
@@ -127,9 +138,9 @@ The document-graph sweep job is **paused**. Do not resume it just because Hermes
 
 ## Troubleshooting
 
-- Container exits: `docker compose logs hermes`; check `hermes-data/config.yaml` and required root `.env` settings.
-- Skill missing: check its directory under `hermes-data/profiles/operator/skills/`, run `docker exec horology-hermes hermes -p operator skills list`, then `/reload-skills` or start a new session.
-- MCP tools missing: run the two profile-specific `hermes mcp test` commands above, check `tools.include` in `hermes-data/profiles/operator/config.yaml`, and use `/reload-mcp` or start a new session. Discovery shows what the server offers; the filter determines what Hermes receives.
-- Terminal unavailable: run `docker exec horology-hermes hermes tools list --platform cli`. If needed, enable it with `docker exec horology-hermes hermes tools enable --platform cli terminal code_execution`, restart Hermes and start a new session so the updated tool schema is loaded.
+- Container exits: `docker compose logs hermes`; check the tracked profile configuration and required root `.env` settings.
+- Skill missing: rerun the bootstrap, then run `docker exec --user hermes horology-hermes /opt/hermes/.venv/bin/hermes -p operator skills list` and start a new session.
+- MCP tools missing: run `docker exec --user hermes horology-hermes /opt/hermes/.venv/bin/hermes -p operator mcp list`, check `tools.include` in `hermes/operator/config.yaml`, and use `/reload-mcp` or start a new session.
+- Operator terminal unavailable: this is intentional. Route code execution to Explorer instead of enabling local terminal access.
 - Modal terminal unavailable: confirm Explorer resolves `terminal.backend: modal`, `terminal.cwd: /root` and `terminal.container_persistent: false`; then verify the image contains the exact Modal version pinned by the active Hermes release.
-- When editing `config.yaml`, stop Hermes first or use its config UI/CLI. A running gateway can overwrite direct file edits from its in-memory settings.
+- When editing reviewed configuration, edit the tracked files and rerun the bootstrap. Avoid treating files inside the Docker volume as the maintained source.

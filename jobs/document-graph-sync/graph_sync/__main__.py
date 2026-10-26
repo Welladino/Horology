@@ -9,7 +9,7 @@ GRAPH_SYNC_MODE:
   Index into the execution history only (no AI). A sync run does this first.
 
 Each workspace's spreadsheets come from the workspaces table (active rows
-with a Document Index; scripts/ops/access.py sets them). For a local run,
+with a Document Index; scripts/ops/mcp/access.py sets them). For a local run,
 GRAPH_SYNC_WORKBOOKS overrides it: workspace -> a Document Index id
 ({"welladino": "1kOb..."}) or {"index": id, "pipeline": id, "decisions": id}.
 DATABASE_URL_POOLED and OPENROUTER_API_KEY as for the document graph.
@@ -59,7 +59,7 @@ async def workbooks(database):
     override = os.environ.get("GRAPH_SYNC_WORKBOOKS", "").strip()
     mapping = json.loads(override) if override else await configured_workbooks(database)
     if not isinstance(mapping, dict) or not mapping:
-        raise SystemExit("No workspace to sync: add one with scripts/ops/access.py (or set GRAPH_SYNC_WORKBOOKS locally)")
+        raise SystemExit("No workspace to sync: add one with scripts/ops/mcp/access.py (or set GRAPH_SYNC_WORKBOOKS locally)")
     only = os.environ.get("GRAPH_SYNC_WORKSPACE", "").strip()
     if only:
         if only not in mapping:

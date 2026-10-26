@@ -4,7 +4,7 @@ Each MCP server builds one Directory with its own server id (the row in
 mcp_servers). check() runs on every request through the OAuth provider, so
 lookups are cached per email: an LRU of ACCESS.cache_size entries, each kept
 ACCESS.cache_seconds (misses ACCESS.miss_seconds). A change made with
-scripts/ops/access.py reaches every instance within that time.
+scripts/ops/mcp/access.py reaches every instance within that time.
 """
 import time
 from collections import OrderedDict

@@ -1,0 +1,5 @@
+description: >-
+  Isolated code worker for implementation, tests, dependency installation,
+  and unfamiliar repository work in ephemeral Modal sandboxes. No local
+  workspace or credentials unless explicitly imported.
+description_auto: false

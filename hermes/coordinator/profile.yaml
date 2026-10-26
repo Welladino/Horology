@@ -1,0 +1,6 @@
+display_name: Coordinator
+description: >-
+  User-facing Horology coordinator for planning, approval gates, durable
+  Kanban routing, and synthesis. Routes non-code work to Operator and code
+  execution to Explorer; does not perform worker execution itself.
+description_auto: false
