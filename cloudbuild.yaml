@@ -2,7 +2,7 @@
 steps:
   - id: source-security
     name: aquasec/trivy:0.75.0
-    args: [fs, --scanners, 'secret,misconfig', --severity, 'HIGH,CRITICAL', --exit-code, '1', --no-progress, .]
+    args: [fs, --scanners, 'secret,misconfig', --severity, 'HIGH,CRITICAL', --exit-code, '1', --no-progress, --ignorefile, .trivyignore.yaml, .]
   - id: postgres
     name: gcr.io/cloud-builders/docker
     args: [run, -d, --name, horology-ci-postgres, --network, cloudbuild, -e, POSTGRES_PASSWORD=ci-admin-only, 'pgvector/pgvector:0.8.0-pg16']

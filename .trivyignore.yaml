@@ -1,0 +1,9 @@
+misconfigurations:
+  - id: DS-0002
+    paths:
+      - ops/hermes/Dockerfile
+    statement: >-
+      The upstream Hermes image must start as root so its s6 entrypoint can
+      remap PUID/PGID, prepare the data volume, and then drop privileges to the
+      hermes user. A final USER instruction would bypass that supported startup
+      path. Reassess this exception when upgrading the pinned Hermes image.

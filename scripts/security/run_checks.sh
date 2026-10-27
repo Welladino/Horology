@@ -51,7 +51,8 @@ echo "Bandit"
 
 echo "Trivy: source"
 trivy fs --scanners secret,misconfig --severity HIGH,CRITICAL --exit-code 1 --no-progress \
-  --format json --output /out/trivy-source.json /repo > /dev/null 2>&1; record "Trivy: source secrets and misconfigurations" $?
+  --ignorefile /repo/.trivyignore.yaml --format json --output /out/trivy-source.json \
+  /repo > /dev/null 2>&1; record "Trivy: source secrets and misconfigurations" $?
 
 if [[ "$SKIP_IMAGES" == false ]]; then
   for image in mcp-gateway document-graph; do
