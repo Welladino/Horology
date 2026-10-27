@@ -6,6 +6,9 @@ This folder contains the reviewed, Git-tracked configuration for the Coordinator
 - **Operator** — non-code research, browser, documents and connected-service work.
 - **Explorer** — code execution and dependency experiments in ephemeral Modal sandboxes.
 
+See the [Modal sandbox runbook](../docs/runbook/docker/modal_sandbox.md) for
+Explorer's isolation model, setup, verification and artifact handling.
+
 Live sessions, databases, logs, caches and generated gateway files stay in the Docker volume `horology-hermes-data`. The old ignored `hermes-data/` directory is retained as a rollback copy for now.
 
 ## Set up on a new machine

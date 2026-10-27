@@ -4,6 +4,7 @@ Horology's two purpose-built MCP servers each expose a small, fixed set of named
 
 - [`document_graph_server.md`](document_graph_server.md) — the document graph: running, connecting and testing it locally.
 - [gateway_server.md](gateway_server.md) — restricted gateway setup, local start-up and verification.
+- [composio.md](composio.md) — add hosted service connections for Hermes, create or update a Tool Router session with `curl`, and apply its MCP URL safely.
 - Cloud deployment of both: [`../gcp/mcp_deployment.md`](../gcp/mcp_deployment.md).
 - Users, workspaces and which person may use which server: [`access.md`](access.md).
 
