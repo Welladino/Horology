@@ -6,6 +6,7 @@
 # resolution for mcp-servers/*/server.py.
 
 alembic==1.19.0
+blake3==1.0.11
 python-dotenv==1.2.2
 mcp==2.2.0
 httpx==0.28.1
