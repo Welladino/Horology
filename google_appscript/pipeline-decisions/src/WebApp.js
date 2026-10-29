@@ -264,7 +264,9 @@ function getReviewDashboard(request) {
         id: String(d['Decision ID']), pipelineId: String(d['Pipeline ID']),
         title: d['Pipeline title'] || (p && p.Title) || 'Untitled decision',
         domain: d.Domain || '', stage: d['Review stage'], status: d.Status,
-        question: snippet(d.Question, 220), editable
+        question: snippet(d.Question, 220), editable,
+        // For the inbox's age: when it was decided, or for a proposal the item's last update.
+        date: d['Decision Date'] || (p && p.Updated) || ''
       };
       if (editable) pending.push(summary);
       else if (norm(d.Status) !== 'proposed') recent.push(summary);

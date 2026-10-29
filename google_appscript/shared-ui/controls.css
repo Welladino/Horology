@@ -1,31 +1,17 @@
 /* Shared primitives. Page-specific layout stays in each project's HTML. */
-.h-button { font:inherit; font-weight:700; cursor:pointer; border-radius:10px;
-  padding:10px 15px; border:1px solid var(--h-line); background:#fff;
-  color:var(--h-green); }
-.h-button--primary { border-color:var(--h-green); background:var(--h-green); color:#fff; }
+.h-button { font:inherit; font-weight:600; cursor:pointer; border-radius:8px;
+  min-height:44px; padding:9px 15px; border:1px solid var(--h-line); background:#fff;
+  color:var(--h-ink); }
+.h-button:hover { border-color:var(--h-accent); color:var(--h-accent); }
+.h-button--primary { border-color:var(--h-accent); background:var(--h-accent); color:#fff; }
+.h-button--primary:hover { background:#0b4a5a; border-color:#0b4a5a; color:#fff; }
 .h-button:disabled { opacity:.55; cursor:default; }
-.h-button:focus-visible { outline:2px solid #9ac9bb; outline-offset:2px; }
+.h-button:focus-visible { outline:3px solid #7fb6c4; outline-offset:2px; }
 .h-input,.h-select,.h-textarea { min-width:0; width:100%; box-sizing:border-box;
-  font:inherit; color:var(--h-ink); border:0; border-bottom:1px solid #aac5b9;
-  border-radius:0; padding:10px 12px; background:#f7faf8; }
-.h-input:focus,.h-select:focus,.h-textarea:focus { outline:none;
-  border-bottom:2px solid var(--h-green); }
-.h-pill { display:inline-block; border-radius:99px; padding:6px 10px;
-  background:#edf2f1; color:#38575d; font-size:12px; font-weight:700;
+  min-height:44px; font:inherit; color:var(--h-ink); border:1px solid #b9c5cc;
+  border-radius:8px; padding:9px 12px; background:#fff; }
+.h-input:focus,.h-select:focus,.h-textarea:focus { outline:2px solid var(--h-accent);
+  outline-offset:0; border-color:var(--h-accent); }
+.h-pill { display:inline-block; border-radius:99px; padding:3px 10px;
+  background:#e8edf0; color:#33434d; font-size:12px; font-weight:600;
   white-space:nowrap; }
-.h-row { display:grid; grid-template-columns:110px minmax(160px,1fr)
-  minmax(180px,1.5fr) auto 24px; gap:16px; align-items:center;
-  min-width:0; padding:14px 18px; }
-.h-row__id { color:var(--h-green); font-size:11px; letter-spacing:.09em;
-  font-weight:700; text-transform:uppercase; }
-.h-row__title { min-width:0; margin:0; font-size:18px; line-height:1.3; }
-.h-row__support { min-width:0; overflow:hidden; text-overflow:ellipsis;
-  white-space:nowrap; color:var(--h-muted); font-size:13px; }
-.h-row__badges { display:flex; gap:7px; flex-wrap:wrap; align-items:center; }
-.h-row__chevron { display:flex; align-items:center; justify-content:center;
-  width:24px; height:24px; color:var(--h-green); font-size:20px; line-height:1; }
-@media(max-width:760px) {
-  .h-row { grid-template-columns:1fr 24px; gap:6px 10px; }
-  .h-row__id,.h-row__title,.h-row__support,.h-row__badges { grid-column:1; }
-  .h-row__chevron { grid-column:2; grid-row:1 / 5; align-self:center; }
-}

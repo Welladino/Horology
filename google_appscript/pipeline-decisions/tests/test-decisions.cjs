@@ -246,7 +246,11 @@ test('web review lists current proposals and recent decisions without adding tab
   assert.equal(dashboard.recent.map(r=>r.id).join(','), '4,3');
   // The list carries summaries only; the full record comes when a decision is opened.
   assert.deepEqual(Object.keys(dashboard.pending[0]).sort(),
-    ['domain','editable','id','pipelineId','question','stage','status','title']);
+    ['date','domain','editable','id','pipelineId','question','stage','status','title']);
+  // Age in the inbox: the Decision Date once decided, else the item's Updated date.
+  assert.equal(dashboard.recent[0].date, '2026-10-20');
+  w.pipeline.rows[1][8] = '28/10/2026';
+  assert.equal(w.ctx.getReviewDashboard({fresh:true}).pending[0].date, '28/10/2026');
   const record = w.ctx.getDecisionReview('1');
   assert.equal(record.options.map(o=>o.code).join(','), 'B,C');
   assert.equal(record.links.length, 1);
@@ -553,15 +557,49 @@ function page({embedded = null, hash = ''} = {}) {
   return {ctx, calls, pushed, run: code => JSON.parse(vm.runInContext('JSON.stringify(' + code + ')', ctx))};
 }
 
-test('workspace groups decisions by item and combines search with Pipeline filters', () => {
+test('the Decisions inbox lists proposals and history, newest first, and search narrows both', () => {
   const {run, ctx} = page();
-  vm.runInContext("dashboard={pending:[{id:'5',pipelineId:'22',editable:true,title:'Audience lists'}],recent:[{id:'4',pipelineId:'22',editable:false,title:'Audience lists'},{id:'3',pipelineId:'14',editable:false,title:'TF-IDF drafting',question:'Which content feature?'}]}", ctx);
-  const groups = run('decisionGroups()');
-  assert.equal(groups.pending.length,1);
-  assert.equal(groups.pending[0].length,2);
-  assert.equal(groups.history[0][0].pipelineId,'14');
-  const searched = run("decisionGroups('content FEATURE')");
-  assert.deepEqual([searched.pending.length, searched.history.length], [0, 1]);
+  vm.runInContext("dashboard={pending:[{id:'5',pipelineId:'22',editable:true,title:'Audience lists'},{id:'7',pipelineId:'30',editable:true,title:'Pricing'}],recent:[{id:'4',pipelineId:'22',editable:false,title:'Audience lists'},{id:'3',pipelineId:'14',editable:false,title:'TF-IDF drafting',question:'Which content feature?'}]}", ctx);
+  const inbox = run('decisionInbox()');
+  assert.deepEqual(inbox.pending.map(r => r.id), ['7','5']);
+  assert.deepEqual(inbox.history.map(r => r.id), ['4','3']);
+  const searched = run("decisionInbox('content FEATURE')");
+  assert.deepEqual([searched.pending.length, searched.history.map(r => r.id)], [0, ['3']]);
+});
+test('decision age reads both sheet date formats', () => {
+  const {run} = page();
+  const now = 'new Date(2026,9,30,15).getTime()';
+  assert.equal(run(`ageLabel('2026-10-27',${now})`), '3d');
+  assert.equal(run(`ageLabel('30/10/2026',${now})`), 'today');
+  assert.equal(run(`ageLabel('01/06/2026',${now})`), '5mo');
+  assert.equal(run(`ageLabel('',${now})`), '');
+  assert.equal(run(`ageLabel('soon',${now})`), '');
+});
+test('the Pipeline board places each item in one column, Done most recent first', () => {
+  const {run} = page();
+  const rows = JSON.stringify([
+    {ID:'1',Status:'Inbox',Stage:'Stage 0'}, {ID:'2',Status:'Researching',Stage:'Stage 1'},
+    {ID:'3',Status:'In progress',Stage:'Stage 1'}, {ID:'4',Status:'Awaiting decision',Stage:'Stage 2'},
+    {ID:'5',Status:'Approved',Stage:'Stage 3'}, {ID:'6',Status:'In progress',Stage:'Stage 3'},
+    {ID:'7',Status:'Rework',Stage:'Stage 3'}, {ID:'8',Status:'Completed',Updated:'01/10/2026'},
+    {ID:'9',Status:'Completed',Updated:'28/10/2026'}, {ID:'10',Status:'Parked'},
+    {ID:'11',Status:'Rejected'}, {ID:'12',Status:'',Stage:''}, {ID:'13',Status:'Rework',Stage:'Stage 1'}]);
+  const groups = run(`(g => Object.fromEntries(Object.entries(g).map(([k,v]) => [k,v.map(r => r.ID)])))(boardGroups(${rows}))`);
+  assert.deepEqual(groups, {inbox:['1','12'], investigating:['2','3','13'], waiting:['4'],
+    building:['5','6','7'], done:['9','8'], parked:['10'], rejected:['11']});
+});
+test('the Type filter groups Build and Investigate types', () => {
+  const {run} = page();
+  const rows = JSON.stringify(['Feature','Enhancement','Refactor','Fix','Research','Idea','Plan','Direction','']
+    .map((Type, i) => ({ID: String(i), Type})));
+  assert.deepEqual(run(`filteredPipelineRows(${rows}, '', {Type:'@build'}).map(r => r.Type)`),
+    ['Feature','Enhancement','Refactor','Fix']);
+  assert.deepEqual(run(`filteredPipelineRows(${rows}, '', {Type:'@investigate'}).map(r => r.Type)`),
+    ['Research','Idea','Plan','Direction','']);
+  assert.deepEqual(run(`filteredPipelineRows(${rows}, '', {Type:'Fix'}).map(r => r.Type)`), ['Fix']);
+});
+test('Pipeline search and filters combine', () => {
+  const {run} = page();
   const rows = "[{ID:'1',Title:'Audience',Domain:'Article Aggregator',Entity:'',Type:'Research',Status:'Inbox',Stage:'','Agent status':'No action','Agent type':'Codex','Run location':'Local',summary:'Lists for pilots'},{ID:'2',Title:'Campaign',Domain:'Horology',Entity:'',Type:'Plan',Status:'Approved',Stage:'Stage 3','Agent status':'Ready','Agent type':'Claude Code','Run location':'Cloud',summary:''}]";
   const filtered = run(`filteredPipelineRows(${rows}, 'aud', {Domain:'Article Aggregator',Stage:'__blank__'})`);
   assert.equal(filtered.length,1);

@@ -1,8 +1,9 @@
 :root {
-  --h-ink: #1b3037;
-  --h-muted: #597078;
-  --h-line: #d8e3df;
-  --h-green: #246c53;
-  --h-pale: #eaf4ed;
-  --h-paper: #f7f8f4;
+  --h-ink: #1e2a32;
+  --h-muted: #4f5d66;
+  --h-line: #d5dde2;
+  --h-accent: #0f5f73;
+  --h-pale: #e4eff2;
+  --h-ground: #eef1f3;
+  --h-amber: #f2b33d;
 }

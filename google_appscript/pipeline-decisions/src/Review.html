@@ -3,437 +3,330 @@
 <head>
   <base target="_blank">
   <meta charset="utf-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
   <?!= include('SharedUi') ?>
   <style>
+    /* Triage board (item 52): dark top bar, white panels on a light ground, one accent. */
     :root { color-scheme:light; --ink:var(--h-ink); --muted:var(--h-muted); --line:var(--h-line);
-      --paper:var(--h-paper); --white:#fff; --green:var(--h-green); --pale:var(--h-pale);
-      --blue:#eef5f8; --gold:#fff1d5; }
+      --accent:var(--h-accent); --pale:var(--h-pale); --ground:var(--h-ground); --amber:var(--h-amber);
+      --bar:#1e2a32; --bar-raised:#2c3a44; --white:#fff; --sticky:68px; }
     * { box-sizing:border-box; }
-    body { margin:0; background:var(--paper); color:var(--ink); font:15px/1.48 Arial,sans-serif; }
+    html,body { background:var(--ground); }
+    body { margin:0; min-height:100vh; color:var(--ink);
+      font:15px/1.5 'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',Arial,sans-serif; }
     button,select,textarea,input { font:inherit; }
     button { cursor:pointer; }
-    button:focus-visible,a:focus-visible {
-      outline:3px solid #9ac9bb; outline-offset:2px; }
-    .top { background:#19353b; color:white; }
-    .top-inner { max-width:1260px; margin:auto; padding:20px 28px 0; }
-    .brandbar { display:flex; justify-content:space-between; align-items:center; gap:16px; }
-    .brand { display:flex; align-items:center; gap:14px; }
-    .mark { width:42px; height:42px; border:1px solid #8db1a7; border-radius:12px;
-      display:grid; place-items:center; font-size:21px; font-weight:700; }
-    .brand h1 { margin:0; font-size:21px; letter-spacing:-.03em; }
-    .brand p { margin:1px 0 0; color:#d0e2dc; font-size:12px; }
-    .sheet-link { color:#e3f4ee; text-decoration:none; font-size:13px; }
-    .nav { display:flex; gap:4px; margin-top:21px; }
-    .nav button { color:#cee1dc; background:transparent; border:0; border-bottom:3px solid transparent;
-      padding:11px 17px 12px; font-weight:700; }
-    .nav button.active { color:white; border-color:#8cd1ac; }
-    .wrap { max-width:1260px; margin:auto; padding:34px 28px 80px; }
-    .hero { display:flex; justify-content:space-between; align-items:flex-end; gap:20px; margin-bottom:25px; }
-    .eyebrow { color:var(--green); text-transform:uppercase; letter-spacing:.14em; font-size:11px;
+    a { color:var(--accent); }
+    button:focus-visible,a:focus-visible,summary:focus-visible,[tabindex]:focus-visible {
+      outline:3px solid #7fb6c4; outline-offset:2px; }
+    .sr-only { position:absolute; width:1px; height:1px; margin:-1px; overflow:hidden;
+      clip:rect(0 0 0 0); white-space:nowrap; border:0; padding:0; }
+
+    /* Top bar */
+    .top { position:sticky; top:0; z-index:5; background:var(--bar); color:#fff; }
+    .top-inner { max-width:1440px; margin:auto; padding:8px 20px; display:flex; align-items:center;
+      gap:8px 16px; flex-wrap:wrap; }
+    .brand { display:flex; align-items:center; gap:10px; margin-right:6px; }
+    .mark { width:32px; height:32px; border-radius:8px; background:var(--accent); color:#fff;
+      display:grid; place-items:center; font-weight:700; }
+    .brand h1 { margin:0; font-size:16px; font-weight:600; letter-spacing:-.01em; }
+    .nav { display:flex; gap:2px; }
+    .nav button { display:inline-flex; align-items:center; gap:8px; min-height:44px; padding:0 14px;
+      border:0; border-radius:8px; background:transparent; color:#c9d3d9; font-weight:600; }
+    .nav button:hover { background:var(--bar-raised); color:#fff; }
+    .nav button.active { background:#33434d; color:#fff; box-shadow:inset 0 -3px 0 var(--amber); }
+    .nav-count { min-width:22px; padding:1px 7px; border-radius:99px; background:var(--amber);
+      color:var(--bar); font-size:12px; font-weight:700; text-align:center; }
+    .top-search { flex:1 1 220px; max-width:460px; margin:0 0 0 auto; }
+    .top-search input { width:100%; min-height:44px; padding:9px 12px; border-radius:8px;
+      border:1px solid #4a5b66; background:var(--bar-raised); color:#fff; }
+    .top-search input::placeholder { color:#b4c1c8; }
+    .top-search input:focus { outline:2px solid #7fb6c4; outline-offset:1px; border-color:#7fb6c4; }
+    .add-button { min-height:44px; padding:0 16px; border:0; border-radius:8px; background:var(--amber);
+      color:var(--bar); font-weight:700; white-space:nowrap; }
+    .add-button:hover { background:#f5c260; }
+    .add-button.active { box-shadow:0 0 0 2px var(--bar),0 0 0 4px var(--amber); }
+    .sheet-link { color:#c9d3d9; font-size:13px; text-decoration:none; padding:12px 4px; white-space:nowrap; }
+    .sheet-link:hover { color:#fff; text-decoration:underline; }
+
+    /* Page frame */
+    .wrap { max-width:1440px; margin:auto; padding:20px 20px 64px; }
+    .hero { display:flex; justify-content:space-between; align-items:flex-end; gap:16px;
+      flex-wrap:wrap; margin-bottom:16px; }
+    .eyebrow { color:var(--accent); text-transform:uppercase; letter-spacing:.1em; font-size:11px;
       font-weight:700; }
-    h2 { font-size:clamp(27px,3.2vw,42px); line-height:1.14; letter-spacing:-.04em;
-      margin:8px 0 8px; }
-    .lead { color:var(--muted); margin:0; max-width:670px; }
-    .toggle { display:flex; background:white; border:1px solid var(--line); border-radius:11px;
-      padding:3px; flex-shrink:0; }
-    .toggle button { border:0; background:transparent; border-radius:8px; padding:8px 13px;
-      color:var(--muted); font-size:13px; }
-    .toggle button.active { background:#e5f0e9; color:var(--green); font-weight:700; }
-    .search-bar { display:flex; align-items:end; gap:12px; flex-wrap:wrap; margin:0 0 18px; }
-    .search-field { flex:2 1 280px; max-width:420px; }
-    .filter-field { flex:1 1 190px; max-width:245px; }
-    .filter-field label { display:block; color:var(--muted); font-size:12px; font-weight:700;
-      margin-bottom:4px; }
-    .filter-actions { display:flex; align-items:end; gap:8px; }
-    .filter-panel { border:1px solid var(--line); border-radius:12px; background:white;
-      padding:0 17px 15px; margin-bottom:18px; }
-    .filter-panel summary { cursor:pointer; padding:13px 0; color:var(--green); font-weight:700; }
-    .filter-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; }
-    .group-title { display:flex; justify-content:space-between; align-items:baseline;
-      border-bottom:1px solid var(--line); margin:34px 0 16px; padding-bottom:10px; }
-    .group-title h3 { margin:0; font-size:18px; }
-    .count { color:var(--muted); font-size:13px; }
-    .collection.cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(275px,1fr)); gap:14px; }
-    .collection.rows { display:grid; gap:8px; }
-    .record { width:100%; border:1px solid var(--line); border-radius:16px; background:white;
-      padding:20px; text-align:left; color:var(--ink); box-shadow:0 3px 14px #17323808; }
-    .record:hover { border-color:#7aaf94; box-shadow:0 6px 18px #17323816; }
-    .decision-group { border:1px solid var(--line); border-radius:16px; background:white;
-      box-shadow:0 3px 14px #17323808; overflow:hidden; }
-    .decision-group .subrows { border-top:1px solid var(--line); padding:7px; }
-    .decision-subrow { display:flex; align-items:center; justify-content:space-between; gap:15px;
-      width:100%; padding:13px; text-align:left; background:white; color:var(--ink);
-      border:0; border-radius:9px; }
-    .decision-subrow:hover { background:var(--pale); }
-    .decision-subrow strong { display:block; }
-    .decision-subrow small { display:block; color:var(--muted); margin-top:3px; }
-    .record .id { color:var(--green); font-size:11px; letter-spacing:.09em; font-weight:700;
-      text-transform:uppercase; }
-    .record strong { display:block; font-size:18px; line-height:1.3; margin:10px 0; }
-    .record .question { display:block; color:var(--muted); font-size:13px; margin-bottom:15px;
-      overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
-    .record .foot { display:flex; gap:7px; flex-wrap:wrap; align-items:center; }
-    .record.h-row { padding:14px 18px; }
-    .record.h-row strong,.record.h-row .question { margin:0; }
-    .record.h-row .question { display:block; white-space:nowrap; text-overflow:ellipsis; }
-    .h-pill.pending { background:var(--gold); color:#745317; }
-    .empty { background:white; border:1px dashed var(--line); border-radius:15px;
-      padding:23px; color:var(--muted); }
-    .back { display:inline-flex; align-items:center; gap:7px; background:transparent;
-      border:0; color:var(--green); font-weight:700; padding:0 0 20px; }
-    .panel { background:white; border:1px solid var(--line); border-radius:20px;
-      overflow:hidden; box-shadow:0 8px 28px #1732380b; }
-    .panel-head { padding:clamp(23px,4vw,43px); border-bottom:1px solid var(--line); }
-    .panel-head h2 { max-width:910px; }
-    .meta { display:flex; flex-wrap:wrap; gap:8px; }
-    .panel-body { padding:clamp(23px,4vw,43px); display:grid; gap:31px; }
-    .section h3 { margin:0 0 10px; font-size:18px; letter-spacing:-.02em; }
-    .section p.hint { color:var(--muted); font-size:13px; margin:0 0 13px; }
-    .choices { display:grid; grid-template-columns:repeat(auto-fit,minmax(225px,1fr)); gap:11px; }
-    .choice { position:relative; display:block; border:1.5px solid var(--line); border-radius:14px;
-      min-height:112px; padding:17px; cursor:pointer; }
-    .choice:has(input:checked),.choice:focus-within {
-      border-color:var(--green); background:#f1f8f3; }
-    .choice input[type="radio"] { position:absolute; right:17px; top:18px;
-      width:19px; height:19px; margin:0; padding:0; border:0; border-radius:50%;
-      background:transparent; box-shadow:none; outline:none; accent-color:var(--green); }
-    .choice strong { display:block; padding-right:29px; }
-    .choice span { display:block; color:var(--muted); font-size:13px; margin-top:7px; }
-    .choice em { display:block; margin-top:10px; color:var(--green); font-size:11px;
-      font-style:normal; font-weight:700; text-transform:uppercase; letter-spacing:.08em; }
-    .choice ul,.option-card ul { margin:9px 0 0; padding-left:18px; font-size:13px; }
-    .option-card { cursor:default; min-height:0; }
-    .option-card.recommended { border-color:var(--green); }
-    .bullets { margin:0; padding-left:20px; line-height:1.62; }
+    .hero h2 { margin:2px 0 2px; font-size:24px; line-height:1.25; font-weight:600; letter-spacing:-.015em; }
+    .lead { color:var(--muted); margin:0; max-width:680px; font-size:14px; }
+    .hero-tools,.toolbar-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .panel { background:#fff; border:1px solid var(--line); border-radius:10px; }
+    .panel-head { padding:20px 24px 16px; border-bottom:1px solid var(--line); }
+    .panel-head h2 { margin:8px 0 10px; font-size:24px; line-height:1.25; font-weight:600; max-width:920px; }
+    .panel-body { padding:20px 24px 24px; display:grid; gap:24px; }
+    .head-line { display:flex; flex-wrap:wrap; align-items:center; gap:4px 8px; color:var(--muted); font-size:13px; }
+    .head-line .id { color:var(--accent); font-weight:700; }
+    .head-line .dot { color:#8a979f; }
+    .meta { display:flex; flex-wrap:wrap; gap:6px; }
+    .section h3 { margin:0 0 8px; font-size:12px; font-weight:700; letter-spacing:.08em;
+      text-transform:uppercase; color:var(--muted); }
+    .section p.hint { color:var(--muted); font-size:13px; margin:-2px 0 10px; }
+    .plain-copy { margin:0; white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.6; }
+    .plain-copy + .plain-copy { margin-top:10px; }
+    .bullets { margin:0; padding-left:20px; line-height:1.6; }
     .bullets li + li { margin-top:4px; }
-    .steps { margin:0; padding-left:22px; line-height:1.62; }
+    .steps { margin:0; padding-left:22px; line-height:1.6; }
     .steps li + li { margin-top:6px; }
     .steps small { color:var(--muted); margin-left:6px; }
-    .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:17px 20px; }
-    .wide { grid-column:1/-1; }
-    .field label { display:block; font-weight:700; font-size:13px; margin-bottom:7px; }
-    .field small { display:block; color:var(--muted); margin:4px 0 7px; font-size:12px; }
-    input:not([type="radio"]):not(.h-input),select:not(.h-select),textarea:not(.h-textarea) { width:100%; border:0;
-      border-bottom:1px solid #aac5b9; border-radius:0; color:var(--ink);
-      background:#f7faf8; padding:10px 12px; }
-    input:not([type="radio"]):not(.h-input):focus,select:not(.h-select):focus,textarea:not(.h-textarea):focus {
-      outline:none; border-bottom:2px solid var(--green); }
-    textarea { min-height:88px; resize:vertical; }
-    .more { border:1px solid var(--line); border-radius:12px; padding:0 18px 18px; }
-    .more summary { padding:15px 0; cursor:pointer; font-weight:700; color:#315960; }
-    .links { display:flex; flex-wrap:wrap; gap:9px; }
-    .links a { display:inline-block; padding:8px 11px; border-radius:9px; background:var(--blue);
-      color:#185a80; font-size:13px; text-decoration:none; font-weight:700; }
-    .actions { display:flex; align-items:center; flex-wrap:wrap; gap:14px; padding-top:3px; }
+    .empty { background:#fff; border:1px dashed #b9c5cc; border-radius:8px; padding:18px; color:var(--muted); }
+    .loading { padding:24px; color:var(--muted); }
+    .load-error { display:flex; align-items:center; gap:12px; flex-wrap:wrap; color:#a3302a; }
     .message { font-size:13px; color:var(--muted); }
-    .message.ok { color:var(--green); }
-    .message.error { color:#a7352b; }
-    .loading { padding:35px; color:var(--muted); }
-    @media(max-width:760px) { .top-inner,.wrap { padding-left:17px; padding-right:17px; }
-      .hero { align-items:flex-start; flex-direction:column; } .grid { grid-template-columns:1fr; }
-      .wide { grid-column:auto; } .sheet-link { display:none; } }
-    /* Workspace dark theme: black canvas, grey cards, clear controls. */
-    :root { color-scheme:dark; --ink:#f4f5f5; --muted:#adb5b8; --line:#495155;
-      --paper:#0e1011; --white:#2a2f32; --green:#e8ebec; --pale:#343a3e;
-      --blue:#343e44; --gold:#394146; }
-    body { background:var(--paper); color:var(--ink); }
-    .top { position:fixed; inset:0 auto 0 0; width:202px; z-index:2;
-      background:#08090a; border-right:1px solid #34383b; }
-    .top-inner { padding:25px 16px; }
-    .brandbar,.brand { align-items:flex-start; flex-direction:column; }
-    .brand { gap:12px; }
-    .mark { border-color:#8e999e; color:var(--ink); }
-    .brand h1 { font-size:17px; }
-    .brand p { color:var(--muted); }
-    .sheet-link { display:block; margin-top:20px; color:var(--muted); line-height:1.35; }
-    .nav { display:flex; flex-direction:column; align-items:stretch; margin-top:30px; gap:5px; }
-    .nav button { text-align:left; color:#c3cbce; border:0; border-radius:10px;
-      padding:11px 12px; }
-    .nav button.active { color:#101214; background:#f4f5f5; }
-    .wrap { max-width:1430px; margin-left:202px; margin-right:auto; padding:32px 30px 80px; }
-    .eyebrow,.record .id { color:var(--muted); }
-    .lead,.count,.field small,.decision-subrow small { color:var(--muted); }
-    .group-title { border-color:var(--line); }
-    .toggle { background:#1b1e20; border-color:var(--line); }
-    .toggle button { color:var(--muted); }
-    .toggle button.active { background:#f4f5f5; color:#101214; }
-    .record,.decision-group,.panel,.empty { background:#2a2f32; color:var(--ink);
-      border-color:var(--line); box-shadow:none; }
-    .record:hover,.decision-group:hover { border-color:#8b969b; box-shadow:none; }
-    .decision-group.expanded { border-color:#8b969b; }
-    .decision-group .h-row { grid-template-columns:110px minmax(160px,1fr)
-      minmax(180px,1.5fr) auto; }
-    .decision-group__head { padding:15px 18px; }
-    .decision-group__head strong { margin:0; }
-    .decision-group .subrows { border-color:var(--line); background:#252a2d; }
-    .decision-subrow { background:transparent; color:var(--ink); }
-    .decision-subrow:hover { background:#343b3e; }
-    .h-row__id { color:var(--muted); }
-    .h-row__support { color:var(--muted); }
-    .h-row__chevron { color:var(--ink); border:1px solid var(--line);
-      border-radius:10px; width:36px; height:36px; }
-    .h-pill { background:#3c4448; color:var(--ink); }
-    .h-pill.pending { background:#e8ebec; color:#101214; }
-    .icon-button { display:inline-grid; place-items:center; width:38px; height:38px;
-      flex:none; padding:0; border:1px solid var(--line); border-radius:10px;
-      background:#1b1e20; color:var(--ink); font-size:23px; line-height:1; }
-    .icon-button:hover { background:#41494d; }
-    .decision-expand { margin-left:2px; }
-    .decision-expand[aria-expanded="true"] { background:#e8ebec; color:#101214; }
-    .decision-expand[aria-expanded="true"] { transform:rotate(180deg); }
-    .back { padding:0; }
-    .detail-toolbar { display:flex; align-items:center; justify-content:space-between;
-      gap:12px; margin-bottom:17px; }
-    .edit-action { display:inline-flex; align-items:center; gap:8px;
-      padding:11px 16px; }
-    .edit-glyph { font-size:21px; line-height:1; }
-    .panel-head,.panel-body { border-color:var(--line); }
-    .panel-head,.panel-body { padding:clamp(21px,3vw,36px); }
-    .filter-panel,.more { border:1px solid var(--line); border-radius:14px;
-      background:#2a2f32; }
-    .filter-panel summary,.more summary { color:var(--ink); }
-    .filter-panel,.more { padding:14px 17px; }
-    .filter-panel summary,.more summary { display:flex; align-items:center;
-      justify-content:center; width:max-content; max-width:100%; margin:0 auto;
-      padding:10px 18px; border:1px solid #899398; border-radius:999px;
-      background:#1b1e20; font-weight:700; list-style:none; }
-    .filter-panel summary::-webkit-details-marker,.more summary::-webkit-details-marker { display:none; }
-    .filter-panel summary::after,.more summary::after { content:'⌄'; font-size:20px;
-      line-height:.7; margin-left:9px; transition:transform .15s; }
-    .filter-panel[open] summary::after,.more[open] summary::after { transform:rotate(180deg); }
-    .filter-grid,.more .grid { margin-top:17px; }
-    .choice { border-color:var(--line); background:#252a2d; }
-    .choice:has(input:checked),.choice:focus-within { border-color:#dfe3e4; background:#383f42; }
-    .choice input[type="radio"] { accent-color:#e8ebec; }
-    .choice em { color:#e8ebec; }
-    .filter-field label,.field label { color:var(--ink); }
-    .h-input,.h-select,.h-textarea,
-    input:not([type="radio"]):not(.h-input),select:not(.h-select),textarea:not(.h-textarea) {
-      background:#1b1e20; color:var(--ink); border:1px solid var(--line);
-      border-radius:9px; }
-    .h-input:focus,.h-select:focus,.h-textarea:focus,
-    input:not([type="radio"]):not(.h-input):focus,select:not(.h-select):focus,
-    textarea:not(.h-textarea):focus { outline:2px solid #a6b3b8; outline-offset:1px;
-      border-color:#a6b3b8; }
-    input::placeholder,textarea::placeholder { color:#939da2; }
-    .h-button { background:#2a2f32; border-color:var(--line); color:var(--ink); }
-    .h-button--primary { background:#e8ebec; border-color:#e8ebec; color:#101214; }
-    .h-button:hover { filter:brightness(1.15); }
-    .links a { background:#364044; color:#ecf1f3; }
-    .message.ok { color:#c5dbd0; }
-    .message.error { color:#ffafa5; }
-    button:focus-visible,a:focus-visible,summary:focus-visible { outline:2px solid #aab7bc;
-      outline-offset:2px; }
-    @media(max-width:760px) {
-      .top { position:static; width:auto; border-right:0; border-bottom:1px solid #34383b; }
-      .top-inner { padding:17px 18px 12px; }
-      .brandbar { display:block; }
-      .brand { flex-direction:row; align-items:center; }
-      .brand p { display:none; }
-      .mark { width:34px; height:34px; font-size:18px; }
-      .nav { flex-direction:row; flex-wrap:nowrap; margin-top:14px; gap:3px; }
-      .nav button { flex:1 1 0; text-align:center; font-size:12px; padding:9px 4px; }
-      .wrap { margin:0; padding:24px 17px 65px; }
-      .decision-group .h-row { display:grid; grid-template-columns:1fr; gap:6px;
-        padding:16px; }
-      .decision-group .h-row__id,.decision-group .h-row__title,
-      .decision-group .h-row__support,.decision-group .h-row__badges { grid-column:1; grid-row:auto; }
-      .decision-group .h-row__support { white-space:normal; }
-      .decision-group .h-row__badges { margin-top:7px; }
-      .record.h-row { grid-template-columns:1fr auto; gap:6px 10px; }
-      .record.h-row .h-row__id,.record.h-row .h-row__title,
-      .record.h-row .h-row__support,.record.h-row .h-row__badges { grid-column:1; grid-row:auto; }
-      .record.h-row .h-row__chevron { grid-column:2; grid-row:1/5; align-self:center; }
-      .filter-panel summary,.more summary { width:100%; }
-      .search-field,.filter-field { max-width:none; }
-    }
-    /* Black canvas with white content surfaces and grey secondary controls. */
-    html,body { background:#0e1011; overscroll-behavior-y:none; }
-    html { min-height:100%; }
-    body { min-height:100vh; }
-    .record,.decision-group,.panel,.empty,.filter-panel,.more,.toggle {
-      --ink:#151819; --muted:#606a6e; --line:#d7dddf; --green:#151819;
-      --pale:#f1f3f4; background:#fff; color:var(--ink); border-color:var(--line); }
-    .record:hover,.decision-group:hover,.decision-group.expanded { border-color:#8b969b; }
-    .decision-group .subrows { background:#f2f4f4; border-color:var(--line); }
-    .decision-subrow:hover { background:#e8ebec; }
-    .record .id,.h-row__id { color:#566064; }
-    .h-row__support,.record .question,.decision-subrow small { color:#606a6e; }
-    .h-pill { background:#e9ecec; color:#151819; }
-    .h-pill.pending { background:#e9ecec; color:#151819; border:1px solid #b9c1c4; }
-    .toggle button { color:#606a6e; }
-    .toggle button.active { background:#171a1b; color:#fff; }
-    .icon-button { background:#fff; color:#151819; border-color:#b7c0c3; }
-    .icon-button:hover { background:#eef0f0; }
-    .decision-expand[aria-expanded="true"] { background:#e9ecec; color:#151819; }
-    .h-row__chevron { color:#151819; }
-    .detail-toolbar { min-height:38px; margin-bottom:25px; }
-    .panel .eyebrow { color:#566064; }
-    .panel .section h3,.panel .field label,.panel .filter-field label { color:#151819; }
-    .panel .section p.hint,.panel .field small { color:#606a6e; }
-    .panel-body > form { display:grid; gap:32px; }
-    .plain-copy { margin:0; white-space:pre-wrap; overflow-wrap:anywhere;
-      color:#343b3e; line-height:1.62; }
-    .plain-copy + .plain-copy { margin-top:12px; }
-    .filter-panel,.more { border-color:#d7dddf; }
-    .filter-panel summary,.more summary { background:#fff; color:#151819;
-      border-color:#9da8ac; }
-    .filter-panel summary::after,.more summary::after { content:none; }
-    .choice { background:#f7f8f8; border-color:#bfc7ca; color:#151819; }
-    .choice:has(input:checked),.choice:focus-within { background:#eef1f1;
-      border-color:#151819; }
-    .choice span { color:#606a6e; }
-    .choice em { color:#343b3e; }
-    .choice input[type="radio"] { accent-color:#151819; }
-    .h-input,.h-select,.h-textarea,
-    input:not([type="radio"]):not(.h-input),select:not(.h-select),textarea:not(.h-textarea) {
-      background:#fff; color:#151819; border:1px solid #bfc7ca; }
-    .h-input:focus,.h-select:focus,.h-textarea:focus,
-    input:not([type="radio"]):not(.h-input):focus,select:not(.h-select):focus,
-    textarea:not(.h-textarea):focus { border-color:#151819; outline-color:#606a6e; }
-    input::placeholder,textarea::placeholder { color:#717b7f; }
-    .filter-field label { color:#f4f5f5; }
-    .filter-panel .filter-field label { color:#151819; }
-    .h-button { background:#fff; color:#151819; border-color:#b7c0c3; }
-    .h-button--primary { background:#fff; color:#151819; border:2px solid #151819; }
-    .links a { background:#edf0f0; color:#151819; }
-    .message.ok { color:#326448; }
-    .message.error { color:#aa3b30; }
-    /* Actions are black on white surfaces; controls on the black canvas stay white. */
-    .panel .h-button,.panel .h-button--primary,
-    .filter-panel summary,.more summary { background:#151819; color:#fff;
-      border-color:#151819; }
-    .panel .h-button:hover,.filter-panel summary:hover,.more summary:hover {
-      background:#303638; border-color:#303638; filter:none; }
-    .decision-expand,.decision-expand[aria-expanded="true"] {
-      background:#151819; color:#fff; border-color:#151819; transform:none; }
-    .decision-expand:hover { background:#303638; border-color:#303638; }
-    .decision-expand svg { display:block; width:20px; height:20px;
-      transition:transform .15s ease; }
-    .decision-expand[aria-expanded="true"] svg { transform:rotate(180deg); }
-    .h-pill.tone-neutral { background:#e9ecee; color:#303a3e; }
-    .h-pill.tone-review { background:#fff0c2; color:#684900; border:0; }
-    .h-pill.tone-success { background:#dcf4e6; color:#155d3b; }
-    .h-pill.tone-warning { background:#ffead7; color:#82420c; }
-    .h-pill.tone-danger { background:#ffe0dd; color:#8b2924; }
-    .h-pill.tone-stage { background:#ece5ff; color:#54378d; }
-    .h-pill.tone-info { background:#dfeeff; color:#26517c; }
-    /* Folder path browser uses the existing sidebar and shared chip colors. */
-    .folder-controls { display:flex; flex-wrap:wrap; align-items:end; gap:10px;
-      margin:23px 0 17px; }
-    .folder-controls .search-field { flex:1 1 270px; }
-    .folder-controls .h-button { min-height:43px; }
-    .folder-path { display:flex; flex-wrap:wrap; align-items:center; gap:7px;
-      margin:0 0 14px; color:#bac4c8; }
-    .folder-crumb { border:0; background:transparent; color:#d5dddf;
-      padding:5px 2px; font-weight:700; }
+    .message.ok { color:#1d6b45; }
+    .message.error { color:#a3302a; }
+    .wrap > .message { margin:0 0 12px; padding:10px 14px; background:#fff; border:1px solid var(--line);
+      border-left:4px solid var(--accent); border-radius:8px; }
+    .wrap > .message.error { border-left-color:#a3302a; }
+    .back { display:inline-flex; align-items:center; gap:6px; }
+    .detail-toolbar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap;
+      gap:10px; margin-bottom:14px; }
+    .links { display:flex; flex-wrap:wrap; gap:8px; }
+    .links a,.link-button { display:inline-flex; align-items:center; min-height:44px; padding:8px 12px;
+      border:1px solid var(--line); border-radius:8px; background:#fff; color:var(--accent);
+      font-size:14px; font-weight:600; text-decoration:none; }
+    .links a:hover,.link-button:hover { border-color:var(--accent); }
+    .more-row { display:flex; justify-content:center; margin:12px 0 4px; }
+
+    /* Status pills */
+    .h-pill.tone-neutral { background:#e8edf0; color:#33434d; }
+    .h-pill.tone-review { background:#fdeac2; color:#6b4700; }
+    .h-pill.tone-success { background:#dcf1e5; color:#155d3b; }
+    .h-pill.tone-warning { background:#fde6d3; color:#82420c; }
+    .h-pill.tone-danger { background:#fbe0dd; color:#8b2924; }
+    .h-pill.tone-stage { background:#ebe6f7; color:#4f3a83; }
+    .h-pill.tone-info { background:#dcecf0; color:#0b4a5a; }
+
+    /* Decisions: inbox beside a reading pane */
+    .inbox-layout { display:grid; grid-template-columns:minmax(340px,400px) minmax(0,1fr); gap:16px;
+      align-items:start; }
+    .inbox { position:sticky; top:calc(var(--sticky) + 12px); display:flex; flex-direction:column;
+      max-height:calc(100vh - var(--sticky) - 28px); background:#fff; border:1px solid var(--line);
+      border-radius:10px; overflow:hidden; }
+    .inbox-head { padding:12px 14px 0; border-bottom:1px solid var(--line); }
+    .inbox-title { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .inbox-title h2 { margin:0; font-size:18px; font-weight:600; }
+    .tabs { display:flex; gap:2px; margin-top:6px; }
+    .tabs button { min-height:44px; padding:0 12px; border:0; border-bottom:3px solid transparent;
+      background:transparent; color:var(--muted); font-weight:600; }
+    .tabs button[aria-pressed="true"] { color:var(--ink); border-bottom-color:var(--accent); }
+    .tab-count { margin-left:6px; padding:0 7px; border-radius:99px; background:#e8edf0; color:#33434d;
+      font-size:12px; }
+    .inbox-list { flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; }
+    .inbox-row { position:relative; display:block; width:100%; min-height:44px; padding:12px 14px 12px 18px;
+      border:0; border-bottom:1px solid var(--line); background:#fff; color:var(--ink); text-align:left; }
+    .inbox-row:hover { background:#f4f7f8; }
+    .inbox-row[aria-current="true"] { background:var(--pale); }
+    .inbox-row[aria-current="true"]::before { content:''; position:absolute; left:0; top:0; bottom:0;
+      width:4px; background:var(--accent); }
+    .row-meta { display:flex; align-items:center; gap:6px; color:var(--muted); font-size:12px; min-width:0; }
+    .row-meta .id { color:var(--accent); font-weight:700; }
+    .row-meta .age { margin-left:auto; white-space:nowrap; }
+    .row-title { display:block; margin:3px 0 2px; font-weight:600; line-height:1.35; }
+    .row-question { display:block; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+      color:var(--muted); font-size:13px; }
+    .inbox .empty { margin:14px; }
+    .reader { min-width:0; }
+    .reader-panel { background:#fff; border:1px solid var(--line); border-radius:10px; }
+    .reader-panel .panel-head h2 { margin-bottom:0; }
+    .reader-empty { padding:40px 24px; text-align:center; color:var(--muted); }
+    .reader-empty h2 { margin:0 0 6px; color:var(--ink); font-size:20px; font-weight:600; }
+    .reader-grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(280px,340px); gap:20px;
+      padding:20px 24px 24px; align-items:start; }
+    .reader-main { display:grid; gap:24px; min-width:0; }
+    .decide-panel { position:sticky; top:calc(var(--sticky) + 12px); display:grid; gap:16px; padding:16px;
+      background:#f6f8f9; border:1px solid var(--line); border-radius:10px; min-width:0; }
+    .decide-panel > h3 { margin:0; font-size:16px; font-weight:600; }
+    .decide-panel form,.decide-panel .stack { display:grid; gap:14px; }
+    .decide-panel .grid { grid-template-columns:1fr; gap:14px; }
+    .decide-panel .actions .h-button { width:100%; }
+
+    /* Options as cards; the recommended one carries the accent */
+    .choices { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; }
+    .choices.compact { grid-template-columns:1fr; }
+    .choice { position:relative; display:block; min-width:0; padding:14px; background:#fff;
+      border:1px solid var(--line); border-radius:8px; }
+    label.choice { cursor:pointer; padding-right:44px; }
+    .choice.recommended { border:2px solid var(--accent); padding:13px; }
+    label.choice.recommended { padding-right:43px; }
+    label.choice:hover { border-color:var(--accent); }
+    label.choice:has(input:checked) { background:var(--pale); box-shadow:inset 0 0 0 1px var(--accent);
+      border-color:var(--accent); }
+    label.choice:has(input:disabled) { cursor:default; }
+    .choice input[type="radio"] { position:absolute; right:12px; top:12px; width:22px; height:22px; margin:0;
+      accent-color:var(--accent); }
+    .rec-label { display:block; margin-bottom:4px; color:var(--accent); font-size:11px; font-weight:700;
+      letter-spacing:.1em; }
+    .choice strong { display:block; }
+    .choice span { display:block; margin-top:4px; color:#3a4952; font-size:14px; }
+    .choice ul { margin:8px 0 0; padding-left:18px; font-size:13px; }
+
+    /* Forms */
+    .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px 20px; }
+    .wide { grid-column:1/-1; }
+    .field label,.filter-field label { display:block; margin-bottom:6px; font-size:13px; font-weight:600; }
+    .field small { display:block; margin:-2px 0 6px; color:var(--muted); font-size:12px; }
+    .field small:empty { display:none; }
+    textarea { min-height:88px; resize:vertical; }
+    .actions { display:flex; align-items:center; flex-wrap:wrap; gap:12px; }
+    .more { border:1px solid var(--line); border-radius:8px; padding:0 16px; }
+    .more summary,.filter-panel summary { display:flex; align-items:center; min-height:44px; cursor:pointer;
+      font-weight:600; color:var(--accent); }
+    .more[open] { padding-bottom:16px; }
+    .panel-body > form { display:grid; gap:24px; }
+
+    /* Pipeline board */
+    .board-tools { display:flex; flex-wrap:wrap; align-items:end; gap:10px 12px; margin-bottom:10px; }
+    .filter-field { flex:1 1 170px; max-width:240px; min-width:0; }
+    .filter-panel { margin:0 0 12px; padding:0 14px; background:#fff; border:1px solid var(--line); border-radius:8px; }
+    .filter-panel[open] { padding-bottom:14px; }
+    .filter-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; }
+    .board-count { margin:0 0 10px; color:var(--muted); font-size:13px; }
+    .board { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(260px,1fr); gap:12px;
+      align-items:start; overflow-x:auto; padding-bottom:10px; scroll-snap-type:x proximity; }
+    .column { scroll-snap-align:start; min-width:0; padding:10px; background:#e2e8eb;
+      border:1px solid var(--line); border-radius:10px; }
+    .column--waiting { border-top:4px solid var(--amber); }
+    .column-head { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:2px 4px 10px; }
+    .column-head h3 { margin:0; font-size:14px; font-weight:600; }
+    .column-head .h-pill { background:#fff; }
+    .column-list { display:grid; gap:8px; }
+    .column-empty { margin:0; padding:12px; color:var(--muted); font-size:13px; text-align:center; }
+    .column .more-row .h-button { width:100%; }
+    .card-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px; }
+    .card { display:block; width:100%; min-height:44px; padding:12px; background:#fff; color:var(--ink);
+      border:1px solid var(--line); border-radius:8px; text-align:left; }
+    .card:hover { border-color:var(--accent); box-shadow:0 2px 8px #1e2a3214; }
+    .card-meta { display:flex; justify-content:space-between; align-items:center; gap:8px;
+      color:var(--muted); font-size:12px; }
+    .card-meta .id { color:var(--ink); font-weight:700; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+    .card-title { display:block; margin:6px 0; font-weight:600; line-height:1.35; }
+    .card-foot { display:block; color:var(--muted); font-size:12px; }
+    .card-foot .ready { color:#0b4a5a; font-weight:700; }
+    .type-tag { flex:none; padding:2px 8px; border-radius:99px; font-size:11px; font-weight:700; }
+    .type-tag.build { background:#dcecf0; color:#0b4a5a; }
+    .type-tag.investigate { background:#efe7fa; color:#563887; }
+    .board-note { margin:6px 0 0; color:var(--muted); font-size:13px; }
+
+    /* Folders */
+    .folder-controls { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin:0 0 14px; }
+    .folder-path { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin:0 0 12px; color:var(--muted); }
+    .folder-crumb { min-height:44px; padding:0 4px; border:0; background:transparent; color:var(--accent); font-weight:600; }
     .folder-crumb:hover { text-decoration:underline; }
-    .folder-crumb[aria-current="page"] { color:#fff; }
-    .folder-browser { display:grid;
-      grid-template-columns:repeat(2,minmax(0,1fr));
-      align-items:stretch; gap:11px; }
-    .folder-column,.folder-detail,.folder-results { --ink:#151819;
-      border:1px solid #d7dddf; border-radius:14px; background:#fff;
-      color:var(--ink); padding:17px; min-width:0; }
+    .folder-crumb[aria-current="page"] { color:var(--ink); }
+    .folder-browser { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:stretch; gap:12px; }
+    .folder-column,.folder-detail,.folder-results { min-width:0; padding:16px; background:#fff;
+      border:1px solid var(--line); border-radius:10px; }
     .folder-column { display:flex; flex-direction:column; height:420px; overflow:hidden; }
-    .folder-column-scroll { flex:1; min-height:0; overflow-y:auto;
-      overscroll-behavior:contain; scrollbar-gutter:stable; padding-right:4px; }
-    .folder-column h3,.folder-results h3 { margin:0 0 13px; color:#606a6e;
-      font-size:11px; letter-spacing:.1em; text-transform:uppercase; flex:none; }
-    .folder-group-label { margin:17px 0 7px; color:#82420c; font-size:11px;
-      font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
-    .folder-row { display:flex; align-items:center; gap:8px; width:100%;
-      min-height:43px; padding:10px; border:0; border-radius:9px;
-      background:transparent; color:#263034; text-align:left; }
-    .folder-row:hover,.folder-row.selected { background:#eef0f1; }
-    .folder-row.selected { font-weight:700; }
+    .folder-column-scroll { flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain;
+      scrollbar-gutter:stable; padding-right:4px; }
+    .folder-column h3,.folder-results h3 { flex:none; margin:0 0 10px; color:var(--muted); font-size:11px;
+      letter-spacing:.1em; text-transform:uppercase; }
+    .folder-group-label { margin:14px 0 6px; color:#82420c; font-size:11px; font-weight:700;
+      letter-spacing:.08em; text-transform:uppercase; }
+    .folder-row { display:flex; align-items:center; gap:8px; width:100%; min-height:44px; padding:10px;
+      border:0; border-radius:8px; background:transparent; color:var(--ink); text-align:left; }
+    .folder-row:hover { background:#f1f4f6; }
+    .folder-row.selected { background:var(--pale); font-weight:600; box-shadow:inset 3px 0 0 var(--accent); }
     .folder-row-name { flex:1; min-width:0; overflow-wrap:anywhere; }
-    .folder-row-arrow { color:#687579; font-size:20px; line-height:1; }
+    .folder-row-arrow { color:var(--muted); font-size:20px; line-height:1; }
     .folder-column .empty { border:0; padding:10px; }
-    .folder-detail { grid-column:1/-1; }
-    .folder-detail .eyebrow { color:#606a6e; }
-    .folder-detail-head { display:flex; align-items:flex-start;
-      justify-content:space-between; flex-wrap:wrap; gap:15px; }
-    .folder-detail h3 { margin:5px 0 0; font-size:clamp(24px,2.5vw,32px);
-      line-height:1.2; overflow-wrap:anywhere; }
-    .folder-detail .h-button { background:#151819; color:#fff;
-      border-color:#151819; text-decoration:none; }
-    .folder-detail .h-button:hover { background:#303638; }
-    .folder-chips { display:flex; flex-wrap:wrap; gap:7px; margin:20px 0 24px; }
-    .folder-info { display:grid; grid-template-columns:repeat(2,minmax(0,1fr));
-      gap:18px; border-top:1px solid #e1e5e6; padding-top:18px; }
-    .folder-info small { color:#667176; }
-    .folder-info p { margin:5px 0 0; overflow-wrap:anywhere; }
-    .folder-results { grid-column:1/-1; }
-    .folder-results .folder-row { border-top:1px solid #eef0f1;
-      border-radius:0; }
-    .folder-result-path { display:block; color:#606a6e; font-size:12px; }
-    .folder-report a { color:#215482; text-decoration:underline;
-      text-underline-offset:2px; font-weight:700; }
-    .folder-error { color:#ffb4a9; }
-    .folder-report { --ink:#151819; margin-top:26px; padding:24px;
-      border:1px solid #d7dddf; border-radius:15px; background:#fff; color:var(--ink); }
-    .folder-report h3 { margin:0 0 18px; font-size:20px; }
-    .folder-report h4 { margin:16px 0 6px; font-size:15px; }
-    .folder-report p { color:#606a6e; }
+    .folder-detail,.folder-results { grid-column:1/-1; }
+    .folder-detail-head { display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:14px; }
+    .folder-detail h3 { margin:4px 0 0; font-size:22px; font-weight:600; line-height:1.25; overflow-wrap:anywhere; }
+    .folder-detail a.h-button { display:inline-flex; align-items:center; text-decoration:none; }
+    .folder-chips { display:flex; flex-wrap:wrap; gap:6px; margin:16px 0 18px; }
+    .folder-info { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px;
+      border-top:1px solid var(--line); padding-top:16px; }
+    .folder-info small { color:var(--muted); }
+    .folder-info p { margin:4px 0 0; overflow-wrap:anywhere; }
+    .folder-results .folder-row { border-top:1px solid var(--line); border-radius:0; }
+    .folder-result-path { display:block; color:var(--muted); font-size:12px; }
+    .folder-error { color:#a3302a; }
+    .folder-report { margin-top:20px; padding:20px; background:#fff; border:1px solid var(--line); border-radius:10px; }
+    .folder-report h3 { margin:0 0 14px; font-size:18px; font-weight:600; }
+    .folder-report h4 { margin:14px 0 6px; font-size:15px; }
+    .folder-report p { color:var(--muted); }
     .folder-report ul { margin:0; padding-left:22px; }
     .folder-report li { margin:5px 0; overflow-wrap:anywhere; }
-    .folder-report li a { margin-left:7px; }
-    .hero-tools,.toolbar-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-    .quick-filters { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 16px; }
-    .quick-filters button { border:1px solid var(--line); background:var(--white); color:var(--muted);
-      border-radius:99px; padding:6px 12px; font-size:13px; }
-    .quick-filters button.active { border-color:var(--green); color:var(--green); font-weight:700; }
-    .more-row { display:flex; justify-content:center; margin:18px 0 0; }
-    .load-error { display:flex; align-items:center; gap:14px; flex-wrap:wrap; color:#a7352b; }
-    @media(max-width:760px) {
-      .nav { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
-      .nav button { width:100%; }
-      .folder-controls .search-field { flex-basis:100%; }
+    .folder-report li a { margin-left:7px; font-weight:600; }
+
+    @media(max-width:1180px) {
+      .reader-grid { grid-template-columns:1fr; }
+      .decide-panel { position:static; }
+    }
+    @media(max-width:860px) {
+      :root { --sticky:0px; }
+      .top { position:static; }
+      .top-inner { padding:8px 12px; }
+      .nav { order:3; flex:1 1 100%; }
+      .nav button { flex:1 1 0; justify-content:center; padding:0 6px; }
+      .top-search { order:4; flex:1 1 auto; max-width:none; margin:0; }
+      .add-button { order:5; }
+      .sheet-link { display:none; }
+      .wrap { padding:14px 16px 56px; }
+      .inbox-layout { grid-template-columns:1fr; }
+      .inbox { position:static; max-height:55vh; }
+      .reader-grid,.panel-head,.panel-body { padding-left:16px; padding-right:16px; }
+      .grid { grid-template-columns:1fr; }
+      .wide { grid-column:auto; }
+      .board { grid-auto-columns:minmax(250px,84vw); }
+      .filter-field { max-width:none; }
     }
     @media(max-width:570px) {
-      .folder-browser { grid-template-columns:1fr; }
+      .brand h1 { display:none; }
+      .folder-browser,.folder-info { grid-template-columns:1fr; }
       .folder-column { height:320px; }
-      .folder-detail { grid-column:1; }
-      .folder-info { grid-template-columns:1fr; }
     }
   </style>
 </head>
 <body>
   <header class="top"><div class="top-inner">
-    <div class="brandbar"><div class="brand"><div class="mark" aria-hidden="true">H</div>
-      <div><h1>Horology workspace</h1><p>Review decisions and manage Pipeline work</p></div></div>
-      <a class="sheet-link" href="https://docs.google.com/spreadsheets/d/1aL678ACs97YpLIGrGU5LbpXHc7jQBxl64ED-sLyehvI/edit" target="_blank" rel="noopener noreferrer">Open Pipeline sheet ↗</a>
-    </div>
+    <div class="brand"><div class="mark" aria-hidden="true">H</div><h1>Horology</h1></div>
     <nav class="nav" aria-label="Workspace">
-      <button id="nav-decisions" class="active" type="button">Decisions</button>
+      <button id="nav-decisions" class="active" type="button">Decisions<span class="nav-count" id="nav-decisions-count" aria-hidden="true" hidden></span></button>
       <button id="nav-pipeline" type="button">Pipeline</button>
       <button id="nav-folders" type="button">Folders</button>
-      <button id="nav-add" type="button">Add Pipeline item</button>
     </nav>
+    <form class="top-search" id="top-search-form" role="search">
+      <label class="sr-only" for="top-search" id="top-search-label">Search decisions</label>
+      <input id="top-search" type="search" autocomplete="off" placeholder="Search decisions">
+    </form>
+    <button id="nav-add" class="add-button" type="button">Add item</button>
+    <a class="sheet-link" href="https://docs.google.com/spreadsheets/d/1aL678ACs97YpLIGrGU5LbpXHc7jQBxl64ED-sLyehvI/edit" target="_blank" rel="noopener noreferrer">Pipeline sheet ↗</a>
   </div></header>
   <main id="app" class="wrap"><div class="loading">Loading workspace…</div></main>
   <script type="application/json" id="initial-data"><?!= initialJson ?></script>
   <script>
     const $ = id => document.getElementById(id);
-    const app = $('app');
-    let page = 'decisions', pipelineMode = 'cards',
+    const app = $('app'), topSearch = $('top-search');
+    let page = 'decisions', inboxTab = 'pending', inboxScroll = 0, boardShow = 'board',
       dashboard = null, pipelineRows = null, pipelineQuery = '', pipelineSort = 'sheet',
-      pipelineLimit = 50, historyLimit = 50, decisionQuery = '',
+      pipelineLimit = 50, historyLimit = 50, decisionQuery = '', columnLimits = {},
       fullText = {query:'',ids:null,pending:false},
-      pipelineFilters = {'Domain':'','Status':'','Entity':'','Type':'',
+      pipelineFilters = {'Domain':'','Type':'','Status':'','Entity':'',
         'Agent status':'','Agent type':'','Run location':'','Stage':''},
       filtersExpanded = false, folderData = null, folderPath = [], folderQuery = '',
       folderScroll = {roots:0,children:0},
-      selectedId = '', selectedPipelineId = '', formData = null, notice = '';
+      selectedId = '', selectedPipelineId = '', formData = null, notice = '',
+      inboxUpdate = null, pipelineUpdate = null;
     function chipTone(value) {
       const label = String(value || '').trim().toLowerCase();
-      if (/(?:^|:\s)(needs review|awaiting decision)$/.test(label)) return 'tone-review';
+      if (/(?:^|:\s)(needs review|awaiting decision|proposed)$/.test(label)) return 'tone-review';
       if (/(?:^|:\s)(accepted|approved|ready|completed)$/.test(label)) return 'tone-success';
       if (/(?:^|:\s)(rework|parked|plan)$/.test(label)) return 'tone-warning';
       if (/(?:^|:\s)(rejected|blocked|failed)$/.test(label)) return 'tone-danger';
       if (/^(stage\s*\d|investigation proposal|specialist deliverable|implementation question)/.test(label)) return 'tone-stage';
-      if (/(?:^|:\s)(inbox|in progress)$/.test(label)) return 'tone-info';
+      if (/(?:^|:\s)(inbox|in progress|researching)$/.test(label)) return 'tone-info';
       return 'tone-neutral';
     }
     const node = (tag,className,value) => {
@@ -442,19 +335,6 @@
         element.classList.add(chipTone(value));
       return element;
     };
-    function chevronIcon() {
-      const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
-      svg.setAttribute('viewBox','0 0 24 24');
-      svg.setAttribute('aria-hidden','true');
-      const path = document.createElementNS('http://www.w3.org/2000/svg','path');
-      path.setAttribute('d','m6 9 6 6 6-6');
-      path.setAttribute('fill','none');
-      path.setAttribute('stroke','currentColor');
-      path.setAttribute('stroke-width','2.4');
-      path.setAttribute('stroke-linecap','round');
-      path.setAttribute('stroke-linejoin','round');
-      svg.appendChild(path); return svg;
-    }
     const append = (parent,...children) => children.forEach(child => parent.appendChild(child));
     const section = (parent,title,hint) => {
       const box = node('section','section'); box.appendChild(node('h3','',title));
@@ -465,8 +345,12 @@
       try { const url = new URL(raw); return url.protocol === 'https:' ? url.href : ''; }
       catch (_) { return ''; }
     };
-    const filterMatches = (value,selected) =>
-      !selected || (selected === '__blank__' ? !value : value === selected);
+    // Type groups for the board's Type filter: Build is the implementation route, Investigate the rest.
+    const BUILD_TYPES = ['Feature','Enhancement','Refactor','Fix'];
+    const isBuild = type => BUILD_TYPES.includes(type);
+    const filterMatches = (value,selected) => !selected ||
+      (selected === '__blank__' ? !value : selected === '@build' ? isBuild(value) :
+        selected === '@investigate' ? !isBuild(value) : value === selected);
     // Every word of the query must appear in some list field; fullTextIds adds the items whose
     // long text (fetched by searchPipelineItems) matched on the server.
     function filteredPipelineRows(rows,query,filters,fullTextIds) {
@@ -484,10 +368,10 @@
     }
     function showNotice(text,kind) {
       if (!text) return;
-      const box = node('p','message ' + (kind || 'ok'),text);
+      const box = node('p','message ' + (kind || 'ok'),text); box.setAttribute('role','status');
       app.prepend(box);
     }
-    const PAGE = 50;
+    const PAGE = 50, COLUMN_PAGE = 20, DONE_CAP = 10;
     const errorText = error => error && error.message ? error.message : String(error);
     // One server call; a failure reaches fail as a message.
     function serve(method,args,ok,fail) {
@@ -514,11 +398,25 @@
       button.title = 'Read the sheets again. Lists can be up to a minute behind edits made in the sheets.';
       button.onclick = onClick; return button;
     }
-    function moreButton(parent,left,onClick) {
+    function moreButton(parent,left,onClick,step) {
       const row = node('div','more-row'), button = node('button','h-button',
-        'Show ' + Math.min(left,PAGE) + ' more (' + left + ' not shown)');
+        'Show ' + Math.min(left,step || PAGE) + ' more (' + left + ' not shown)');
       button.type = 'button'; button.onclick = onClick;
       row.appendChild(button); parent.appendChild(row);
+    }
+    // "3d" from a sheet date (dd/mm/yyyy or yyyy-mm-dd); blank when there is no date.
+    function ageLabel(text,now) {
+      const value = String(text || '').trim();
+      let m = value.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/), date = null;
+      if (m) date = new Date(Number(m[1]),Number(m[2]) - 1,Number(m[3]));
+      else if ((m = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/)))
+        date = new Date(Number(m[3]),Number(m[2]) - 1,Number(m[1]));
+      if (!date || isNaN(date)) return '';
+      const today = new Date(now || Date.now()); today.setHours(0,0,0,0);
+      const days = Math.round((today - date) / 86400000);
+      if (days <= 0) return 'today';
+      if (days < 60) return days + 'd';
+      return Math.round(days / 30) + 'mo';
     }
 
     /* Views live in the URL hash (#decision/9, #item/51), so the browser's Back button works
@@ -532,6 +430,8 @@
         return m[2] ? {view:m[1],id:m[2]} : {view:m[1] === 'item' ? 'pipeline' : 'decisions'};
       return {view:m[1]};
     }
+    const SEARCH_LABELS = {decisions:'Search decisions',pipeline:'Search Pipeline items',
+      folders:'Search folders',add:'Search Pipeline items'};
     let viewToken = 0;
     const isCurrent = token => token === viewToken;
     function show(state,push) {
@@ -539,7 +439,7 @@
       if (push && google.script.history) google.script.history.push(state,{},hashFor(state));
       const token = ++viewToken;
       const tab = {decision:'decisions',item:'pipeline'}[state.view] || state.view;
-      page = tab;
+      page = tab; inboxUpdate = null; pipelineUpdate = null;
       selectedId = state.view === 'decision' ? state.id : '';
       selectedPipelineId = state.view === 'item' ? state.id : '';
       for (const name of ['decisions','pipeline','folders','add']) {
@@ -547,7 +447,10 @@
         button.classList.toggle('active',tab === name);
         if (tab === name) button.setAttribute('aria-current','page'); else button.removeAttribute('aria-current');
       }
-      if (state.view === 'decision') openDecision(token);
+      $('top-search-label').textContent = SEARCH_LABELS[tab];
+      topSearch.placeholder = SEARCH_LABELS[tab];
+      topSearch.value = tab === 'decisions' ? decisionQuery : tab === 'folders' ? folderQuery : pipelineQuery;
+      if (tab === 'decisions') showDecisions(token,state.view === 'decision' ? state.id : '');
       else if (state.view === 'item') openPipelineItem(token);
       else if (tab === 'pipeline') withPipeline(token,renderPipelineList);
       else if (tab === 'folders' && !folderData) {
@@ -557,8 +460,7 @@
         },message => isCurrent(token) && app.replaceChildren(errorBox('Could not load folders: ' + message,
           () => show({view:'folders'}))));
       } else if (tab === 'folders') renderFolders();
-      else if (tab === 'add') withFormData(token,renderAdd);
-      else withDashboard(token,renderList);
+      else withFormData(token,renderAdd);
       window.scrollTo(0,0);
     }
     const navigate = to => show({view:to},true);
@@ -575,18 +477,14 @@
       serve(method,args,data => { keep(data); finish(0); },message => finish(1,message));
     }
     function loadDashboard(fresh,ok,fail) {
-      loadOnce('dashboard','getReviewDashboard',[{fresh:!!fresh}],data => { dashboard = data; },ok,fail);
+      loadOnce('dashboard','getReviewDashboard',[{fresh:!!fresh}],data => {
+        dashboard = data; updateNavCount();
+      },ok,fail);
     }
     function loadPipeline(fresh,ok,fail) {
       loadOnce('pipeline','getPipelineOverview',[{fresh:!!fresh}],data => {
         pipelineRows = data.rows; fullText = {query:'',ids:null,pending:false};
       },ok,fail);
-    }
-    function withDashboard(token,done,fresh) {
-      if (dashboard && !fresh) { done(); return; }
-      app.replaceChildren(loadingBox('Loading decisions…'));
-      loadDashboard(fresh,() => isCurrent(token) && done(),message => isCurrent(token) &&
-        app.replaceChildren(errorBox('Could not load decisions: ' + message,() => show({view:'decisions'}))));
     }
     function withPipeline(token,done,fresh) {
       if (pipelineRows && !fresh) { done(); return; }
@@ -603,93 +501,353 @@
     }
     // After a save, lists reload from the sheets (the server cleared its cache).
     function afterWrite() { dashboard = null; pipelineRows = null; }
+    // The Decisions tab shows how many decisions need review.
+    function updateNavCount() {
+      const count = $('nav-decisions-count'), n = dashboard ? dashboard.pending.length : 0;
+      count.textContent = String(n); count.hidden = !n;
+      $('nav-decisions').setAttribute('aria-label',n ? 'Decisions, ' + n + ' need review' : 'Decisions');
+    }
 
-    function renderList() {
+    // The top bar's search acts on the view on screen; from an item or Add item it opens the board.
+    const updateInboxSoon = debounce(() => { if (inboxUpdate) inboxUpdate(); },120);
+    const updateBoardSoon = debounce(() => { if (pipelineUpdate) pipelineUpdate(); },100);
+    const searchFullText = debounce(query => {
+      if (query !== pipelineQuery) return;
+      serve('searchPipelineItems',[query],ids => {
+        if (query !== pipelineQuery) return;
+        fullText = {query,ids:new Set(ids),pending:false}; if (pipelineUpdate) pipelineUpdate();
+      },() => { if (query === pipelineQuery) { fullText.pending = false; if (pipelineUpdate) pipelineUpdate(); } });
+    },350);
+    function setPipelineQuery(value) {
+      pipelineQuery = value; pipelineLimit = PAGE; columnLimits = {};
+      // The list's own fields filter at once; words in the long text are found on the server.
+      const long = searchWords(value).join(' ').length >= 3;
+      fullText = {query:value,ids:null,pending:long};
+      if (long) searchFullText(value);
+    }
+    function onTopSearch() {
+      const value = topSearch.value;
+      if (page === 'decisions') { decisionQuery = value; historyLimit = PAGE; inboxScroll = 0; updateInboxSoon(); }
+      else if (page === 'folders') {
+        folderQuery = value.trim().toLowerCase(); if (folderData && page === 'folders') renderFolderBrowser();
+      } else {
+        setPipelineQuery(value);
+        if (pipelineUpdate) updateBoardSoon(); else show({view:'pipeline'},true);
+      }
+    }
+
+    /* Decisions: the inbox on the left, the open decision in the reading pane. */
+    function decisionInbox(query) {
+      const words = searchWords(query), newest = (a,b) => Number(b.id) - Number(a.id);
+      const match = record => matchesWords(record,['id','pipelineId','title','question','status','stage','domain'],words);
+      return {pending:dashboard.pending.filter(match).sort(newest),
+        history:dashboard.recent.filter(match).sort(newest)};
+    }
+    function showDecisions(token,id) {
       app.replaceChildren();
-      const hero = header('Decision register','What needs your decision?',
-        'Open an item to compare options, record your choice, or request rework.');
-      hero.appendChild(refreshButton(() => withDashboard(viewToken,renderList,true)));
-      const searchBar = node('div','search-bar'), searchWrap = node('div','filter-field search-field');
-      const searchLabel = node('label','','Search decisions');
-      const search = node('input','h-input'); search.id = 'decision-search';
-      searchLabel.htmlFor = search.id; search.type = 'search';
-      search.placeholder = 'Title, question, ID or status'; search.value = decisionQuery;
-      append(searchWrap,searchLabel,search); searchBar.appendChild(searchWrap); app.appendChild(searchBar);
-      const results = node('div'); app.appendChild(results);
-      function update() {
-        results.replaceChildren();
-        const groups = decisionGroups(decisionQuery);
-        renderGroup(results,'Needs your review',groups.pending,true,Infinity);
-        renderGroup(results,'Decision history',groups.history,false,historyLimit,
-          () => { historyLimit += PAGE; update(); });
-      }
-      search.oninput = debounce(() => { decisionQuery = search.value; historyLimit = PAGE; update(); },120);
-      update();
+      const layout = node('div','inbox-layout'), inbox = node('aside','inbox'), reader = node('section','reader');
+      inbox.setAttribute('aria-label','Decisions inbox'); reader.setAttribute('aria-label','Decision');
+      append(layout,inbox,reader); app.appendChild(layout);
       showNotice(notice); notice = '';
-    }
-    function decisionGroups(query) {
-      const words = searchWords(query), byItem = new Map();
-      [...dashboard.pending,...dashboard.recent].filter(record => matchesWords(record,
-        ['id','pipelineId','title','question','status','stage','domain'],words)).forEach(record => {
-        if (!byItem.has(record.pipelineId)) byItem.set(record.pipelineId,[]);
-        byItem.get(record.pipelineId).push(record);
-      });
-      const pending = [], history = [];
-      byItem.forEach(records => {
-        records.sort((a,b) => Number(b.id) - Number(a.id));
-        (records.some(record => record.editable) ? pending : history).push(records);
-      });
-      pending.sort((a,b) => Number(b[0].id) - Number(a[0].id));
-      history.sort((a,b) => Number(b[0].id) - Number(a[0].id));
-      return {pending,history};
-    }
-    function renderGroup(parent,title,groups,pending,limit,showMore) {
-      const heading = node('div','group-title');
-      append(heading,node('h3','',title),node('span','count',groups.length +
-        (groups.length === 1 ? ' item' : ' items')));
-      parent.appendChild(heading);
-      if (!groups.length) {
-        parent.appendChild(node('div','empty',decisionQuery.trim() ? 'No decisions match your search.' :
-          pending ? 'Nothing is awaiting a decision.' : 'No recorded decisions.'));
-        return;
+      const paint = () => {
+        if (!isCurrent(token)) return;
+        // A linked decision opens in the tab that holds it.
+        if (id && dashboard.recent.some(r => r.id === id) && !dashboard.pending.some(r => r.id === id)) inboxTab = 'history';
+        else if (id && dashboard.pending.some(r => r.id === id)) inboxTab = 'pending';
+        renderInbox(inbox,token);
+      };
+      if (dashboard) paint();
+      else {
+        inbox.appendChild(loadingBox('Loading decisions…'));
+        loadDashboard(false,paint,message => isCurrent(token) && inbox.replaceChildren(
+          errorBox('Could not load decisions: ' + message,() => show({view:id ? 'decision' : 'decisions',id}))));
       }
-      const list = node('div','collection rows'); parent.appendChild(list);
-      groups.slice(0,limit).forEach(records => {
-        const latest = records[0], current = records.find(r => r.editable);
-        const card = node('div','decision-group'), summary = node('div','h-row decision-group__head');
-        append(summary,node('span','h-row__id','Pipeline ' + latest.pipelineId),
-          node('strong','h-row__title',latest.title),
-          node('span','h-row__support',latest.question || 'Open decision history'));
-        const foot = node('span','h-row__badges');
-        append(foot,node('span','h-pill' + (current ? ' pending' : ''),
-          current ? 'Needs review' : latest.status),
-          node('span','h-pill',records.length + (records.length === 1 ? ' decision' : ' decisions')));
-        const expand = node('button','icon-button decision-expand');
-        expand.appendChild(chevronIcon());
-        expand.type = 'button'; expand.setAttribute('aria-label','Show decisions for Pipeline ' + latest.pipelineId);
-        expand.setAttribute('aria-expanded','false');
-        foot.appendChild(expand); append(summary,foot); card.appendChild(summary);
-        const children = node('div','subrows'); children.hidden = true;
-        records.forEach(record => {
-          const button = node('button','decision-subrow'); button.type = 'button';
-          const label = node('span');
-          append(label,node('strong','','Decision ' + record.id + ' · ' + record.stage),
-            node('small','',record.question || 'Open decision details'));
-          append(button,label,node('span','h-pill' + (record.editable ? ' pending' : ''),
-            record.editable ? 'Needs review' : record.status));
-          button.onclick = () => show({view:'decision',id:record.id},true);
-          children.appendChild(button);
-        });
-        expand.onclick = () => {
-          children.hidden = !children.hidden;
-          expand.setAttribute('aria-expanded',String(!children.hidden));
-          expand.setAttribute('aria-label',(children.hidden ? 'Show' : 'Hide') +
-            ' decisions for Pipeline ' + latest.pipelineId);
-          card.classList.toggle('expanded',!children.hidden);
-        };
-        card.appendChild(children); list.appendChild(card);
+      if (id) openDecision(token,reader); else renderReaderEmpty(reader);
+    }
+    function renderInbox(box,token) {
+      box.replaceChildren();
+      const head = node('div','inbox-head'), title = node('div','inbox-title');
+      append(title,node('h2','','Decisions'),refreshButton(() => {
+        box.replaceChildren(loadingBox('Reading the sheets…'));
+        loadDashboard(true,() => isCurrent(token) && renderInbox(box,token),message => isCurrent(token) &&
+          box.replaceChildren(errorBox('Could not load decisions: ' + message,() => renderInbox(box,token))));
+      }));
+      const lists = decisionInbox(decisionQuery), tabs = node('div','tabs');
+      tabs.setAttribute('role','group'); tabs.setAttribute('aria-label','Decision lists');
+      [['pending','Needs review',lists.pending.length],['history','History',lists.history.length]].forEach(entry => {
+        const button = node('button','',entry[1]); button.type = 'button';
+        button.setAttribute('aria-pressed',String(inboxTab === entry[0]));
+        button.appendChild(node('span','tab-count',String(entry[2])));
+        button.onclick = () => { inboxTab = entry[0]; historyLimit = PAGE; inboxScroll = 0; renderInbox(box,token); };
+        tabs.appendChild(button);
       });
-      if (groups.length > limit) moreButton(parent,groups.length - limit,showMore);
+      append(head,title,tabs); box.appendChild(head);
+      const list = node('div','inbox-list');
+      list.setAttribute('role','region'); list.setAttribute('aria-label',inboxTab === 'pending' ? 'Needs review' : 'History');
+      box.appendChild(list);
+      const rows = inboxTab === 'pending' ? lists.pending : lists.history;
+      const limit = inboxTab === 'pending' ? Infinity : historyLimit;
+      if (!rows.length) list.appendChild(node('div','empty',decisionQuery.trim() ? 'No decisions match your search.' :
+        inboxTab === 'pending' ? 'Nothing is awaiting a decision.' : 'No recorded decisions.'));
+      rows.slice(0,limit).forEach(record => list.appendChild(inboxRow(record)));
+      if (rows.length > limit) moreButton(list,rows.length - limit,() => { historyLimit += PAGE; renderInbox(box,token); });
+      list.scrollTop = inboxScroll;
+      list.onscroll = () => { inboxScroll = list.scrollTop; };
+      inboxUpdate = () => renderInbox(box,token);
+    }
+    function inboxRow(record) {
+      const row = node('button','inbox-row'); row.type = 'button';
+      if (record.id === selectedId) row.setAttribute('aria-current','true');
+      const meta = node('span','row-meta'), age = ageLabel(record.date);
+      append(meta,node('span','id','Decision ' + record.id),node('span','',record.domain || 'No domain'));
+      if (!record.editable) meta.appendChild(node('span','h-pill',record.status));
+      if (age) { const label = node('span','age',age); label.title = record.date; meta.appendChild(label); }
+      append(row,meta,node('span','row-title',record.title),
+        node('span','row-question',record.question || record.stage || 'Open decision details'));
+      row.onclick = () => show({view:'decision',id:record.id},true);
+      return row;
+    }
+    function renderReaderEmpty(reader) {
+      const panel = node('div','reader-panel reader-empty');
+      const n = dashboard ? dashboard.pending.length : 0;
+      append(panel,node('h2','','Choose a decision'),node('p','',n ?
+        n + (n === 1 ? ' decision needs' : ' decisions need') + ' your review. Open one from the list to read it and decide.' :
+        'Nothing is waiting for you. Past decisions are under History.'));
+      reader.replaceChildren(panel);
+    }
+    function defaultWording(record,code) {
+      if (code === 'OTHER') return '';
+      const option = record.options.find(o => o.code === code);
+      if (code === 'PROPOSAL' || (option && option.recommended))
+        return record.proposal.replace(/^\s*Proposed\s*:/i,'Accepted:').trim();
+      return option ? 'Accepted: ' + option.context.replace(/[.;]+$/,'') +
+        ' (Option ' + code + ').' : '';
+    }
+    // A decision is read fresh each time it is opened, so its version matches the sheet.
+    function openDecision(token,reader) {
+      const id = selectedId;
+      reader.replaceChildren(loadingBox('Loading decision ' + id + '…'));
+      serve('getDecisionReview',[id],record => {
+        if (!isCurrent(token)) return;
+        renderDetail(record,reader);
+        // On a phone the reading pane sits below the inbox, so bring it into view.
+        if (window.matchMedia && window.matchMedia('(max-width: 860px)').matches && reader.scrollIntoView)
+          reader.scrollIntoView({block:'start'});
+      },message => isCurrent(token) && reader.replaceChildren(errorBox('Could not load decision ' + id + ': ' + message,
+        () => show({view:'decision',id}))));
+    }
+    function renderDetail(r,reader) {
+      reader.replaceChildren();
+      const panel = node('article','reader-panel'); reader.appendChild(panel);
+      const head = node('header','panel-head'), line = node('div','head-line');
+      const dot = () => { const s = node('span','dot','·'); s.setAttribute('aria-hidden','true'); return s; };
+      append(line,node('span','id','Decision ' + r.id),dot(),node('span','',r.domain || 'No domain'),dot(),
+        node('span','','Pipeline ' + r.pipelineId),
+        node('span','h-pill' + (r.editable ? ' pending' : ''),r.editable ? 'Needs review' : r.status),
+        node('span','h-pill',r.stage));
+      append(head,line,node('h2','',r.title)); panel.appendChild(head);
+      // A proposal's whole reading pane is its form, so the option cards are the choice.
+      const body = node(r.editable ? 'form' : 'div','reader-grid'), main = node('div','reader-main');
+      const side = node('aside','decide-panel'); side.setAttribute('aria-label','Your decision');
+      append(body,main,side); panel.appendChild(body);
+      if (r.question) paragraphs(section(main,'Question'),r.question);
+      paragraphs(section(main,r.editable ? 'Proposal' : 'Recorded decision'),r.proposal,'No decision text recorded.');
+      let choices = null;
+      if (r.editable) choices = optionChoices(section(main,'Options',
+        'The recommended option is selected. You can choose another without requesting rework.'),r,true,false);
+      else if (r.options.length) {
+        const cards = node('div','choices');
+        r.options.forEach(o => cards.appendChild(optionCard(o)));
+        section(main,'Options').appendChild(cards);
+      }
+      const why = section(main,'Why');
+      if (r.reasonPoints.length) why.appendChild(bulletList(r.reasonPoints,'bullets'));
+      else why.appendChild(node('p','plain-copy','No reason recorded.'));
+      if (r.steps.length) section(main,'Planned steps').appendChild(stepList(r.steps));
+      if (r.reviewTrigger) paragraphs(section(main,'Revisit trigger'),r.reviewTrigger);
+      side.appendChild(node('h3','','Your decision'));
+      if (r.editable) renderDecisionForm(side,body,choices,r);
+      else if (r.revisable) renderReviseForm(side,r);
+      else side.appendChild(node('p','message','Recorded as ' + r.status + '. Only an item’s current decision can be revised.'));
+      const links = section(side,'Links'), row = node('div','links');
+      const open = node('button','link-button','Pipeline item ' + r.pipelineId); open.type = 'button';
+      open.onclick = () => show({view:'item',id:r.pipelineId},true); row.appendChild(open);
+      r.links.forEach((raw,i) => {
+        const href = safeLink(raw); if (!href) return;
+        const a = node('a','',r.links.length === 1 ? 'Evidence ↗' : 'Evidence ' + (i+1) + ' ↗');
+        a.href = href; a.target = '_blank'; a.rel = 'noopener noreferrer'; row.appendChild(a);
+      });
+      links.appendChild(row);
+    }
+    // Each line of a cell as its own paragraph, so paragraphs are spaced apart.
+    function paragraphs(parent,text,empty) {
+      const lines = String(text || '').split('\n').map(line => line.trim()).filter(Boolean);
+      if (!lines.length && empty) lines.push(empty);
+      lines.forEach(line => parent.appendChild(node('p','plain-copy',line)));
+    }
+    // An item's planned steps as a numbered list, with specialist and status after each task.
+    function stepList(steps) {
+      const list = node('ol','steps');
+      steps.forEach(step => {
+        const li = node('li','',step.task); if (Number(step.number)) li.value = Number(step.number);
+        const extra = [step.specialist,step.status].filter(Boolean).join(' · ');
+        if (extra) li.appendChild(node('small','',extra));
+        list.appendChild(li);
+      });
+      return list;
+    }
+    function bulletList(points,className) {
+      const list = node('ul',className || '');
+      points.forEach(point => list.appendChild(node('li','',point)));
+      return list;
+    }
+    function optionLabel(o) {
+      return o.code === 'OTHER' ? 'Another option' : o.code === 'PROPOSAL' ? 'Use proposal' : 'Option ' + o.code;
+    }
+    function optionCard(o) {
+      const card = node('div','choice' + (o.recommended ? ' recommended' : ''));
+      if (o.recommended) card.appendChild(node('em','rec-label','RECOMMENDED'));
+      append(card,node('strong','',optionLabel(o)),node('span','',o.context));
+      if (o.figures && o.figures.length) card.appendChild(bulletList(o.figures));
+      return card;
+    }
+    function optionChoices(parent,r,checkRecommended,compact) {
+      const grid = node('div','choices' + (compact ? ' compact' : '')); parent.appendChild(grid);
+      grid.setAttribute('role','radiogroup'); grid.setAttribute('aria-label','Options');
+      const listed = r.options.length ? r.options : [{code:'PROPOSAL',context:'Use the proposal',recommended:true}];
+      [...listed,{code:'OTHER',context:'Describe a different choice',recommended:false}].forEach(o => {
+        const label = node('label','choice' + (o.recommended ? ' recommended' : '')), input = node('input');
+        input.type = 'radio'; input.name = 'option'; input.value = o.code;
+        if (o.recommended && checkRecommended) input.checked = true;
+        label.appendChild(input);
+        if (o.recommended) label.appendChild(node('em','rec-label','RECOMMENDED'));
+        append(label,node('strong','',optionLabel(o)),node('span','',o.context));
+        if (o.figures && o.figures.length) label.appendChild(bulletList(o.figures));
+        grid.appendChild(label);
+      });
+      return grid;
+    }
+    function renderReviseForm(side,r) {
+      const form = node('form'); side.appendChild(form);
+      form.appendChild(node('p','message','Recorded as ' + r.status + '. Revising changes the outcome and moves Pipeline ' +
+        r.pipelineId + ' (now ' + r.itemStatus + ') as that outcome would from review. The decision keeps its ID; your reason is added to it.'));
+      const grid = node('div','grid'); form.appendChild(grid);
+      const outcome = field(grid,'New outcome','revise-outcome','select').control;
+      [['parked','Park'],['rejected','Reject'],['rework','Request rework'],['accepted','Accept an option']]
+        .filter(pair => pair[0] !== String(r.status).trim().toLowerCase() || pair[0] === 'accepted')
+        .forEach(pair => {
+          const option = node('option','',pair[1]); option.value = pair[0]; outcome.appendChild(option);
+        });
+      const choices = section(form,'Choose an option');
+      optionChoices(choices,r,false,true);
+      const wordingField = field(form,'Decision to record','revise-wording','textarea');
+      wordingField.control.rows = 4; wordingField.control.maxLength = 4000;
+      const noteField = field(form,'Why are you revising it?','revise-note','textarea');
+      noteField.control.rows = 3; noteField.control.maxLength = 3000;
+      const bar = node('div','actions'), save = node('button','h-button h-button--primary','Revise decision');
+      save.type = 'submit'; const message = node('span','message'); message.setAttribute('role','status');
+      append(bar,save,message); form.appendChild(bar);
+      const checked = () => form.querySelector('input[name="option"]:checked');
+      function update() {
+        const accepting = outcome.value === 'accepted';
+        choices.hidden = !accepting; wordingField.wrap.hidden = !accepting;
+        noteField.label.textContent = outcome.value === 'rework' ? 'Rework instructions' : 'Why are you revising it?';
+        if (accepting && checked()) wordingField.control.value = defaultWording(r,checked().value);
+      }
+      form.querySelectorAll('input[name="option"]').forEach(el => el.onchange = update);
+      outcome.onchange = update; update();
+      form.onsubmit = event => {
+        event.preventDefault(); save.disabled = true;
+        message.className = 'message'; message.textContent = 'Saving…';
+        const chosen = checked();
+        google.script.run.withSuccessHandler(result => {
+          afterWrite();
+          notice = 'Decision revised; Pipeline ' + r.pipelineId + ' is now ' + result.set.Status + '.';
+          show({view:'decisions'},true);
+        }).withFailureHandler(error => {
+          message.className = 'message error';
+          message.textContent = error && error.message ? error.message : String(error);
+          save.disabled = false;
+        }).reviseDecisionReview({decisionId:r.id,version:r.version,action:outcome.value,
+          optionCode:chosen ? chosen.value : '',wording:wordingField.control.value,
+          note:noteField.control.value});
+      };
+    }
+    // form is the whole reading pane; the option cards in it are the choice an approval records.
+    function renderDecisionForm(side,form,choices,r) {
+      const box = node('div','stack'); side.appendChild(box);
+      const outcomeField = field(box,'Outcome','outcome','select');
+      const outcome = outcomeField.control;
+      // An Implementation question is answered, and the implementation resumes at Stage 3.
+      const question = String(r.stage).trim().toLowerCase() === 'implementation question';
+      [['accepted',question ? 'Answer and resume Stage 3' : 'Approve chosen option'],['rework','Request rework'],
+        ['parked','Park for now'],['rejected','Reject']].forEach(pair => {
+          const option = node('option','',pair[1]); option.value = pair[0]; outcome.appendChild(option);
+        });
+      const wordingField = field(box,'Decision to record','wording','textarea');
+      wordingField.control.rows = 4; wordingField.control.maxLength = 4000;
+      wordingField.hint.textContent = 'Edit the wording if your choice has conditions or limits.';
+      const noteField = field(box,'Your reason or instructions','note','textarea');
+      noteField.control.rows = 3; noteField.control.maxLength = 3000;
+      noteField.control.placeholder = 'One or two sentences are enough.';
+      const bar = node('div','actions'), save = node('button','h-button h-button--primary','Save decision');
+      save.type = 'submit'; const message = node('span','message'); message.setAttribute('role','status');
+      append(bar,save,message); box.appendChild(bar);
+      const checked = () => form.querySelector('input[name="option"]:checked');
+      const choiceHint = choices.parentNode && choices.parentNode.querySelector('.hint');
+      function update() {
+        const accepting = outcome.value === 'accepted';
+        // The options stay readable; they only count when approving.
+        choices.querySelectorAll('input').forEach(input => { input.disabled = !accepting; });
+        if (choiceHint) choiceHint.textContent = accepting ?
+          'The recommended option is selected. You can choose another without requesting rework.' :
+          'Options apply only when you approve. This outcome records no option.';
+        wordingField.wrap.hidden = !accepting;
+        noteField.label.textContent = outcome.value === 'rework' ? 'Rework instructions' :
+          accepting ? 'Your reason (required for a different option)' : 'Why this outcome?';
+        if (accepting && checked()) wordingField.control.value = defaultWording(r,checked().value);
+      }
+      form.querySelectorAll('input[name="option"]').forEach(el => el.onchange = update);
+      outcome.onchange = update; update();
+      form.onsubmit = event => {
+        event.preventDefault(); save.disabled = true;
+        message.className = 'message'; message.textContent = 'Saving…';
+        const chosen = outcome.value === 'accepted' ? checked() : null;
+        const payload = {decisionId:r.id,version:r.version,action:outcome.value,
+          optionCode:chosen ? chosen.value : '',wording:wordingField.control.value,
+          note:noteField.control.value};
+        google.script.run.withSuccessHandler(result => {
+          afterWrite();
+          notice = result.warning || (result.applied ?
+            'Decision saved and Pipeline updated.' : 'Decision saved.');
+          show({view:'decisions'},true);
+        }).withFailureHandler(error => {
+          message.className = 'message error';
+          message.textContent = error && error.message ? error.message : String(error);
+          save.disabled = false;
+        }).submitDecisionReview(payload);
+      };
+    }
+
+    /* Pipeline board: one column per place in the workflow; Parked and Rejected under Show. */
+    const BOARD_COLUMNS = [['inbox','Inbox'],['investigating','Investigating or planning'],
+      ['waiting','Waiting for you'],['building','Building or delivering'],['done','Done']];
+    const ALL_LABELS = {'Domain':'All domains','Type':'All types','Status':'All statuses','Entity':'All entities',
+      'Agent status':'All agent statuses','Agent type':'All agent types','Run location':'All run locations','Stage':'All stages'};
+    function boardColumn(item) {
+      const status = item.Status || '';
+      if (status === 'Parked' || status === 'Rejected') return status.toLowerCase();
+      if (status === 'Completed') return 'done';
+      if (status === 'Awaiting decision') return 'waiting';
+      if (!status || status === 'Inbox') return 'inbox';
+      // Approved, In progress, Rework and Researching: Stage 3 is building or delivering, earlier is investigating.
+      return item.Stage === 'Stage 3' ? 'building' : 'investigating';
+    }
+    function boardGroups(rows) {
+      const groups = {inbox:[],investigating:[],waiting:[],building:[],done:[],parked:[],rejected:[]};
+      rows.forEach(item => groups[boardColumn(item)].push(item));
+      groups.done.sort((a,b) => dayNumber(b.Updated) - dayNumber(a.Updated) || (Number(b.ID) || 0) - (Number(a.ID) || 0));
+      return groups;
     }
     // Workflow order: what needs the founder first, finished work last.
     const STATUS_ORDER = ['Awaiting decision','In progress','Researching','Approved','Rework',
@@ -706,163 +864,122 @@
       if (sort === 'status') return rows.slice().sort((a,b) => statusRank(a.Status) - statusRank(b.Status) || newest(a,b));
       return rows;
     }
+    function typeTag(type) {
+      const tag = node('span','type-tag ' + (isBuild(type) ? 'build' : 'investigate'),type || 'No type');
+      tag.title = isBuild(type) ? 'Build (implementation route)' : 'Investigate';
+      return tag;
+    }
+    function cardStatus(item) {
+      if (item.Status === 'Awaiting decision')
+        return (item['Current decision ID'] ? 'Decision ' + item['Current decision ID'] + ' · ' : '') +
+          (item['Review stage'] || 'Awaiting decision');
+      if (item.Status === 'Completed') return 'Completed' + (item.Updated ? ' · ' + item.Updated : '');
+      return [item.Stage,item.Status].filter(Boolean).join(' · ') || 'No status';
+    }
+    function pipelineCard(item) {
+      const card = node('button','card'); card.type = 'button';
+      const meta = node('span','card-meta'), foot = node('span','card-foot',cardStatus(item));
+      append(meta,node('span','id','#' + item.ID + (item.Domain ? ' · ' + item.Domain : '')),typeTag(item.Type));
+      if (item['Agent status'] === 'Ready' || item['Agent status'] === 'Plan')
+        foot.appendChild(node('span','ready',' · ' + item['Agent status']));
+      append(card,meta,node('span','card-title',item.Title || 'Untitled item'),foot);
+      card.onclick = () => show({view:'item',id:item.ID},true);
+      return card;
+    }
     function renderPipelineList() {
       app.replaceChildren();
-      const hero = header('Pipeline','All Pipeline items',
-        'Browse every Pipeline row. Open one to see its work, status, next step and revisit trigger.');
-      const searchBar = node('div','search-bar'), searchWrap = node('div','filter-field search-field');
-      const searchLabel = node('label','','Search');
-      const search = node('input','h-input'); search.id = 'pipeline-search';
-      searchLabel.htmlFor = search.id;
-      search.type = 'search'; search.placeholder = 'Titles and full text'; search.value = pipelineQuery;
-      append(searchWrap,searchLabel,search); searchBar.appendChild(searchWrap);
-      const tools = node('div','hero-tools'), toggle = node('div','toggle');
-      for (const label of ['Cards','Rows']) {
-        const button = node('button',pipelineMode === label.toLowerCase() ? 'active' : '',label);
-        button.type = 'button';
-        button.setAttribute('aria-pressed',String(pipelineMode === label.toLowerCase()));
-        button.onclick = () => { pipelineMode = label.toLowerCase(); renderPipelineList(); };
-        toggle.appendChild(button);
-      }
-      append(tools,toggle,refreshButton(() => withPipeline(viewToken,renderPipelineList,true)));
+      const hero = header('Pipeline','Pipeline board',
+        'Every Pipeline item by where it stands. Open a card to see its work and edit it.');
+      const tools = node('div','hero-tools');
+      tools.appendChild(refreshButton(() => withPipeline(viewToken,renderPipelineList,true)));
       hero.appendChild(tools);
-      const filterControls = {};
-      function addFilter(key,parent,rows) {
-        const wrap = node('div','filter-field'), label = node('label','',key);
-        const select = node('select','h-select');
-        select.id = 'filter-' + key.toLowerCase().replace(/\s+/g,'-');
-        label.htmlFor = select.id;
-        append(wrap,label,select); parent.appendChild(wrap);
-        filterControls[key] = select;
-        const values = [...new Set(rows.map(item => item[key] || ''))]
-          .sort((a,b) => a.localeCompare(b));
-        const all = node('option','','All ' + key.toLowerCase()); all.value = '';
-        select.appendChild(all);
-        values.forEach(value => {
-          const option = node('option','',value || 'No ' + key.toLowerCase());
-          option.value = value || '__blank__'; select.appendChild(option);
-        });
-        if (![...select.options].some(option => option.value === pipelineFilters[key]))
-          pipelineFilters[key] = '';
-        select.value = pipelineFilters[key];
-        select.onchange = () => {
-          pipelineFilters[key] = select.value; pipelineLimit = PAGE;
-          if (key === 'Status') { renderPipelineList(); return; }  // keeps the status chips in step
-          if (key === 'Domain') {
-            pipelineFilters.Entity = '';
-            const entity = filterControls.Entity;
-            if (entity) {
-              const subset = (pipelineRows || []).filter(item =>
-                !pipelineFilters.Domain || filterMatches(item.Domain,pipelineFilters.Domain));
-              entity.replaceChildren();
-              const allEntity = node('option','','All entity'); allEntity.value = '';
-              entity.appendChild(allEntity);
-              [...new Set(subset.map(item => item.Entity || ''))]
-                .sort((a,b) => a.localeCompare(b)).forEach(value => {
-                  const option = node('option','',value || 'No entity');
-                  option.value = value || '__blank__'; entity.appendChild(option);
-                });
-            }
-          }
-          updateResults();
-        };
+      const bar = node('div','board-tools'), filterControls = {};
+      function addSelect(key,label,parent,options,value,onChange) {
+        const wrap = node('div','filter-field'), text = node('label','',label);
+        const select = node('select','h-select'); select.id = 'filter-' + key.toLowerCase().replace(/\s+/g,'-');
+        text.htmlFor = select.id; append(wrap,text,select); parent.appendChild(wrap);
+        options.forEach(pair => { const option = node('option','',pair[1]); option.value = pair[0]; select.appendChild(option); });
+        if (![...select.options].some(option => option.value === value)) value = '';
+        select.value = value; select.onchange = () => onChange(select.value);
+        return select;
       }
-      addFilter('Domain',searchBar,pipelineRows || []);
-      addFilter('Status',searchBar,pipelineRows || []);
-      const sortWrap = node('div','filter-field'), sortLabel = node('label','','Sort');
-      const sort = node('select','h-select'); sort.id = 'pipeline-sort'; sortLabel.htmlFor = sort.id;
-      [['sheet','Sheet order'],['status','Needs attention first'],['newest','Newest first'],['updated','Recently updated']]
-        .forEach(pair => { const option = node('option','',pair[1]); option.value = pair[0]; sort.appendChild(option); });
-      sort.value = pipelineSort;
-      sort.onchange = () => { pipelineSort = sort.value; pipelineLimit = PAGE; updateResults(); };
-      append(sortWrap,sortLabel,sort); searchBar.appendChild(sortWrap);
+      const valuesOf = (key,rows) => [...new Set(rows.map(item => item[key] || ''))].sort((a,b) => a.localeCompare(b))
+        .map(value => [value || '__blank__',value || 'No ' + key.toLowerCase()]);
+      function addFilter(key,parent,rows,extra) {
+        filterControls[key] = addSelect(key,key,parent,[['',ALL_LABELS[key]],...(extra || []),...valuesOf(key,rows)],
+          pipelineFilters[key],value => {
+            pipelineFilters[key] = value; pipelineLimit = PAGE; columnLimits = {};
+            if (key === 'Domain') { pipelineFilters.Entity = ''; renderPipelineList(); return; }  // Entity narrows with Domain
+            updateResults();
+          });
+        pipelineFilters[key] = filterControls[key].value;
+      }
+      const all = pipelineRows || [];
+      addFilter('Domain',bar,all);
+      addFilter('Type',bar,all,[['@build','Build (Feature, Enhancement, Refactor, Fix)'],['@investigate','Investigate (all other types)']]);
+      addSelect('show','Show',bar,[['board','Board'],['parked','Parked'],['rejected','Rejected'],['all','All items as cards']],
+        boardShow,value => { boardShow = value; pipelineLimit = PAGE; columnLimits = {}; updateResults(); });
+      addSelect('sort','Sort',bar,[['sheet','Sheet order'],['status','Needs attention first'],['newest','Newest first'],['updated','Recently updated']],
+        pipelineSort,value => { pipelineSort = value; pipelineLimit = PAGE; columnLimits = {}; updateResults(); });
       const clear = node('button','h-button','Clear filters'); clear.type = 'button';
       clear.onclick = () => {
-        pipelineQuery = ''; pipelineLimit = PAGE;
+        setPipelineQuery(''); topSearch.value = ''; boardShow = 'board';
         Object.keys(pipelineFilters).forEach(key => { pipelineFilters[key] = ''; });
         renderPipelineList();
       };
-      const actions = node('div','filter-actions'); actions.appendChild(clear); searchBar.appendChild(actions);
-      app.appendChild(searchBar);
-      // Status chips: one click narrows the list to a status; counts are for the whole Pipeline.
-      const chips = node('div','quick-filters'); chips.setAttribute('aria-label','Filter by status');
-      const counts = {};
-      (pipelineRows || []).forEach(item => { counts[item.Status || ''] = (counts[item.Status || ''] || 0) + 1; });
-      [['','All',(pipelineRows || []).length],...Object.keys(counts)
-        .sort((a,b) => statusRank(a) - statusRank(b) || a.localeCompare(b))
-        .map(status => [status || '__blank__',status || 'No status',counts[status]])].forEach(entry => {
-        const chip = node('button',pipelineFilters.Status === entry[0] ? 'active' : '',entry[1] + ' · ' + entry[2]);
-        chip.type = 'button'; chip.setAttribute('aria-pressed',String(pipelineFilters.Status === entry[0]));
-        chip.onclick = () => { pipelineFilters.Status = entry[0]; pipelineLimit = PAGE; renderPipelineList(); };
-        chips.appendChild(chip);
-      });
-      app.appendChild(chips);
+      bar.appendChild(clear); app.appendChild(bar);
       const more = node('details','filter-panel'), moreLabel = node('summary','','More filters');
-      more.open = filtersExpanded;
-      more.ontoggle = () => { filtersExpanded = more.open; };
+      more.open = filtersExpanded; more.ontoggle = () => { filtersExpanded = more.open; };
       const filterGrid = node('div','filter-grid');
       append(more,moreLabel,filterGrid); app.appendChild(more);
-      const entityRows = (pipelineRows || []).filter(item =>
-        filterMatches(item.Domain,pipelineFilters.Domain));
-      addFilter('Entity',filterGrid,entityRows);
-      for (const key of ['Type','Agent status','Agent type','Run location','Stage'])
-        addFilter(key,filterGrid,pipelineRows || []);
-      const heading = node('div','group-title'), count = node('span','count');
-      count.setAttribute('aria-live','polite');
-      append(heading,node('h3','','Pipeline items'),count); app.appendChild(heading);
-      const list = node('div','collection ' + pipelineMode); app.appendChild(list);
-      const moreRow = node('div'); app.appendChild(moreRow);
+      addFilter('Status',filterGrid,all);
+      addFilter('Entity',filterGrid,all.filter(item => filterMatches(item.Domain,pipelineFilters.Domain)));
+      for (const key of ['Agent status','Agent type','Run location','Stage']) addFilter(key,filterGrid,all);
+      const count = node('p','board-count'); count.setAttribute('aria-live','polite'); app.appendChild(count);
+      const results = node('div'); app.appendChild(results);
       function updateResults() {
         const extra = fullText.query === pipelineQuery ? fullText.ids : null;
-        const rows = sortedPipelineRows(filteredPipelineRows(pipelineRows || [],pipelineQuery,pipelineFilters,extra),pipelineSort);
-        const active = Object.entries(pipelineFilters)
-          .filter(([key,value]) => !['Domain','Status'].includes(key) && value).length;
+        const rows = sortedPipelineRows(filteredPipelineRows(all,pipelineQuery,pipelineFilters,extra),pipelineSort);
+        const active = Object.entries(pipelineFilters).filter(([key,value]) => !['Domain','Type'].includes(key) && value).length;
         moreLabel.textContent = 'More filters' + (active ? ' · ' + active + ' active' : '');
-        count.textContent = rows.length + ' of ' + (pipelineRows || []).length + ' items' +
+        count.textContent = rows.length + ' of ' + all.length + ' items' +
           (fullText.pending && fullText.query === pipelineQuery ? ' · searching full text…' : '');
-        list.className = 'collection ' + pipelineMode;
-        list.replaceChildren(); moreRow.replaceChildren();
-        if (!rows.length) {
-          list.appendChild(node('div','empty',fullText.pending ? 'Searching the full text…' :
+        results.replaceChildren();
+        const groups = boardGroups(rows);
+        if (boardShow === 'board') {
+          const board = node('div','board'); board.tabIndex = 0;
+          board.setAttribute('role','region'); board.setAttribute('aria-label','Pipeline board columns');
+          BOARD_COLUMNS.forEach(([key,label]) => {
+            const column = node('section','column column--' + key), head = node('div','column-head');
+            const heading = node('h3','',label); heading.id = 'column-' + key;
+            column.setAttribute('aria-labelledby',heading.id);
+            const items = groups[key], limit = columnLimits[key] || (key === 'done' ? DONE_CAP : COLUMN_PAGE);
+            append(head,heading,node('span','h-pill',String(items.length))); column.appendChild(head);
+            const list = node('div','column-list'); column.appendChild(list);
+            if (!items.length) list.appendChild(node('p','column-empty','Nothing here'));
+            items.slice(0,limit).forEach(item => list.appendChild(pipelineCard(item)));
+            if (items.length > limit) moreButton(column,items.length - limit,() => {
+              columnLimits[key] = limit + COLUMN_PAGE; updateResults(); },COLUMN_PAGE);
+            board.appendChild(column);
+          });
+          results.appendChild(board);
+          if (groups.parked.length || groups.rejected.length)
+            results.appendChild(node('p','board-note','Not on the board: ' + groups.parked.length + ' parked and ' +
+              groups.rejected.length + ' rejected. Choose them under Show.'));
+          return;
+        }
+        const listed = boardShow === 'all' ? rows : groups[boardShow];
+        if (!listed.length) {
+          results.appendChild(node('div','empty',fullText.pending ? 'Searching the full text…' :
             'No Pipeline items match your search and filters.'));
           return;
         }
-        rows.slice(0,pipelineLimit).forEach(item => {
-          const rowMode = pipelineMode === 'rows';
-          const button = node('button','record' + (rowMode ? ' h-row' : '')); button.type = 'button';
-          append(button,node('span',rowMode ? 'id h-row__id' : 'id','Pipeline ' + item.ID),
-            node('strong',rowMode ? 'h-row__title' : '',item.Title || 'Untitled item'),
-            node('span',rowMode ? 'question h-row__support' : 'question',
-              item.summary || 'Open item details'));
-          const foot = node('span',rowMode ? 'foot h-row__badges' : 'foot');
-          append(foot,node('span','h-pill',item.Status || 'No status'),
-            node('span','h-pill',item.Stage || 'No stage'),
-            node('span','h-pill',item.Domain || 'No domain'));
-          if (item['Agent status'] === 'Ready') foot.appendChild(node('span','h-pill','Ready'));
-          button.appendChild(foot);
-          if (rowMode) button.appendChild(node('span','h-row__chevron','›'));
-          button.onclick = () => show({view:'item',id:item.ID},true);
-          list.appendChild(button);
-        });
-        if (rows.length > pipelineLimit)
-          moreButton(moreRow,rows.length - pipelineLimit,() => { pipelineLimit += PAGE; updateResults(); });
+        const grid = node('div','card-grid'); results.appendChild(grid);
+        listed.slice(0,pipelineLimit).forEach(item => grid.appendChild(pipelineCard(item)));
+        if (listed.length > pipelineLimit)
+          moreButton(results,listed.length - pipelineLimit,() => { pipelineLimit += PAGE; updateResults(); });
       }
-      // The list's own fields filter at once; words in the long text are found on the server.
-      const searchText = debounce(query => {
-        if (query !== pipelineQuery) return;
-        serve('searchPipelineItems',[query],ids => {
-          if (query !== pipelineQuery) return;
-          fullText = {query,ids:new Set(ids),pending:false}; updateResults();
-        },() => { if (query === pipelineQuery) { fullText.pending = false; updateResults(); } });
-      },350);
-      const localSearch = debounce(() => updateResults(),100);
-      search.oninput = () => {
-        pipelineQuery = search.value; pipelineLimit = PAGE;
-        const long = searchWords(pipelineQuery).join(' ').length >= 3;
-        fullText = {query:pipelineQuery,ids:null,pending:long};
-        localSearch();
-        if (long) searchText(pipelineQuery);
-      };
+      pipelineUpdate = updateResults;
       updateResults();
       showNotice(notice); notice = '';
     }
@@ -873,16 +990,19 @@
         message => isCurrent(token) && app.replaceChildren(errorBox('Could not load Pipeline item ' + id + ': ' + message,
           () => show({view:'item',id}))));
     }
+    function itemHead(item,title) {
+      const head = node('div','panel-head'), line = node('div','head-line');
+      append(line,node('span','id','#' + item.ID),node('span','',item.Domain || 'No domain'),typeTag(item.Type));
+      append(head,line,node('h2','',title));
+      return head;
+    }
     function renderPipelineDetail(item) {
       app.replaceChildren();
-      const back = node('button','back icon-button','←'); back.type = 'button';
-      back.setAttribute('aria-label','Back to all Pipeline items'); back.title = 'All Pipeline items';
+      const back = node('button','h-button back','← Pipeline board'); back.type = 'button';
       back.onclick = () => show({view:'pipeline'},true);
       const toolbar = node('div','detail-toolbar'); toolbar.appendChild(back); app.appendChild(toolbar);
       const panel = node('article','panel'); app.appendChild(panel);
-      const head = node('div','panel-head');
-      append(head,node('div','eyebrow','Pipeline ' + item.ID + ' · ' + item.Domain),
-        node('h2','',item.Title || 'Untitled item'));
+      const head = itemHead(item,item.Title || 'Untitled item');
       const meta = node('div','meta');
       for (const value of [item.Status,item.Stage,item['Review stage'],item['Agent status']])
         if (value) meta.appendChild(node('span','h-pill',value));
@@ -894,8 +1014,7 @@
         decision.onclick = () => show({view:'decision',id:item['Current decision ID']},true);
         tools.appendChild(decision);
       }
-      const edit = node('button','h-button h-button--primary edit-action'); edit.type = 'button';
-      append(edit,node('span','edit-glyph','✎'),node('span','','Edit item'));
+      const edit = node('button','h-button h-button--primary','Edit item'); edit.type = 'button';
       const token = viewToken;
       edit.onclick = () => withFormData(token,() => renderPipelineEdit(item));
       tools.appendChild(edit); toolbar.appendChild(tools); panel.appendChild(head);
@@ -924,9 +1043,9 @@
       const links = section(body,'Open records');
       const linkRow = node('div','links');
       for (const pair of [
-        ['Open Pipeline row ↗',item.sheetUrl],
-        ['Open work target ↗',item.URL],
-        ['Open ClickUp task ↗',item['ClickUp Pipeline URL']]
+        ['Pipeline row ↗',item.sheetUrl],
+        ['Work target ↗',item.URL],
+        ['ClickUp task ↗',item['ClickUp Pipeline URL']]
       ]) {
         const href = safeLink(pair[1]); if (!href) continue;
         const a = node('a','',pair[0]); a.href = href; a.target = '_blank';
@@ -937,13 +1056,10 @@
     }
     function renderPipelineEdit(item) {
       app.replaceChildren();
-      const back = node('button','back icon-button','←'); back.type = 'button';
-      back.setAttribute('aria-label','Back to Pipeline item'); back.title = 'Pipeline item';
+      const back = node('button','h-button back','← Back to item'); back.type = 'button';
       back.onclick = () => renderPipelineDetail(item);
       const toolbar = node('div','detail-toolbar'); toolbar.appendChild(back); app.appendChild(toolbar);
-      const panel = node('article','panel'), head = node('div','panel-head');
-      append(head,node('div','eyebrow','Pipeline ' + item.ID),
-        node('h2','','Edit ' + (item.Title || 'item')));
+      const panel = node('article','panel'), head = itemHead(item,'Edit ' + (item.Title || 'item'));
       const readOnly = node('div','meta');
       for (const pair of [['Domain',item.Domain],['Entity',item.Entity],
         ['Status',item.Status],['Stage',item.Stage]])
@@ -981,7 +1097,7 @@
       fill(runLocation.control,formData.options['Run location'],true);
       runLocation.control.value = item['Run location'];
       const bar = node('div','actions'), save = node('button','h-button h-button--primary','Save item');
-      save.type = 'submit'; const message = node('span','message');
+      save.type = 'submit'; const message = node('span','message'); message.setAttribute('role','status');
       append(bar,save,message); form.appendChild(bar);
       form.onsubmit = event => {
         event.preventDefault(); save.disabled = true;
@@ -1009,213 +1125,6 @@
           message.className = 'message error';
           message.textContent = error.message || String(error); save.disabled = false;
         }).updatePipelineItemFromWeb(payload);
-      };
-    }
-    function defaultWording(record,code) {
-      if (code === 'OTHER') return '';
-      const option = record.options.find(o => o.code === code);
-      if (code === 'PROPOSAL' || (option && option.recommended))
-        return record.proposal.replace(/^\s*Proposed\s*:/i,'Accepted:').trim();
-      return option ? 'Accepted: ' + option.context.replace(/[.;]+$/,'') +
-        ' (Option ' + code + ').' : '';
-    }
-    // A decision is read fresh each time it is opened, so its version matches the sheet.
-    function openDecision(token) {
-      const id = selectedId;
-      app.replaceChildren(loadingBox('Loading decision ' + id + '…'));
-      serve('getDecisionReview',[id],record => { if (isCurrent(token)) renderDetail(record); },
-        message => isCurrent(token) && app.replaceChildren(errorBox('Could not load decision ' + id + ': ' + message,
-          () => show({view:'decision',id}))));
-    }
-    function renderDetail(r) {
-      app.replaceChildren();
-      const back = node('button','back icon-button','←'); back.type = 'button';
-      back.setAttribute('aria-label','Back to all decisions'); back.title = 'All decisions';
-      back.onclick = () => show({view:'decisions'},true);
-      const toolbar = node('div','detail-toolbar'); toolbar.appendChild(back); app.appendChild(toolbar);
-      const tools = node('div','toolbar-actions'), open = node('button','h-button','Open Pipeline ' + r.pipelineId);
-      open.type = 'button'; open.onclick = () => show({view:'item',id:r.pipelineId},true);
-      tools.appendChild(open); toolbar.appendChild(tools);
-      const panel = node('article','panel'); app.appendChild(panel);
-      const head = node('div','panel-head');
-      append(head,node('div','eyebrow','Decision ' + r.id + ' · ' + r.domain),
-        node('h2','',r.title));
-      const meta = node('div','meta');
-      append(meta,node('span','h-pill' + (r.editable ? ' pending' : ''),r.editable ? 'Needs review' : r.status),
-        node('span','h-pill',r.stage),node('span','h-pill','Pipeline ' + r.pipelineId));
-      head.appendChild(meta); panel.appendChild(head);
-      const body = node('div','panel-body'); panel.appendChild(body);
-
-      if (r.question) paragraphs(section(body,'Question'),r.question);
-      const saved = section(body,r.editable ? 'Proposal' : 'Recorded decision');
-      paragraphs(saved,r.proposal,'No decision text recorded.');
-      if (!r.editable && r.options.length) {
-        const cards = node('div','choices');
-        r.options.forEach(o => cards.appendChild(optionCard(o)));
-        section(body,'Options').appendChild(cards);
-      }
-      const why = section(body,'Reason and key figures');
-      if (r.reasonPoints.length) why.appendChild(bulletList(r.reasonPoints,'bullets'));
-      else why.appendChild(node('p','plain-copy','No reason recorded.'));
-      if (r.steps.length) section(body,'Planned steps').appendChild(stepList(r.steps));
-      if (r.reviewTrigger) paragraphs(section(body,'Revisit trigger'),r.reviewTrigger);
-      if (r.editable) renderDecisionForm(body,r);
-      if (r.revisable) renderReviseForm(body,r);
-      if (r.links.length) {
-        const sources = section(body,'Evidence');
-        const links = node('div','links');
-        r.links.forEach((raw,i) => {
-          const href = safeLink(raw); if (!href) return;
-          const a = node('a','',r.links.length === 1 ? 'Open evidence ↗' : 'Evidence ' + (i+1) + ' ↗');
-          a.href = href; a.target = '_blank'; a.rel = 'noopener noreferrer'; links.appendChild(a);
-        });
-        sources.appendChild(links);
-      }
-    }
-    // Each line of a cell as its own paragraph, so paragraphs are spaced apart.
-    function paragraphs(parent,text,empty) {
-      const lines = String(text || '').split('\n').map(line => line.trim()).filter(Boolean);
-      if (!lines.length && empty) lines.push(empty);
-      lines.forEach(line => parent.appendChild(node('p','plain-copy',line)));
-    }
-    // An item's planned steps as a numbered list, with specialist and status after each task.
-    function stepList(steps) {
-      const list = node('ol','steps');
-      steps.forEach(step => {
-        const li = node('li','',step.task); if (Number(step.number)) li.value = Number(step.number);
-        const extra = [step.specialist,step.status].filter(Boolean).join(' · ');
-        if (extra) li.appendChild(node('small','',extra));
-        list.appendChild(li);
-      });
-      return list;
-    }
-    function bulletList(points,className) {
-      const list = node('ul',className || '');
-      points.forEach(point => list.appendChild(node('li','',point)));
-      return list;
-    }
-    function optionLabel(o) {
-      return o.code === 'OTHER' ? 'Another option' : o.code === 'PROPOSAL' ? 'Use proposal' : 'Option ' + o.code;
-    }
-    function optionCard(o) {
-      const card = node('div','choice option-card' + (o.recommended ? ' recommended' : ''));
-      append(card,node('strong','',optionLabel(o)),node('span','',o.context));
-      if (o.figures && o.figures.length) card.appendChild(bulletList(o.figures));
-      if (o.recommended) card.appendChild(node('em','','Model suggests'));
-      return card;
-    }
-    function optionChoices(parent,r,checkRecommended) {
-      const grid = node('div','choices'); parent.appendChild(grid);
-      const listed = r.options.length ? r.options : [{code:'PROPOSAL',context:'Use the proposal',recommended:true}];
-      [...listed,{code:'OTHER',context:'Describe a different choice',recommended:false}].forEach(o => {
-        const label = node('label','choice'), input = node('input');
-        input.type = 'radio'; input.name = 'option'; input.value = o.code;
-        if (o.recommended && checkRecommended) input.checked = true;
-        append(label,input,node('strong','',optionLabel(o)),node('span','',o.context));
-        if (o.figures && o.figures.length) label.appendChild(bulletList(o.figures));
-        if (o.recommended) label.appendChild(node('em','','Model suggests'));
-        grid.appendChild(label);
-      });
-      return grid;
-    }
-    function renderReviseForm(body,r) {
-      const form = node('form'); body.appendChild(form);
-      const action = section(form,'Revise this decision',
-        'Changes the recorded outcome and moves Pipeline ' + r.pipelineId + ' (now ' + r.itemStatus +
-        ') as that outcome would from review. The decision keeps its ID; your reason is added to it.');
-      const grid = node('div','grid'); action.appendChild(grid);
-      const outcome = field(grid,'New outcome','revise-outcome','select').control;
-      [['parked','Park'],['rejected','Reject'],['rework','Request rework'],['accepted','Accept an option']]
-        .filter(pair => pair[0] !== String(r.status).trim().toLowerCase() || pair[0] === 'accepted')
-        .forEach(pair => {
-          const option = node('option','',pair[1]); option.value = pair[0]; outcome.appendChild(option);
-        });
-      const choices = section(form,'Choose an option');
-      optionChoices(choices,r,false);
-      const wordingField = field(grid,'Decision to record','revise-wording','textarea','wide');
-      wordingField.control.rows = 4; wordingField.control.maxLength = 4000;
-      const noteField = field(grid,'Why are you revising it?','revise-note','textarea','wide');
-      noteField.control.rows = 3; noteField.control.maxLength = 3000;
-      const bar = node('div','actions'), save = node('button','h-button h-button--primary','Revise decision');
-      save.type = 'submit'; const message = node('span','message');
-      append(bar,save,message); form.appendChild(bar);
-      const checked = () => form.querySelector('input[name="option"]:checked');
-      function update() {
-        const accepting = outcome.value === 'accepted';
-        choices.hidden = !accepting; wordingField.wrap.hidden = !accepting;
-        noteField.label.textContent = outcome.value === 'rework' ? 'Rework instructions' : 'Why are you revising it?';
-        if (accepting && checked()) wordingField.control.value = defaultWording(r,checked().value);
-      }
-      form.querySelectorAll('input[name="option"]').forEach(el => el.onchange = update);
-      outcome.onchange = update; update();
-      form.onsubmit = event => {
-        event.preventDefault(); save.disabled = true;
-        message.className = 'message'; message.textContent = 'Saving…';
-        const chosen = checked();
-        google.script.run.withSuccessHandler(result => {
-          afterWrite();
-          notice = 'Decision revised; Pipeline ' + r.pipelineId + ' is now ' + result.set.Status + '.';
-          show({view:'decisions'},true);
-        }).withFailureHandler(error => {
-          message.className = 'message error';
-          message.textContent = error && error.message ? error.message : String(error);
-          save.disabled = false;
-        }).reviseDecisionReview({decisionId:r.id,version:r.version,action:outcome.value,
-          optionCode:chosen ? chosen.value : '',wording:wordingField.control.value,
-          note:noteField.control.value});
-      };
-    }
-    function renderDecisionForm(body,r) {
-      const form = node('form'); body.appendChild(form);
-      const choices = section(form,'Choose an option',
-        'The model suggestion is marked. You can select another option without requesting rework.');
-      optionChoices(choices,r,true);
-      const action = section(form,'Record your decision');
-      const grid = node('div','grid'); action.appendChild(grid);
-      const outcomeField = field(grid,'Outcome','outcome','select');
-      const outcome = outcomeField.control;
-      // An Implementation question is answered, and the implementation resumes at Stage 3.
-      const question = String(r.stage).trim().toLowerCase() === 'implementation question';
-      [['accepted',question ? 'Answer and resume Stage 3' : 'Approve chosen option'],['rework','Request rework'],
-        ['parked','Park for now'],['rejected','Reject']].forEach(pair => {
-          const option = node('option','',pair[1]); option.value = pair[0]; outcome.appendChild(option);
-        });
-      const wordingField = field(grid,'Decision to record','wording','textarea','wide');
-      wordingField.control.rows = 4; wordingField.control.maxLength = 4000;
-      wordingField.hint.textContent = 'Edit the wording if your choice has conditions or limits.';
-      const noteField = field(grid,'Your reason or instructions','note','textarea','wide');
-      noteField.control.rows = 3; noteField.control.maxLength = 3000;
-      noteField.control.placeholder = 'One or two sentences are enough.';
-      const bar = node('div','actions'), save = node('button','h-button h-button--primary','Save decision');
-      save.type = 'submit'; const message = node('span','message');
-      append(bar,save,message); form.appendChild(bar);
-      const checked = () => form.querySelector('input[name="option"]:checked');
-      function update() {
-        const accepting = outcome.value === 'accepted';
-        choices.hidden = !accepting; wordingField.wrap.hidden = !accepting;
-        noteField.label.textContent = outcome.value === 'rework' ? 'Rework instructions' :
-          accepting ? 'Your reason (required for a different option)' : 'Why this outcome?';
-        if (accepting && checked()) wordingField.control.value = defaultWording(r,checked().value);
-      }
-      form.querySelectorAll('input[name="option"]').forEach(el => el.onchange = update);
-      outcome.onchange = update; update();
-      form.onsubmit = event => {
-        event.preventDefault(); save.disabled = true;
-        message.className = 'message'; message.textContent = 'Saving…';
-        const chosen = checked();
-        const payload = {decisionId:r.id,version:r.version,action:outcome.value,
-          optionCode:chosen ? chosen.value : '',wording:wordingField.control.value,
-          note:noteField.control.value};
-        google.script.run.withSuccessHandler(result => {
-          afterWrite();
-          notice = result.warning || (result.applied ?
-            'Decision saved and Pipeline updated.' : 'Decision saved.');
-          show({view:'decisions'},true);
-        }).withFailureHandler(error => {
-          message.className = 'message error';
-          message.textContent = error && error.message ? error.message : String(error);
-          save.disabled = false;
-        }).submitDecisionReview(payload);
       };
     }
     function field(parent,labelText,id,type,extra) {
@@ -1281,7 +1190,7 @@
       fill(linkType.control,formData.options['Link type'],true);
       form.appendChild(more);
       const bar = node('div','actions'), save = node('button','h-button h-button--primary','Add item');
-      save.type = 'submit'; const message = node('span','message');
+      save.type = 'submit'; const message = node('span','message'); message.setAttribute('role','status');
       append(bar,save,message); form.appendChild(bar);
       form.onsubmit = event => {
         event.preventDefault(); save.disabled = true;
@@ -1327,6 +1236,8 @@
       const root = folderRoots()[0];
       return root ? [root,...(root.children || []).slice(0,1)] : [];
     }
+    // Choosing a folder clears the top bar's folder search.
+    function clearFolderSearch() { folderQuery = ''; if (page === 'folders') topSearch.value = ''; }
     function renderFolderBrowser() {
       const browser = $('folder-browser');
       browser.replaceChildren();
@@ -1336,8 +1247,7 @@
         const button = node('button','folder-crumb',label);
         button.type = 'button';
         if (current) button.setAttribute('aria-current','page');
-        button.onclick = () => { folderPath = path; folderQuery = '';
-          $('folder-search').value = ''; renderFolderBrowser(); };
+        button.onclick = () => { folderPath = path; clearFolderSearch(); renderFolderBrowser(); };
         return button;
       };
       pathBar.appendChild(crumb('All folders',[],!folderPath.length));
@@ -1362,8 +1272,7 @@
             append(copy,node('strong','',item.name || 'Unnamed folder'),
               node('span','folder-result-path',next.map(part => part.name).join(' › ')));
             append(button,copy,node('span','folder-row-arrow','›'));
-            button.onclick = () => { folderPath = next; folderQuery = '';
-              $('folder-search').value = ''; renderFolderBrowser(); };
+            button.onclick = () => { folderPath = next; clearFolderSearch(); renderFolderBrowser(); };
             results.appendChild(button);
           }
           (item.children || []).forEach(child => visit(child,next));
@@ -1434,7 +1343,7 @@
       head.appendChild(title);
       const href = safeLink(selected.url);
       if (href) {
-        const link = node('a','h-button','Open in Drive ↗');
+        const link = node('a','h-button h-button--primary','Open in Drive ↗');
         link.href = href; link.target = '_blank'; link.rel = 'noopener noreferrer';
         head.appendChild(link);
       }
@@ -1458,35 +1367,28 @@
     }
     function renderFolders() {
       app.replaceChildren();
-      header('Locations','Folder structure',
-        'Browse the folders recorded in Pipeline Locations and open them in Drive.');
+      const hero = header('Locations','Folder structure',
+        'Browse the folders recorded in Pipeline Locations and open them in Drive. Search folders from the top bar.');
       const controls = node('div','folder-controls');
-      const searchWrap = node('div','filter-field search-field');
-      const label = node('label','','Search folders');
-      const search = node('input','h-input'); search.type = 'search';
-      search.id = 'folder-search'; search.placeholder = 'Name, purpose or type';
-      search.value = folderQuery;
-      label.htmlFor = search.id; append(searchWrap,label,search);
       const check = node('button','h-button','Check Drive & update Locations'); check.type = 'button';
-      append(controls,searchWrap,check); app.appendChild(controls);
+      controls.appendChild(check); hero.appendChild(controls);
       const pathBar = node('nav','folder-path'); pathBar.id = 'folder-path';
       pathBar.setAttribute('aria-label','Folder path'); app.appendChild(pathBar);
       const browser = node('div','folder-browser'); browser.id = 'folder-browser';
       app.appendChild(browser);
       renderFolderBrowser();
-      search.oninput = () => { folderQuery = search.value.trim().toLowerCase();
-        renderFolderBrowser(); };
       check.onclick = () => {
         check.disabled = true; check.textContent = 'Checking Drive…';
         google.script.run.withSuccessHandler(result => {
           folderData = {count:result.count,tree:result.tree};
-          folderPath = defaultFolderPath(); folderQuery = '';
+          folderPath = defaultFolderPath(); clearFolderSearch();
           renderFolders(); renderFolderReport(result);
         }).withFailureHandler(error => {
           check.disabled = false; check.textContent = 'Check Drive & update Locations';
           const message = node('p','folder-error',
             'Folder check stopped: ' + (error.message || String(error)));
-          controls.after(message);
+          message.setAttribute('role','alert');
+          hero.after(message);
         }).checkFoldersAgainstDrive();
       };
     }
@@ -1527,17 +1429,18 @@
     $('nav-pipeline').onclick = () => navigate('pipeline');
     $('nav-folders').onclick = () => navigate('folders');
     $('nav-add').onclick = () => navigate('add');
-    // "/" jumps to the search box of the list on screen.
+    topSearch.oninput = onTopSearch;
+    $('top-search-form').onsubmit = event => { event.preventDefault(); onTopSearch(); };
+    // "/" jumps to the top bar's search.
     if (document.addEventListener) document.addEventListener('keydown',event => {
       const target = event.target || {};
       if (event.key !== '/' || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName || '') || target.isContentEditable) return;
-      const box = $('pipeline-search') || $('decision-search') || $('folder-search');
-      if (box) { event.preventDefault(); box.focus(); }
+      event.preventDefault(); topSearch.focus();
     });
     // The first Decisions list comes with the page (doGet); without it the page loads it.
     try {
       const embedded = JSON.parse(($('initial-data') || {}).textContent || 'null');
-      if (embedded && Array.isArray(embedded.pending)) dashboard = embedded;
+      if (embedded && Array.isArray(embedded.pending)) { dashboard = embedded; updateNavCount(); }
     } catch (_) { dashboard = null; }
     function start(hash) {
       show(parseHash(hash),false);

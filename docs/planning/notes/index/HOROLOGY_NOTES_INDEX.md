@@ -30,6 +30,7 @@ Implementation notes under `docs/planning/notes/`, grouped by area. Add a row wh
 | 2026-10-29 | [ClickUp shared tasks and onChange](../2026-10-29_clickup-shared-tasks-and-onchange_note.md) | Several items per ClickUp task, first-sync intro, Pipeline onChange trigger and lock |
 | 2026-10-29 | [Implementation route](../2026-10-29_implementation-route_note.md) | Type chooses the route; Feature/Enhancement/Refactor/Fix plan at Stage 1 and implement at Stage 3, In progress, Completed or Implementation question (HOR-12 a) |
 | 2026-10-29 | [Web workspace scale and usability](../2026-10-29_web-workspace-scale-and-ux_note.md) | Light lists with details on open, a 60-second list cache, embedded first list, hash navigation, search, chips, sort and paging (HOR-12 c) |
+| 2026-10-30 | [Web workspace Triage board](../2026-10-30_web-workspace-triage-board_note.md) | Dark top bar, decisions inbox with reading pane, Pipeline board by workflow column, Build/Investigate Type filter (HOR-12 c, item 52) |
 
 ## MCP gateway
 
