@@ -1,4 +1,5 @@
-/* Schema and hourly trigger management. */
+/* Schema and trigger management: hourly applySync is the catch-all; the
+ * Pipeline onChange trigger posts soon after an edit that fires it. */
 
 function initializeSheets() {
   // Run once manually. No ClickUp access. Existing rows stay intact.
@@ -23,4 +24,20 @@ function installHourlyTrigger() {
     ScriptApp.newTrigger('applySync').timeBased().everyHours(1).create();
 }
 
-function stopSync() { ScriptApp.getProjectTriggers().filter(t=>t.getHandlerFunction()==='applySync').forEach(t=>ScriptApp.deleteTrigger(t)); }
+// Installable onChange on the Pipeline workbook. People's edits fire it; Sheets API
+// and Apps Script writes may not, which the hourly trigger covers.
+function installChangeTrigger() {
+  if(!SYNC_CONFIG.ENABLE_WRITES) throw Error('Enable writes only after successful preview.');
+  if(!ScriptApp.getProjectTriggers().some(t=>t.getHandlerFunction()==='syncOnPipelineChange'))
+    ScriptApp.newTrigger('syncOnPipelineChange').forSpreadsheet(sheetIds().PIPELINE_SHEET_ID).onChange().create();
+}
+
+function removeChangeTrigger() { removeTriggers('syncOnPipelineChange'); }
+
+function installTriggers() { installHourlyTrigger(); installChangeTrigger(); }
+
+function stopSync() { removeTriggers('applySync'); removeTriggers('syncOnPipelineChange'); }
+
+function removeTriggers(handler) {
+  ScriptApp.getProjectTriggers().filter(t=>t.getHandlerFunction()===handler).forEach(t=>ScriptApp.deleteTrigger(t));
+}

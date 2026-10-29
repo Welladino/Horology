@@ -64,7 +64,7 @@ flowchart TB
 | **Drive folders**           | Grouped by domain (a business, product or area). Each folder in Locations has a type: **Hub** (a domain's root), **Node** (holds other folders), **Agent reference** (read for context), **Agent output** (agents save here), **Others** (not for agents)             | You create them; agents only save into Agent output folders          |
 | **Skills**                  | The instructions each agent follows, installed in Claude and Codex                                                                                                                                                                                                    | Maintained in this repository                                        |
 | **Document graph**          | A searchable store of past research and decisions, so agents build on what's known instead of starting over                                                                                                                                                           | Agents write to it; the sync job copies in documents you mark for it |
-| **Apps Scripts**            | The Pipeline script serves the Horology workspace, applies decisions and checks Locations against Drive. An optional standalone script sends status and milestone comments to linked ClickUp tasks. | Web saves run on demand; optional ClickUp updates run hourly |
+| **Apps Scripts**            | The Pipeline script serves the Horology workspace, applies decisions and checks Locations against Drive. An optional standalone script sends status and milestone comments to linked ClickUp tasks. | Web saves run on demand; optional ClickUp updates run hourly and after Pipeline edits |
 
 ## How a piece of work moves
 

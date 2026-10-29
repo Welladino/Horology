@@ -64,6 +64,6 @@ The graph groups searchable passages into topics and extracts entities and relat
 
 `claim_item`, `finish_run` and `reserve_id` are immediate connector writes to Neon; `check_register_write` reads the reservation and the last synced copy, and the agent passes the live row it just read. Pipeline, Decision Register and Document Index changes reach Neon's copies only on a records pass. Changes between two passes can appear as one event; `get_item_history` reflects the last pass rather than a live Sheet view. The records pass also runs when the graph job runs in records-only mode.
 
-The optional hourly [ClickUp sync](../subscription-agents/apps-script.md#clickup-sync) is separate: it sends status and milestone comments from already linked Pipeline items to ClickUp. It neither starts agent work nor writes ClickUp changes back to Sheets or Neon.
+The optional [ClickUp sync](../subscription-agents/apps-script.md#clickup-sync) is separate: hourly, and soon after edits to the Pipeline workbook, it sends status and milestone comments from already linked Pipeline items to ClickUp; several items can share one task. It neither starts agent work nor writes ClickUp changes back to Sheets or Neon.
 
 For the underlying tables, see the [Neon data model](data-model.md). For the agent's required claim and finish calls, see the [supervisor run rules](../../../plugins/horology-workflows/skills/horology-supervisor/references/runs.md).

@@ -4,6 +4,8 @@ const SYNC_CONFIG = {
   MAX_ITEMS_PER_RUN: 50,
   ENABLE_WRITES: true,
   SYNC_ALL: true, // true + empty pilot IDs considers every linked Pipeline row.
+  CHANGE_SETTLE_SECONDS: 30, // onChange waits this long for further edits before syncing.
+  CHANGE_LOCK_WAIT_SECONDS: 120, // and up to this long for a running sync to finish.
   WORKSPACE_URL: 'https://script.google.com/a/macros/welladino.com/s/AKfycbxNK7mEVHiTBH-X_Upl8dOYA5sD6ATfEWCnyHrw8u5_fZzxyQuCMm4maiHUn1qJGD4Z2A/exec'
 };
 const STATUS_MAP = {inbox:'backlogs', parked:'blocked', researching:'open',
