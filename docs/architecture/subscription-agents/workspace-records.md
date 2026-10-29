@@ -53,7 +53,7 @@ The founder can **revise** an item's current decision after it was applied, for 
 
 ## Document Index
 
-The Document Index is a catalog, not the file store. Drive remains the source file location; one index row records its permanent Document ID, title, Pipeline relationship, Drive URL, domain/entity, document type, approval state and optional predecessor. A repository planning note (a Stage 3 deliverable kept in Git) is indexed with its GitHub `blob` link on `main` in the Drive URL column; the ClickUp sync links it like a Drive file, and the document-graph sync skips it because it has no Drive file ID.
+The Document Index is a catalog, not the file store. Drive remains the source file location; one index row records its permanent Document ID, title, Pipeline relationship, Drive URL, domain/entity, document type, approval state and optional predecessor. A repository planning note (a Stage 3 deliverable kept in Git) gets a Google Doc copy in the Agent output Plans folder: Drive URL is the Doc and Related Repo Document the GitHub link on `main`. Document 32 is the one older row indexed by its GitHub link; the ClickUp sync accepts such links, and skips any other non-Drive link with a log line instead of stopping.
 
 The graph columns are explicit controls:
 
