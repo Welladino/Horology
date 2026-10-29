@@ -12,7 +12,7 @@ Planning or drafting content: a content calendar, briefs for posts, newsletters,
 ## Required context and locations
 
 - Read [domains, folders and templates](../horology-research/references/locations.md) before choosing a domain or entity, reading context or saving anything.
-- Follow the [presentation rules](../horology-research/references/presentation.md) when creating or filling documents.
+- Follow the [presentation rules](../horology-research/references/presentation.md) when creating or filling documents. Each document carries its default visual (Plan: a milestone timeline or process flow, such as the content calendar) or a `No visual: <reason>` line in its Visuals section.
 - Read [linking rules](../horology-research/references/linking.md) when saving outputs.
 - Resolve the permanent Pipeline ID, the request and the domain or entity. Find the brand guide, the accepted marketing plan and earlier content for this business in its Agent reference folders, the graph and the Document Index. Search the graph before drafting so you don't repeat published pieces.
 

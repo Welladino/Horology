@@ -21,3 +21,4 @@ Choose from the installed specialist `horology-*` skills: research, technical as
 - Nothing contradicts earlier decisions without saying so.
 - `auto_link_similar_documents` scores of 0.90 or more are reported as near-duplicates.
 - Outputs are in Drive, listed in the Document Index, and linked to the Pipeline ID.
+- Each Stage 1 or Stage 3 Research, Direction, Plan or Technical Assessment document has its default visual (embedded, or linked when the specialist reported it couldn't embed) with a caption and source link, or a `No visual: <reason>` line in its Visuals section; a Technical Assessment needs this for both the quadrant and the current-vs-proposed diagram. Open the document to check. A document with neither fails the check: send it back once, and if it still has neither, report it and finish the run as failed.

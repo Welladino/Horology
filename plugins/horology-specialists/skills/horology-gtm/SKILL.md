@@ -12,7 +12,7 @@ A Pipeline question about the path to paying customers: target segment, position
 ## Required context and locations
 
 - Read [domains, folders and templates](../horology-research/references/locations.md) before choosing a domain or entity, reading context or saving anything.
-- Follow the [presentation rules](../horology-research/references/presentation.md) when creating or filling documents.
+- Follow the [presentation rules](../horology-research/references/presentation.md) when creating or filling documents. Each document carries its default visual (Direction: an audience or positioning diagram; Plan: a milestone timeline or process flow) or a `No visual: <reason>` line in its Visuals section.
 - Read [linking rules](../horology-research/references/linking.md) when saving outputs.
 - Resolve the permanent Pipeline ID, the bounded question and the domain or entity. Search the document graph for earlier GTM recommendations, research and decisions on the same business before starting.
 
