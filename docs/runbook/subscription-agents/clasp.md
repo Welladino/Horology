@@ -125,6 +125,13 @@ Bound to the Pipeline workbook. **Extensions → Horology — Pipeline decisions
 
 3. In the Apps Script editor: **Deploy → Manage deployments**, select the existing web-app deployment, **Edit** (pencil), Version **New version**, **Deploy**. Keep the same deployment so `WEB_APP_URL` and the Extensions menu link stay valid; a *new* deployment gets a new URL.
 4. Expected result: open the workspace from **Extensions → Horology — Pipeline decisions → Open Horology workspace**. A proposed decision with Options rows shows one card per row with the recommended one marked; an item with Steps rows shows **Planned steps**; a decided current decision on an Approved, Parked, Rejected, Rework or Completed item shows **Revise this decision**.
+   Then check the loading behaviour:
+   - The Decisions list appears with the page, with no separate "Loading decisions…" step.
+   - Opening a decision or item shows "Loading …" briefly, and the address bar ends in `#decision/<ID>` or `#item/<ID>`; the browser's Back button returns to the list.
+   - Searching the Pipeline for a word that appears only in an item's Next step finds it after a moment ("searching full text…").
+   - An edit made directly in the sheet shows in the lists within a minute, or at once after **Refresh**.
+
+   `appsscript.json` is unchanged by this release.
 5. To roll back: **Manage deployments → Edit → Version**, choose the previous version, **Deploy**. Tabs and rows are additive, so the old code ignores them.
 
 No data is deleted by this change. Revising a decision writes the Decision Register row (Status, Reason, Review source, and Decision or Rework instructions) and the item's Status, Stage, Agent status and Updated cells.

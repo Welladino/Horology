@@ -3,7 +3,7 @@
  */
 
 function getPipelineFormData() {
-  const book = SpreadsheetApp.openById(DECISIONS_CONFIG.WEB_PIPELINE_SHEET_ID);
+  const book = openBook(DECISIONS_CONFIG.WEB_PIPELINE_SHEET_ID);
   const domains = book.getSheetByName('Domains');
   const master = book.getSheetByName('Master');
   if (!domains || !master) throw Error('The Pipeline needs Domains and Master tabs.');
@@ -13,29 +13,60 @@ function getPipelineFormData() {
   };
 }
 
-// Read-only overview for the workspace's Pipeline tab. Every non-empty Master
-// ID is included; browsing an item does not change its stage or agent status.
-function getPipelineOverview() {
-  const id = DECISIONS_CONFIG.WEB_PIPELINE_SHEET_ID;
-  const table = readMaster(id, ['ID', 'Title', 'Domain', 'Entity', 'Type', 'Status', 'Stage',
-    'Agent status', 'Agent type', 'Run location', 'Summary / Why',
-    'Next step / Research question', 'Revisit trigger']);
-  const sheetId = table.sheet.getSheetId();
-  const stepRows = readTab(id, 'Steps', ['Pipeline ID', 'Step', 'Task']);
-  const fields = ['ID', 'Title', 'Domain', 'Entity', 'Type', 'Status', 'Stage',
-    'Review stage', 'Agent status', 'Agent type', 'Run location',
-    'Summary / Why', 'Next step / Research question', 'Revisit trigger',
-    'Current decision ID', 'Link type', 'URL', 'GitHub branch',
-    'ClickUp Pipeline URL', 'Created', 'Updated'];
-  return table.rows.map(row => {
-    const item = {route: itemRoute(row.data.Type), readyStatuses: readyStatuses(row.data.Type), sheetUrl: 'https://docs.google.com/spreadsheets/d/' + id +
-      '/edit#gid=' + sheetId + '&range=A' + row.row};
-    fields.forEach(field => { item[field] = String(row.data[field] || ''); });
-    item.version = pipelineEditVersion(row.data);
-    // Steps-tab rows only: an older numbered Next step is already shown as the Next step text.
-    item.steps = plannedSteps(row.data.ID, stepRows, '');
-    return item;
+// Pipeline list rows: the fields the list shows, filters and sorts by, and a one-line summary.
+// Long text, steps and the edit version come from getPipelineItem when an item is opened.
+const PIPELINE_LIST_FIELDS = ['ID', 'Title', 'Domain', 'Entity', 'Type', 'Status', 'Stage',
+  'Review stage', 'Agent status', 'Agent type', 'Run location', 'Current decision ID', 'Updated'];
+const PIPELINE_TEXT_FIELDS = ['Summary / Why', 'Next step / Research question', 'Revisit trigger'];
+
+function readPipelineMaster() {
+  return readMaster(DECISIONS_CONFIG.WEB_PIPELINE_SHEET_ID, ['ID', 'Title', 'Domain', 'Entity', 'Type',
+    'Status', 'Stage', 'Agent status', 'Agent type', 'Run location', ...PIPELINE_TEXT_FIELDS]);
+}
+
+// Read-only overview for the workspace's Pipeline tab. Every non-empty Master ID is
+// included; browsing an item does not change its stage or agent status.
+function getPipelineOverview(request) {
+  return cachedList('pipelineOverview', !!(request && request.fresh), () => {
+    const rows = readPipelineMaster().rows.map(row => {
+      const item = {};
+      PIPELINE_LIST_FIELDS.forEach(field => { item[field] = String(row.data[field] || ''); });
+      item.summary = snippet(row.data['Summary / Why'] || row.data['Next step / Research question'], 180);
+      return item;
+    });
+    return {rows};
   });
+}
+
+// One Pipeline item in full, read fresh, with its Steps-tab rows and the version an edit is checked against.
+function getPipelineItem(pipelineId) {
+  const id = String(pipelineId == null ? '' : pipelineId).trim();
+  if (!id || id.length > 40) throw Error('Choose a Pipeline item.');
+  const sheetId = DECISIONS_CONFIG.WEB_PIPELINE_SHEET_ID;
+  const table = readPipelineMaster(), row = uniqueRow(table, 'ID', id);
+  const fields = [...PIPELINE_LIST_FIELDS, ...PIPELINE_TEXT_FIELDS,
+    'Link type', 'URL', 'GitHub branch', 'ClickUp Pipeline URL', 'Created'];
+  const item = {route: itemRoute(row.data.Type), readyStatuses: readyStatuses(row.data.Type),
+    sheetUrl: 'https://docs.google.com/spreadsheets/d/' + sheetId +
+      '/edit#gid=' + table.sheet.getSheetId() + '&range=A' + row.row};
+  fields.forEach(field => { item[field] = String(row.data[field] || ''); });
+  item.version = pipelineEditVersion(row.data);
+  // Steps-tab rows only: an older numbered Next step is already shown as the Next step text.
+  item.steps = plannedSteps(id, readTab(sheetId, 'Steps', ['Pipeline ID', 'Step', 'Task']), '');
+  return item;
+}
+
+// IDs of the items whose list fields or long text contain every word of the query. The
+// list searches its own fields at once; this adds matches in the text it does not carry.
+function searchPipelineItems(query) {
+  const words = String(query == null ? '' : query).toLowerCase().split(/\s+/).filter(Boolean);
+  if (!words.length) return [];
+  if (words.join(' ').length > 120) throw Error('The search is too long.');
+  return readPipelineMaster().rows.filter(row => {
+    const text = [...PIPELINE_LIST_FIELDS, ...PIPELINE_TEXT_FIELDS]
+      .map(field => String(row.data[field] || '')).join('\n').toLowerCase();
+    return words.every(word => text.includes(word));
+  }).map(row => String(row.data.ID));
 }
 
 const PIPELINE_EDIT_FIELDS = ['Title', 'Type', 'Summary / Why',
@@ -118,6 +149,7 @@ function updatePipelineItemFromWeb(request) {
     if (changed) write(table, row, 'Updated', today());
     return {saved: true, changed, id, stage};
   } finally {
+    clearListCache();
     lock.releaseLock();
   }
 }
@@ -144,7 +176,7 @@ function addPipelineItemFromWeb(form) {
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(10000)) throw Error('Another Pipeline change is in progress. Try again in a moment.');
   try {
-    const book = SpreadsheetApp.openById(DECISIONS_CONFIG.WEB_PIPELINE_SHEET_ID);
+    const book = openBook(DECISIONS_CONFIG.WEB_PIPELINE_SHEET_ID);
     const sheet = book.getSheetByName('Master');
     if (!sheet) throw Error('The Pipeline has no Master tab.');
     const data = getPipelineFormData();
@@ -163,6 +195,7 @@ function addPipelineItemFromWeb(form) {
     return {id: result.values.ID, row: last + 1, title: result.values.Title,
       stage: result.values.Stage, status: result.values.Status};
   } finally {
+    clearListCache();
     lock.releaseLock();
   }
 }

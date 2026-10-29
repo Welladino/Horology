@@ -3,7 +3,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const assert = require('node:assert/strict');
 const dir = path.join(__dirname, '../src');
-const sources = ['Config.js','FolderRules.js','Folders.js']
+const sources = ['Config.js','FolderRules.js','Folders.js','Registers.js']
   .map(name => fs.readFileSync(path.join(dir,name),'utf8')).join('\n');
 const cells = [
   ['Domain','Entity','Kind','Parent','Name','Type','Location','Purpose'],

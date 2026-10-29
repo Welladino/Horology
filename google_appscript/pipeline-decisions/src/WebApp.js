@@ -1,9 +1,21 @@
 /* Founder decision review page. Master sheets remain the only records. */
 
+// The page arrives with the first Decisions list already in it, so it paints without a second
+// round trip. If that read fails the page loads the list itself and shows the error there.
 function doGet() {
-  return HtmlService.createTemplateFromFile('Review').evaluate()
+  const page = HtmlService.createTemplateFromFile('Review');
+  let initial = null;
+  try { initial = getReviewDashboard(); } catch (error) { console.log('First list not embedded: ' + error.message); }
+  page.initialJson = embeddedJson(initial);
+  return page.evaluate()
     .setTitle('Horology workspace')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+}
+
+// JSON that is safe inside a <script> element: no "<" can close it early.
+function embeddedJson(value) {
+  return JSON.stringify(value == null ? null : value).replace(/</g, '\\u003c')
+    .replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 }
 
 function include(name) {
@@ -11,8 +23,48 @@ function include(name) {
   return HtmlService.createHtmlOutputFromFile(name).getContent();
 }
 
+/* Lists are cached for a short time so reloading the page or returning to a view is quick.
+ * Every write from this page clears them; Refresh reads the sheets again. Edits made in the
+ * sheets or by agents show within LIST_CACHE.seconds. Details (a decision or item opened) are
+ * never cached, so the version checks always compare against the sheet. A cached value is
+ * split into chunks of at most 30,000 characters, under CacheService's 100 KB limit per key
+ * even when every character takes three bytes.
+ */
+const LIST_CACHE = {seconds: 60, chunk: 30000, maxChunks: 30, keys: ['reviewDashboard', 'pipelineOverview']};
+
+function cachedList(key, fresh, build) {
+  const cache = CacheService.getScriptCache();
+  if (!fresh) {
+    const meta = JSON.parse(cache.get(key) || 'null');
+    if (meta && meta.chunks) {
+      const names = Array.from({length: meta.chunks}, (_, i) => key + ':' + meta.stamp + ':' + i);
+      const parts = cache.getAll(names);
+      if (names.every(n => typeof parts[n] === 'string')) {
+        const value = JSON.parse(names.map(n => parts[n]).join(''));
+        value.cachedAt = meta.stamp;
+        return value;
+      }
+    }
+  }
+  const value = build(), json = JSON.stringify(value), stamp = Date.now();
+  const chunks = Math.ceil(json.length / LIST_CACHE.chunk);
+  if (chunks <= LIST_CACHE.maxChunks) {
+    const parts = {};
+    for (let i = 0; i < chunks; i++)
+      parts[key + ':' + stamp + ':' + i] = json.slice(i * LIST_CACHE.chunk, (i + 1) * LIST_CACHE.chunk);
+    cache.putAll(parts, LIST_CACHE.seconds);
+    cache.put(key, JSON.stringify({stamp, chunks}), LIST_CACHE.seconds);
+  } else cache.remove(key);
+  value.cachedAt = 0;
+  return value;
+}
+
+function clearListCache() {
+  CacheService.getScriptCache().removeAll(LIST_CACHE.keys);
+}
+
 function webRegisterIds() {
-  const pipeline = SpreadsheetApp.openById(DECISIONS_CONFIG.WEB_PIPELINE_SHEET_ID);
+  const pipeline = openBook(DECISIONS_CONFIG.WEB_PIPELINE_SHEET_ID);
   const tab = pipeline.getSheetByName('Registers');
   if (!tab) throw Error('The Pipeline has no Registers tab.');
   return {
@@ -21,7 +73,9 @@ function webRegisterIds() {
   };
 }
 
-function reviewTables() {
+// The two Masters, and with children the Options and Steps tabs a decision page needs.
+// Lists read only the Masters.
+function reviewTables(children) {
   const ids = webRegisterIds();
   return {
     pipeline: readMaster(ids.PIPELINE_ID,
@@ -29,15 +83,16 @@ function reviewTables() {
     register: readMaster(ids.DECISIONS_ID,
       ['Decision ID', 'Pipeline ID', 'Status', 'Review stage', 'Question',
         'Decision', 'Reason', 'Rework instructions']),
-    options: readTab(ids.DECISIONS_ID, 'Options', ['Decision ID', 'Code', 'Summary', 'Recommended']),
-    steps: readTab(ids.PIPELINE_ID, 'Steps', ['Pipeline ID', 'Step', 'Task'])
+    options: children === false ? [] :
+      readTab(ids.DECISIONS_ID, 'Options', ['Decision ID', 'Code', 'Summary', 'Recommended']),
+    steps: children === false ? [] : readTab(ids.PIPELINE_ID, 'Steps', ['Pipeline ID', 'Step', 'Task'])
   };
 }
 
 // A child tab (workflow.yaml tabs) as {header: display text} rows. A workbook without the tab
 // gives no rows, so its decisions and items fall back to the text in their Master cells.
 function readTab(spreadsheetId, name, required) {
-  const sheet = SpreadsheetApp.openById(spreadsheetId).getSheetByName(name);
+  const sheet = openBook(spreadsheetId).getSheetByName(name);
   if (!sheet) return [];
   const values = sheet.getDataRange().getDisplayValues();
   const headers = (values[0] || []).map(h => String(h).trim());
@@ -171,22 +226,61 @@ function reviewRecord(decision, item, tables) {
   };
 }
 
-function getReviewDashboard() {
-  const tables = reviewTables(), current = {}, pending = [], recent = [];
-  tables.pipeline.rows.forEach(row => {
+// The item a decision belongs to while it is that item's current decision; otherwise null.
+function currentItems(pipeline) {
+  const current = {};
+  pipeline.rows.forEach(row => {
     const id = String(row.data['Current decision ID']).trim();
     if (id) current[id] = row;
   });
-  tables.register.rows.forEach(row => {
-    const id = String(row.data['Decision ID']).trim();
-    const item = current[id] && String(current[id].data.ID).trim() === String(row.data['Pipeline ID']).trim()
-      ? current[id] : null;
-    const record = reviewRecord(row, item, tables);
-    if (record.editable) pending.push(record);
-    else if (norm(row.data.Status) !== 'proposed') recent.push(record);
+  return current;
+}
+
+function itemFor(decision, current) {
+  const item = current[String(decision.data['Decision ID']).trim()];
+  return item && String(item.data.ID).trim() === String(decision.data['Pipeline ID']).trim() ? item : null;
+}
+
+// One line of text for a list row: whitespace collapsed and cut at a word near max characters.
+function snippet(text, max) {
+  const value = String(text || '').replace(/\s+/g, ' ').trim();
+  if (value.length <= max) return value;
+  const cut = value.slice(0, max), space = cut.lastIndexOf(' ');
+  return (space > max * 0.6 ? cut.slice(0, space) : cut).replace(/[\s,;:.–—-]+$/, '') + '…';
+}
+
+/* The Decisions list: one light summary per decision. The full record (proposal, reason,
+ * options, steps and the version a save is checked against) comes from getDecisionReview
+ * when a decision is opened.
+ */
+function getReviewDashboard(request) {
+  return cachedList('reviewDashboard', !!(request && request.fresh), () => {
+    const tables = reviewTables(false), current = currentItems(tables.pipeline), pending = [], recent = [];
+    tables.register.rows.forEach(row => {
+      const d = row.data, item = itemFor(row, current), p = item && item.data;
+      const editable = !!p && norm(p.Status) === 'awaiting decision' &&
+        norm(d.Status) === 'proposed' && norm(p['Review stage']) === norm(d['Review stage']);
+      const summary = {
+        id: String(d['Decision ID']), pipelineId: String(d['Pipeline ID']),
+        title: d['Pipeline title'] || (p && p.Title) || 'Untitled decision',
+        domain: d.Domain || '', stage: d['Review stage'], status: d.Status,
+        question: snippet(d.Question, 220), editable
+      };
+      if (editable) pending.push(summary);
+      else if (norm(d.Status) !== 'proposed') recent.push(summary);
+    });
+    recent.sort((a, b) => Number(b.id) - Number(a.id));
+    return {pending, recent};
   });
-  recent.sort((a, b) => Number(b.id) - Number(a.id));
-  return {pending, recent};
+}
+
+// One decision in full, read fresh from the sheets.
+function getDecisionReview(decisionId) {
+  const id = cleanReviewText(decisionId, 80, 'Decision ID');
+  if (!id) throw Error('Choose a decision.');
+  const tables = reviewTables();
+  const decision = uniqueRow(tables.register, 'Decision ID', id);
+  return reviewRecord(decision, itemFor(decision, currentItems(tables.pipeline)), tables);
 }
 
 function cleanReviewText(value, max, label) {
@@ -256,6 +350,7 @@ function submitDecisionReview(request) {
     // Status is last: the existing decision processor sees a complete record.
     write(tables.register, decision, 'Status', action);
   } finally {
+    clearListCache();
     lock.releaseLock();
   }
   // Apps Script writes do not fire edit triggers. Apply immediately, then report any
@@ -321,6 +416,7 @@ function reviseDecisionReview(request) {
     if (tables.pipeline.headers.includes('Updated')) write(tables.pipeline, item, 'Updated', today());
     return {saved: true, applied: true, transition: result.transition, set: result.set};
   } finally {
+    clearListCache();
     lock.releaseLock();
   }
 }

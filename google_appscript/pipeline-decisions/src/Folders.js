@@ -3,7 +3,7 @@
  */
 
 function readFolderLocations() {
-  const book = SpreadsheetApp.openById(DECISIONS_CONFIG.WEB_PIPELINE_SHEET_ID);
+  const book = openBook(DECISIONS_CONFIG.WEB_PIPELINE_SHEET_ID);
   const sheet = book.getSheetByName('Locations');
   if (!sheet) throw Error('The Pipeline has no Locations tab.');
   const values = sheet.getDataRange().getDisplayValues();

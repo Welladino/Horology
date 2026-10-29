@@ -32,7 +32,7 @@ function run(live, onlyDecisionId) {
 }
 
 function readMaster(spreadsheetId, required) {
-  const sheet = SpreadsheetApp.openById(spreadsheetId).getSheetByName('Master');
+  const sheet = openBook(spreadsheetId).getSheetByName('Master');
   if (!sheet) throw Error('Missing Master tab in ' + spreadsheetId);
   const values = sheet.getDataRange().getDisplayValues();
   const headers = values[0].map(h => String(h).trim());
