@@ -58,6 +58,19 @@ They need Docker running and `.env` populated, and are skipped when Docker isn't
 .venv/bin/python -m pytest tests/ -q
 ```
 
+### As Cloud Build sees the source
+
+Cloud Build uploads only the files `.gcloudignore` allows, so a test that reads any other file passes locally and in GitHub Actions but fails the release build. Before a release, run the suite on the upload set:
+
+```bash
+d="$(mktemp -d)"
+gcloud meta list-files-for-upload . > "$d.list"
+rsync -a --files-from="$d.list" . "$d/"
+(cd "$d" && "$OLDPWD/.venv/bin/python" -m pytest tests/ -q -p no:cacheprovider)
+```
+
+Expected result: no failures; integration tests skip without the test database URLs. A test that checks a file outside the upload list must skip when the file is absent, as the Apps Script checks in `tests/unit/workflow/test_workflow_definition.py` do. Delete the temporary folder afterwards.
+
 ### Gateway HTTP smoke check (by hand)
 
 ```bash
