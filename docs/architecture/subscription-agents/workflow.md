@@ -4,15 +4,27 @@ Subscription agents are Horology's document-driven way of working. Claude, ChatG
 
 The workflow's states, field values and allowed moves are defined once in [`workflow.yaml`](https://github.com/Welladino/Horology/blob/main/plugins/horology-workflows/skills/horology-capture-triage/references/workflow.yaml). The skills and Apps Scripts follow it, and unit tests check that they remain aligned.
 
+## Routes
+
+An item's **Type** chooses its route ([`routes`](https://github.com/Welladino/Horology/blob/main/plugins/horology-workflows/skills/horology-capture-triage/references/workflow.yaml) in `workflow.yaml`):
+
+| Route | Types | Stages | Status while a run works |
+| --- | --- | --- | --- |
+| Investigation | Idea, Research, Direction, Plan | Stage 1 proposal → Stage 2 founder decision → Stage 3 deliverable → Stage 4 synthesis and review | Researching |
+| Implementation | Feature, Enhancement, Refactor, Fix | Stage 1 implementation plan (Steps rows) → Stage 3 implementation; no Stage 2 or Stage 4 | In progress |
+
+The implementation route was decided by the founder on 29/10/2026 ([note](https://github.com/Welladino/Horology/blob/main/docs/planning/notes/2026-10-29_implementation-route_note.md)). The run writes its plan as Steps rows, moves the item to Stage 3 itself and implements in the same run. It finishes **Completed** at Stage 3 when no founder decision is needed. When it needs one, it stops at **Awaiting decision** with Review stage **Implementation question** (a proposed decision with Options rows, reviewed on the decision page); the founder's answer resumes the item at Stage 3, In progress and Ready for its platform.
+
 ## Status lifecycle
 
-This diagram shows the normal path in human terms. The table beneath it is the exact maintainer reference, including less common direct park, reject and reopen moves and the revise move, drawn once as a dotted line.
+The first diagram shows the investigation route in human terms, the second the implementation route. The table beneath it is the exact maintainer reference, including less common direct park, reject and reopen moves and the revise move, drawn once as a dotted line.
 
 ```mermaid
 flowchart LR
   %% Exact workflow moves represented by this lifecycle and the table below:
   %% capture, start-run, submit-for-review, synthesize-stage-3, accept-stage-1,
   %% accept-stage-3, rework, park, decide-park, unpark, reject, decide-reject, reopen, revise
+  %% Investigation route: Idea, Research, Direction and Plan items.
   inbox["Inbox<br/>Stage 0"]
   investigate["Researching<br/>Stage 1 investigation"]
   review1{"Awaiting decision<br/>Stage 2 review"}
@@ -50,15 +62,54 @@ flowchart LR
   class rework revise
 ```
 
+```mermaid
+flowchart LR
+  %% Implementation route: Feature, Enhancement, Refactor and Fix items. Exact moves:
+  %% start-implementation, plan-implementation, complete-implementation, raise-implementation-question,
+  %% resume-implementation, run-failed (Status stays; Agent status back to No action)
+  inbox2["Inbox<br/>Stage 0"]
+  planning["In progress<br/>Stage 1 plan on the Steps tab"]
+  implementing["In progress<br/>Stage 3 implementation"]
+  question{"Awaiting decision<br/>Implementation question"}
+  done["Completed<br/>Stage 3"]
+  rework2["Rework<br/>Stage 3"]
+  stopped["Parked or Rejected<br/>Stage 3"]
+
+  inbox2 -->|Start selected work| planning -->|Plan written; same run| implementing
+  implementing -->|No decision needed| done
+  planning -->|Needs a founder choice| question
+  implementing -->|Needs a founder choice| question
+  question -->|Answer · Ready again| implementing
+  question -->|Request changes| rework2 -->|Run again| implementing
+  question -->|Do later or stop| stopped
+
+  classDef waiting fill:#f1f3f4,stroke:#5f6368,color:#202124
+  classDef running fill:#f3e8fd,stroke:#9334e6,color:#681da8
+  classDef decision fill:#fef7e0,stroke:#f9ab00,color:#7a4f01
+  classDef success fill:#e6f4ea,stroke:#137333,color:#137333
+  classDef revise fill:#fce8e6,stroke:#c5221f,color:#a50e0e
+  class inbox2,stopped waiting
+  class planning,implementing running
+  class question decision
+  class done success
+  class rework2 revise
+```
+
 | Move ID | From → To | Who/what makes it | Meaning |
 | --- | --- | --- | --- |
 | `capture` | New → Inbox | Capture skill | Record a Stage 0 item; do not run it |
-| `start-run` | Inbox, Rework or Approved → Researching | Supervisor | Begin the selected Stage 1 or Stage 3 work |
+| `start-run` | Inbox, Rework or Approved → Researching | Supervisor | Begin the selected Stage 1 or Stage 3 work of an investigation-route item |
+| `start-implementation` | Ready → In progress | Supervisor | Begin an implementation-route item: plan at Stage 1, or implement at Stage 3 |
+| `plan-implementation` | In progress, Stage 1 → Stage 3 | Supervisor | The plan is on the Steps tab; implement in the same run |
+| `complete-implementation` | In progress, Stage 3 → Completed | Supervisor | Every step Done or Skipped and no founder decision needed |
+| `raise-implementation-question` | In progress → Awaiting decision, Stage 3 | Supervisor | Stop with a proposed decision and Options rows (Review stage Implementation question) |
+| `resume-implementation` | Awaiting decision → In progress, Stage 3 | Founder or decision sync | The founder answered the Implementation question; Ready again for its platform |
+| `run-failed` | Researching or In progress (Agent status → No action) | Supervisor | The run failed or was released; Status stays and the run's notes say why |
 | `submit-for-review` | Researching → Awaiting decision | Supervisor | Submit a Stage 1 investigation for Stage 2 review |
 | `synthesize-stage-3` | Researching → Awaiting decision | Supervisor and synthesis specialist | Submit the Stage 3 deliverable and Stage 4 synthesis together |
 | `accept-stage-1` | Awaiting decision → Approved | Founder or decision sync | Accept the investigation; make Stage 3 Ready |
 | `accept-stage-3` | Awaiting decision → Completed | Founder or decision sync | Accept the specialist deliverable after Stage 4 review |
-| `rework` | Awaiting decision → Rework | Founder or decision sync | Save instructions and make the item Ready again |
+| `rework` | Awaiting decision → Rework | Founder or decision sync | Save instructions and make the item Ready again (Stage 1 for an Investigation proposal, Stage 3 otherwise) |
 | `park` | Inbox or Rework → Parked | Founder | Stop before review and retain the item |
 | `decide-park` | Awaiting decision → Parked | Founder or decision sync | Park during a review |
 | `unpark` | Parked → Inbox | Founder | Return a parked item to the queue |
@@ -79,8 +130,9 @@ flowchart LR
   noaction -- "request-plan · founder" --> plan
   plan -- "planned · planner · Planner output Yes" --> noaction
   noaction -- "select · founder · Stage 1 or 3, Claude Code or Codex rows" --> ready
+  noaction -- "accept-stage-1, resume-implementation or rework · decision sync" --> ready
   plan -- "select · founder" --> ready
-  ready -- "submit-for-review or run-failed · supervisor" --> noaction
+  ready -- "submit-for-review, synthesize-stage-3, complete-implementation, raise-implementation-question or run-failed · supervisor" --> noaction
 
   classDef inactive fill:#f1f3f4,stroke:#5f6368,color:#202124
   classDef planning fill:#fef7e0,stroke:#f9ab00,color:#7a4f01
@@ -90,17 +142,18 @@ flowchart LR
   class ready selected
 ```
 
-A run (`start-run`) only starts on a Ready row; the decisions script sets Ready again after accept-stage-1 and rework, and No action after the other decisions.
+A run (`start-run` or `start-implementation`) only starts on a Ready row; the decisions script sets Ready again after accept-stage-1, resume-implementation and rework, and No action after the other decisions. An implementation-route item left In progress by a failed or stopped run can be selected again.
 
 ## Stages
 
 * **Stage 0, capture.** `horology-capture-triage` records an idea, parked proposal or research request as a Pipeline row and checks for duplicates.
-* **Stage 1, investigation and proposal.** The question decides the form: research (`horology-research`), direction, a plan, or a technical assessment (`horology-technical-assessment`). These are not a fixed sequence. The deliverable is saved to Drive and listed in the Document Index.
+* **Stage 1, investigation and proposal (investigation route).** The question decides the form: research (`horology-research`), direction, a plan, or a technical assessment (`horology-technical-assessment`). These are not a fixed sequence. The deliverable is saved to Drive and listed in the Document Index.
+* **Stage 1 and Stage 3, implementation route.** Feature, Enhancement, Refactor and Fix items: the run writes the implementation plan as Steps rows (Stage 1), moves the item to Stage 3 itself, implements it (code on a branch with a pull request, or the named change), marks each step Done and finishes Completed at Stage 3. A founder choice it needs becomes an Implementation question. There is no Stage 2 or Stage 4.
 * **Stage 2, founder decision.** Approve, rework, park or reject, recorded in the Decision Register with feedback; options come from its Options tab. A decision already applied can later be revised from the decision page. The Horology web workspace applies the decision immediately; direct edits in the register can be handled by its edit trigger.
-* **Stage 3, specialist deliverable.** An approved scope becomes a detailed deliverable. For code work this is a planning note in the repository, not automatic implementation.
+* **Stage 3, specialist deliverable.** An approved scope becomes a detailed deliverable. On the investigation route, code work is a planning note in the repository, not implementation; implementation belongs to the implementation route.
 * **Stage 4, synthesis.** In the same Stage 3 run, the supervisor calls Horology Synthesis Artifacts to turn the investigation and specialist deliverable into a concise visual briefing. HTML is preferred when it can be saved and opened reliably; a visual Doc or Sheet can be used when better suited. The item then awaits founder review at Stage 4. No new prompt, selection or schedule is needed for synthesis.
 
-Stage and Review stage are separate fields. At Stage 2 the founder reviews the Investigation proposal; at Stage 4 the founder reviews the Specialist deliverable alongside its synthesis.
+Stage and Review stage are separate fields. At Stage 2 the founder reviews the Investigation proposal; at Stage 4 the founder reviews the Specialist deliverable alongside its synthesis; on the implementation route, at Stage 3, the founder answers an Implementation question.
 
 ## IDs and records
 

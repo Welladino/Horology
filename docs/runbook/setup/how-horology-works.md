@@ -114,7 +114,29 @@ Work uses five numbered stages, from capture at Stage 0 through synthesis at Sta
 | **Stage 3, the deliverable**         | For an accepted proposal, agents produce the detailed piece: a go-to-market plan, a marketing plan, content drafts, or a planning note for code. Then you review it once more. |
 | **Stage 4, visual synthesis**        | In the same Stage 3 run, the supervisor creates a concise visual artifact that makes the deliverable easier to review. The deliverable and synthesis return together for your decision. |
 
-Nothing runs by itself. A row marked Ready only says what should be done next; work starts when you ask a Claude Code or Codex session to "run the Ready items" or "run item 42". Agents never accept their own proposals, and approving research doesn't approve building anything.
+That is the **investigation route**, for Idea, Research, Direction and Plan items. **Feature, Enhancement, Refactor and Fix** items take the shorter **implementation route**: in one run the agent writes its plan as steps on the Steps tab (Stage 1), moves the item to Stage 3 and does the work, with Status **In progress** throughout. It finishes **Completed** at Stage 3, or, if it needs your choice, stops at Awaiting decision with an **Implementation question** you answer on the decision page; the item then goes back to In progress and Ready, and the next run carries on.
+
+```mermaid
+flowchart LR
+  readyi["<b>Ready · Stage 1</b><br/>Feature, Enhancement,<br/>Refactor or Fix"]
+  plani["<b>Plan · Stage 1</b><br/>In progress: steps<br/>on the Steps tab"]
+  buildi["<b>Implement · Stage 3</b><br/>In progress: the change,<br/>tests and pull request"]
+  questioni{"<b>Implementation question</b><br/>Your choice is needed"}
+  donei["<b>Completed · Stage 3</b>"]
+  readyi --> plani --> buildi --> donei
+  buildi --> questioni -->|You answer| buildi
+
+  classDef selected fill:#e8f0fe,stroke:#1a73e8,color:#174ea6
+  classDef agent fill:#f3e8fd,stroke:#9334e6,color:#681da8
+  classDef review fill:#fef7e0,stroke:#f9ab00,color:#7a4f01
+  classDef success fill:#e6f4ea,stroke:#137333,color:#137333
+  class readyi selected
+  class plani,buildi agent
+  class questioni review
+  class donei success
+```
+
+Nothing runs by itself. A row marked Ready only says what should be done next; work starts when you ask a Claude Code or Codex session to "run the Ready items" or "run item 42". Agents never accept their own proposals, and approving research doesn't approve building anything: only an implementation-route item is built.
 
 ## What the agents do
 

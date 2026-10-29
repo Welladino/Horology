@@ -80,6 +80,35 @@ test('revise needs the item\'s current decided decision and no open run or revie
   assert.match(revise(approved, decision({'Pipeline ID': '7'}), 'parked').error, /belongs to Pipeline 7/);
 });
 
+test('answering an Implementation question resumes the item at Stage 3, In progress and Ready', () => {
+  const asked = item({'Stage': 'Stage 3', 'Review stage': 'Implementation question'});
+  const answer = decision({'Review stage': 'Implementation question'});
+  const r = decide(asked, [answer]);
+  assert.equal(r.transition, 'resume-implementation');
+  assert.deepEqual({...r.set}, {'Status': 'In progress', 'Stage': 'Stage 3', 'Agent status': 'Ready'});
+  assert.equal(decide({...asked, 'Agent type': 'Manual'}, [answer]).set['Agent status'], 'No action');
+  assert.deepEqual({...decide(asked, [decision({'Status': 'rework', 'Review stage': 'Implementation question',
+    'Rework instructions': 'Use the smaller option'})]).set}, {'Status': 'Rework', 'Stage': 'Stage 3', 'Agent status': 'Ready'});
+  assert.deepEqual({...decide(asked, [decision({'Status': 'parked', 'Review stage': 'Implementation question'})]).set},
+    {'Status': 'Parked', 'Stage': 'Stage 3', 'Agent status': 'No action'});
+  assert.equal(decide(asked, [decision({'Status': 'rejected', 'Review stage': 'Implementation question'})]).set['Status'], 'Rejected');
+});
+test('an item In progress is a run in progress: no decision is applied and it cannot be revised', () => {
+  assert.ok(decide(item({'Status': 'In progress', 'Stage': 'Stage 3'}), [decision()]).skip);
+  assert.match(revise(item({'Status': 'In progress'}), decision(), 'parked').error, /In progress/);
+  const parked = item({'Status': 'Parked', 'Stage': 'Stage 3', 'Review stage': 'Implementation question'});
+  assert.deepEqual({...revise(parked, decision({'Status': 'parked', 'Review stage': 'Implementation question'}), 'accepted').set},
+    {'Status': 'In progress', 'Stage': 'Stage 3', 'Agent status': 'Ready'});
+});
+test('Type chooses the route; Fix takes the implementation route', () => {
+  const ctx = load(), {itemRoute, readyStatuses} = ctx;
+  assert.ok(vm.runInContext('ITEM_OPTIONS.Type', ctx).includes('Fix'));
+  for (const type of ['Feature', 'Enhancement', 'Refactor', 'Fix']) assert.equal(itemRoute(type), 'implementation');
+  for (const type of ['Idea', 'Research', 'Direction', 'Plan', '']) assert.equal(itemRoute(type), 'investigation');
+  assert.ok(readyStatuses('Fix').includes('In progress'));
+  assert.ok(!readyStatuses('Research').includes('In progress'));
+});
+
 // The run, against fake workbooks.
 function sheet(rows) {
   const writes = [];
@@ -373,6 +402,23 @@ test('Pipeline edit rejects stale data, forbidden fields and invalid Ready moves
     /cannot be edited/);
   assert.throws(() => w.ctx.updatePipelineItemFromWeb(base),/Agent status change is not allowed/);
   assert.equal(w.pipeline.writes.length,0);
+});
+test('Pipeline edit makes a Fix item Ready at Stage 1, and an In progress one Ready again at Stage 3', () => {
+  const w = webWorkbooks();
+  w.pipeline.rows[1][2] = 'Inbox'; w.pipeline.rows[1][3] = 'Stage 0';
+  let item = w.ctx.getPipelineOverview()[0];
+  const fields = {'Type':'Fix','Agent status':'Ready','Agent type':'Claude Code','Run location':'Cloud',
+    'Next step / Research question':'Fix the broken link'};
+  assert.equal(w.ctx.updatePipelineItemFromWeb({pipelineId:'14',version:item.version,fields}).stage,'Stage 1');
+  w.pipeline.rows[1][2] = 'In progress'; w.pipeline.rows[1][3] = 'Stage 3'; w.pipeline.rows[1][5] = 'No action';
+  item = w.ctx.getPipelineOverview()[0];
+  assert.equal(item.route,'implementation');
+  assert.equal(w.ctx.updatePipelineItemFromWeb({pipelineId:'14',version:item.version,fields}).stage,'Stage 3');
+  assert.equal(w.pipeline.rows[1][5],'Ready');
+  w.pipeline.rows[1][5] = 'No action';
+  item = w.ctx.getPipelineOverview()[0];
+  assert.throws(() => w.ctx.updatePipelineItemFromWeb({pipelineId:'14',version:item.version,
+    fields:{...fields,'Type':'Research'}}),/Agent status change is not allowed/);
 });
 test('Pipeline edit leaves Stage 3 unchanged and avoids writes when nothing changed', () => {
   const w = webWorkbooks();

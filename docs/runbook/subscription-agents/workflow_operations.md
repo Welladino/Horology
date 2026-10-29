@@ -28,6 +28,8 @@ or for one item:
 
 The supervisor claims each item through the document graph and starts one session per item. Check progress by asking a session to `list_runs`, or `get_item_history` for one item. Every run needs the document-graph connector. Claude cloud runs need the skills and the document graph and Google connectors on your claude.ai account. Codex runs need the Codex CLI installed and signed in.
 
+Feature, Enhancement, Refactor and Fix items take the implementation route: one run writes the plan on the Steps tab, moves the item to Stage 3 and implements it, with Status In progress throughout. It ends Completed at Stage 3 (check its pull request and the deploy steps in its `finish_run` notes), or Awaiting decision with an Implementation question for you to answer below. If an implementation run fails, the item stays In progress with Agent status No action; set it Ready again to retry.
+
 ## Decide on an item
 
 Open **Extensions → Horology — Pipeline decisions → Open Horology workspace** from your Pipeline workbook and follow its private web-app link while signed into the owning Google account. In **Decisions**, expand a Pipeline row and open a decision to compare the options and evidence and choose an outcome. For a different option, edit **Decision to record** so its conditions are accurate, then give a short reason. **Save decision** writes to Decision Register Master and applies that item's Pipeline transition immediately; the page reports if the Pipeline update is pending.
@@ -40,6 +42,7 @@ flowchart LR
   accepted{"<b>Accepted</b><br/>What was reviewed?"}
   proposal["<b>Investigation proposal</b><br/>Approved · Stage 3 · Ready<br/>for the detailed deliverable"]
   complete["<b>Specialist deliverable</b><br/>Completed · Stage 4<br/>No action"]
+  resume["<b>Implementation question</b><br/>In progress · Stage 3 · Ready<br/>implementation resumes"]
   rework["<b>Rework</b><br/>Add clear instructions<br/>Item returns to Ready"]
   parked["<b>Parked</b><br/>No action until its<br/>revisit trigger applies"]
   rejected["<b>Rejected</b><br/>No further action"]
@@ -49,11 +52,13 @@ flowchart LR
   choose -->|Accept| accepted
   accepted --> proposal
   accepted --> complete
+  accepted --> resume
   choose -->|Request changes| rework
   choose -->|Later| parked
   choose -->|Stop| rejected
   proposal --> saved
   complete --> saved
+  resume --> saved
   rework --> saved
   parked --> saved
   rejected --> saved
@@ -65,7 +70,7 @@ flowchart LR
   classDef neutral fill:#f1f3f4,stroke:#5f6368,color:#202124
   class open,read,saved action
   class choose,accepted decision
-  class proposal,complete success
+  class proposal,complete,resume success
   class rework revise
   class parked,rejected neutral
 ```
@@ -74,7 +79,7 @@ Use **Pipeline** to browse all Master rows as Cards or Rows. Search the text or 
 
 In **Decisions**, expand a Pipeline item to see its decisions, then choose a decision to review it or read its recorded outcome and reason.
 
-To change a decision that was already applied (for example an Approved item you now want to park), open it under **Decision history**. **Revise this decision** is shown when it is the item's current decision and no run or review is open (the item is Approved, Rework, Parked, Rejected or Completed). Choose the new outcome, give a reason (rework: the instructions), and **Revise decision**. The decision keeps its ID, your reason is added to it, and the Pipeline item moves straight away. If the item is Researching, wait for the run to finish.
+To change a decision that was already applied (for example an Approved item you now want to park), open it under **Decision history**. **Revise this decision** is shown when it is the item's current decision and no run or review is open (the item is Approved, Rework, Parked, Rejected or Completed). Choose the new outcome, give a reason (rework: the instructions), and **Revise decision**. The decision keeps its ID, your reason is added to it, and the Pipeline item moves straight away. If the item is Researching or In progress, wait for the run to finish.
 
 To capture new work, choose **Add Pipeline item** in the same page. Fill Title and Domain, then optionally add the reason, next step, revisit trigger and target. Ready items need an agent and a Next step. **Add item** writes the next permanent ID to Pipeline Master. The old Add Pipeline item entry is no longer in the Workbook Extensions menu.
 

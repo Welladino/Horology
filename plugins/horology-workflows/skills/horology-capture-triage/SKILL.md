@@ -23,7 +23,7 @@ Edit Pipeline Master only; filter its table to see one domain. Resolve records b
 1. Read Pipeline Master and live headers; map fields by name because columns may be reordered.
 2. Match existing records by permanent Pipeline ID, source URL, and meaning. Update an existing item rather than duplicate it. ClickUp task URLs uniquely identify tasks even when title prefixes repeat.
 3. Preserve historical EPIC-NEWS references in optional External ID. For new items, prefer the Add Pipeline item form; otherwise scan Master and use the next unused numeric Pipeline ID across all domains, as the only capture writer. Never renumber existing IDs.
-4. Write a concise title, reason, next question, and supporting links. Use **Inbox** for newly captured work, **Parked** for explicitly deferred work with a revisit trigger, and **Researching** for a selected, authorized investigation.
+4. Choose Type by what is wanted: a question to answer is Idea, Research, Direction or Plan (investigation route); a change to make is Feature, Enhancement, Refactor or Fix (implementation route; Fix corrects a defect). Write a concise title, reason, next question, and supporting links. Use **Inbox** for newly captured work, **Parked** for explicitly deferred work with a revisit trigger, and **Researching** for a selected, authorized investigation.
 5. Edit only relevant cells. Find the row by its ID immediately before every update, never by row position; other runs may add or move rows at any time.
 
 ## Decision and permission boundaries

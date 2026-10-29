@@ -92,7 +92,8 @@ def test_pipeline_decisions_script_matches_the_decision_transitions(wf):
         assert outcome["Status"] == to["Status"], key
         assert outcome["Agent status"] == to["Agent status"], key
         review_stage = key.split("|")[1]
-        stage = ({"Investigation proposal": "Stage 1", "Specialist deliverable": "Stage 3"}[review_stage]
+        stage = ({"Investigation proposal": "Stage 1", "Specialist deliverable": "Stage 3",
+                  "Implementation question": "Stage 3"}[review_stage]
                  if outcome["Stage"] == "REVIEW" else outcome["Stage"])
         assert stage in _as_list(to["Stage"]), key
 
@@ -106,7 +107,7 @@ def test_revise_matches_the_pipeline_decisions_script(wf):
     assert script["decision_statuses"] == revise["decision_statuses"]
     assert script["item_statuses"] == revise["item_statuses"] == _as_list(transition["from"]["Status"])
     assert set(revise["decision_statuses"]) == {s for s, d in wf["decisions"].items() if d.get("triggers")}
-    assert not {"Inbox", "Researching", "Awaiting decision"} & set(revise["item_statuses"])
+    assert not {"Inbox", "Researching", "In progress", "Awaiting decision"} & set(revise["item_statuses"])
     # Every outcome a revision can apply is a move the revise transition allows.
     outcomes = json.loads("{" + re.search(r"OUTCOMES\s*=\s*\{(.*?)\};", rules, re.S).group(1) + "}")
     for key, outcome in outcomes.items():
@@ -133,3 +134,57 @@ def test_register_ids_are_reserved_not_taken_from_the_sheet(wf):
     assert ids["find_rows_by"] == "ID"
     tools = (DOCUMENT_GRAPH / "document_graph" / "tools.py").read_text()
     assert "graph.reserve_id" in tools and "graph.check_register_write" in tools
+
+
+def test_routes_split_the_types(wf):
+    routes = wf["routes"]
+    types = [t for r in routes.values() for t in r["types"]]
+    assert sorted(types) == sorted(wf["fields"]["Type"]["values"]) and len(types) == len(set(types))
+    assert "Stage 2" not in routes["implementation"]["stages"]
+    for route in routes.values():
+        assert set(route["stages"]) <= set(wf["stages"])
+
+
+def test_each_route_starts_with_its_own_status(wf):
+    transitions = {t["id"]: t for t in wf["transitions"]}
+    routes = wf["routes"]
+    assert transitions["start-run"]["from"]["Type"] == routes["investigation"]["types"]
+    assert transitions["start-run"]["to"]["Status"] == "Researching"
+    assert transitions["start-implementation"]["from"]["Type"] == routes["implementation"]["types"]
+    assert transitions["start-implementation"]["to"]["Status"] == "In progress"
+
+
+def test_implementation_route_skips_stage_2_and_resumes_at_stage_3(wf):
+    transitions = {t["id"]: t for t in wf["transitions"]}
+    assert transitions["plan-implementation"]["from"]["Stage"] == "Stage 1"
+    assert transitions["plan-implementation"]["to"] == {"Stage": "Stage 3"}
+    assert transitions["complete-implementation"]["to"]["Status"] == "Completed"
+    assert transitions["complete-implementation"]["to"]["Stage"] == "Stage 3"
+    question = transitions["raise-implementation-question"]["to"]
+    assert question["Status"] == "Awaiting decision" and question["Review stage"] == "Implementation question"
+    resume = transitions["resume-implementation"]
+    assert resume["from"]["Review stage"] == "Implementation question"
+    assert resume["to"] == {"Status": "In progress", "Stage": "Stage 3", "Agent status": "Ready"}
+    for t in wf["transitions"]:
+        if "In progress" in _as_list(t["from"].get("Status", [])) or t["to"].get("Status") == "In progress":
+            assert "Stage 2" not in _as_list(t["to"].get("Stage", [])), t["id"]
+
+
+def test_investigation_route_is_unchanged(wf):
+    transitions = {t["id"]: t for t in wf["transitions"]}
+    assert transitions["submit-for-review"]["to"] == {
+        "Status": "Awaiting decision", "Stage": "Stage 2", "Review stage": "Investigation proposal",
+        "Agent status": "No action"}
+    assert transitions["synthesize-stage-3"]["to"] == {
+        "Status": "Awaiting decision", "Stage": "Stage 4", "Review stage": "Specialist deliverable",
+        "Agent status": "No action"}
+    assert transitions["accept-stage-1"]["to"] == {"Status": "Approved", "Stage": "Stage 3", "Agent status": "Ready"}
+    assert transitions["accept-stage-3"]["to"] == {"Status": "Completed", "Stage": "Stage 4", "Agent status": "No action"}
+
+
+def test_type_list_matches_the_pipeline_decisions_script(wf):
+    rules = (PIPELINE_DECISIONS / "src" / "ItemRules.js").read_text()
+    types = re.search(r"'Type':\s*\[(.*?)\]", rules).group(1)
+    assert re.findall(r"'([^']+)'", types) == wf["fields"]["Type"]["values"]
+    implementation = re.search(r"IMPLEMENTATION_TYPES\s*=\s*\[(.*?)\]", rules).group(1)
+    assert re.findall(r"'([^']+)'", implementation) == wf["routes"]["implementation"]["types"]

@@ -10,8 +10,8 @@ The Pipeline is the main control surface. Work is selected here, but a row never
 
 | Tab | Purpose |
 | --- | --- |
-| **Master** | One row per work item. It holds the permanent Pipeline ID, title, domain and optional entity, lifecycle status and stage, review state, agent platform, a one-line next question, linked repository or external task, and document/decision references. |
-| **Steps** | One row per planned step of an item: Pipeline ID, Step, Task, Specialist and Status (Planned, Done or Skipped). The planner writes them; the item's run marks each one Done. Rows join Master by Pipeline ID, never by position. Older items may still keep a numbered list in Next step, which the run and the decision page read the same way. |
+| **Master** | One row per work item. It holds the permanent Pipeline ID, title, domain and optional entity, Type (which chooses the investigation or implementation route), lifecycle status and stage, review state, agent platform, a one-line next question, linked repository or external task, and document/decision references. |
+| **Steps** | One row per planned step of an item: Pipeline ID, Step, Task, Specialist and Status (Planned, Done or Skipped). The planner writes them, or on the implementation route the item's own run writes its implementation plan at Stage 1; the item's run marks each one Done. Rows join Master by Pipeline ID, never by position. Older items may still keep a numbered list in Next step, which the run and the decision page read the same way. |
 | **Locations** | The workspace's Drive folder directory. This is the source of truth for where agents read and write; the repository does not prescribe folder names or a fixed tree. |
 | **Domains** | A derived view of the root folders and entity folders in Locations. Agents use it as the valid list of domains and entities. Add or change the corresponding Locations row instead of editing this tab directly. |
 | **Templates** | Links to document templates and a short description of when each is appropriate. Agents copy templates; they do not modify the originals. |

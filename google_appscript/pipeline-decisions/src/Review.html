@@ -422,8 +422,8 @@
       if (/(?:^|:\s)(accepted|approved|ready|completed)$/.test(label)) return 'tone-success';
       if (/(?:^|:\s)(rework|parked|plan)$/.test(label)) return 'tone-warning';
       if (/(?:^|:\s)(rejected|blocked|failed)$/.test(label)) return 'tone-danger';
-      if (/^(stage\s*\d|investigation proposal|specialist deliverable)/.test(label)) return 'tone-stage';
-      if (/(?:^|:\s)inbox$/.test(label)) return 'tone-info';
+      if (/^(stage\s*\d|investigation proposal|specialist deliverable|implementation question)/.test(label)) return 'tone-stage';
+      if (/(?:^|:\s)(inbox|in progress)$/.test(label)) return 'tone-info';
       return 'tone-neutral';
     }
     const node = (tag,className,value) => {
@@ -791,7 +791,7 @@
       const runLocation = field(agentGrid,'Run location','edit-run-location','select');
       const currentStatus = item['Agent status'] || 'No action';
       const allowed = [currentStatus];
-      if (['Inbox','Rework','Approved'].includes(item.Status)) {
+      if ((item.readyStatuses || ['Inbox','Rework','Approved']).includes(item.Status)) {
         if (currentStatus === 'No action') allowed.push('Plan','Ready');
         else if (currentStatus === 'Plan') allowed.push('Ready');
       }
@@ -984,7 +984,9 @@
       const grid = node('div','grid'); action.appendChild(grid);
       const outcomeField = field(grid,'Outcome','outcome','select');
       const outcome = outcomeField.control;
-      [['accepted','Approve chosen option'],['rework','Request rework'],
+      // An Implementation question is answered, and the implementation resumes at Stage 3.
+      const question = String(r.stage).trim().toLowerCase() === 'implementation question';
+      [['accepted',question ? 'Answer and resume Stage 3' : 'Approve chosen option'],['rework','Request rework'],
         ['parked','Park for now'],['rejected','Reject']].forEach(pair => {
           const option = node('option','',pair[1]); option.value = pair[0]; outcome.appendChild(option);
         });
