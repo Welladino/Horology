@@ -295,4 +295,27 @@ test('workspace groups decisions by item and combines search with Pipeline filte
   assert.equal(filtered[0].ID,'1');
 });
 
+test('writes find the row by ID, not by the position read earlier', () => {
+  const w = workbooks();
+  // Another writer inserts a row above item 42 after the read (HOR-6: item 41's run wrote item 40's row).
+  const getDataRange = w.pipeline.getDataRange;
+  let moved = false;
+  w.pipeline.getDataRange = () => {
+    const range = getDataRange();
+    if (!moved) { moved = true; return range; }  // the run's first read sees the old order
+    if (w.pipeline.rows[1][0] !== '41') w.pipeline.rows.splice(1, 0, ['41', 'Inserted', 'Inbox', 'Stage 0', '', 'No action', 'Codex', '', '']);
+    return getDataRange();
+  };
+  w.ctx.applyDecisions();
+  const row42 = w.pipeline.rows.find(r => r[0] === '42'), row41 = w.pipeline.rows.find(r => r[0] === '41');
+  assert.deepEqual(row42.slice(2, 6), ['Approved', 'Stage 3', 'Investigation proposal', 'Ready']);
+  assert.deepEqual(row41.slice(2, 6), ['Inbox', 'Stage 0', '', 'No action']);  // untouched
+});
+test('a row whose ID disappeared or is duplicated is not written', () => {
+  const w = workbooks();
+  w.pipeline.rows.push(['42', 'Copy', 'Awaiting decision', 'Stage 2', 'Investigation proposal', 'No action', 'Claude Code', 'D-3', '']);
+  assert.throws(() => w.ctx.applyDecisions(), /appears 2 times; nothing was written/);
+  assert.equal(w.pipeline.writes.length, 0);
+});
+
 console.log(passed + ' tests passed');

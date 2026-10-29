@@ -39,12 +39,33 @@ function readMaster(spreadsheetId, required) {
   required.forEach(h => { if (!headers.includes(h)) throw Error('Missing column ' + h + ' in ' + spreadsheetId); });
   const rows = values.slice(1).map((v, i) => ({row: i + 2, data: Object.fromEntries(headers.map((h, j) => [h, v[j] || '']))}))
     .filter(r => String(r.data[headers[0]]).trim());
-  return {sheet, headers, rows};
+  // key: the permanent ID column (ID or Decision ID) that writes use to find their row.
+  return {sheet, headers, rows, key: required[0]};
 }
 
+// Writes find their row by permanent ID immediately before writing, never by the position read
+// earlier: a sort, insert or another writer may have moved rows since. Stops if the ID is gone or
+// appears twice rather than writing into whichever row is now at the old position.
 function write(table, row, header, value) {
-  table.sheet.getRange(row.row, table.headers.indexOf(header) + 1).setValue(value);
+  const col = table.headers.indexOf(header);
+  if (col < 0) throw Error('Missing column ' + header);
+  table.sheet.getRange(currentRow(table, row), col + 1).setValue(value);
   row.data[header] = String(value);
+}
+
+function currentRow(table, row) {
+  const key = table.key || table.headers[0], col = table.headers.indexOf(key);
+  const id = String(row.data[key]).trim();
+  if (col < 0 || !id) throw Error('Rows are written by ' + key + '; this row has none.');
+  const found = [];
+  table.sheet.getDataRange().getDisplayValues().forEach((cells, i) => {
+    if (i > 0 && String(cells[col]).trim() === id) found.push(i + 1);
+  });
+  if (found.length !== 1)
+    throw Error(key + ' ' + id + (found.length ? ' appears ' + found.length + ' times' : ' is no longer in the sheet') +
+      '; nothing was written. Fix the sheet and try again.');
+  row.row = found[0];
+  return row.row;
 }
 
 function today() {
