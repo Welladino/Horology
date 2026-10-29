@@ -89,7 +89,7 @@ Why the obvious route fails: `insertInlineImage` fetches its URI without your cr
 1. Encode the image:
 
    ```bash
-   base64 < chart.png | tr -d '\n' > chart.b64
+   base64 -w0 chart.png > chart.b64
    ```
 
 2. Create a carrier Doc with Drive `create_file`: title `carrier (delete)`, content type `text/html`, text content `<img alt="<ALT TEXT>" src="data:image/png;base64,<CONTENTS OF chart.b64>">`. Drive converts the HTML and embeds the image.
@@ -104,7 +104,7 @@ Why the obvious route fails: `insertInlineImage` fetches its URI without your cr
 
 Expected result: `read_doc` on the target lists the new inline object with its own `contentUri`, and the image still shows after the carrier is trashed (the target keeps its own copy).
 
-A very small image (base64 under about 1.5 KB) can go straight into step 4 as `data:image/png;base64,…`, because Docs caps the URI at 2 KB. If neither route works, upload the PNG beside the document and link it with a caption instead.
+A very small image (base64 under about 1.9 KB) can go straight into step 4 as `data:image/png;base64,…`, because Docs caps the URI at 2 KB. If neither route works, upload the PNG beside the document and link it with a caption instead.
 
 Recovery: a failed `insertInlineImage` changes nothing. If a carrier Doc was left behind, search Drive for `carrier (delete)` and trash it.
 
