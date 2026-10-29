@@ -849,13 +849,14 @@
       const panel = node('article','panel'); app.appendChild(panel);
       const head = node('div','panel-head');
       append(head,node('div','eyebrow','Decision ' + r.id + ' · ' + r.domain),
-        node('h2','',r.question || r.title));
+        node('h2','',r.title));
       const meta = node('div','meta');
       append(meta,node('span','h-pill' + (r.editable ? ' pending' : ''),r.editable ? 'Needs review' : r.status),
         node('span','h-pill',r.stage),node('span','h-pill','Pipeline ' + r.pipelineId));
       head.appendChild(meta); panel.appendChild(head);
       const body = node('div','panel-body'); panel.appendChild(body);
 
+      if (r.question) paragraphs(section(body,'Question'),r.question);
       const saved = section(body,r.editable ? 'Proposal' : 'Recorded decision');
       paragraphs(saved,r.proposal,'No decision text recorded.');
       if (!r.editable && r.options.length) {
