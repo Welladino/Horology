@@ -12,7 +12,7 @@ A Pipeline item asking whether something is secure, what the security risks are,
 ## Required context and locations
 
 - Read [domains, folders and templates](../horology-research/references/locations.md) before choosing a domain or entity, reading context or saving anything.
-- Follow the [presentation rules](../horology-research/references/presentation.md) when creating or filling documents. Each document carries its default visual (the one the presentation rules give for its template) or a `No visual: <reason>` line in its Visuals section.
+- Follow the [presentation rules](../horology-research/references/presentation.md) when creating or filling documents.
 - Read [linking rules](../horology-research/references/linking.md) when saving outputs.
 - Resolve the permanent Pipeline ID and the scope. Read Link type, URL and GitHub branch; verify the repository remote, branch and the commit you inspect before making claims. Use read-only access only. If no repository access is available, report it and stop.
 - Search the document graph for earlier security reviews of the same target so you report what changed, not the same list again.

@@ -10,11 +10,7 @@ Supply JSON with title and options. Each option has name, effort, uncertainty, a
 
 Example invocation: python scripts/render_quadrant.py ratings.json quadrant.png.
 
-Generate the top summary and JSON from the same evidence and written reasons. Direct and ongoing costs remain separate, with assumptions and units. Embed the image at readable document width using the insertion route in the presentation rules, add a caption/explanation, upload ratings.json or another editable source beside the assessment, and link it. Verify the actual assessment visual; do not reuse the template's blank quadrant as the result.
-
-## Current-vs-proposed diagram
-
-Draw today's relevant components or flow next to the recommended change (Mermaid or similar), render it to PNG, embed it in the template's Current vs proposed subsection with a caption, and keep the source beside the assessment. When the recommendation leaves the design unchanged or the change has no structural effect, write `No visual: <reason>` there instead.
+Generate the top summary and JSON from the same evidence and written reasons. Direct and ongoing costs remain separate, with assumptions and units. Embed the image at readable document width, add a caption/explanation, upload ratings.json or another editable source beside the assessment, and link it. Verify the actual assessment visual; do not reuse the template's blank quadrant as the result.
 
 ## Shared records
 

@@ -44,13 +44,13 @@ Agent status is No action, Plan or Ready; Agent type is Claude Code, Codex, Manu
 - A scoped research document with evidence, options, recommendation, uncertainties, and sources, associated with Pipeline through Document Index.
 - When included in the requested workflow, a proposed decision and linked Draft Plan; preserve their unapproved status.
 - Use prose for explanation, native bullets for parallel points, numbered lists for sequences, and tables for meaningful comparisons or milestone details. Give dependencies and milestones separate native subsections; avoid steps or arrow chains buried in paragraphs. Adapt or remove optional template examples.
-- A Visuals section with the default visual from the presentation rules (Research: an options or evidence chart from real figures; Direction: an audience or positioning diagram; Plan: a milestone timeline or process flow), embedded by the route described there, with a caption, explanation and source link. Skip it only with a `No visual: <reason>` line.
+- When useful, render diagrams as images and retain editable sources; use linked Sheets charts for changing data where supported or clearly labelled snapshots otherwise. Include captions, short explanations, and source links.
 - Report findings, the next decision or information needed, and any limitations or unsaved changes plainly.
 
 ## Verification before finishing
 
 - Read back documents and affected records by ID; verify identities, backlinks, and preservation of unrelated cells. If `check_register_write` refused a write, report the clash instead of overwriting.
 - Check native headings, lists, table headers, readable spacing, and removal of leftover placeholders. When layout matters, inspect a rendered preview or disclose that it was unavailable.
-- Check the Visuals section has its visual or a `No visual: <reason>` line. Check visual labels, captions, source links, and readability at normal document width. Verify chart data and diagram source match the inserted visual.
+- Check visual labels, captions, source links, and readability at normal document width. Verify chart data and diagram source match the inserted visual.
 - Inspect destinations after ambiguous write failures before retrying.
 - Confirm recommendations remain proposed until the founder explicitly chooses, and distinguish saved work from pending writes.

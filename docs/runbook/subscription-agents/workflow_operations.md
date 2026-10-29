@@ -78,36 +78,6 @@ To capture new work, choose **Add Pipeline item** in the same page. Fill Title a
 
 The existing sheet route also works: in the Decision Register, set the current decision's Status to accepted, rework (with Rework instructions), parked or rejected. A direct human edit is applied by the installable edit trigger when it is present. Apps Script or API writes must call `applyDecisions` explicitly. To check, inspect the item's Status in the Pipeline or run `previewDecisions` from the Apps Script editor as an administrator.
 
-## Insert an image into a private Google Doc
-
-Purpose: put a rendered chart or diagram into an agent document (or a template) without making any file public. Agents follow the same route; the rules are in the research skill's `references/presentation.md`.
-
-Prerequisites: the Drive and Docs connectors (or API access as the document's owner) and a PNG, JPEG or GIF. Docs does not accept SVG, so render SVG or Mermaid to PNG first.
-
-Why the obvious route fails: `insertInlineImage` fetches its URI without your credentials. A private Drive link (`https://drive.google.com/uc?export=view&id=<FILE_ID>`) returns "There was a problem retrieving the image. The provided image should be publicly accessible". Do not share the file publicly to fix it.
-
-1. Encode the image:
-
-   ```bash
-   base64 -w0 chart.png > chart.b64
-   ```
-
-2. Create a carrier Doc with Drive `create_file`: title `carrier (delete)`, content type `text/html`, text content `<img alt="<ALT TEXT>" src="data:image/png;base64,<CONTENTS OF chart.b64>">`. Drive converts the HTML and embeds the image.
-3. Read the carrier with Docs `read_doc` and copy `inlineObjects.<ID>.inlineObjectProperties.embeddedObject.imageProperties.contentUri` (a `https://docs.google.com/docs-images-rt/…` URL). It expires, so use it straight away.
-4. Insert it into the target Doc with Docs `update_doc`:
-
-   ```json
-   [{"insertInlineImage": {"uri": "<CONTENT_URI>", "location": {"index": <INDEX>}, "objectSize": {"width": {"magnitude": 450, "unit": "PT"}}}}]
-   ```
-
-5. Trash the carrier with Drive `trash_file`.
-
-Expected result: `read_doc` on the target lists the new inline object with its own `contentUri`, and the image still shows after the carrier is trashed (the target keeps its own copy).
-
-A very small image (base64 under about 1.9 KB) can go straight into step 4 as `data:image/png;base64,…`, because Docs caps the URI at 2 KB. If neither route works, upload the PNG beside the document and link it with a caption instead.
-
-Recovery: a failed `insertInlineImage` changes nothing. If a carrier Doc was left behind, search Drive for `carrier (delete)` and trash it.
-
 ## Scheduled jobs
 
 Create the oversight jobs below on a platform scheduler. Investigation and Stage 3 runs remain founder-started. During a Stage 3 run, the supervisor invokes Horology Synthesis Artifacts immediately after saving the deliverable, then presents both outputs for review. No Stage 4 schedule or second founder prompt is needed.

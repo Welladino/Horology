@@ -12,7 +12,7 @@ Turning an agreed go-to-market direction into a marketing plan: who to reach, wh
 ## Required context and locations
 
 - Read [domains, folders and templates](../horology-research/references/locations.md) before choosing a domain or entity, reading context or saving anything.
-- Follow the [presentation rules](../horology-research/references/presentation.md) when creating or filling documents. Each document carries its default visual (Plan: a milestone timeline or process flow; Direction: an audience or positioning diagram) or a `No visual: <reason>` line in its Visuals section.
+- Follow the [presentation rules](../horology-research/references/presentation.md) when creating or filling documents.
 - Read [linking rules](../horology-research/references/linking.md) when saving outputs.
 - Resolve the permanent Pipeline ID, the bounded question and the domain or entity. Find the accepted GTM direction and any brand guide for this business in its Agent reference folders, the graph, the Document Index or the Decision Register. If there's no agreed direction, say so and recommend a GTM step first.
 
