@@ -1,4 +1,9 @@
-/* Document Index associations; permanent Pipeline IDs, never task titles. */
+/* Document Index associations; permanent Pipeline IDs, never task titles.
+ * A document is a Drive file or, for a repository note, its GitHub link. A row with
+ * any other link or a malformed Pipeline ID is skipped with a log line, so one bad
+ * row cannot stop the sync for every item. */
+const DRIVE_URL=/^https:\/\/(docs|drive)\.google\.com\//;
+const REPO_URL=/^https:\/\/github\.com\/[^/]+\/[^/]+\/blob\//;
 function indexDocuments(values) {
   if(!values.length) throw Error('Document Index is empty.');
   const headers=values[0].map(x=>String(x).trim());
@@ -10,11 +15,15 @@ function indexDocuments(values) {
     if(seen.has(d['Document ID'])) throw Error('Duplicate Document ID: '+d['Document ID']);
     seen.add(d['Document ID']);
     const ids=Array.from(new Set(d['Pipeline ID'].split(',').map(x=>x.trim()).filter(Boolean)));
-    if(ids.length && !/^https:\/\/(docs|drive)\.google\.com\//.test(d['Drive URL'])) throw Error('Invalid indexed Drive URL: '+d['Document ID']);
-    const file=d['Drive URL'].match(/\/d\/([^/?#]+)/);
-    const key=file?file[1]:d['Drive URL'];
+    if(!ids.length) return;
+    const url=d['Drive URL'],drive=DRIVE_URL.test(url);
+    if(!drive && !REPO_URL.test(url)) {
+      console.log('Skipped Document ID '+d['Document ID']+': Drive URL is not a Google Drive or GitHub link.');return;}
+    const bad=ids.filter(id=>!/^\d+$/.test(id));
+    if(bad.length) {console.log('Skipped Document ID '+d['Document ID']+': invalid Pipeline ID '+bad.join(', ')+'.');return;}
+    const file=drive?url.match(/\/d\/([^/?#]+)/):null;
+    const key=file?file[1]:url;
     ids.forEach(id=>{
-      if(!/^\d+$/.test(id)) throw Error('Invalid indexed Pipeline ID: '+id);
       const docs=result[id]||(result[id]=[]);
       if(!docs.some(doc=>doc.key===key)) docs.push({id:d['Document ID'],title:d.Title,url:d['Drive URL'],key});
     });
