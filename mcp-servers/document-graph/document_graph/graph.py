@@ -245,6 +245,41 @@ async def claim_item(pipeline_id: int, agent_type: str, run_location: str = "Loc
     return await history.claim(current_workspace(), pipeline_id, agent_type, run_location, kind)
 
 
+async def reserve_id(register: str, pipeline_id: int | None = None, run_id: str | None = None,
+                     live_max_id: int | None = None) -> dict:
+    """Reserve the next permanent Decision or Document ID before adding a register row.
+
+    register is "decision" (Decision Register) or "document" (Document Index).
+    Call it once per new row, right before writing that row, and write the row
+    with exactly the returned id. Two runs calling at the same time never get
+    the same ID. Pass the Pipeline ID and your run ID (e.g. R-12, from
+    claim_item) when the row is for a Pipeline item; both are recorded, so
+    get_item_history shows who took which ID. live_max_id is the highest ID
+    you just read in the live sheet, so a row added by hand since the last
+    sync is respected. Never use "max + 1" from the sheet yourself.
+    reserved: false means the run isn't live or isn't this item's: stop.
+    """
+    return await history.reserve_id(current_workspace(), register, pipeline_id, run_id, "agent", live_max_id)
+
+
+async def check_register_write(register: str, id: int, pipeline_id: int | None = None, drive_url: str | None = None,
+                               live_pipeline_id: str | None = None, live_drive_url: str | None = None,
+                               live_row_exists: bool = False) -> dict:
+    """Check ownership before every Decision Register or Document Index write, new row or update.
+
+    Re-read the live register row with this ID immediately before calling:
+    pass live_row_exists true with its Pipeline ID and Drive URL (Document
+    Index), or false when no row has this ID. pipeline_id and drive_url are
+    what you are about to write (drive_url is required for "document").
+    ok: true means go ahead. ok: false means the ID already belongs to another
+    Pipeline item or Drive file: do not write or overwrite the row; report the
+    message, or reserve a new ID with reserve_id. Rows are found by ID only,
+    never by row position.
+    """
+    live = {"pipeline_id": live_pipeline_id, "drive_url": live_drive_url} if live_row_exists else None
+    return await history.check_register_write(current_workspace(), register, id, pipeline_id, drive_url, live)
+
+
 async def finish_run(run_id: str, status: str, skills_used: list[str] | None = None, steps_done: str | None = None,
                      notes: str | None = None, session_link: str | None = None) -> dict:
     """Record how a run ended. Call once, at the end of every run you claimed.
@@ -271,6 +306,7 @@ async def list_runs(since_hours: int = 24, pipeline_id: int | None = None, limit
 async def get_item_history(pipeline_id: int) -> dict:
     """How a Pipeline item got where it is: its current copy, decisions, and a timeline of status
     changes (each marked expected or not by the workflow), runs with their outputs, Document Index
-    documents (with the graph document id when included) and agent documents. Built from the last
+    documents (with the graph document id when included), agent documents, and the Decision and
+    Document IDs reserved for it (which run took each; these are immediate). Built from the last
     records sync of the sheets, so it can lag the sheet by one sync."""
     return await history.item_history(current_workspace(), pipeline_id)

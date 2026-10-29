@@ -18,6 +18,9 @@ TRACKED = (("Status", "status"), ("Stage", "stage"), ("Review stage", "review_st
 DECISION_FIELDS = ("pipeline_id", "status", "review_stage", "decision", "reason", "rework_instructions")
 INDEX_FIELDS = ("pipeline_id", "title", "drive_url", "doc_type", "document_status", "last_updated",
                 "graph_inclusion", "graph_sync_status")
+# Each register's synced sheet copy and its ID column: the allocator never hands out an ID at or
+# below the highest numeric one seen there, so rows added by hand are respected.
+REGISTER_COPIES = {"decision": ("decisions", "decision_id"), "document": ("document_index", "index_document_id")}
 
 # A run "was active since the previous sync" if it started before now and hadn't ended, or its
 # claim hadn't expired, by then. Used to attribute changes and outputs to a run of the same item.
@@ -134,10 +137,92 @@ class HistoryRepository:
                       WHERE di.workspace = %(ws)s AND di.pipeline_id = %(item)s) i),
                   (SELECT coalesce(json_agg(a ORDER BY a.created_at), '[]') FROM (
                       SELECT id, title, doc_type, created_by_agent, created_at
-                      FROM documents WHERE workspace = %(ws)s AND source = 'agent' AND pipeline_id = %(item)s) a)
+                      FROM documents WHERE workspace = %(ws)s AND source = 'agent' AND pipeline_id = %(item)s) a),
+                  (SELECT coalesce(json_agg(v ORDER BY v.reserved_at, v.register, v.reserved_id), '[]') FROM (
+                      SELECT register, reserved_id, reserved_id::text AS id, run_id, reserved_by, drive_url, reserved_at, bound_at
+                      FROM register_reservations WHERE workspace = %(ws)s AND pipeline_id = %(item)s) v)
                 """,
                 {"ws": workspace, "item": pipeline_id})
             return await cur.fetchone()
+
+    async def reserve_id(self, workspace, register, pipeline_id, run_id, reserved_by, live_max):
+        """Hand out the next permanent ID of a register in one statement. -> (reserved_id or None, run or None).
+
+        The new ID is greatest(stored last ID + 1, highest numeric ID in the synced sheet copy + 1,
+        live_max + 1). The upsert locks the workspace's counter row, so concurrent calls queue and each
+        sees the previous one's ID. Nothing is reserved when run_id is given but isn't a live run of
+        pipeline_id in this workspace; the run row comes back so the caller can say why."""
+        table, column = REGISTER_COPIES[register]
+        async with self.database.connection() as conn, conn.cursor() as cur:
+            await cur.execute(
+                f"""
+                WITH run AS (
+                    SELECT id, pipeline_id, status,
+                           (status IN ('claimed', 'running') AND claim_expires > now()) AS live
+                    FROM run_log WHERE workspace = %(ws)s AND id = %(run)s
+                ), allowed AS (
+                    SELECT 1 WHERE %(run)s::bigint IS NULL
+                                OR EXISTS (SELECT 1 FROM run WHERE live AND pipeline_id = %(item)s)
+                ), seen AS (
+                    SELECT coalesce(max({column}::bigint), 0) AS top FROM {table}
+                    WHERE workspace = %(ws)s AND {column} ~ '^[0-9]{{1,15}}$'
+                ), next AS (
+                    INSERT INTO register_ids AS r (workspace, register, last_id)
+                    SELECT %(ws)s, %(register)s, greatest(seen.top, %(live_max)s) + 1 FROM seen, allowed
+                    ON CONFLICT (workspace, register) DO UPDATE
+                        SET last_id = greatest(r.last_id + 1, EXCLUDED.last_id), updated_at = now()
+                    RETURNING last_id
+                ), recorded AS (
+                    INSERT INTO register_reservations (workspace, register, reserved_id, pipeline_id, run_id, reserved_by)
+                    SELECT %(ws)s, %(register)s, last_id, %(item)s, %(run)s, %(by)s FROM next
+                    RETURNING reserved_id
+                )
+                SELECT (SELECT reserved_id FROM recorded), (SELECT row_to_json(run) FROM run)
+                """,  # nosec B608: table and column come from the fixed REGISTER_COPIES map; values are bound
+                {"ws": workspace, "register": register, "item": pipeline_id, "run": run_id, "by": reserved_by,
+                 "live_max": live_max})
+            return await cur.fetchone()
+
+    async def register_owner(self, workspace, register, register_id, bind):
+        """The reservation and synced row for one register ID, locking the reservation while it is bound.
+
+        bind(reservation, synced) -> drive_url to record on the reservation, or None. One transaction, so two
+        writers binding the same ID queue and the second sees the first's Drive URL.
+        -> (reservation dict or None, synced row dict or None)."""
+        table, column = REGISTER_COPIES[register]
+        drive = "drive_url" if register == "document" else "NULL::text"
+        async with self.database.transaction() as conn, conn.cursor() as cur:
+            await cur.execute(
+                """
+                SELECT row_to_json(x) FROM (
+                    SELECT reserved_id::text, pipeline_id, run_id, reserved_by, drive_url, reserved_at, bound_at
+                    FROM register_reservations
+                    WHERE workspace = %(ws)s AND register = %(register)s AND reserved_id::text = %(id)s
+                    FOR UPDATE
+                ) x
+                """,
+                {"ws": workspace, "register": register, "id": register_id})
+            reservation = (await cur.fetchone() or (None,))[0]
+            await cur.execute(
+                f"""
+                SELECT row_to_json(x) FROM (
+                    SELECT {column} AS id, pipeline_id, {drive} AS drive_url, synced_at
+                    FROM {table} WHERE workspace = %(ws)s AND {column} = %(id)s
+                ) x
+                """,  # nosec B608: table and column come from the fixed REGISTER_COPIES map; values are bound
+                {"ws": workspace, "id": register_id})
+            synced = (await cur.fetchone() or (None,))[0]
+            url = bind(reservation, synced) if reservation else None
+            if url:
+                await cur.execute(
+                    """
+                    UPDATE register_reservations SET drive_url = %(url)s, bound_at = now()
+                    WHERE workspace = %(ws)s AND register = %(register)s AND reserved_id::text = %(id)s
+                      AND drive_url IS NULL
+                    """,
+                    {"ws": workspace, "register": register, "id": register_id, "url": url})
+                reservation["drive_url"] = url
+            return reservation, synced
 
     async def apply_records(self, workspace, items, decisions, index_rows):
         """Copy the three registers, record changes as events and link run outputs, in one transaction.

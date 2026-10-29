@@ -48,7 +48,7 @@ sequenceDiagram
 | 3 — Specialist deliverable | A new authorised deliverable is saved to Drive and Document Index under the same Pipeline ID. Earlier documents remain unless a replacement is explicitly marked as superseding them. |
 | 4 — Synthesis | The supervisor calls the synthesis specialist in the same Stage 3 run. Its visual briefing is saved and indexed before the item returns for founder review. |
 
-The Pipeline ID joins an item to its decisions, indexed documents and run history. Decision IDs, Document IDs, Drive file IDs and optional ClickUp task URLs are separate identifiers. See the [workflow stages](../subscription-agents/workflow.md#stages) for the allowed status moves.
+The Pipeline ID joins an item to its decisions, indexed documents and run history. Decision IDs, Document IDs, Drive file IDs and optional ClickUp task URLs are separate identifiers. New Decision and Document IDs come from the document graph's `reserve_id`, so parallel runs never share one, and every register write is checked for ownership first ([register IDs](../mcp/document-graph.md#register-ids)). Every write, by an agent or an Apps Script, finds its row by ID immediately before writing, never by row position. See the [workflow stages](../subscription-agents/workflow.md#stages) for the allowed status moves.
 
 ## What enters the document graph
 
@@ -62,7 +62,7 @@ The graph groups searchable passages into topics and extracts entities and relat
 
 ## Timing and other paths
 
-`claim_item` and `finish_run` are immediate connector writes to Neon. Pipeline, Decision Register and Document Index changes reach Neon's copies only on a records pass. Changes between two passes can appear as one event; `get_item_history` reflects the last pass rather than a live Sheet view. The records pass also runs when the graph job runs in records-only mode.
+`claim_item`, `finish_run` and `reserve_id` are immediate connector writes to Neon; `check_register_write` reads the reservation and the last synced copy, and the agent passes the live row it just read. Pipeline, Decision Register and Document Index changes reach Neon's copies only on a records pass. Changes between two passes can appear as one event; `get_item_history` reflects the last pass rather than a live Sheet view. The records pass also runs when the graph job runs in records-only mode.
 
 The optional hourly [ClickUp sync](../subscription-agents/apps-script.md#clickup-sync) is separate: it sends status and milestone comments from already linked Pipeline items to ClickUp. It neither starts agent work nor writes ClickUp changes back to Sheets or Neon.
 

@@ -22,13 +22,13 @@ Edit Pipeline Master only; filter its table to see one domain. Resolve records b
 
 1. Read Pipeline Master and live headers; map fields by name because columns may be reordered.
 2. Match existing records by permanent Pipeline ID, source URL, and meaning. Update an existing item rather than duplicate it. ClickUp task URLs uniquely identify tasks even when title prefixes repeat.
-3. Preserve historical EPIC-NEWS references in optional External ID. For new items, scan Master and use the next unused numeric Pipeline ID across all domains; never renumber existing IDs.
+3. Preserve historical EPIC-NEWS references in optional External ID. For new items, prefer the Add Pipeline item form; otherwise scan Master and use the next unused numeric Pipeline ID across all domains, as the only capture writer. Never renumber existing IDs.
 4. Write a concise title, reason, next question, and supporting links. Use **Inbox** for newly captured work, **Parked** for explicitly deferred work with a revisit trigger, and **Researching** for a selected, authorized investigation.
-5. Edit only relevant cells. Re-read identity immediately before updating after sorting or concurrent changes.
+5. Edit only relevant cells. Find the row by its ID immediately before every update, never by row position; other runs may add or move rows at any time.
 
 ## Decision and permission boundaries
 
-ID is permanent and unique across the whole Pipeline. Allocate the next unused numeric ID; never renumber after sorting or reuse a removed ID. External ID is optional and holds historical EPIC-NEWS or other source identifiers. Domain and Entity come from the Domains tab: set Entity only when the domain lists entities.
+ID is permanent and unique across the whole Pipeline. New Pipeline IDs come from the Add Pipeline item form, which allocates them under a lock; when capturing directly in Master, take the next unused numeric Pipeline ID as the only capture writer and re-read Master just before saving. Never renumber after sorting or reuse a removed ID. Decision and Document IDs always come from `reserve_id` ([records](references/records.md)). External ID is optional and holds historical EPIC-NEWS or other source identifiers. Domain and Entity come from the Domains tab: set Entity only when the domain lists entities.
 
 Agent status is No action, Plan or Ready; Agent type is Claude Code, Codex, Manual or Unassigned; Run location is Local or Cloud (blank means Local). Default new captures to No action and Unassigned unless the user selects otherwise. Ready selects the stated Next step / Research question but does not launch an automatic run. A user request or authorised schedule starts work; selection never implies acceptance of a recommendation or permission for unrelated implementation.
 

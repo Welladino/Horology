@@ -23,7 +23,7 @@ Planning or drafting content: a content calendar, briefs for posts, newsletters,
 3. For each piece: write a brief (goal, audience, key message, proof points, call to action, length, sources) and then a draft.
 4. Write real copy, not descriptions of copy. Match the brand voice; avoid generic marketing language. Note anything that needs a fact check or the founder's input.
 5. Check drafts against the graph: flag near-duplicates of earlier content (a similarity of 0.90 or more) instead of presenting them as new.
-6. Save plans and drafts from the closest template in the Templates tab, in the Agent output folder that fits, and register them in the Document Index.
+6. Save plans and drafts from the closest template in the Templates tab, in the Agent output folder that fits, and register them in the Document Index with a reserved Document ID, following the register ID and ownership rules in the linking rules (one reserved ID per document).
 7. Set the Pipeline item to Awaiting decision when the plan or drafts are ready for review.
 
 ## Decision and permission boundaries

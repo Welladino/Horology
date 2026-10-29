@@ -182,4 +182,21 @@ test('configuration uses token and register links without domain list properties
   assert.deepEqual(requested,['CLICKUP_TOKEN','PIPELINE_SHEET_ID']);
   assert.equal(cfg.max,50);assert.equal(cfg.DECISIONS_SHEET_ID,'dec');
 });
+test('Document count is written to the row with that ID, wherever it is now',()=>{
+  const ctx=vm.createContext({console,Object,Array,String,Error,Set,JSON,Number});
+  vm.runInContext(source,ctx);
+  const rows=[['Title','ID','Document count'],['Item 39','39','0'],['Item 40','40','0']];
+  const writes=[];
+  const sheet={getDataRange:()=>({getDisplayValues:()=>rows.map(r=>r.map(String))}),
+    getRange:(r,c)=>({setValue:v=>{writes.push([r,c,v]);rows[r-1][c-1]=String(v);}})};
+  const table={sheet,headers:rows[0],key:'ID',rows:[{row:2,data:{Title:'Item 39',ID:'39','Document count':'0'}},
+    {row:3,data:{Title:'Item 40',ID:'40','Document count':'0'}}]};
+  rows.splice(1,0,['Inserted','41','0']);  // a row arrives above them after the read
+  ctx.put(table,table.rows[1],'Document count',2);
+  assert.deepEqual(rows.find(r=>r[1]==='40'),['Item 40','40','2']);
+  assert.deepEqual(rows.find(r=>r[1]==='41'),['Inserted','41','0']);
+  rows.splice(3,1);  // item 40 removed
+  assert.throws(()=>ctx.put(table,table.rows[1],'Document count',3),/no longer in the sheet; nothing was written/);
+  assert.equal(writes.length,1);
+});
 console.log(passed+' tests passed');

@@ -43,3 +43,18 @@ def test_shared_copies_are_identical(pair):
 def test_no_domain_names(path):
     text = path.read_text()
     assert not [name for name in DOMAIN_NAMES if name in text]
+
+
+# HOR-6: "next unused ID" from the sheet let parallel runs overwrite each other's register rows.
+STALE_ALLOCATION = [r"next (unused|free) (numeric )?(document |decision )?id", r"max ?\+ ?1 from",
+                    r"concurrent allocation is not implemented", r"coordinated allocator is required"]
+
+
+@pytest.mark.parametrize("path", SKILL_FILES, ids=lambda p: str(p.relative_to(PLUGINS)))
+def test_register_ids_are_never_taken_from_the_sheet(path):
+    text = path.read_text().lower()
+    allowed = "pipeline id" if "capture-triage" in str(path) else None  # Pipeline IDs: the form allocates them
+    for pattern in STALE_ALLOCATION:
+        for match in re.finditer(pattern, text):
+            line = text[text.rfind("\n", 0, match.start()) + 1:text.find("\n", match.end())]
+            assert allowed and allowed in line, f"{path.name}: '{match.group(0)}' - use reserve_id"

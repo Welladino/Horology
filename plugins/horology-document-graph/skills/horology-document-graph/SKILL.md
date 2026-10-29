@@ -78,15 +78,17 @@ Start a sync only when asked, or after the operator changed Graph Inclusion. Don
 
 ## Runs and item history
 
-Agent runs on Pipeline items are recorded here. A run makes two calls; everything else is recorded from the sheets by the sync:
+Agent runs on Pipeline items are recorded here. A run makes two calls, plus one ID reservation and one ownership check per register row it writes; everything else is recorded from the sheets by the sync:
 
 - `claim_item` before working on an item (kind `run` for the supervisor, `plan` for the planner). `claimed: false` means another live run holds it: skip it. Claims expire after 2 hours.
 - `finish_run` once at the end, with status `done`, `failed` or `released`, the skills used, steps done and notes.
+- `reserve_id(register, pipeline_id, run_id, live_max_id)` for every new Decision Register (`decision`) or Document Index (`document`) row: it returns the next permanent ID, and two runs never get the same one. Pass the Pipeline ID and run ID when the row is for an item; `reserved: false` means the run isn't live or isn't that item's. Never count up from the highest ID in the sheet yourself.
+- `check_register_write(register, id, pipeline_id, drive_url, live_pipeline_id, live_drive_url, live_row_exists)` before every register write, with the live row you just found by ID. `ok: false` means the ID belongs to another item or Drive file: stop and report instead of overwriting.
 
 The supervisor skill's runs reference has the full rules. To look back:
 
 - `list_runs` gives recent runs (default the last 24 hours, optionally for one `pipeline_id`), with their outputs and whether a claim expired. Skills, steps and notes are self-reported by the agent.
-- `get_item_history` gives one item's timeline: runs, field changes between syncs (each marked `expected` against the workflow, and linked to the run active at the time), decisions and documents. Changes made between two syncs appear as one.
+- `get_item_history` gives one item's timeline: runs, field changes between syncs (each marked `expected` against the workflow, and linked to the run active at the time), decisions, documents, and the Decision and Document IDs each run reserved (immediately, without a sync). Changes made between two syncs appear as one.
 
 ## Limits and failures
 

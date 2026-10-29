@@ -32,13 +32,27 @@ function checkFoldersAgainstDrive() {
     const result = compareWithDrive(rows, folderDriveAdapter(ids));
     result.updates.forEach(update => {
       const record = table.rows[update.row];
-      table.sheet.getRange(record.row, table.headers.indexOf(update.field) + 1).setValue(update.to);
+      table.sheet.getRange(locationRow(table, record), table.headers.indexOf(update.field) + 1).setValue(update.to);
       record.data[update.field] = update.to;
     });
     return {count: rows.length, ...result, tree: buildTree(rows)};
   } finally {
     lock.releaseLock();
   }
+}
+
+/* Locations rows are identified by the folder ID in Location. Find the row again just before writing,
+ * never by the position read earlier; stop if the folder is gone or listed twice. */
+function locationRow(table, record) {
+  const id = folderId(record.data.Location), col = table.headers.indexOf('Location');
+  const found = [];
+  if (id) table.sheet.getDataRange().getDisplayValues().forEach((cells, i) => {
+    if (i > 0 && folderId(cells[col]) === id) found.push(i + 1);
+  });
+  if (found.length !== 1) throw Error('Folder ' + (record.data.Name || id) +
+    (found.length ? ' is listed ' + found.length + ' times' : ' is no longer in Locations') + '; nothing was written.');
+  record.row = found[0];
+  return record.row;
 }
 
 /* Batch listed parents and fetch any roots or moved folders the parent queries miss. */

@@ -1,6 +1,6 @@
 # Runs
 
-Runs are recorded in the execution history (Neon), through the document-graph connector. You make two calls per run: `claim_item` at the start and `finish_run` at the end. Everything else (status changes, outputs, decisions) is recorded from the sheets by the sync job, so don't report it.
+Runs are recorded in the execution history (Neon), through the document-graph connector. You make two calls per run: `claim_item` at the start and `finish_run` at the end. Specialists also call `reserve_id` for each new Decision or Document ID and `check_register_write` before each register write, passing the run ID. Everything else (status changes, outputs, decisions) is recorded from the sheets by the sync job, so don't report it.
 
 ## Claiming
 

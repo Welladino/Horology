@@ -40,7 +40,7 @@ Ask one question at a time, with short numbered choices built from the sheets (d
 4. **Domain and entity**, from the Domains tab.
 5. **What it reads:** the domain's Agent reference folders that matter (a competitor list, brand notes), or none. If the targets aren't written down anywhere, offer to put the list in the prompt instead.
 6. **Report folder:** an Agent output folder for the domain. If none fits, offer `horology-workspace-setup` to add one.
-7. **Connectors it may use:** Google Drive, Docs and Sheets (always, to read and save), the Horology gateway for web search and page reading, the document-graph connector for the digest, planner and graph sync, GitHub for a security review, and any others the job needs. Fewer is safer: a scheduled run uses every tool of a connector it's given without asking.
+7. **Connectors it may use:** Google Drive, Docs and Sheets (always, to read and save), the Horology gateway for web search and page reading, the document-graph connector for the digest, planner, graph sync and any watcher that adds a Document Index row (for its Document ID), GitHub for a security review, and any others the job needs. Fewer is safer: a scheduled run uses every tool of a connector it's given without asking.
 8. **Schedule and timezone:** daily, weekdays, weekly on a day, monthly; a time a few minutes past the hour (e.g. 09:07) so it starts on time.
 9. **Platform:** Claude (routine) or Codex (scheduled task), and for Claude the model to use.
 

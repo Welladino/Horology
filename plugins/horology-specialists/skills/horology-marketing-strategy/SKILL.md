@@ -24,7 +24,7 @@ Turning an agreed go-to-market direction into a marketing plan: who to reach, wh
 4. Choose the channel mix and campaigns: purpose, audience, message, format, cadence and rough effort for each. Prefer fewer, well-run channels.
 5. State budget and time assumptions in ranges, with currency and units. Unknown is not zero.
 6. Define metrics: one primary outcome, a few leading indicators, the review point, and what result would change the plan.
-7. Copy the Plan template from the Templates tab into the Agent output folder for plans, fill it, and register it in the Document Index. Set the Pipeline item to Awaiting decision when ready; draft a proposed decision only when the requested workflow includes one.
+7. Copy the Plan template from the Templates tab into the Agent output folder for plans, fill it, and register it in the Document Index with a reserved Document ID, following the register ID and ownership rules in the linking rules. Set the Pipeline item to Awaiting decision when ready; draft a proposed decision only when the requested workflow includes one.
 
 ## Decision and permission boundaries
 

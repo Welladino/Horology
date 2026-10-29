@@ -30,7 +30,7 @@ A scheduled daily run, or when the founder asks "what happened?", "give me the d
    - **Health and graph checks:** only problems, each with what to do; a clean area gets one line.
 6. Choose the presentation freely: tables, short prose, charts or diagrams, whatever makes the state quickest to grasp. Follow the presentation rules.
 7. Charts and diagrams go in as images. A Google Doc can only take an image from a URL Google can fetch: insert one only where the platform can host the image privately for Google to read. Never make a file public to embed it. Otherwise put the chart on a Digest tab in the Pipeline workbook (native chart) and link to it from the Doc.
-8. Register the Doc in the Document Index as Document Type report, Graph Inclusion FALSE, with the Domain of the folder it was saved in, so digests don't fill the knowledge graph with near-duplicates.
+8. Register the Doc in the Document Index under a Document ID from the document-graph tool `reserve_id` (register `document`, no Pipeline ID), after `check_register_write` confirms it; never take the next number from the sheet. Document Type report, Graph Inclusion FALSE, with the Domain of the folder it was saved in, so digests don't fill the knowledge graph with near-duplicates.
 
 ## Decision and permission boundaries
 

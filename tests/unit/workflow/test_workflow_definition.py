@@ -5,7 +5,7 @@ import re
 import pytest
 import yaml
 
-from support.paths import CLICKUP_SYNC, PIPELINE_DECISIONS, WORKFLOW
+from support.paths import CLICKUP_SYNC, DOCUMENT_GRAPH, PIPELINE_DECISIONS, WORKFLOW
 
 
 @pytest.fixture(scope="module")
@@ -95,3 +95,11 @@ def test_pipeline_decisions_script_matches_the_decision_transitions(wf):
         stage = ({"Investigation proposal": "Stage 1", "Specialist deliverable": "Stage 3"}[review_stage]
                  if outcome["Stage"] == "REVIEW" else outcome["Stage"])
         assert stage in _as_list(to["Stage"]), key
+
+
+def test_register_ids_are_reserved_not_taken_from_the_sheet(wf):
+    ids = wf["register_ids"]
+    assert ids["decision"]["allocated_by"] == ids["document"]["allocated_by"] == "reserve_id"
+    assert ids["find_rows_by"] == "ID"
+    tools = (DOCUMENT_GRAPH / "document_graph" / "tools.py").read_text()
+    assert "graph.reserve_id" in tools and "graph.check_register_write" in tools

@@ -44,6 +44,7 @@ Implementation notes under `docs/planning/notes/`, grouped by area. Add a row wh
 | 2026-08-06 | [First version](../2026-08-06_document-graph-v1_note.md) | Server, embeddings, auto-linking, embedding sweep, near-duplicate threshold |
 | 2026-10-13 | [Workspaces, sign-in and sync](../2026-10-13_document-graph-workspaces-signin-and-sync_note.md) | Workspaces, shared sign-in, the Document Index sync job |
 | 2026-10-14 | [Passage search](../2026-10-14_document-graph-passage-search_note.md) | Section-by-section search with matching passages |
+| 2026-10-29 | [Register ID allocator](../2026-10-29_register-id-allocator_note.md) | Atomic Decision/Document IDs, ownership check before register writes, rows found by ID (HOR-6) |
 
 ## Cloud, data and local infrastructure
 
