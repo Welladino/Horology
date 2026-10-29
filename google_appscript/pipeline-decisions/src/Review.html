@@ -72,7 +72,7 @@
       text-transform:uppercase; color:var(--muted); }
     .section p.hint { color:var(--muted); font-size:13px; margin:-2px 0 10px; }
     .plain-copy { margin:0; white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.6; }
-    .plain-copy + .plain-copy { margin-top:10px; }
+    .plain-copy + .plain-copy { margin-top:14px; }
     .bullets { margin:0; padding-left:20px; line-height:1.6; }
     .bullets li + li { margin-top:4px; }
     .steps { margin:0; padding-left:22px; line-height:1.6; }
@@ -679,11 +679,25 @@
       });
       links.appendChild(row);
     }
-    // Each line of a cell as its own paragraph, so paragraphs are spaced apart.
+    // A cell as spaced paragraphs: each line, and a long line in chunks of a few sentences.
+    // A labelled sentence ("Alternatives: …", "If accepted, …") starts a new paragraph.
     function paragraphs(parent,text,empty) {
-      const lines = String(text || '').split('\n').map(line => line.trim()).filter(Boolean);
-      if (!lines.length && empty) lines.push(empty);
-      lines.forEach(line => parent.appendChild(node('p','plain-copy',line)));
+      const chunks = paragraphChunks(text);
+      if (!chunks.length && empty) chunks.push(empty);
+      chunks.forEach(chunk => parent.appendChild(node('p','plain-copy',chunk)));
+    }
+    function paragraphChunks(text) {
+      const out = [];
+      String(text || '').split('\n').map(line => line.trim()).filter(Boolean).forEach(line => {
+        let chunk = '';
+        line.split(/(?<=[.!?])\s+(?=[A-Z(“"'‘])/).forEach(sentence => {
+          const labelled = /^(?:[A-Z][\w’' /-]{0,30}:|If (?:accepted|approved)\b)/.test(sentence);
+          if (chunk && (labelled || chunk.length >= 260)) { out.push(chunk); chunk = ''; }
+          chunk = chunk ? chunk + ' ' + sentence : sentence;
+        });
+        if (chunk) out.push(chunk);
+      });
+      return out;
     }
     // An item's planned steps as a numbered list, with specialist and status after each task.
     function stepList(steps) {

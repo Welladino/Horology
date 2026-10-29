@@ -647,6 +647,15 @@ test('a linked item or decision is read fresh when opened, and opening one updat
   failed.fail(Error('Expected one ID 14; found 0.'));
 });
 
+test('a long cell reads as spaced paragraphs, starting a new one at each labelled sentence', () => {
+  const {run} = page({embedded: {pending: [], recent: []}});
+  const long = 'A'.repeat(200) + '. Second sentence keeps the first chunk going past the limit. Third starts a new one.';
+  assert.deepEqual(run(`paragraphChunks(${JSON.stringify(long)})`),
+    ['A'.repeat(200) + '. Second sentence keeps the first chunk going past the limit.', 'Third starts a new one.']);
+  assert.deepEqual(run(`paragraphChunks('Proposed: park it (Option A). Keep the steps, e.g. 2 and 3. Alternatives: B build. If accepted, plan it.\\n\\nNew line.')`),
+    ['Proposed: park it (Option A). Keep the steps, e.g. 2 and 3.', 'Alternatives: B build.', 'If accepted, plan it.', 'New line.']);
+});
+
 test('writes find the row by ID, not by the position read earlier', () => {
   const w = workbooks();
   // Another writer inserts a row above item 42 after the read (HOR-6: item 41's run wrote item 40's row).
