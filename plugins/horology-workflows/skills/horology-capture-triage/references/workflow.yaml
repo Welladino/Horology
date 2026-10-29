@@ -156,6 +156,14 @@ transitions:
     to: {Status: Inbox, Stage: Stage 0}
     when: The founder reopens rejected work.
 
+  - id: revise
+    actor: [founder, sync]
+    from: {Status: [Approved, Rework, Parked, Rejected, Completed]}
+    to: {Status: [Approved, Rework, Parked, Rejected, Completed], Stage: [Stage 1, Stage 2, Stage 3, Stage 4], Agent status: [Ready, No action]}
+    when: >-
+      The founder revises the item's current, already decided decision on the decision page (for example
+      Approved to Parked). The item moves as the new outcome would have moved it from review; see revise below.
+
 # Decision Register status values and the transition each one triggers.
 decisions:
   proposed: {meaning: Drafted by an agent; waiting for the founder}
@@ -163,6 +171,16 @@ decisions:
   rework: {triggers: [rework], requires: Rework instructions}
   parked: {triggers: [decide-park]}
   rejected: {triggers: [decide-reject]}
+
+# Revising a decided decision. The decision row keeps its Decision ID: Status becomes the new outcome,
+# the founder's reason is appended to Reason (rework: Rework instructions) and Review source records it.
+# A new review round still gets a new Decision row.
+revise:
+  transition: revise
+  decision_statuses: [accepted, rework, parked, rejected]  # the recorded outcome being revised, and the new one
+  item_statuses: [Approved, Rework, Parked, Rejected, Completed]  # never Inbox, Researching or Awaiting decision
+  requires: The decision is the item's Current decision ID, and a reason
+  effect: The Pipeline fields the new outcome's decision transition sets for the decision's Review stage
 
 # Runs: one record per claim, in the execution history (run_log in Neon).
 # Agents call claim_item at the start and finish_run at the end; register rows use register_ids below.
@@ -189,8 +207,25 @@ register_ids:
     belongs to another Pipeline ID or Drive file, the write stops and is reported; nothing is overwritten.
   find_rows_by: ID  # never by row position, title or a row number read earlier
 
-# Steps: the planner writes them as a numbered list in Next step / Research question;
-# the run reports the completed numbers in finish_run's steps_done.
+# Child tabs: one row per entry, joined to the parent row by its permanent ID, never by row position.
+# Steps: the planner writes one row per planned step; Next step / Research question stays a one-line
+# question. Older items may still hold a numbered list in Next step, which is read the same way.
+# The run reports the completed numbers in finish_run's steps_done and marks those rows Done.
+# Options: whoever drafts a proposed decision writes one row per option; the Master Decision cell
+# keeps a one-line summary. Decisions without Options rows fall back to the option codes in their text.
+tabs:
+  Steps:
+    workbook: Pipeline
+    key: [Pipeline ID, Step]
+    columns: [Pipeline ID, Step, Task, Specialist, Status]
+    Status: [Planned, Done, Skipped]
+    written_by: [planner, supervisor]
+  Options:
+    workbook: Decision Register
+    key: [Decision ID, Code]
+    columns: [Decision ID, Code, Summary, Recommended, Key figures]
+    Recommended: ["Yes", ""]
+    written_by: [supervisor]
 
 # Founder-only rules every actor follows.
 rules:

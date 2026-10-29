@@ -16,7 +16,7 @@ const decision = (o = {}) => ({'Decision ID': 'D-3', 'Pipeline ID': '42', 'Statu
 
 let passed = 0;
 function test(name, fn) { fn(); passed++; console.log('PASS ' + name); }
-const {decide} = load();
+const {decide, revise} = load();
 
 test('accepting a Stage 1 review approves the item and makes it Ready', () => {
   const r = decide(item(), [decision()]);
@@ -56,6 +56,28 @@ test('only the current decision counts, and it must match the item', () => {
   assert.match(decide(item(), [decision({'Pipeline ID': '7'})]).error, /belongs to Pipeline 7/);
   assert.match(decide(item({'Review stage': 'Specialist deliverable'}), [decision()]).error, /reviewing Specialist deliverable/);
   assert.match(decide(item(), [decision({'Review stage': 'Stage 2'})]).error, /Review stage/);
+});
+
+test('revise moves a decided item as the new outcome would from review', () => {
+  const approved = item({'Status': 'Approved', 'Stage': 'Stage 3', 'Agent status': 'Ready'});
+  const r = revise(approved, decision(), 'parked');
+  assert.equal(r.transition, 'revise');
+  assert.deepEqual({...r.set}, {'Status': 'Parked', 'Stage': 'Stage 2', 'Agent status': 'No action'});
+  const done = item({'Status': 'Completed', 'Stage': 'Stage 4', 'Review stage': 'Specialist deliverable'});
+  assert.deepEqual({...revise(done, decision({'Review stage': 'Specialist deliverable'}), 'rework').set},
+    {'Status': 'Rework', 'Stage': 'Stage 3', 'Agent status': 'Ready'});
+  const parked = item({'Status': 'Parked', 'Agent type': 'Manual'});
+  assert.deepEqual({...revise(parked, decision({'Status': 'parked'}), 'accepted').set},
+    {'Status': 'Approved', 'Stage': 'Stage 3', 'Agent status': 'No action'});
+});
+test('revise needs the item\'s current decided decision and no open run or review', () => {
+  const approved = item({'Status': 'Approved'});
+  assert.match(revise(approved, decision({'Decision ID': 'D-1'}), 'parked').error, /not the item/);
+  assert.match(revise(approved, decision({'Status': 'proposed'}), 'parked').error, /only a decided decision/);
+  assert.match(revise(item(), decision(), 'parked').error, /Awaiting decision; it can be revised only/);
+  assert.match(revise(item({'Status': 'Researching'}), decision(), 'parked').error, /Researching/);
+  assert.match(revise(approved, decision(), 'proposed').error, /Unknown outcome/);
+  assert.match(revise(approved, decision({'Pipeline ID': '7'}), 'parked').error, /belongs to Pipeline 7/);
 });
 
 // The run, against fake workbooks.
@@ -143,7 +165,7 @@ test('a missing or duplicated Decision Register row stops the run before any wri
   assert.deepEqual(w.pipeline.writes, []);
 });
 
-function webWorkbooks() {
+function webWorkbooks(tabs = {}) {
   const pipeline = sheet([
     ['ID','Title','Status','Stage','Review stage','Agent status','Agent type','Current decision ID','Updated',
       'Next step / Research question','Domain','Entity','Type','Run location','Summary / Why','Revisit trigger'],
@@ -164,6 +186,8 @@ function webWorkbooks() {
   const registers = sheet([['Register','Location'],['Horology — Decision Register','https://docs.google.com/spreadsheets/d/D/edit']]);
   const domains = sheet([['Domain','Entities'],['Article Aggregator',''],['Horology','']]);
   const books = {P:{Master:pipeline,Registers:registers,Domains:domains},D:{Master:register}};
+  if (tabs.options) books.D.Options = sheet(tabs.options);
+  if (tabs.steps) books.P.Steps = sheet(tabs.steps);
   const book = id => {
     const key = id === '1aL678ACs97YpLIGrGU5LbpXHc7jQBxl64ED-sLyehvI' ? 'P' : id;
     return {getId:()=>key,getSheetByName:n=>books[key][n]||null};
@@ -211,6 +235,81 @@ test('web review requires rework instructions and records them before status', (
   assert.equal(w.register.rows[1][8],'rework');
   assert.equal(w.pipeline.rows[1][2],'Rework');
 });
+const DECISION_6 = 'Proposed (Option B): lead with intermediate lifters. Positioning: mechanism-first. ' +
+  'Alternatives: A lead with beginners; C lead with coaches as a paid research review; park; reject.';
+test('without Options rows, options come from the text, including lettered alternatives', () => {
+  const w = webWorkbooks();
+  w.register.rows[1][6] = DECISION_6;
+  const options = w.ctx.getReviewDashboard().pending[0].options;
+  assert.equal(options.map(o => o.code).join(','), 'A,B,C');
+  assert.equal(options.find(o => o.recommended).code, 'B');
+  assert.equal(options[0].context, 'lead with beginners');
+  const five = w.ctx.proposalOptions('Proposed: approve stages 1–2 only (Option A): interviews. ' +
+    'Alternatives: B approve stages 1–4 (about S$450–1,450), C park, D reject.');
+  assert.equal(five.map(o => o.code + (o.recommended ? '*' : '')).join(','), 'A*,B,C,D');
+  assert.equal(five[1].context, 'approve stages 1–4 (about S$450–1,450)');
+});
+test('Options rows replace the parsed text, and planned steps come from the Steps tab', () => {
+  const w = webWorkbooks({
+    options: [['Decision ID','Code','Summary','Recommended','Key figures'],
+      ['1','C','Build TF-IDF term gap','','About $0.50 a plan run\nEffort Medium'],
+      ['1','A','Do nothing','',''],['1','B','Measurement spike first','Yes',''],['3','A','Other decision','Yes','']],
+    steps: [['Pipeline ID','Step','Task','Specialist','Status'],
+      ['14','2','Offline TF-IDF test on 2–3 plans','horology-research','Planned'],
+      ['14','1','Read persisted search-quality reports','horology-technical-assessment','Done'],
+      ['22','1','Another item','','']]});
+  const r = w.ctx.getReviewDashboard().pending[0];
+  assert.equal(r.options.map(o => o.code).join(','), 'A,B,C');
+  assert.equal(r.options.find(o => o.recommended).code, 'B');
+  assert.deepEqual([...r.options[2].figures], ['About $0.50 a plan run', 'Effort Medium']);
+  assert.equal(r.steps.map(x => x.number + ':' + x.status).join(','), '1:Done,2:Planned');
+  const version = r.version;
+  const saved = w.ctx.submitDecisionReview({decisionId:'1',version,action:'accepted',optionCode:'B',
+    wording:'Accepted: measurement spike first (Option B).',note:''});
+  assert.equal(saved.saved, true);
+  assert.equal(w.pipeline.rows[1][2], 'Approved');
+});
+test('without Steps rows, planned steps come from a numbered Next step; reasons become bullets', () => {
+  const w = webWorkbooks();
+  w.pipeline.rows[1][9] = 'Overall question\n1. Demand gate [horology-research]\n2) Current state';
+  const r = w.ctx.getReviewDashboard().pending[0];
+  assert.deepEqual(JSON.parse(JSON.stringify(r.steps.map(x => [x.number, x.task, x.specialist]))),
+    [['1', 'Demand gate', 'horology-research'], ['2', 'Current state', '']]);
+  assert.deepEqual([...w.ctx.bulletPoints('Costs ~$90 a month; e.g. 250+ readers. Effort Medium.\n- Uncertainty Low')],
+    ['Costs ~$90 a month; e.g. 250+ readers.', 'Effort Medium.', 'Uncertainty Low']);
+});
+test('a decided current decision can be revised: Approved item parked from the page', () => {
+  const w = webWorkbooks();
+  w.register.rows[1][8] = 'accepted';
+  w.pipeline.rows[1][2] = 'Approved'; w.pipeline.rows[1][3] = 'Stage 3'; w.pipeline.rows[1][5] = 'Ready';
+  const record = w.ctx.getReviewDashboard().recent.find(r => r.id === '1');
+  assert.equal(record.revisable, true);
+  assert.equal(w.ctx.getReviewDashboard().recent.find(r => r.id === '4').revisable, true);
+  assert.equal(w.ctx.getReviewDashboard().recent.find(r => r.id === '3').revisable, false);  // not current
+  assert.throws(() => w.ctx.reviseDecisionReview({decisionId:'1',version:record.version,action:'parked',note:''}), /reason/);
+  assert.throws(() => w.ctx.reviseDecisionReview({decisionId:'1',version:'old',action:'parked',note:'Later'}), /changed since/);
+  assert.deepEqual(w.register.writes, []);
+  const result = w.ctx.reviseDecisionReview({decisionId:'1',version:record.version,action:'parked',note:'No pilot yet.'});
+  assert.equal(result.transition, 'revise');
+  assert.equal(w.register.rows[1][8], 'parked');
+  assert.match(w.register.rows[1][7], /Founder revised accepted to parked on \d\d\/\d\d\/\d{4}: No pilot yet\.$/);
+  assert.match(w.register.rows[1][12], /revise .* parked$/);
+  assert.deepEqual(w.pipeline.rows[1].slice(2, 6), ['Parked', 'Stage 2', 'Investigation proposal', 'No action']);
+  assert.ok(w.pipeline.rows[1][8] instanceof Date);
+});
+test('revise refuses an item under review or a run in progress, before writing', () => {
+  const w = webWorkbooks();
+  w.register.rows[1][8] = 'accepted';
+  w.pipeline.rows[1][2] = 'Researching';
+  const record = w.ctx.getReviewDashboard().recent.find(r => r.id === '1');
+  assert.equal(record.revisable, false);
+  w.pipeline.rows[1][2] = 'Approved';
+  const version = w.ctx.getReviewDashboard().recent.find(r => r.id === '1').version;
+  w.pipeline.rows[1][2] = 'Researching';
+  assert.throws(() => w.ctx.reviseDecisionReview({decisionId:'1',version,action:'parked',note:'x'}), /changed since/);
+  assert.equal(w.register.writes.length + w.pipeline.writes.length, 0);
+});
+
 test('web item form uses live domains and adds a captured row with the next permanent ID', () => {
   const w = webWorkbooks(), data = w.ctx.getPipelineFormData();
   assert.equal(Object.keys(data.domains).join(','),'Article Aggregator,Horology');

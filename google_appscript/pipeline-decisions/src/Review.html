@@ -101,6 +101,14 @@
     .choice span { display:block; color:var(--muted); font-size:13px; margin-top:7px; }
     .choice em { display:block; margin-top:10px; color:var(--green); font-size:11px;
       font-style:normal; font-weight:700; text-transform:uppercase; letter-spacing:.08em; }
+    .choice ul,.option-card ul { margin:9px 0 0; padding-left:18px; font-size:13px; }
+    .option-card { cursor:default; min-height:0; }
+    .option-card.recommended { border-color:var(--green); }
+    .bullets { margin:0; padding-left:20px; line-height:1.62; }
+    .bullets li + li { margin-top:4px; }
+    .steps { margin:0; padding-left:22px; line-height:1.62; }
+    .steps li + li { margin-top:6px; }
+    .steps small { color:var(--muted); margin-left:6px; }
     .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:17px 20px; }
     .wide { grid-column:1/-1; }
     .field label { display:block; font-weight:700; font-size:13px; margin-bottom:7px; }
@@ -846,13 +854,31 @@
 
       const saved = section(body,r.editable ? 'Proposal' : 'Recorded decision');
       saved.appendChild(node('p','plain-copy',r.proposal || 'No decision text recorded.'));
-      const why = section(body,'Reason');
-      why.appendChild(node('p','plain-copy',r.reason || 'No reason recorded.'));
+      if (!r.editable && r.options.length) {
+        const cards = node('div','choices');
+        r.options.forEach(o => cards.appendChild(optionCard(o)));
+        section(body,'Options').appendChild(cards);
+      }
+      const why = section(body,'Reason and key figures');
+      if (r.reasonPoints.length) why.appendChild(bulletList(r.reasonPoints,'bullets'));
+      else why.appendChild(node('p','plain-copy','No reason recorded.'));
+      if (r.steps.length) {
+        const planned = section(body,'Planned steps');
+        const list = node('ol','steps');
+        r.steps.forEach(step => {
+          const li = node('li','',step.task); if (Number(step.number)) li.value = Number(step.number);
+          const extra = [step.specialist,step.status].filter(Boolean).join(' · ');
+          if (extra) li.appendChild(node('small','',extra));
+          list.appendChild(li);
+        });
+        planned.appendChild(list);
+      }
       if (r.reviewTrigger) {
         const revisit = section(body,'Revisit trigger');
         revisit.appendChild(node('p','plain-copy',r.reviewTrigger));
       }
       if (r.editable) renderDecisionForm(body,r);
+      if (r.revisable) renderReviseForm(body,r);
       if (r.links.length) {
         const sources = section(body,'Evidence');
         const links = node('div','links');
@@ -864,22 +890,87 @@
         sources.appendChild(links);
       }
     }
-    function renderDecisionForm(body,r) {
-      const form = node('form'); body.appendChild(form);
-      const choices = section(form,'Choose an option',
-        'The model suggestion is marked. You can select another option without requesting rework.');
-      const choiceGrid = node('div','choices'); choices.appendChild(choiceGrid);
+    function bulletList(points,className) {
+      const list = node('ul',className || '');
+      points.forEach(point => list.appendChild(node('li','',point)));
+      return list;
+    }
+    function optionLabel(o) {
+      return o.code === 'OTHER' ? 'Another option' : o.code === 'PROPOSAL' ? 'Use proposal' : 'Option ' + o.code;
+    }
+    function optionCard(o) {
+      const card = node('div','choice option-card' + (o.recommended ? ' recommended' : ''));
+      append(card,node('strong','',optionLabel(o)),node('span','',o.context));
+      if (o.figures && o.figures.length) card.appendChild(bulletList(o.figures));
+      if (o.recommended) card.appendChild(node('em','','Model suggests'));
+      return card;
+    }
+    function optionChoices(parent,r,checkRecommended) {
+      const grid = node('div','choices'); parent.appendChild(grid);
       const listed = r.options.length ? r.options : [{code:'PROPOSAL',context:'Use the proposal',recommended:true}];
       [...listed,{code:'OTHER',context:'Describe a different choice',recommended:false}].forEach(o => {
         const label = node('label','choice'), input = node('input');
         input.type = 'radio'; input.name = 'option'; input.value = o.code;
-        if (o.recommended) input.checked = true;
-        append(label,input,node('strong','',o.code === 'OTHER' ? 'Another option' :
-          o.code === 'PROPOSAL' ? 'Use proposal' : 'Option ' + o.code),
-          node('span','',o.context));
+        if (o.recommended && checkRecommended) input.checked = true;
+        append(label,input,node('strong','',optionLabel(o)),node('span','',o.context));
+        if (o.figures && o.figures.length) label.appendChild(bulletList(o.figures));
         if (o.recommended) label.appendChild(node('em','','Model suggests'));
-        choiceGrid.appendChild(label);
+        grid.appendChild(label);
       });
+      return grid;
+    }
+    function renderReviseForm(body,r) {
+      const form = node('form'); body.appendChild(form);
+      const action = section(form,'Revise this decision',
+        'Changes the recorded outcome and moves Pipeline ' + r.pipelineId + ' (now ' + r.itemStatus +
+        ') as that outcome would from review. The decision keeps its ID; your reason is added to it.');
+      const grid = node('div','grid'); action.appendChild(grid);
+      const outcome = field(grid,'New outcome','revise-outcome','select').control;
+      [['parked','Park'],['rejected','Reject'],['rework','Request rework'],['accepted','Accept an option']]
+        .filter(pair => pair[0] !== String(r.status).trim().toLowerCase() || pair[0] === 'accepted')
+        .forEach(pair => {
+          const option = node('option','',pair[1]); option.value = pair[0]; outcome.appendChild(option);
+        });
+      const choices = section(form,'Choose an option');
+      optionChoices(choices,r,false);
+      const wordingField = field(grid,'Decision to record','revise-wording','textarea','wide');
+      wordingField.control.rows = 4; wordingField.control.maxLength = 4000;
+      const noteField = field(grid,'Why are you revising it?','revise-note','textarea','wide');
+      noteField.control.rows = 3; noteField.control.maxLength = 3000;
+      const bar = node('div','actions'), save = node('button','h-button h-button--primary','Revise decision');
+      save.type = 'submit'; const message = node('span','message');
+      append(bar,save,message); form.appendChild(bar);
+      const checked = () => form.querySelector('input[name="option"]:checked');
+      function update() {
+        const accepting = outcome.value === 'accepted';
+        choices.hidden = !accepting; wordingField.wrap.hidden = !accepting;
+        noteField.label.textContent = outcome.value === 'rework' ? 'Rework instructions' : 'Why are you revising it?';
+        if (accepting && checked()) wordingField.control.value = defaultWording(r,checked().value);
+      }
+      form.querySelectorAll('input[name="option"]').forEach(el => el.onchange = update);
+      outcome.onchange = update; update();
+      form.onsubmit = event => {
+        event.preventDefault(); save.disabled = true;
+        message.className = 'message'; message.textContent = 'Saving…';
+        const chosen = checked();
+        google.script.run.withSuccessHandler(result => {
+          pipelineRows = null;
+          notice = 'Decision revised; Pipeline ' + r.pipelineId + ' is now ' + result.set.Status + '.';
+          loadDashboard(() => renderList());
+        }).withFailureHandler(error => {
+          message.className = 'message error';
+          message.textContent = error && error.message ? error.message : String(error);
+          save.disabled = false;
+        }).reviseDecisionReview({decisionId:r.id,version:r.version,action:outcome.value,
+          optionCode:chosen ? chosen.value : '',wording:wordingField.control.value,
+          note:noteField.control.value});
+      };
+    }
+    function renderDecisionForm(body,r) {
+      const form = node('form'); body.appendChild(form);
+      const choices = section(form,'Choose an option',
+        'The model suggestion is marked. You can select another option without requesting rework.');
+      optionChoices(choices,r,true);
       const action = section(form,'Record your decision');
       const grid = node('div','grid'); action.appendChild(grid);
       const outcomeField = field(grid,'Outcome','outcome','select');

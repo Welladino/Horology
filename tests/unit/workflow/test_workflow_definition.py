@@ -54,9 +54,9 @@ def test_every_status_is_reachable_from_capture(wf):
         changed = False
         for t in wf["transitions"]:
             source = set(_as_list(t["from"].get("Status", list(reached))))
-            target = t["to"].get("Status")
-            if target and source & reached and target not in reached:
-                reached.add(target)
+            targets = set(_as_list(t["to"].get("Status", [])))
+            if source & reached and targets - reached:
+                reached |= targets
                 changed = True
     assert reached == set(wf["statuses"])
 
@@ -95,6 +95,36 @@ def test_pipeline_decisions_script_matches_the_decision_transitions(wf):
         stage = ({"Investigation proposal": "Stage 1", "Specialist deliverable": "Stage 3"}[review_stage]
                  if outcome["Stage"] == "REVIEW" else outcome["Stage"])
         assert stage in _as_list(to["Stage"]), key
+
+
+def test_revise_matches_the_pipeline_decisions_script(wf):
+    rules = (PIPELINE_DECISIONS / "src" / "Rules.js").read_text()
+    script = json.loads(re.search(r"REVISE\s*=\s*(\{.*?\});", rules, re.S).group(1))
+    revise = wf["revise"]
+    transition = {t["id"]: t for t in wf["transitions"]}[revise["transition"]]
+    assert script["transition"] == revise["transition"]
+    assert script["decision_statuses"] == revise["decision_statuses"]
+    assert script["item_statuses"] == revise["item_statuses"] == _as_list(transition["from"]["Status"])
+    assert set(revise["decision_statuses"]) == {s for s, d in wf["decisions"].items() if d.get("triggers")}
+    assert not {"Inbox", "Researching", "Awaiting decision"} & set(revise["item_statuses"])
+    # Every outcome a revision can apply is a move the revise transition allows.
+    outcomes = json.loads("{" + re.search(r"OUTCOMES\s*=\s*\{(.*?)\};", rules, re.S).group(1) + "}")
+    for key, outcome in outcomes.items():
+        assert outcome["Status"] in _as_list(transition["to"]["Status"]), key
+        assert outcome["Agent status"] in _as_list(transition["to"]["Agent status"]), key
+
+
+def test_child_tabs_match_the_web_page(wf):
+    tabs = wf["tabs"]
+    assert tabs["Steps"]["workbook"] == "Pipeline" and tabs["Options"]["workbook"] == "Decision Register"
+    for tab in tabs.values():
+        assert set(tab["key"]) <= set(tab["columns"])
+    web = (PIPELINE_DECISIONS / "src" / "WebApp.js").read_text()
+    for name, tab in tabs.items():
+        required = re.search(rf"readTab\(ids\.\w+, '{name}', \[(.*?)\]\)", web).group(1)
+        assert set(re.findall(r"'([^']+)'", required)) <= set(tab["columns"]), name
+        for column in tab["columns"]:
+            assert f"'{column}'" in web or f".{column}" in web or f"['{column}']" in web, (name, column)
 
 
 def test_register_ids_are_reserved_not_taken_from_the_sheet(wf):
