@@ -14,7 +14,7 @@ Agent status is No action, Plan or Ready. Plan asks the planner to scope or spli
 
 Agent type is Claude Code, Codex, Manual or Unassigned; verify live selections. Each platform runs only its own rows. Manual is founder-led and never run by agents. Run location is Local or Cloud (blank means Local) and decides where the item's session runs. Planner output is Yes when the planner has written a sharper question or steps for the row; only the planner sets it. Default new captures to No action and Unassigned, with Run location blank, unless instructed otherwise.
 
-Runs are recorded in the execution history through the document-graph connector (`claim_item`, `finish_run`), not in the workbook; the planner writes steps as a numbered list in Next step. The rules are in the supervisor skill's runs reference.
+Runs are recorded in the execution history through the document-graph connector (`claim_item`, `finish_run`), not in the workbook. The planner writes planned steps on the Pipeline's **Steps** tab (one row per step: Pipeline ID, Step, Task, Specialist, Status), and Next step stays a one-line question; capture never writes Steps. Proposed decisions keep a one-line Decision cell, with one row per option on the Decision Register's **Options** tab. The rules are in the supervisor skill's runs reference.
 
 Link type, URL and GitHub branch identify the work target. Verify repo remote and branch before inspecting code. Supporting documents belong in Document Index. Do not recreate removed Research / Plan links, Decision link or ClickUp execution link columns.
 

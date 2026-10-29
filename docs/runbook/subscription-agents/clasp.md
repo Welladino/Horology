@@ -110,6 +110,24 @@ diff -ru src "$compare_dir/src"
 
 Bound to the Pipeline workbook. **Extensions → Horology — Pipeline decisions → Open Horology workspace** opens the private web app. The founder removed its time trigger; web decisions apply immediately, while the edit trigger can process direct human edits if still installed. Apps Script/API writers must call `applyDecisions` explicitly. `installTriggers` would recreate both the edit and time triggers, so do not run it unless that behavior is wanted.
 
+### Deploy the web page after a change
+
+`clasp push` updates the project's code, but the web app's `/exec` URL serves the deployed version. After pushing:
+
+1. Prerequisites: the Decision Register has an **Options** tab (Decision ID, Code, Summary, Recommended, Key figures) and the Pipeline a **Steps** tab (Pipeline ID, Step, Task, Specialist, Status), header row only is enough. Without them the page falls back to the text in Master; with a tab but a missing column it stops with "Missing column … in the … tab".
+2. From `google_appscript/pipeline-decisions`:
+
+   ```sh
+   npm test
+   npm run clasp:push
+   ```
+
+3. In the Apps Script editor: **Deploy → Manage deployments**, select the existing web-app deployment, **Edit** (pencil), Version **New version**, **Deploy**. Keep the same deployment so `WEB_APP_URL` and the Extensions menu link stay valid; a *new* deployment gets a new URL.
+4. Expected result: open the workspace from **Extensions → Horology — Pipeline decisions → Open Horology workspace**. A proposed decision with Options rows shows one card per row with the recommended one marked; an item with Steps rows shows **Planned steps**; a decided current decision on an Approved, Parked, Rejected, Rework or Completed item shows **Revise this decision**.
+5. To roll back: **Manage deployments → Edit → Version**, choose the previous version, **Deploy**. Tabs and rows are additive, so the old code ignores them.
+
+No data is deleted by this change. Revising a decision writes the Decision Register row (Status, Reason, Review source, and Decision or Rework instructions) and the item's Status, Stage, Agent status and Updated cells.
+
 ## Locations
 
 The folder path browser and **Check Drive & update Locations** action are in the Horology web workspace’s **Folders** view. The web app may ask the owner to authorize read-only Drive access.

@@ -25,7 +25,7 @@ Edit Pipeline Master only; filter its table to see one domain. Resolve records b
 2. Copy the Research template from the Templates tab into the Agent output folder that fits before filling it. Preserve metadata and section roles; use the platform's document-editing safeguards and native link controls where supported.
 3. Keep evidence, alternatives, recommendations, and uncertainties distinct. Distinguish source behavior, deployed behavior, and assumptions; explain material access gaps. Stop when the scoped question is answered or remaining gaps require user input.
 4. Read live sheet headers and map fields by name. Find an existing Document Index row by Drive file ID and keep its document ID; for a new document, reserve the ID with `reserve_id` and check ownership with `check_register_write` before writing, as in the [linking rules](references/linking.md). Associate the document through Document Index and update the Pipeline row, found by its ID, with the next step. Mark **Awaiting decision** when the selected investigation is complete.
-5. If the requested workflow includes a decision, reserve its Decision ID with `reserve_id`, check ownership, and draft a **proposed** record in Decision Register Master with evidence and a review trigger. Copy and link a **Draft Plan** when useful to make the recommendation reviewable. Create a Direction document only when the choice concerns purpose, audience, positioning, or priorities.
+5. If the requested workflow includes a decision, reserve its Decision ID with `reserve_id`, check ownership, and draft a **proposed** record in Decision Register Master with evidence and a review trigger: a one-line Decision and one Options row per option, as in the [linking rules](references/linking.md#proposed-decisions-and-options). Copy and link a **Draft Plan** when useful to make the recommendation reviewable. Create a Direction document only when the choice concerns purpose, audience, positioning, or priorities.
 
 ## Decision and permission boundaries
 
@@ -51,6 +51,6 @@ Agent status is No action, Plan or Ready; Agent type is Claude Code, Codex, Manu
 
 - Read back documents and affected records by ID; verify identities, backlinks, and preservation of unrelated cells. If `check_register_write` refused a write, report the clash instead of overwriting.
 - Check native headings, lists, table headers, readable spacing, and removal of leftover placeholders. When layout matters, inspect a rendered preview or disclose that it was unavailable.
-- Check visual labels, captions, source links, and readability at normal document width. Verify chart data and diagram source match the inserted visual.
+- Confirm the document has no inserted images or charts; comparisons and figures are native tables (see the presentation rules).
 - Inspect destinations after ambiguous write failures before retrying.
 - Confirm recommendations remain proposed until the founder explicitly chooses, and distinguish saved work from pending writes.

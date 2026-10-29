@@ -71,7 +71,7 @@ flowchart TB
 ```mermaid
 flowchart TB
   capture["<b>Capture · Stage 0</b><br/>Add the idea or question.<br/>Nothing runs yet."]
-  plan["<b>Scope · optional</b><br/>The planner sharpens the question<br/>or turns it into numbered steps."]
+  plan["<b>Scope · optional</b><br/>The planner sharpens the question<br/>or splits it into steps on the Steps tab."]
   ready["<b>Select · Stage 1</b><br/>Choose Claude or Codex<br/>and set Agent status Ready."]
   investigate["<b>Investigation run</b><br/>The supervisor claims the item,<br/>selects specialists and checks the work."]
   proposal["<b>Review · Stage 2</b><br/>Evidence, recommendation and<br/>a proposed decision are ready."]
@@ -123,7 +123,7 @@ You talk to one agent, the **supervisor**, unless you name another. It reads the
 | Agent                | Does                                                                                                                                              |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Supervisor           | Runs Ready items, one session each; reports what ran and what it found                                                                            |
-| Planner              | Turns a vague item (Agent status Plan) into a sharp question or numbered steps                                                                    |
+| Planner              | Turns a vague item (Agent status Plan) into a sharp question or steps on the Steps tab                                                                    |
 | Capture and triage   | Records ideas and requests as Pipeline rows, without duplicates                                                                                   |
 | Research             | Answers a bounded question with sources, options and a recommendation                                                                             |
 | Technical assessment | Decides whether and how to build a software change: options, cost, effort, uncertainty                                                            |

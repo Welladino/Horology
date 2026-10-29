@@ -19,6 +19,8 @@ def test_workflow_values_come_from_workflow_yaml():
     ("Status", "Inbox", "Completed", False),  # skips the review
     ("Status", "Awaiting decision", "Inbox", False),  # capture creates items; it isn't a move
     ("Status", "Parked", "Inbox", True),  # unpark
+    ("Status", "Approved", "Parked", True),  # revise a decided decision
+    ("Status", "Researching", "Parked", False),  # a run is open; revise doesn't apply
     ("Agent status", "Plan", "No action", True),  # planned
     ("Agent status", "Ready", "Plan", False),
     ("Run location", "Local", "Cloud", None),  # no transition governs it

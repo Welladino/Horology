@@ -1,8 +1,8 @@
 # Records and linking
 
-Read live headers and dropdowns before writing. Edit Pipeline and Decision Register Master only; any other tabs there are views. Find every row by its permanent ID immediately before writing it, never by row position, title or a row number read earlier: other runs and the founder may add, sort or move rows in between.
+Read live headers and dropdowns before writing. Edit Pipeline and Decision Register Master, plus the Decision Register's Options tab for your own proposed decision; other tabs there are views or belong to other writers (the planner writes the Pipeline's Steps tab). Find every row by its permanent ID immediately before writing it, never by row position, title or a row number read earlier: other runs and the founder may add, sort or move rows in between.
 
-Keep longer cell text readable. In Pipeline Summary / Why, Next step / Research question and Revisit trigger, and Decision Register Question, Decision, Reason and Rework instructions, put distinct points on separate lines and numbered steps on separate lines. Use actual line breaks in cell values, not literal `\n` characters or one run-on paragraph. A single short thought can stay on one line. Preserve founder-written line breaks when revising a cell, and read back multiline values after saving.
+Keep longer cell text readable. In Pipeline Summary / Why, Next step / Research question and Revisit trigger, and Decision Register Question, Reason and Rework instructions, put distinct points on separate lines and numbered steps on separate lines. Use actual line breaks in cell values, not literal `\n` characters or one run-on paragraph. A single short thought can stay on one line. Preserve founder-written line breaks when revising a cell, and read back multiline values after saving.
 
 - [Pipeline](https://docs.google.com/spreadsheets/d/1aL678ACs97YpLIGrGU5LbpXHc7jQBxl64ED-sLyehvI/edit): permanent numeric ID; optional External ID; domain/entity, title, scope, status, Stage and Review stage. Current decision ID selects the active decision; ClickUp Pipeline URL identifies its UI task; Document count is derived from the Index. Removed link columns must not be recreated. Agent type Manual is skipped by scheduled agents; Ready is selection, not execution permission.
 - [Document Index](https://docs.google.com/spreadsheets/d/1kObhQNjsFhziS-wRzjaEIzr9j8jjbfvd-ZgvzuwQ-Jc/edit): find an existing row by Drive file ID/URL and keep its permanent numeric Document ID; a new file gets a reserved ID. Associate each document with Pipeline ID, Pipeline title and Related Pipeline URL where those live fields exist. Use the revision/sequence field and Supersedes document ID for substantive replacements; retain originals. An original plan and an assessment may both belong to one Pipeline item without either superseding the other. Copy exact field names and dropdown values from the live sheet.
@@ -20,6 +20,15 @@ Decision and Document IDs come from the document-graph connector, never from the
 4. Read the row back after writing and confirm its ID, Pipeline ID and Drive URL.
 
 If the connector is unavailable, don't allocate IDs: save the Drive output, leave the register rows unwritten and report them as pending.
+
+## Proposed decisions and options
+
+The decision page reads options from the Decision Register's **Options** tab, not from the Decision cell.
+
+- **Decision** (Master): one line, for example `Proposed: Option B, lead with intermediate lifters.` Detail stays in the document; Reason holds the evidence and key figures, one point per line.
+- **Options** tab: one row per option the founder can choose, with columns Decision ID, Code, Summary, Recommended and Key figures. Code is a capital letter (A, B, C) in the order the document presents them. Summary is one plain line. Recommended is `Yes` on the recommended option only, blank otherwise. Key figures is optional: cost, effort, reach or thresholds, one per line. Park and reject are outcomes on the page, not options.
+- Write the Master row first, then its Options rows. Find existing rows by Decision ID and Code, never by position. `check_register_write` for the Decision ID covers its Options rows; don't touch another decision's rows. On rework of your own proposed decision, update its rows in place and blank the Summary of an option you drop.
+- If the workbook has no Options tab, write the options in the Decision cell as `Option A …; Option B …` and report that the tab is missing.
 
 Metadata carries domain, entity, Pipeline ID/link, purpose, draft status and related decision when applicable. Domain and Entity come from the Domains tab, and folders and templates from Locations and Templates ([domains, folders and templates](locations.md)). Copy templates; preserve originals. Follow the [presentation rules](presentation.md).
 

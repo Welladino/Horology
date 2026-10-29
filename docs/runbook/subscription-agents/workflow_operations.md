@@ -49,7 +49,7 @@ flowchart LR
   choose -->|Accept| accepted
   accepted --> proposal
   accepted --> complete
-  choose -->|Revise| rework
+  choose -->|Request changes| rework
   choose -->|Later| parked
   choose -->|Stop| rejected
   proposal --> saved
@@ -73,6 +73,8 @@ flowchart LR
 Use **Pipeline** to browse all Master rows as Cards or Rows. Search the text or filter by Domain and Status. Expand **More filters** for Entity, Type, Agent status, Agent type, Run location and Stage; **Clear filters** resets the search and filters. Open an item to see its next step, revisit trigger and links. Choose **Edit item** to change its title, type, summary, next step, revisit trigger or agent assignment, then **Save item**. Domain, Entity, Status and Stage are displayed without edit controls. If another writer changed the item, refresh it before saving.
 
 In **Decisions**, expand a Pipeline item to see its decisions, then choose a decision to review it or read its recorded outcome and reason.
+
+To change a decision that was already applied (for example an Approved item you now want to park), open it under **Decision history**. **Revise this decision** is shown when it is the item's current decision and no run or review is open (the item is Approved, Rework, Parked, Rejected or Completed). Choose the new outcome, give a reason (rework: the instructions), and **Revise decision**. The decision keeps its ID, your reason is added to it, and the Pipeline item moves straight away. If the item is Researching, wait for the run to finish.
 
 To capture new work, choose **Add Pipeline item** in the same page. Fill Title and Domain, then optionally add the reason, next step, revisit trigger and target. Ready items need an agent and a Next step. **Add item** writes the next permanent ID to Pipeline Master. The old Add Pipeline item entry is no longer in the Workbook Extensions menu.
 

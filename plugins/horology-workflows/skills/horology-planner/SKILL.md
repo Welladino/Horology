@@ -1,6 +1,6 @@
 ---
 name: horology-planner
-description: Scope or split Pipeline items set to Agent status Plan (not marketing or content plans) — rewrite Next step as a bounded question, or break it into numbered steps there — then set the item back to No action for the founder to review. Runs on a schedule, when the supervisor hands it an item to scope, or when this skill is named. Only touches Plan rows.
+description: Scope or split Pipeline items set to Agent status Plan (not marketing or content plans) — rewrite Next step as a bounded question, or break the item into numbered steps on the Pipeline's Steps tab — then set the item back to No action for the founder to review. Runs on a schedule, when the supervisor hands it an item to scope, or when this skill is named. Only touches Plan rows.
 ---
 
 # Planner
@@ -28,13 +28,16 @@ For each Pipeline row with Agent status Plan (or the one item you were given, if
    - **A split:** it needs several distinct pieces of work, often for different specialists or in an order.
    - **Nothing more:** it's already well scoped, or the graph already answers it. Say so in the `finish_run` notes.
 5. For a sharper question, rewrite Next step / Research question as one bounded question with what "answered" looks like. Keep the old wording for the `finish_run` notes.
-6. For a split, rewrite Next step / Research question as a numbered list with actual cell line breaks: one bounded question or task per line, in order, ending with the suggested specialist in brackets where one clearly fits. Do not join the steps into a paragraph or store literal `\n` characters. Keep the old wording for the notes. Usually 2–5 steps; if it needs more, it should probably be separate Pipeline items, so say that instead.
+6. For a split, write one row per step on the Pipeline's **Steps** tab: Pipeline ID, Step (1, 2, 3 …), Task (one bounded question or task with what "answered" looks like), Specialist (the suggested `horology-*` skill where one clearly fits, else blank) and Status `Planned`. Then set Next step / Research question to one line: the item's overall question, followed by "Steps 1–N on the Steps tab". Usually 2–5 steps; if it needs more, it should probably be separate Pipeline items, so say that instead. Keep the old wording for the notes.
+   - Find this item's rows by Pipeline ID and Step, never by position, and don't touch other items' rows. When re-planning, overwrite this item's rows in place and set Status `Skipped` on any old step you drop; never delete rows.
+   - If an older item's Next step still holds a numbered list, move those steps to the Steps tab the same way.
+   - If the workbook has no Steps tab, write the numbered list in Next step instead (one step per line, actual cell line breaks) and say the tab is missing.
 7. Set Planner output to **Yes** (unless nothing changed), Agent status to **No action**, and Updated to today. Call `finish_run` as done, with the old wording and a one-line reason in notes.
 
 ## Decision and permission boundaries
 
 - Only Plan rows. Never touch other rows, and never set an item to Ready: the founder reviews the plan and marks it Ready.
-- Don't create new Pipeline rows. Splits go in Next step.
+- Don't create new Pipeline Master rows. Splits go on the Steps tab.
 - Don't change Agent type, Run location, Status, Stage or decisions.
 - Don't start any specialist work.
 
@@ -45,5 +48,5 @@ For each Pipeline row with Agent status Plan (or the one item you were given, if
 
 ## Verification before finishing
 
-- Read back the Pipeline cells you wrote; confirm unrelated cells were preserved.
+- Read back the Pipeline cells and Steps rows you wrote; confirm unrelated cells and other items' steps were preserved.
 - Confirm every planned item is back to No action with Planner output Yes, and its run is finished.

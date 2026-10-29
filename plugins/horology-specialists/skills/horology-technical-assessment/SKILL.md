@@ -13,7 +13,7 @@ Use for Stage 1 evaluation of a code-related Pipeline item, including Feature, E
 
 - Read [domains, folders and templates](../horology-research/references/locations.md) before choosing a domain or entity, reading context or saving anything.
 - Follow the [presentation rules](../horology-research/references/presentation.md) when creating or filling documents.
-- Read [output and linking rules](references/output.md) when saving the assessment or generating the quadrant.
+- Read [output and linking rules](references/output.md) when saving the assessment or filling the ratings table.
 - Resolve the permanent numeric Pipeline ID and bounded question from the request. Map live Master headers by name; columns may move. External ID is optional. Domain and Entity come from the Domains tab.
 - Read Link type, URL, and GitHub branch. Verify the repository remote, target branch, and inspected commit before making code claims. Do not assume the current checkout is the requested branch or switch a dirty checkout to inspect it. Use read-only Git revision reads or an available matching checkout when appropriate. Report inaccessible branch/source evidence and clarify an ambiguous target.
 - Agent type Manual means founder-led exploration, skipped by scheduled agents even if Ready. Ready is a selection signal, not an automatic launch. Explicit user assignments can select work directly.
@@ -25,26 +25,26 @@ Use for Stage 1 evaluation of a code-related Pipeline item, including Feature, E
 3. Establish the current baseline and the smallest useful change. Reason beyond today's design: consider simplification, removing the need, reusing an existing capability, open-source libraries, managed services, and alternative architectures when credible. Investigate material alternatives with primary documentation and current pricing when relevant. Do not force a paid service or a fixed number of options into every assessment.
 4. Compare each credible option against what exists today: expected benefit, one-off implementation and migration effort, direct/provider costs, recurring usage, maintenance, integration, reversibility, reliability, access/security constraints, and vendor dependence where material. State workload assumptions, currency/units, evidence date, and unknowns. A library being free does not make integration free; Unknown is not zero.
 5. Explain Low / Medium / High or Unknown effort and uncertainty ratings. Use bounded estimates only when evidence supports them; do not invent precise hours or prices. Uncertainty means unresolved facts affecting feasibility, behaviour, cost, or validation. Recommend proceed, further investigation, or park with reasons and a revisit trigger when useful.
-6. Copy the Technical Assessment template from the Templates tab into the Agent output folder for technical research. Adapt depth to the change. Fill native tables, derive the top summary and quadrant from the same evidence, retain editable visual sources, and link supporting evidence. Save the document and register links according to output.md.
+6. Copy the Technical Assessment template from the Templates tab into the Agent output folder for technical research. Adapt depth to the change. Fill native tables, derive the top summary and ratings table from the same evidence, and link supporting evidence. Save the document and register links according to output.md.
 7. Set Pipeline Awaiting decision only when the selected assessment is ready for founder review. Leave material blockers visible. Draft a proposed decision only when the requested workflow includes one. Stop at assessment; an accepted decision can separately authorise Stage 3 creation of a repo planning note using that repo's existing template.
 
 ## Decision and permission boundaries
 
 - Do not implement fixes, install project libraries, run deployments/migrations, provision paid services, or execute live/provider-cost tests merely to prepare the assessment.
 - Use existing evidence and safe read-only inspection. Explain evidence gaps instead of claiming tests or live configuration were checked when they were not.
-- The founder decides proceed, rework, park, or reject. Recommendations, quadrant position, Type, and Ready are not acceptance.
+- The founder decides proceed, rework, park, or reject. Recommendations, ratings, Type, and Ready are not acceptance.
 - Preserve document and decision history. Small corrections update a document; substantive rework retains the prior revision and links its replacement. Never claim proposed register columns or graph imports already exist.
 
 ## Output requirements
 
 - A concise assessment with metadata, summary, verified problem/impact, investigation questions and answers, current implementation/dependencies, alternatives, cost/effort/uncertainty reasons, validation approach, and recommendation/open questions.
 - Top summary: Effort, Direct cost, Ongoing cost, Uncertainty. Include reasons and Unknown where appropriate.
-- An effort-versus-uncertainty quadrant image with labelled option markers when rated, a caption, explanation, and editable-source link. Costs stay in the summary/table. Unknowns remain unplotted and listed. The template's unrated image is not a completed assessment visual.
+- An effort-and-uncertainty ratings table: one row per option with Effort, Uncertainty (Low, Medium, High or Unknown), Recommended and a one-line reason. Costs stay in the summary/table. The template's placeholder rows are not a completed rating.
 - Native headings/lists/tables and evidence links; saved Pipeline and Document Index backlinks, with limits stated plainly.
 
 ## Verification before finishing
 
-- Recheck repo/branch/commit, question evidence, estimates, current pricing sources where used, and consistency between recommendation, summary, and visual.
-- Read back the document and linked records; preserve unrelated values. Verify native table structure, links, inserted image, readable labels, and removal of instructional placeholders.
-- Inspect a rendered document when image placement/page fit matters; disclose unavailable visual QA. If the platform cannot render/embed the quadrant, report the limitation and provide the source plus textual ratings rather than silently omitting it.
+- Recheck repo/branch/commit, question evidence, estimates, current pricing sources where used, and consistency between recommendation, summary, and ratings table.
+- Read back the document and linked records; preserve unrelated values. Verify native table structure, links, and removal of instructional placeholders.
+- Inspect a rendered document when layout matters; disclose when a preview was unavailable.
 - After uncertain write failures, inspect before retrying to prevent duplicates. Distinguish saved changes from pending writes.

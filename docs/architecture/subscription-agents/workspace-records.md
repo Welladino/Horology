@@ -10,7 +10,8 @@ The Pipeline is the main control surface. Work is selected here, but a row never
 
 | Tab | Purpose |
 | --- | --- |
-| **Master** | One row per work item. It holds the permanent Pipeline ID, title, domain and optional entity, lifecycle status and stage, review state, agent platform, next question or numbered steps, linked repository or external task, and document/decision references. |
+| **Master** | One row per work item. It holds the permanent Pipeline ID, title, domain and optional entity, lifecycle status and stage, review state, agent platform, a one-line next question, linked repository or external task, and document/decision references. |
+| **Steps** | One row per planned step of an item: Pipeline ID, Step, Task, Specialist and Status (Planned, Done or Skipped). The planner writes them; the item's run marks each one Done. Rows join Master by Pipeline ID, never by position. Older items may still keep a numbered list in Next step, which the run and the decision page read the same way. |
 | **Locations** | The workspace's Drive folder directory. This is the source of truth for where agents read and write; the repository does not prescribe folder names or a fixed tree. |
 | **Domains** | A derived view of the root folders and entity folders in Locations. Agents use it as the valid list of domains and entities. Add or change the corresponding Locations row instead of editing this tab directly. |
 | **Templates** | Links to document templates and a short description of when each is appropriate. Agents copy templates; they do not modify the originals. |
@@ -41,7 +42,14 @@ This means examples such as Strategy, Research or Brand are suggestions, not sch
 
 The Decision Register preserves the human review trail. Each row has its own permanent Decision ID and points back to a Pipeline ID. Agents get new Decision and Document IDs from the document graph's `reserve_id` and check ownership before every write; they never count up from the sheet, because parallel runs share these registers ([register IDs](../mcp/document-graph.md#register-ids)).
 
-It records the question under review, the proposed or accepted choice, the reason, status, evidence links, rework instructions and any decision it supersedes. Agents may draft proposals; a human accepts, requests rework, parks or rejects them. A later review creates a new row instead of overwriting the earlier decision.
+It records the question under review, a one-line proposed or accepted choice, the reason and key figures, status, evidence links, rework instructions and any decision it supersedes. Agents may draft proposals; a human accepts, requests rework, parks or rejects them. A later review creates a new row instead of overwriting the earlier decision.
+
+| Tab | Purpose |
+| --- | --- |
+| **Master** | One row per decision, keyed by Decision ID. |
+| **Options** | One row per option of a decision: Decision ID, Code (A, B, C), Summary, Recommended (`Yes` on one option) and optional Key figures, one per line. The agent that drafts a proposal writes them; the decision page shows them as cards. A decision without Options rows falls back to the option codes written in its Decision text. |
+
+The founder can **revise** an item's current decision after it was applied, for example Approved to Parked, from the decision page while no run or review is open on the item. The row keeps its Decision ID; Status becomes the new outcome, the reason is appended to Reason and the Pipeline item moves as that outcome would have moved it from review (`revise` in `workflow.yaml`).
 
 ## Document Index
 
@@ -69,6 +77,8 @@ The register documents expected access, while service policy and code enforce th
 | Information | Authoritative place |
 | --- | --- |
 | Current work status and scope | Pipeline Master |
+| Planned steps of an item | Pipeline Steps |
+| Options of a decision | Decision Register Options |
 | Drive folder routing | Pipeline Locations |
 | Human review and rework | Decision Register |
 | Deliverable identity and graph eligibility | Document Index |
@@ -78,4 +88,4 @@ The register documents expected access, while service policy and code enforce th
 | Searchable passages and derived graph | Neon document graph |
 | Provider credentials | Secret Manager or private environment |
 
-Apps Script supplies a lightweight interface over these records: add a Pipeline item, browse the folder tree, reconcile Drive names and parents, and apply decisions. It does not turn the Sheets into a multi-tenant application.
+Apps Script supplies a lightweight interface over these records: add a Pipeline item, browse the folder tree, reconcile Drive names and parents, and apply or revise decisions. It does not turn the Sheets into a multi-tenant application.
