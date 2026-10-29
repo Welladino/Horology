@@ -21,6 +21,7 @@ function getPipelineOverview() {
     'Agent status', 'Agent type', 'Run location', 'Summary / Why',
     'Next step / Research question', 'Revisit trigger']);
   const sheetId = table.sheet.getSheetId();
+  const stepRows = readTab(id, 'Steps', ['Pipeline ID', 'Step', 'Task']);
   const fields = ['ID', 'Title', 'Domain', 'Entity', 'Type', 'Status', 'Stage',
     'Review stage', 'Agent status', 'Agent type', 'Run location',
     'Summary / Why', 'Next step / Research question', 'Revisit trigger',
@@ -31,6 +32,8 @@ function getPipelineOverview() {
       '/edit#gid=' + sheetId + '&range=A' + row.row};
     fields.forEach(field => { item[field] = String(row.data[field] || ''); });
     item.version = pipelineEditVersion(row.data);
+    // Steps-tab rows only: an older numbered Next step is already shown as the Next step text.
+    item.steps = plannedSteps(row.data.ID, stepRows, '');
     return item;
   });
 }

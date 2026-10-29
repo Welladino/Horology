@@ -335,6 +335,17 @@ test('Pipeline overview includes every Master row with a direct link and makes n
   assert.equal(w.pipeline.writes.length,0);
 });
 
+test('Pipeline overview gives each item its Steps-tab rows in order, and none without a tab', () => {
+  const w = webWorkbooks({steps: [['Pipeline ID','Step','Task','Specialist','Status'],
+    ['22','2','Write the plan','horology-gtm','Planned'],['22','1','Read the research','','Done'],
+    ['14','','','','']]});
+  const rows = w.ctx.getPipelineOverview();
+  assert.deepEqual(JSON.parse(JSON.stringify(rows[1].steps.map(s => [s.number, s.task, s.status]))),
+    [['1','Read the research','Done'],['2','Write the plan','Planned']]);
+  assert.equal(rows[0].steps.length, 0);
+  assert.equal(webWorkbooks().ctx.getPipelineOverview()[0].steps.length, 0);
+  assert.equal(w.pipeline.writes.length, 0);
+});
 test('Pipeline edit saves fields by ID and moves an Inbox Ready item to Stage 1', () => {
   const w = webWorkbooks();
   w.pipeline.rows[1][2] = 'Inbox'; w.pipeline.rows[1][3] = 'Stage 0';

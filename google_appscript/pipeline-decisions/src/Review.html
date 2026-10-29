@@ -274,6 +274,7 @@
     .panel-body > form { display:grid; gap:32px; }
     .plain-copy { margin:0; white-space:pre-wrap; overflow-wrap:anywhere;
       color:#343b3e; line-height:1.62; }
+    .plain-copy + .plain-copy { margin-top:12px; }
     .filter-panel,.more { border-color:#d7dddf; }
     .filter-panel summary,.more summary { background:#fff; color:#151819;
       border-color:#9da8ac; }
@@ -724,9 +725,12 @@
         ['Revisit trigger',item['Revisit trigger']]
       ]) {
         if (!pair[1]) continue;
-        const block = section(body,pair[0]);
-        block.appendChild(node('p','plain-copy',pair[1]));
+        paragraphs(section(body,pair[0]),pair[1]);
+        if (pair[0] === 'Next step / Research question' && (item.steps || []).length)
+          section(body,'Planned steps').appendChild(stepList(item.steps));
       }
+      if (!item['Next step / Research question'] && (item.steps || []).length)
+        section(body,'Planned steps').appendChild(stepList(item.steps));
       const context = section(body,'Details');
       const facts = node('div','meta');
       for (const pair of [
@@ -853,7 +857,7 @@
       const body = node('div','panel-body'); panel.appendChild(body);
 
       const saved = section(body,r.editable ? 'Proposal' : 'Recorded decision');
-      saved.appendChild(node('p','plain-copy',r.proposal || 'No decision text recorded.'));
+      paragraphs(saved,r.proposal,'No decision text recorded.');
       if (!r.editable && r.options.length) {
         const cards = node('div','choices');
         r.options.forEach(o => cards.appendChild(optionCard(o)));
@@ -862,21 +866,8 @@
       const why = section(body,'Reason and key figures');
       if (r.reasonPoints.length) why.appendChild(bulletList(r.reasonPoints,'bullets'));
       else why.appendChild(node('p','plain-copy','No reason recorded.'));
-      if (r.steps.length) {
-        const planned = section(body,'Planned steps');
-        const list = node('ol','steps');
-        r.steps.forEach(step => {
-          const li = node('li','',step.task); if (Number(step.number)) li.value = Number(step.number);
-          const extra = [step.specialist,step.status].filter(Boolean).join(' · ');
-          if (extra) li.appendChild(node('small','',extra));
-          list.appendChild(li);
-        });
-        planned.appendChild(list);
-      }
-      if (r.reviewTrigger) {
-        const revisit = section(body,'Revisit trigger');
-        revisit.appendChild(node('p','plain-copy',r.reviewTrigger));
-      }
+      if (r.steps.length) section(body,'Planned steps').appendChild(stepList(r.steps));
+      if (r.reviewTrigger) paragraphs(section(body,'Revisit trigger'),r.reviewTrigger);
       if (r.editable) renderDecisionForm(body,r);
       if (r.revisable) renderReviseForm(body,r);
       if (r.links.length) {
@@ -889,6 +880,23 @@
         });
         sources.appendChild(links);
       }
+    }
+    // Each line of a cell as its own paragraph, so paragraphs are spaced apart.
+    function paragraphs(parent,text,empty) {
+      const lines = String(text || '').split('\n').map(line => line.trim()).filter(Boolean);
+      if (!lines.length && empty) lines.push(empty);
+      lines.forEach(line => parent.appendChild(node('p','plain-copy',line)));
+    }
+    // An item's planned steps as a numbered list, with specialist and status after each task.
+    function stepList(steps) {
+      const list = node('ol','steps');
+      steps.forEach(step => {
+        const li = node('li','',step.task); if (Number(step.number)) li.value = Number(step.number);
+        const extra = [step.specialist,step.status].filter(Boolean).join(' · ');
+        if (extra) li.appendChild(node('small','',extra));
+        list.appendChild(li);
+      });
+      return list;
     }
     function bulletList(points,className) {
       const list = node('ul',className || '');
