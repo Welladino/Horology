@@ -27,6 +27,26 @@ Both services share one Google OAuth client, so one Audience test-user list cove
 
 Never put secret values in tracked files, command arguments or logs. Each runtime identity reads only its own secrets.
 
+## Release in one command
+
+`scripts/ops/gcp/release.sh` runs the release steps below in order. It checks that both gcloud configurations are signed in and that Neon is at the Alembic head. It records the serving revisions and builds through Cloud Build, waiting for the result. After you confirm, it deploys by digest, runs the post-deploy checks and moves `deployed-current`. It stops before deploying if the build fails or migrations are pending.
+
+```bash
+scripts/ops/gcp/release.sh document-graph
+```
+
+Use `gateway` or `all` for the other targets. `document-graph` updates the service and the `document-graph-sync` job.
+
+| Option | Effect |
+|---|---|
+| `--dry-run` | Print every command; run nothing |
+| `--migrate` | Apply pending Alembic revisions first (check they are safe for the running revisions) |
+| `--yes` | Deploy without the confirmation prompt |
+
+Expected result: `ok` for OAuth discovery (200) and anonymous MCP (401), and `deployed-current -> sha256:…`. On a failed check the script prints the rollback command; the earlier revision name is in its "Serving revisions" output. Then call `list_documents` (and `gateway_status`) from a connected client.
+
+If it can't read `cloudbuild.yaml` ("Operation not permitted"), macOS is blocking your terminal app from the Documents folder: allow it under System Settings → Privacy & Security → Files & Folders, then reopen the terminal.
+
 ## Release
 
 1. **Build** through [Cloud Build](cloud_build.md) and note both image digests.

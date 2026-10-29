@@ -6,6 +6,8 @@ system they operate:
 - `hermes/` — local Hermes deployment and profile bootstrap.
 - `mcp/` — MCP access administration, protected Pages registration and live
   deployment checks.
+- `gcp/` — one-command Cloud Run release of the MCP services
+  (`docs/runbook/gcp/mcp_deployment.md`).
 - `claude/` — Claude skill packaging.
 - `codex/` — Codex plugin packaging.
 
