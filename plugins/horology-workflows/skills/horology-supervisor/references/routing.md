@@ -4,7 +4,8 @@
 
 Choose from the installed specialist `horology-*` skills: research, technical assessment, security review, GTM, marketing strategy and content planner. Their names and descriptions say what each does; open a candidate's `SKILL.md` when the fit isn't clear. Ignore other installed skills. The Agent Register is an overview for the founder, not an input.
 
-- Start from the question in Next step / Research question, and use Pipeline Type as a hint, not a rule. Feature, Enhancement and Refactor feasibility usually goes to technical assessment; Research and Idea questions to research.
+- Type chooses the route first. Feature, Enhancement, Refactor and Fix take the implementation route: the run plans and implements the change itself, and a specialist is used only for a step that asks for its kind of output (for example a security review of the change). Idea, Research, Direction and Plan take the investigation route below.
+- On the investigation route, start from the question in Next step / Research question. Research and Idea questions usually go to research; a question about whether or how to build a change goes to technical assessment.
 - Neighbouring specialists split the work like this:
   - **Security review** answers "is this safe, what are the risks"; **technical assessment** answers "should we build this change, and how".
   - **GTM** chooses who to sell to and the first channels; **marketing strategy** turns an agreed GTM direction into a plan; **content planner** plans and drafts the pieces. Without an agreed step before it, route to the earlier one.

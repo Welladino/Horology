@@ -13,7 +13,9 @@ description: Start here for any request about Pipeline work unless a specific sk
 - "Plan item 42", "scope this", "split it up": **planning**. With the founder's go-ahead in the conversation, set the item's Agent status to Plan and use the `horology-planner` skill on it.
 - Any other request to work on or continue a Pipeline item, when no skill is named: read the item, say which of these fits and why, then do it. If it isn't Ready to run, say what it needs (Ready to run, Plan to scope) and ask.
 
-The founder starts investigation and Stage 3 runs. Within each Stage 3 run, the supervisor invokes the `horology-synthesis-artifacts` specialist immediately after the deliverable is saved. No new founder prompt, Ready selection or schedule starts Stage 4. The supervisor chooses and coordinates the specialists.
+Pipeline **Type** chooses the route. Idea, Research, Direction and Plan items take the **investigation route** (Stage 1 proposal, Stage 2 founder decision, Stage 3 deliverable, Stage 4 synthesis). Feature, Enhancement, Refactor and Fix items take the **implementation route**: Stage 1 is the implementation plan on the Steps tab, Stage 3 the implementation, Status **In progress** throughout, no Stage 2 or Stage 4.
+
+The founder starts investigation, implementation and Stage 3 runs. Within each Stage 3 run, the supervisor invokes the `horology-synthesis-artifacts` specialist immediately after the deliverable is saved. No new founder prompt, Ready selection or schedule starts Stage 4. The supervisor chooses and coordinates the specialists.
 
 ## Required context and locations
 
@@ -36,7 +38,7 @@ The founder starts investigation and Stage 3 runs. Within each Stage 3 run, the 
 For exactly one Pipeline ID:
 
 1. If you were started without a run ID, claim the item first with `claim_item`. If another run holds it, stop and report it.
-2. Find the item's Pipeline row by its ID (never by row position; other runs write the same sheet) and set its Status to **Researching**. Read the row: Title, Domain, Type, Status, Stage, Next step / Research question, Current decision ID and the target (Link type, URL, GitHub branch).
+2. Find the item's Pipeline row by its ID (never by row position; other runs write the same sheet). Read the row: Title, Domain, Type, Status, Stage, Next step / Research question, Current decision ID and the target (Link type, URL, GitHub branch). Choose the route from Type and set Status to **Researching** (investigation route) or **In progress** (implementation route; then follow [Implementation route](#implementation-route) instead of steps 5–9). If the live Status dropdown has no In progress yet, stop and report it.
 3. If Current decision ID is set, read that Decision Register row, including rework instructions, and its rows on the Decision Register's Options tab. Read the item's planned steps: its rows on the Pipeline's Steps tab (by Pipeline ID, in Step order, skipping Done and Skipped), or else a numbered list in Next step. Follow them in order.
 4. Search the document graph for earlier research, decisions, topics and entities on the subject. Note what is already answered.
 5. Choose the specialist skill(s) for the question, or for each step (see routing rules). If the question is too vague or broad for one run, finish the run as failed, say so, and recommend Plan. If nothing fits, finish the run as failed with the reason and report it.
@@ -45,6 +47,16 @@ For exactly one Pipeline ID:
 8. Confirm the specialists saved their Drive outputs, Document Index rows and proposed decision, and that each register row's Pipeline ID is this item (`get_item_history` lists the IDs this run reserved). Set Current decision ID only to a decision reserved for this item. For Stage 1, set Status **Awaiting decision**, Stage **Stage 2** and Review stage **Investigation proposal**.
 9. For Stage 3, invoke `horology-synthesis-artifacts` in this same run after the specialist output is verified. Pass the Pipeline ID, run ID and source links. Verify the visual artifact in the Synthesis folder and its Document Index row; then set Status **Awaiting decision**, Stage **Stage 4** and Review stage **Specialist deliverable**. Return the Stage 3 output and Stage 4 visual briefing together for founder review. If synthesis fails, leave the Stage at **Stage 3**, report the error and finish the run as failed; do not silently present Stage 3 as the finished result.
 10. Mark each completed step's Steps row **Done** (found by Pipeline ID and Step). Set Agent status back to **No action** when the run ends. Then call `finish_run`: done or failed, skills used including synthesis when run, steps done and notes. Status changes and outputs are recorded from the sheets.
+
+## Implementation route
+
+For Feature, Enhancement, Refactor and Fix items, after steps 1–4 of item mode:
+
+1. **Stage 1, plan.** If the item has no open Steps rows, write the implementation plan as Steps rows (Pipeline ID, Step, Task with what "done" looks like, Specialist blank or a fitting skill, Status Planned), following the planner's Steps rules. Keep Next step a one-line summary. Then set Stage **Stage 3** yourself in the same run; no Stage 2 review.
+2. **Stage 3, implement.** Work through the open Steps rows in order. For code, follow the repository's CLAUDE.md or AGENTS.md: a branch, tests, commits, a pushed branch and a pull request; never merge or deploy unless the item says so. Use a specialist skill only for a step that asks for its kind of output. Mark each finished step **Done** as you go (by Pipeline ID and Step), or **Skipped** with the reason in the notes.
+3. **Finish.** When every step is Done or Skipped and nothing needs the founder, set Status **Completed** (Stage stays **Stage 3**). Record what was done in `finish_run` notes: branch, commits, pull request and anything left for the founder (deploy steps, manual checks).
+4. **Implementation question.** When a step needs a founder choice you can't make from the item, its decision or the repository, stop: commit and push the work so far, draft a proposed decision (reserve a Decision ID with `reserve_id`, `check_register_write`, a one-line Decision cell, Review stage **Implementation question**, one Options row per option with one Recommended), set Current decision ID to it, Status **Awaiting decision**, Stage **Stage 3** and Review stage **Implementation question**, and finish the run as done. The founder answers on the decision page; the item comes back at Stage 3, In progress and Ready, and the next run reads the answer and continues the open steps.
+5. If the run fails, leave Status In progress and Stage as they are, set Agent status No action and finish the run as failed with the reason; the founder can select it again.
 
 The allowed moves are defined in [workflow.yaml](../horology-capture-triage/references/workflow.yaml); don't make others.
 
@@ -68,13 +80,14 @@ Skills used, steps done and notes are reported by the session itself; outputs an
 - The founder decides. Never accept, reject or park a proposal, and never record a decision as accepted.
 - Only run rows that are Ready. Never set an item to Ready, and never change Agent type or Run location. Always return a run item to No action when its run ends.
 - Stage 4 synthesis is the final specialist in a Stage 3 run. It does not make an item Ready or change a founder decision.
-- Ready selects work; it doesn't authorise implementation or anything beyond the stated next step.
+- Ready selects work; it doesn't authorise anything beyond the stated next step. Only implementation-route items (Feature, Enhancement, Refactor, Fix) are implemented; an investigation-route item never is, whatever its question says.
+- An Implementation question is a proposal like any other: never answer it yourself.
 - Don't edit the Agent Register.
 
 ## Output requirements
 
 - Dispatch: the items started, their run IDs, run location and session links, and any skipped (claimed, wrong platform) with the reason.
-- Item: the specialists used, where outputs were saved, the result of your check, and anything blocked or pending.
+- Item: the specialists used, where outputs were saved, the result of your check, and anything blocked or pending. Implementation route: steps done, branch, commits, pull request and anything left for the founder.
 - Status: running, finished (with findings and links), failed or died (with the reason), and waiting on the founder, in that order. Keep it short; offer detail on request.
 
 ## Verification before finishing

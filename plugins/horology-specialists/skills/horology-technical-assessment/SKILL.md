@@ -7,7 +7,7 @@ description: Investigate a selected software change before committing to impleme
 
 ## When to use
 
-Use for Stage 1 evaluation of a code-related Pipeline item, including Feature, Enhancement, Refactor, or a known issue needing scope/feasibility assessment. A known symptom can shorten the investigation; it does not prove the diagnosis. This skill produces an assessment, not implementation or a Stage 3 repo planning note.
+Use for Stage 1 evaluation of a code-related Pipeline item on the investigation route (a question about whether or how to build a change, or a known issue needing scope/feasibility assessment), or for a step of an implementation-route item (Feature, Enhancement, Refactor, Fix) that asks for an assessment. Implementation-route items are otherwise planned and implemented by the supervisor run itself. A known symptom can shorten the investigation; it does not prove the diagnosis. This skill produces an assessment, not implementation or a Stage 3 repo planning note.
 
 ## Required context and locations
 
