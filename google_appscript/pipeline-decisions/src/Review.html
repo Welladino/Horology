@@ -379,6 +379,13 @@
     .folder-report ul { margin:0; padding-left:22px; }
     .folder-report li { margin:5px 0; overflow-wrap:anywhere; }
     .folder-report li a { margin-left:7px; }
+    .hero-tools,.toolbar-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .quick-filters { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 16px; }
+    .quick-filters button { border:1px solid var(--line); background:var(--white); color:var(--muted);
+      border-radius:99px; padding:6px 12px; font-size:13px; }
+    .quick-filters button.active { border-color:var(--green); color:var(--green); font-weight:700; }
+    .more-row { display:flex; justify-content:center; margin:18px 0 0; }
+    .load-error { display:flex; align-items:center; gap:14px; flex-wrap:wrap; color:#a7352b; }
     @media(max-width:760px) {
       .nav { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
       .nav button { width:100%; }
@@ -406,11 +413,14 @@
     </nav>
   </div></header>
   <main id="app" class="wrap"><div class="loading">Loading workspace…</div></main>
+  <script type="application/json" id="initial-data"><?!= initialJson ?></script>
   <script>
     const $ = id => document.getElementById(id);
     const app = $('app');
     let page = 'decisions', pipelineMode = 'cards',
-      dashboard = {pending:[],recent:[]}, pipelineRows = null, pipelineQuery = '',
+      dashboard = null, pipelineRows = null, pipelineQuery = '', pipelineSort = 'sheet',
+      pipelineLimit = 50, historyLimit = 50, decisionQuery = '',
+      fullText = {query:'',ids:null,pending:false},
       pipelineFilters = {'Domain':'','Status':'','Entity':'','Type':'',
         'Agent status':'','Agent type':'','Run location':'','Stage':''},
       filtersExpanded = false, folderData = null, folderPath = [], folderQuery = '',
@@ -457,14 +467,15 @@
     };
     const filterMatches = (value,selected) =>
       !selected || (selected === '__blank__' ? !value : value === selected);
-    function filteredPipelineRows(rows,query,filters) {
-      const text = query.trim().toLowerCase();
+    // Every word of the query must appear in some list field; fullTextIds adds the items whose
+    // long text (fetched by searchPipelineItems) matched on the server.
+    function filteredPipelineRows(rows,query,filters,fullTextIds) {
+      const words = searchWords(query);
       return rows.filter(item => Object.keys(filters).every(key =>
         filterMatches(item[key],filters[key])) &&
-        (!text || ['ID','Title','Domain','Entity','Type','Status','Stage',
-          'Agent status','Agent type','Run location','Summary / Why',
-          'Next step / Research question'].some(key =>
-          String(item[key] || '').toLowerCase().includes(text))));
+        (!words.length || (fullTextIds && fullTextIds.has(item.ID)) || matchesWords(item,
+          ['ID','Title','Domain','Entity','Type','Status','Stage','Agent status','Agent type',
+            'Run location','summary'],words)));
     }
     function header(eyebrow,title,lead) {
       const hero = node('div','hero'), copy = node('div');
@@ -476,47 +487,150 @@
       const box = node('p','message ' + (kind || 'ok'),text);
       app.prepend(box);
     }
-    function navigate(to) {
-      page = to; selectedId = ''; selectedPipelineId = '';
-      $('nav-decisions').classList.toggle('active',to === 'decisions');
-      $('nav-pipeline').classList.toggle('active',to === 'pipeline');
-      $('nav-folders').classList.toggle('active',to === 'folders');
-      $('nav-add').classList.toggle('active',to === 'add');
-      if (to === 'pipeline' && !pipelineRows) {
-        app.replaceChildren(node('div','loading','Loading Pipeline items…'));
-        google.script.run.withSuccessHandler(rows => {
-          pipelineRows = rows; renderPipelineList();
-        }).withFailureHandler(error => app.replaceChildren(node('div','loading',
-          'Could not load Pipeline items: ' + (error.message || String(error))))).getPipelineOverview();
-      } else if (to === 'pipeline') renderPipelineList();
-      else if (to === 'folders' && !folderData) {
-        app.replaceChildren(node('div','loading','Loading folders…'));
-        google.script.run.withSuccessHandler(data => {
-          folderData = data; folderPath = defaultFolderPath(); renderFolders();
-        }).withFailureHandler(error => app.replaceChildren(node('div','loading',
-          'Could not load folders: ' + (error.message || String(error))))).getFolderOverview();
-      } else if (to === 'folders') renderFolders();
-      else if (to === 'add' && !formData) {
-        app.replaceChildren(node('div','loading','Loading Pipeline fields…'));
-        google.script.run.withSuccessHandler(data => { formData = data; renderAdd(); })
-          .withFailureHandler(error => app.replaceChildren(node('div','loading',
-            'Could not load the form: ' + (error.message || String(error))))).getPipelineFormData();
-      } else if (to === 'add') renderAdd();
-      else renderList();
+    const PAGE = 50;
+    const errorText = error => error && error.message ? error.message : String(error);
+    // One server call; a failure reaches fail as a message.
+    function serve(method,args,ok,fail) {
+      google.script.run.withSuccessHandler(ok)
+        .withFailureHandler(error => { if (fail) fail(errorText(error)); })[method](...args);
+    }
+    const loadingBox = text => node('div','loading',text);
+    function errorBox(text,retry) {
+      const box = node('div','loading load-error'); box.setAttribute('role','alert');
+      box.appendChild(node('span','',text));
+      const again = node('button','h-button','Try again'); again.type = 'button';
+      again.onclick = retry; box.appendChild(again);
+      return box;
+    }
+    function debounce(fn,ms) {
+      let timer;
+      return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args),ms); };
+    }
+    const searchWords = query => String(query || '').trim().toLowerCase().split(/\s+/).filter(Boolean);
+    const matchesWords = (record,keys,words) => words.every(word =>
+      keys.some(key => String(record[key] || '').toLowerCase().includes(word)));
+    function refreshButton(onClick) {
+      const button = node('button','h-button refresh','Refresh'); button.type = 'button';
+      button.title = 'Read the sheets again. Lists can be up to a minute behind edits made in the sheets.';
+      button.onclick = onClick; return button;
+    }
+    function moreButton(parent,left,onClick) {
+      const row = node('div','more-row'), button = node('button','h-button',
+        'Show ' + Math.min(left,PAGE) + ' more (' + left + ' not shown)');
+      button.type = 'button'; button.onclick = onClick;
+      row.appendChild(button); parent.appendChild(row);
+    }
+
+    /* Views live in the URL hash (#decision/9, #item/51), so the browser's Back button works
+     * and a view can be bookmarked or shared with yourself. */
+    const VIEWS = ['decisions','decision','pipeline','item','folders','add'];
+    const hashFor = state => state.view + (state.id ? '/' + state.id : '');
+    function parseHash(hash) {
+      const m = String(hash || '').replace(/^#/,'').match(/^([a-z]+)(?:\/([\w-]{1,40}))?$/);
+      if (!m || !VIEWS.includes(m[1])) return {view:'decisions'};
+      if (m[1] === 'decision' || m[1] === 'item')
+        return m[2] ? {view:m[1],id:m[2]} : {view:m[1] === 'item' ? 'pipeline' : 'decisions'};
+      return {view:m[1]};
+    }
+    let viewToken = 0;
+    const isCurrent = token => token === viewToken;
+    function show(state,push) {
+      state = state && VIEWS.includes(state.view) ? state : {view:'decisions'};
+      if (push && google.script.history) google.script.history.push(state,{},hashFor(state));
+      const token = ++viewToken;
+      const tab = {decision:'decisions',item:'pipeline'}[state.view] || state.view;
+      page = tab;
+      selectedId = state.view === 'decision' ? state.id : '';
+      selectedPipelineId = state.view === 'item' ? state.id : '';
+      for (const name of ['decisions','pipeline','folders','add']) {
+        const button = $('nav-' + name);
+        button.classList.toggle('active',tab === name);
+        if (tab === name) button.setAttribute('aria-current','page'); else button.removeAttribute('aria-current');
+      }
+      if (state.view === 'decision') openDecision(token);
+      else if (state.view === 'item') openPipelineItem(token);
+      else if (tab === 'pipeline') withPipeline(token,renderPipelineList);
+      else if (tab === 'folders' && !folderData) {
+        app.replaceChildren(loadingBox('Loading folders…'));
+        serve('getFolderOverview',[],data => {
+          folderData = data; folderPath = defaultFolderPath(); if (isCurrent(token)) renderFolders();
+        },message => isCurrent(token) && app.replaceChildren(errorBox('Could not load folders: ' + message,
+          () => show({view:'folders'}))));
+      } else if (tab === 'folders') renderFolders();
+      else if (tab === 'add') withFormData(token,renderAdd);
+      else withDashboard(token,renderList);
       window.scrollTo(0,0);
     }
+    const navigate = to => show({view:to},true);
+
+    // Lists load once and are kept; callers asking while a load is running wait for it.
+    const loads = {};
+    function loadOnce(name,method,args,keep,ok,fail) {
+      if (loads[name]) { loads[name].push([ok,fail]); return; }
+      loads[name] = [[ok,fail]];
+      const finish = (index,value) => {
+        const waiting = loads[name]; delete loads[name];
+        waiting.forEach(pair => { if (pair[index]) pair[index](value); });
+      };
+      serve(method,args,data => { keep(data); finish(0); },message => finish(1,message));
+    }
+    function loadDashboard(fresh,ok,fail) {
+      loadOnce('dashboard','getReviewDashboard',[{fresh:!!fresh}],data => { dashboard = data; },ok,fail);
+    }
+    function loadPipeline(fresh,ok,fail) {
+      loadOnce('pipeline','getPipelineOverview',[{fresh:!!fresh}],data => {
+        pipelineRows = data.rows; fullText = {query:'',ids:null,pending:false};
+      },ok,fail);
+    }
+    function withDashboard(token,done,fresh) {
+      if (dashboard && !fresh) { done(); return; }
+      app.replaceChildren(loadingBox('Loading decisions…'));
+      loadDashboard(fresh,() => isCurrent(token) && done(),message => isCurrent(token) &&
+        app.replaceChildren(errorBox('Could not load decisions: ' + message,() => show({view:'decisions'}))));
+    }
+    function withPipeline(token,done,fresh) {
+      if (pipelineRows && !fresh) { done(); return; }
+      app.replaceChildren(loadingBox('Loading Pipeline items…'));
+      loadPipeline(fresh,() => isCurrent(token) && done(),message => isCurrent(token) &&
+        app.replaceChildren(errorBox('Could not load Pipeline items: ' + message,() => show({view:'pipeline'}))));
+    }
+    function withFormData(token,done) {
+      if (formData) { done(); return; }
+      app.replaceChildren(loadingBox('Loading Pipeline fields…'));
+      serve('getPipelineFormData',[],data => { formData = data; if (isCurrent(token)) done(); },
+        message => isCurrent(token) && app.replaceChildren(errorBox('Could not load the Pipeline fields: ' + message,
+          () => show({view:page === 'add' ? 'add' : 'item',id:selectedPipelineId}))));
+    }
+    // After a save, lists reload from the sheets (the server cleared its cache).
+    function afterWrite() { dashboard = null; pipelineRows = null; }
+
     function renderList() {
       app.replaceChildren();
-      header('Decision register','What needs your decision?',
+      const hero = header('Decision register','What needs your decision?',
         'Open an item to compare options, record your choice, or request rework.');
-      const groups = decisionGroups();
-      renderGroup('Needs your review',groups.pending,true);
-      renderGroup('Decision history',groups.history,false);
+      hero.appendChild(refreshButton(() => withDashboard(viewToken,renderList,true)));
+      const searchBar = node('div','search-bar'), searchWrap = node('div','filter-field search-field');
+      const searchLabel = node('label','','Search decisions');
+      const search = node('input','h-input'); search.id = 'decision-search';
+      searchLabel.htmlFor = search.id; search.type = 'search';
+      search.placeholder = 'Title, question, ID or status'; search.value = decisionQuery;
+      append(searchWrap,searchLabel,search); searchBar.appendChild(searchWrap); app.appendChild(searchBar);
+      const results = node('div'); app.appendChild(results);
+      function update() {
+        results.replaceChildren();
+        const groups = decisionGroups(decisionQuery);
+        renderGroup(results,'Needs your review',groups.pending,true,Infinity);
+        renderGroup(results,'Decision history',groups.history,false,historyLimit,
+          () => { historyLimit += PAGE; update(); });
+      }
+      search.oninput = debounce(() => { decisionQuery = search.value; historyLimit = PAGE; update(); },120);
+      update();
       showNotice(notice); notice = '';
     }
-    function decisionGroups() {
-      const byItem = new Map();
-      [...dashboard.pending,...dashboard.recent].forEach(record => {
+    function decisionGroups(query) {
+      const words = searchWords(query), byItem = new Map();
+      [...dashboard.pending,...dashboard.recent].filter(record => matchesWords(record,
+        ['id','pipelineId','title','question','status','stage','domain'],words)).forEach(record => {
         if (!byItem.has(record.pipelineId)) byItem.set(record.pipelineId,[]);
         byItem.get(record.pipelineId).push(record);
       });
@@ -529,17 +643,18 @@
       history.sort((a,b) => Number(b[0].id) - Number(a[0].id));
       return {pending,history};
     }
-    function renderGroup(title,groups,pending) {
+    function renderGroup(parent,title,groups,pending,limit,showMore) {
       const heading = node('div','group-title');
       append(heading,node('h3','',title),node('span','count',groups.length +
         (groups.length === 1 ? ' item' : ' items')));
-      app.appendChild(heading);
+      parent.appendChild(heading);
       if (!groups.length) {
-        app.appendChild(node('div','empty',pending ? 'Nothing is awaiting a decision.' : 'No recorded decisions.'));
+        parent.appendChild(node('div','empty',decisionQuery.trim() ? 'No decisions match your search.' :
+          pending ? 'Nothing is awaiting a decision.' : 'No recorded decisions.'));
         return;
       }
-      const list = node('div','collection rows'); app.appendChild(list);
-      groups.forEach(records => {
+      const list = node('div','collection rows'); parent.appendChild(list);
+      groups.slice(0,limit).forEach(records => {
         const latest = records[0], current = records.find(r => r.editable);
         const card = node('div','decision-group'), summary = node('div','h-row decision-group__head');
         append(summary,node('span','h-row__id','Pipeline ' + latest.pipelineId),
@@ -562,7 +677,7 @@
             node('small','',record.question || 'Open decision details'));
           append(button,label,node('span','h-pill' + (record.editable ? ' pending' : ''),
             record.editable ? 'Needs review' : record.status));
-          button.onclick = () => { selectedId = record.id; renderDetail(); window.scrollTo(0,0); };
+          button.onclick = () => show({view:'decision',id:record.id},true);
           children.appendChild(button);
         });
         expand.onclick = () => {
@@ -574,6 +689,22 @@
         };
         card.appendChild(children); list.appendChild(card);
       });
+      if (groups.length > limit) moreButton(parent,groups.length - limit,showMore);
+    }
+    // Workflow order: what needs the founder first, finished work last.
+    const STATUS_ORDER = ['Awaiting decision','In progress','Researching','Approved','Rework',
+      'Inbox','Parked','Completed','Rejected'];
+    const statusRank = status => { const i = STATUS_ORDER.indexOf(status); return i < 0 ? STATUS_ORDER.length : i; };
+    const dayNumber = text => {
+      const m = String(text || '').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+      return m ? Number(m[3]) * 10000 + Number(m[2]) * 100 + Number(m[1]) : 0;
+    };
+    function sortedPipelineRows(rows,sort) {
+      const newest = (a,b) => (Number(b.ID) || 0) - (Number(a.ID) || 0);
+      if (sort === 'newest') return rows.slice().sort(newest);
+      if (sort === 'updated') return rows.slice().sort((a,b) => dayNumber(b.Updated) - dayNumber(a.Updated) || newest(a,b));
+      if (sort === 'status') return rows.slice().sort((a,b) => statusRank(a.Status) - statusRank(b.Status) || newest(a,b));
+      return rows;
     }
     function renderPipelineList() {
       app.replaceChildren();
@@ -583,9 +714,9 @@
       const searchLabel = node('label','','Search');
       const search = node('input','h-input'); search.id = 'pipeline-search';
       searchLabel.htmlFor = search.id;
-      search.type = 'search'; search.placeholder = 'Search items'; search.value = pipelineQuery;
+      search.type = 'search'; search.placeholder = 'Titles and full text'; search.value = pipelineQuery;
       append(searchWrap,searchLabel,search); searchBar.appendChild(searchWrap);
-      const toggle = node('div','toggle');
+      const tools = node('div','hero-tools'), toggle = node('div','toggle');
       for (const label of ['Cards','Rows']) {
         const button = node('button',pipelineMode === label.toLowerCase() ? 'active' : '',label);
         button.type = 'button';
@@ -593,7 +724,8 @@
         button.onclick = () => { pipelineMode = label.toLowerCase(); renderPipelineList(); };
         toggle.appendChild(button);
       }
-      hero.appendChild(toggle);
+      append(tools,toggle,refreshButton(() => withPipeline(viewToken,renderPipelineList,true)));
+      hero.appendChild(tools);
       const filterControls = {};
       function addFilter(key,parent,rows) {
         const wrap = node('div','filter-field'), label = node('label','',key);
@@ -614,7 +746,8 @@
           pipelineFilters[key] = '';
         select.value = pipelineFilters[key];
         select.onchange = () => {
-          pipelineFilters[key] = select.value;
+          pipelineFilters[key] = select.value; pipelineLimit = PAGE;
+          if (key === 'Status') { renderPipelineList(); return; }  // keeps the status chips in step
           if (key === 'Domain') {
             pipelineFilters.Entity = '';
             const entity = filterControls.Entity;
@@ -636,13 +769,34 @@
       }
       addFilter('Domain',searchBar,pipelineRows || []);
       addFilter('Status',searchBar,pipelineRows || []);
+      const sortWrap = node('div','filter-field'), sortLabel = node('label','','Sort');
+      const sort = node('select','h-select'); sort.id = 'pipeline-sort'; sortLabel.htmlFor = sort.id;
+      [['sheet','Sheet order'],['status','Needs attention first'],['newest','Newest first'],['updated','Recently updated']]
+        .forEach(pair => { const option = node('option','',pair[1]); option.value = pair[0]; sort.appendChild(option); });
+      sort.value = pipelineSort;
+      sort.onchange = () => { pipelineSort = sort.value; pipelineLimit = PAGE; updateResults(); };
+      append(sortWrap,sortLabel,sort); searchBar.appendChild(sortWrap);
       const clear = node('button','h-button','Clear filters'); clear.type = 'button';
       clear.onclick = () => {
-        pipelineQuery = ''; Object.keys(pipelineFilters).forEach(key => { pipelineFilters[key] = ''; });
+        pipelineQuery = ''; pipelineLimit = PAGE;
+        Object.keys(pipelineFilters).forEach(key => { pipelineFilters[key] = ''; });
         renderPipelineList();
       };
       const actions = node('div','filter-actions'); actions.appendChild(clear); searchBar.appendChild(actions);
       app.appendChild(searchBar);
+      // Status chips: one click narrows the list to a status; counts are for the whole Pipeline.
+      const chips = node('div','quick-filters'); chips.setAttribute('aria-label','Filter by status');
+      const counts = {};
+      (pipelineRows || []).forEach(item => { counts[item.Status || ''] = (counts[item.Status || ''] || 0) + 1; });
+      [['','All',(pipelineRows || []).length],...Object.keys(counts)
+        .sort((a,b) => statusRank(a) - statusRank(b) || a.localeCompare(b))
+        .map(status => [status || '__blank__',status || 'No status',counts[status]])].forEach(entry => {
+        const chip = node('button',pipelineFilters.Status === entry[0] ? 'active' : '',entry[1] + ' · ' + entry[2]);
+        chip.type = 'button'; chip.setAttribute('aria-pressed',String(pipelineFilters.Status === entry[0]));
+        chip.onclick = () => { pipelineFilters.Status = entry[0]; pipelineLimit = PAGE; renderPipelineList(); };
+        chips.appendChild(chip);
+      });
+      app.appendChild(chips);
       const more = node('details','filter-panel'), moreLabel = node('summary','','More filters');
       more.open = filtersExpanded;
       more.ontoggle = () => { filtersExpanded = more.open; };
@@ -654,50 +808,76 @@
       for (const key of ['Type','Agent status','Agent type','Run location','Stage'])
         addFilter(key,filterGrid,pipelineRows || []);
       const heading = node('div','group-title'), count = node('span','count');
+      count.setAttribute('aria-live','polite');
       append(heading,node('h3','','Pipeline items'),count); app.appendChild(heading);
       const list = node('div','collection ' + pipelineMode); app.appendChild(list);
+      const moreRow = node('div'); app.appendChild(moreRow);
       function updateResults() {
-        const rows = filteredPipelineRows(pipelineRows || [],pipelineQuery,pipelineFilters);
+        const extra = fullText.query === pipelineQuery ? fullText.ids : null;
+        const rows = sortedPipelineRows(filteredPipelineRows(pipelineRows || [],pipelineQuery,pipelineFilters,extra),pipelineSort);
         const active = Object.entries(pipelineFilters)
           .filter(([key,value]) => !['Domain','Status'].includes(key) && value).length;
         moreLabel.textContent = 'More filters' + (active ? ' · ' + active + ' active' : '');
-        count.textContent = rows.length + ' of ' + (pipelineRows || []).length + ' items';
+        count.textContent = rows.length + ' of ' + (pipelineRows || []).length + ' items' +
+          (fullText.pending && fullText.query === pipelineQuery ? ' · searching full text…' : '');
         list.className = 'collection ' + pipelineMode;
-        list.replaceChildren();
+        list.replaceChildren(); moreRow.replaceChildren();
         if (!rows.length) {
-          list.appendChild(node('div','empty','No Pipeline items match your search.'));
+          list.appendChild(node('div','empty',fullText.pending ? 'Searching the full text…' :
+            'No Pipeline items match your search and filters.'));
           return;
         }
-        rows.forEach(item => {
+        rows.slice(0,pipelineLimit).forEach(item => {
           const rowMode = pipelineMode === 'rows';
           const button = node('button','record' + (rowMode ? ' h-row' : '')); button.type = 'button';
           append(button,node('span',rowMode ? 'id h-row__id' : 'id','Pipeline ' + item.ID),
             node('strong',rowMode ? 'h-row__title' : '',item.Title || 'Untitled item'),
             node('span',rowMode ? 'question h-row__support' : 'question',
-              item['Summary / Why'] || item['Next step / Research question'] ||
-              'Open item details'));
+              item.summary || 'Open item details'));
           const foot = node('span',rowMode ? 'foot h-row__badges' : 'foot');
           append(foot,node('span','h-pill',item.Status || 'No status'),
             node('span','h-pill',item.Stage || 'No stage'),
             node('span','h-pill',item.Domain || 'No domain'));
+          if (item['Agent status'] === 'Ready') foot.appendChild(node('span','h-pill','Ready'));
           button.appendChild(foot);
           if (rowMode) button.appendChild(node('span','h-row__chevron','›'));
-          button.onclick = () => {
-            selectedPipelineId = item.ID; renderPipelineDetail(); window.scrollTo(0,0);
-          };
+          button.onclick = () => show({view:'item',id:item.ID},true);
           list.appendChild(button);
         });
+        if (rows.length > pipelineLimit)
+          moreButton(moreRow,rows.length - pipelineLimit,() => { pipelineLimit += PAGE; updateResults(); });
       }
-      search.oninput = () => { pipelineQuery = search.value; updateResults(); };
+      // The list's own fields filter at once; words in the long text are found on the server.
+      const searchText = debounce(query => {
+        if (query !== pipelineQuery) return;
+        serve('searchPipelineItems',[query],ids => {
+          if (query !== pipelineQuery) return;
+          fullText = {query,ids:new Set(ids),pending:false}; updateResults();
+        },() => { if (query === pipelineQuery) { fullText.pending = false; updateResults(); } });
+      },350);
+      const localSearch = debounce(() => updateResults(),100);
+      search.oninput = () => {
+        pipelineQuery = search.value; pipelineLimit = PAGE;
+        const long = searchWords(pipelineQuery).join(' ').length >= 3;
+        fullText = {query:pipelineQuery,ids:null,pending:long};
+        localSearch();
+        if (long) searchText(pipelineQuery);
+      };
       updateResults();
+      showNotice(notice); notice = '';
     }
-    function renderPipelineDetail() {
-      const item = (pipelineRows || []).find(row => row.ID === selectedPipelineId);
-      if (!item) { renderPipelineList(); return; }
+    function openPipelineItem(token) {
+      const id = selectedPipelineId;
+      app.replaceChildren(loadingBox('Loading Pipeline item ' + id + '…'));
+      serve('getPipelineItem',[id],item => { if (isCurrent(token)) renderPipelineDetail(item); },
+        message => isCurrent(token) && app.replaceChildren(errorBox('Could not load Pipeline item ' + id + ': ' + message,
+          () => show({view:'item',id}))));
+    }
+    function renderPipelineDetail(item) {
       app.replaceChildren();
       const back = node('button','back icon-button','←'); back.type = 'button';
       back.setAttribute('aria-label','Back to all Pipeline items'); back.title = 'All Pipeline items';
-      back.onclick = renderPipelineList;
+      back.onclick = () => show({view:'pipeline'},true);
       const toolbar = node('div','detail-toolbar'); toolbar.appendChild(back); app.appendChild(toolbar);
       const panel = node('article','panel'); app.appendChild(panel);
       const head = node('div','panel-head');
@@ -707,17 +887,18 @@
       for (const value of [item.Status,item.Stage,item['Review stage'],item['Agent status']])
         if (value) meta.appendChild(node('span','h-pill',value));
       head.appendChild(meta);
+      const tools = node('div','toolbar-actions');
+      if (item['Current decision ID']) {
+        const decision = node('button','h-button','Open decision ' + item['Current decision ID']);
+        decision.type = 'button';
+        decision.onclick = () => show({view:'decision',id:item['Current decision ID']},true);
+        tools.appendChild(decision);
+      }
       const edit = node('button','h-button h-button--primary edit-action'); edit.type = 'button';
       append(edit,node('span','edit-glyph','✎'),node('span','','Edit item'));
-      edit.onclick = () => {
-        if (formData) { renderPipelineEdit(); return; }
-        app.replaceChildren(node('div','loading','Loading edit fields…'));
-        google.script.run.withSuccessHandler(data => {
-          formData = data; renderPipelineEdit();
-        }).withFailureHandler(error => app.replaceChildren(node('div','loading',
-          'Could not load edit fields: ' + (error.message || String(error))))).getPipelineFormData();
-      };
-      toolbar.appendChild(edit); panel.appendChild(head);
+      const token = viewToken;
+      edit.onclick = () => withFormData(token,() => renderPipelineEdit(item));
+      tools.appendChild(edit); toolbar.appendChild(tools); panel.appendChild(head);
       const body = node('div','panel-body'); panel.appendChild(body);
       for (const pair of [
         ['Summary / Why',item['Summary / Why']],
@@ -752,14 +933,13 @@
         a.rel = 'noopener noreferrer'; linkRow.appendChild(a);
       }
       links.appendChild(linkRow);
+      showNotice(notice); notice = '';
     }
-    function renderPipelineEdit() {
-      const item = (pipelineRows || []).find(row => row.ID === selectedPipelineId);
-      if (!item) { renderPipelineList(); return; }
+    function renderPipelineEdit(item) {
       app.replaceChildren();
       const back = node('button','back icon-button','←'); back.type = 'button';
       back.setAttribute('aria-label','Back to Pipeline item'); back.title = 'Pipeline item';
-      back.onclick = renderPipelineDetail;
+      back.onclick = () => renderPipelineDetail(item);
       const toolbar = node('div','detail-toolbar'); toolbar.appendChild(back); app.appendChild(toolbar);
       const panel = node('article','panel'), head = node('div','panel-head');
       append(head,node('div','eyebrow','Pipeline ' + item.ID),
@@ -816,14 +996,15 @@
           'Run location':runLocation.control.value
         }};
         google.script.run.withSuccessHandler(result => {
-          google.script.run.withSuccessHandler(rows => {
-            pipelineRows = rows; renderPipelineDetail();
-            showNotice(result.changed ? 'Pipeline item saved.' : 'No changes to save.');
-          }).withFailureHandler(error => {
+          afterWrite();
+          serve('getPipelineItem',[item.ID],saved => {
+            notice = result.changed ? 'Pipeline item saved.' : 'No changes to save.';
+            renderPipelineDetail(saved);
+          },error => {
             message.className = 'message error';
-            message.textContent = 'Saved, but could not refresh: ' + (error.message || String(error));
+            message.textContent = 'Saved, but could not reload the item: ' + error;
             save.disabled = false;
-          }).getPipelineOverview();
+          });
         }).withFailureHandler(error => {
           message.className = 'message error';
           message.textContent = error.message || String(error); save.disabled = false;
@@ -838,14 +1019,23 @@
       return option ? 'Accepted: ' + option.context.replace(/[.;]+$/,'') +
         ' (Option ' + code + ').' : '';
     }
-    function renderDetail() {
-      const r = [...dashboard.pending,...dashboard.recent].find(x => x.id === selectedId);
-      if (!r) { renderList(); return; }
+    // A decision is read fresh each time it is opened, so its version matches the sheet.
+    function openDecision(token) {
+      const id = selectedId;
+      app.replaceChildren(loadingBox('Loading decision ' + id + '…'));
+      serve('getDecisionReview',[id],record => { if (isCurrent(token)) renderDetail(record); },
+        message => isCurrent(token) && app.replaceChildren(errorBox('Could not load decision ' + id + ': ' + message,
+          () => show({view:'decision',id}))));
+    }
+    function renderDetail(r) {
       app.replaceChildren();
       const back = node('button','back icon-button','←'); back.type = 'button';
       back.setAttribute('aria-label','Back to all decisions'); back.title = 'All decisions';
-      back.onclick = renderList;
+      back.onclick = () => show({view:'decisions'},true);
       const toolbar = node('div','detail-toolbar'); toolbar.appendChild(back); app.appendChild(toolbar);
+      const tools = node('div','toolbar-actions'), open = node('button','h-button','Open Pipeline ' + r.pipelineId);
+      open.type = 'button'; open.onclick = () => show({view:'item',id:r.pipelineId},true);
+      tools.appendChild(open); toolbar.appendChild(tools);
       const panel = node('article','panel'); app.appendChild(panel);
       const head = node('div','panel-head');
       append(head,node('div','eyebrow','Decision ' + r.id + ' · ' + r.domain),
@@ -963,9 +1153,9 @@
         message.className = 'message'; message.textContent = 'Saving…';
         const chosen = checked();
         google.script.run.withSuccessHandler(result => {
-          pipelineRows = null;
+          afterWrite();
           notice = 'Decision revised; Pipeline ' + r.pipelineId + ' is now ' + result.set.Status + '.';
-          loadDashboard(() => renderList());
+          show({view:'decisions'},true);
         }).withFailureHandler(error => {
           message.className = 'message error';
           message.textContent = error && error.message ? error.message : String(error);
@@ -1017,10 +1207,10 @@
           optionCode:chosen ? chosen.value : '',wording:wordingField.control.value,
           note:noteField.control.value};
         google.script.run.withSuccessHandler(result => {
-          pipelineRows = null;
+          afterWrite();
           notice = result.warning || (result.applied ?
             'Decision saved and Pipeline updated.' : 'Decision saved.');
-          loadDashboard(() => renderList());
+          show({view:'decisions'},true);
         }).withFailureHandler(error => {
           message.className = 'message error';
           message.textContent = error && error.message ? error.message : String(error);
@@ -1105,7 +1295,7 @@
           'Run location':runLocation.control.value,'Link type':linkType.control.value,
           'URL':url.control.value,'GitHub branch':branch.control.value};
         google.script.run.withSuccessHandler(result => {
-          pipelineRows = null;
+          afterWrite();
           form.reset(); agentStatus.control.value = 'No action'; agentType.control.value = 'Unassigned';
           updateEntities(); updateReady();
           message.className = 'message ok';
@@ -1333,19 +1523,31 @@
           [item.domain,item.entity].filter(Boolean).join(' / ') + ').');
       app.appendChild(report);
     }
-    function loadDashboard(done) {
-      google.script.run.withSuccessHandler(result => {
-        dashboard = result; done();
-      }).withFailureHandler(error => {
-        app.replaceChildren(node('div','loading','Could not load decisions: ' +
-          (error && error.message ? error.message : String(error))));
-      }).getReviewDashboard();
-    }
     $('nav-decisions').onclick = () => navigate('decisions');
     $('nav-pipeline').onclick = () => navigate('pipeline');
     $('nav-folders').onclick = () => navigate('folders');
     $('nav-add').onclick = () => navigate('add');
-    loadDashboard(renderList);
+    // "/" jumps to the search box of the list on screen.
+    if (document.addEventListener) document.addEventListener('keydown',event => {
+      const target = event.target || {};
+      if (event.key !== '/' || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName || '') || target.isContentEditable) return;
+      const box = $('pipeline-search') || $('decision-search') || $('folder-search');
+      if (box) { event.preventDefault(); box.focus(); }
+    });
+    // The first Decisions list comes with the page (doGet); without it the page loads it.
+    try {
+      const embedded = JSON.parse(($('initial-data') || {}).textContent || 'null');
+      if (embedded && Array.isArray(embedded.pending)) dashboard = embedded;
+    } catch (_) { dashboard = null; }
+    function start(hash) {
+      show(parseHash(hash),false);
+      // The Pipeline list loads in the background, so the Pipeline tab opens at once.
+      if (!pipelineRows) loadPipeline(false);
+    }
+    if (google.script.history) google.script.history.setChangeHandler(event =>
+      show(event.state && event.state.view ? event.state : parseHash(event.location && event.location.hash),false));
+    if (google.script.url) google.script.url.getLocation(location => start(location.hash));
+    else start('');
   </script>
 </body>
 </html>

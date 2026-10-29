@@ -194,6 +194,17 @@ test('a missing or duplicated Decision Register row stops the run before any wri
   assert.deepEqual(w.pipeline.writes, []);
 });
 
+// CacheService's script cache, with its 100 KB per-value limit (counted in UTF-8 bytes).
+function fakeCache() {
+  const store = {};
+  const put = (k, v) => {
+    assert.ok(Buffer.byteLength(v) <= 100 * 1024, 'cache value over 100 KB: ' + k);
+    store[k] = v;
+  };
+  return {store, get: k => store[k] ?? null, put, putAll: o => Object.keys(o).forEach(k => put(k, o[k])),
+    getAll: ks => Object.fromEntries(ks.filter(k => k in store).map(k => [k, store[k]])),
+    remove: k => { delete store[k]; }, removeAll: ks => ks.forEach(k => { delete store[k]; })};
+}
 function webWorkbooks(tabs = {}) {
   const pipeline = sheet([
     ['ID','Title','Status','Stage','Review stage','Agent status','Agent type','Current decision ID','Updated',
@@ -222,21 +233,80 @@ function webWorkbooks(tabs = {}) {
     return {getId:()=>key,getSheetByName:n=>books[key][n]||null};
   };
   const lock = {tryLock:()=>true,releaseLock:()=>{}};
-  const ctx = load({SpreadsheetApp:{openById:book,getActiveSpreadsheet:()=>null,
+  const cache = fakeCache(), opened = [];
+  const ctx = load({SpreadsheetApp:{openById:id => { opened.push(id); return book(id); },getActiveSpreadsheet:()=>null,
     DataValidationCriteria:{VALUE_IN_LIST:'list'}},
-    LockService:{getScriptLock:()=>lock}});
-  return {ctx,pipeline,register};
+    LockService:{getScriptLock:()=>lock}, CacheService:{getScriptCache:()=>cache}});
+  return {ctx,pipeline,register,cache,opened};
 }
 
 test('web review lists current proposals and recent decisions without adding tabs', () => {
   const w = webWorkbooks(), dashboard = w.ctx.getReviewDashboard();
   assert.equal(dashboard.pending.map(r=>r.id).join(','), '1');
   assert.equal(dashboard.recent.map(r=>r.id).join(','), '4,3');
-  assert.equal(dashboard.pending[0].options.map(o=>o.code).join(','), 'B,C');
-  assert.equal(dashboard.pending[0].links.length, 1);
+  // The list carries summaries only; the full record comes when a decision is opened.
+  assert.deepEqual(Object.keys(dashboard.pending[0]).sort(),
+    ['domain','editable','id','pipelineId','question','stage','status','title']);
+  const record = w.ctx.getDecisionReview('1');
+  assert.equal(record.options.map(o=>o.code).join(','), 'B,C');
+  assert.equal(record.links.length, 1);
+  assert.equal(record.editable, true);
+  assert.equal(w.ctx.getDecisionReview('3').editable, false);
+  assert.throws(() => w.ctx.getDecisionReview('99'), /Expected one Decision ID 99; found 0/);
+});
+test('lists are cached briefly, in chunks under 100 KB, and Refresh reads the sheets again', () => {
+  const w = webWorkbooks();
+  assert.equal(w.ctx.getReviewDashboard().cachedAt, 0);
+  w.register.rows[3][5] = 'Changed in the sheet';
+  const cached = w.ctx.getReviewDashboard();
+  assert.ok(cached.cachedAt > 0);
+  assert.equal(cached.recent[0].question, 'Should we own sending?');
+  assert.equal(w.ctx.getReviewDashboard({fresh: true}).recent[0].question, 'Changed in the sheet');
+  // A list larger than one cache value is split; every chunk stays under the limit (fakeCache checks it).
+  for (let i = 0; i < 400; i++)
+    w.pipeline.rows.push([String(100 + i), 'Item ' + i + ' – ' + '€'.repeat(150), 'Inbox', 'Stage 0', '', 'No action',
+      'Codex', '', '', '', 'Horology', '', 'Idea', 'Local', 'Ünïcode reason '.repeat(30), '']);
+  const fresh = w.ctx.getPipelineOverview({fresh: true});
+  assert.equal(fresh.rows.length, 402);
+  assert.ok(Object.keys(w.cache.store).filter(k => k.startsWith('pipelineOverview:')).length > 1);
+  assert.equal(w.ctx.getPipelineOverview().rows.length, 402);
+  assert.ok(w.ctx.getPipelineOverview().cachedAt > 0);
+});
+test('every write from the page clears the cached lists', () => {
+  const w = webWorkbooks();
+  const fill = () => { w.ctx.getReviewDashboard(); w.ctx.getPipelineOverview(); assert.ok(w.cache.store.reviewDashboard && w.cache.store.pipelineOverview); };
+  const cleared = () => assert.ok(!w.cache.store.reviewDashboard && !w.cache.store.pipelineOverview);
+  fill();
+  w.ctx.submitDecisionReview({decisionId:'1',version:w.ctx.getDecisionReview('1').version,action:'rework',note:'More detail.'});
+  cleared(); fill();
+  w.ctx.updatePipelineItemFromWeb({pipelineId:'22',version:w.ctx.getPipelineItem('22').version,fields:{Title:'Renamed'}});
+  cleared(); fill();
+  w.ctx.addPipelineItemFromWeb({Title:'New idea',Domain:'Horology',Type:'Idea','Agent status':'No action','Agent type':'Unassigned'});
+  cleared(); fill();
+  assert.throws(() => w.ctx.updatePipelineItemFromWeb({pipelineId:'22',version:'old',fields:{}}), /changed since/);
+  cleared();  // also cleared when a save is refused: the page reloads what changed
+});
+test('a request opens each workbook once', () => {
+  const w = webWorkbooks({steps: [['Pipeline ID','Step','Task']], options: [['Decision ID','Code','Summary','Recommended']]});
+  w.ctx.getDecisionReview('1');
+  assert.deepEqual([...new Set(w.opened)].length, w.opened.length);
+});
+test('the page arrives with the first Decisions list embedded safely', () => {
+  const w = webWorkbooks();
+  w.register.rows[3][5] = 'Close it? </script><script>alert(1)</script>';
+  let template;
+  const output = {setTitle() { return this; }, addMetaTag() { return this; }};
+  vm.runInContext('this.HtmlService = h;', Object.assign(w.ctx, {h: {createTemplateFromFile: () =>
+    (template = {evaluate: () => output})}}));
+  w.ctx.doGet();
+  assert.doesNotMatch(template.initialJson, /<\//);
+  assert.equal(JSON.parse(template.initialJson).recent[0].question, 'Close it? </script><script>alert(1)</script>');
+  w.ctx.CacheService = {getScriptCache: () => { throw Error('cache down'); }};
+  w.ctx.doGet();
+  assert.equal(template.initialJson, 'null');  // the page loads the list itself and shows any error
 });
 test('web review accepts a different option and applies the Pipeline transition immediately', () => {
-  const w = webWorkbooks(), version = w.ctx.getReviewDashboard().pending[0].version;
+  const w = webWorkbooks(), version = w.ctx.getDecisionReview('1').version;
   const result = w.ctx.submitDecisionReview({decisionId:'1',version,action:'accepted',
     optionCode:'C',wording:'Accepted: build TF-IDF term gap (Option C), after a pilot check.',
     note:'The pilot now needs this feature.'});
@@ -248,7 +318,7 @@ test('web review accepts a different option and applies the Pipeline transition 
   assert.equal(w.pipeline.rows[1][3],'Stage 3');
 });
 test('web review rejects stale proposals and requires a reason for an alternative', () => {
-  const w = webWorkbooks(), version = w.ctx.getReviewDashboard().pending[0].version;
+  const w = webWorkbooks(), version = w.ctx.getDecisionReview('1').version;
   assert.throws(()=>w.ctx.submitDecisionReview({decisionId:'1',version:'old',action:'accepted',
     optionCode:'B',wording:'Accepted: measurement spike.'}),/changed since/);
   assert.throws(()=>w.ctx.submitDecisionReview({decisionId:'1',version,action:'accepted',
@@ -256,7 +326,7 @@ test('web review rejects stale proposals and requires a reason for an alternativ
   assert.deepEqual(w.register.writes,[]);
 });
 test('web review requires rework instructions and records them before status', () => {
-  const w = webWorkbooks(), version = w.ctx.getReviewDashboard().pending[0].version;
+  const w = webWorkbooks(), version = w.ctx.getDecisionReview('1').version;
   assert.throws(()=>w.ctx.submitDecisionReview({decisionId:'1',version,action:'rework',note:''}),/instructions/);
   const result = w.ctx.submitDecisionReview({decisionId:'1',version,action:'rework',note:'Compare pilot drafts.'});
   assert.equal(result.applied,true);
@@ -269,7 +339,7 @@ const DECISION_6 = 'Proposed (Option B): lead with intermediate lifters. Positio
 test('without Options rows, options come from the text, including lettered alternatives', () => {
   const w = webWorkbooks();
   w.register.rows[1][6] = DECISION_6;
-  const options = w.ctx.getReviewDashboard().pending[0].options;
+  const options = w.ctx.getDecisionReview('1').options;
   assert.equal(options.map(o => o.code).join(','), 'A,B,C');
   assert.equal(options.find(o => o.recommended).code, 'B');
   assert.equal(options[0].context, 'lead with beginners');
@@ -287,7 +357,7 @@ test('Options rows replace the parsed text, and planned steps come from the Step
       ['14','2','Offline TF-IDF test on 2–3 plans','horology-research','Planned'],
       ['14','1','Read persisted search-quality reports','horology-technical-assessment','Done'],
       ['22','1','Another item','','']]});
-  const r = w.ctx.getReviewDashboard().pending[0];
+  const r = w.ctx.getDecisionReview('1');
   assert.equal(r.options.map(o => o.code).join(','), 'A,B,C');
   assert.equal(r.options.find(o => o.recommended).code, 'B');
   assert.deepEqual([...r.options[2].figures], ['About $0.50 a plan run', 'Effort Medium']);
@@ -301,7 +371,7 @@ test('Options rows replace the parsed text, and planned steps come from the Step
 test('without Steps rows, planned steps come from a numbered Next step; reasons become bullets', () => {
   const w = webWorkbooks();
   w.pipeline.rows[1][9] = 'Overall question\n1. Demand gate [horology-research]\n2) Current state';
-  const r = w.ctx.getReviewDashboard().pending[0];
+  const r = w.ctx.getDecisionReview('1');
   assert.deepEqual(JSON.parse(JSON.stringify(r.steps.map(x => [x.number, x.task, x.specialist]))),
     [['1', 'Demand gate', 'horology-research'], ['2', 'Current state', '']]);
   assert.deepEqual([...w.ctx.bulletPoints('Costs ~$90 a month; e.g. 250+ readers. Effort Medium.\n- Uncertainty Low')],
@@ -311,10 +381,10 @@ test('a decided current decision can be revised: Approved item parked from the p
   const w = webWorkbooks();
   w.register.rows[1][8] = 'accepted';
   w.pipeline.rows[1][2] = 'Approved'; w.pipeline.rows[1][3] = 'Stage 3'; w.pipeline.rows[1][5] = 'Ready';
-  const record = w.ctx.getReviewDashboard().recent.find(r => r.id === '1');
+  const record = w.ctx.getDecisionReview('1');
   assert.equal(record.revisable, true);
-  assert.equal(w.ctx.getReviewDashboard().recent.find(r => r.id === '4').revisable, true);
-  assert.equal(w.ctx.getReviewDashboard().recent.find(r => r.id === '3').revisable, false);  // not current
+  assert.equal(w.ctx.getDecisionReview('4').revisable, true);
+  assert.equal(w.ctx.getDecisionReview('3').revisable, false);  // not current
   assert.throws(() => w.ctx.reviseDecisionReview({decisionId:'1',version:record.version,action:'parked',note:''}), /reason/);
   assert.throws(() => w.ctx.reviseDecisionReview({decisionId:'1',version:'old',action:'parked',note:'Later'}), /changed since/);
   assert.deepEqual(w.register.writes, []);
@@ -330,10 +400,10 @@ test('revise refuses an item under review or a run in progress, before writing',
   const w = webWorkbooks();
   w.register.rows[1][8] = 'accepted';
   w.pipeline.rows[1][2] = 'Researching';
-  const record = w.ctx.getReviewDashboard().recent.find(r => r.id === '1');
+  const record = w.ctx.getDecisionReview('1');
   assert.equal(record.revisable, false);
   w.pipeline.rows[1][2] = 'Approved';
-  const version = w.ctx.getReviewDashboard().recent.find(r => r.id === '1').version;
+  const version = w.ctx.getDecisionReview('1').version;
   w.pipeline.rows[1][2] = 'Researching';
   assert.throws(() => w.ctx.reviseDecisionReview({decisionId:'1',version,action:'parked',note:'x'}), /changed since/);
   assert.equal(w.register.writes.length + w.pipeline.writes.length, 0);
@@ -355,30 +425,50 @@ test('web item form rejects invalid Ready items before writing', () => {
     'Agent status':'Ready','Agent type':'Unassigned'}),/Claude Code or Codex/);
   assert.equal(w.pipeline.writes.length,0);
 });
-test('Pipeline overview includes every Master row with a direct link and makes no writes', () => {
-  const w = webWorkbooks(), rows = w.ctx.getPipelineOverview();
+test('Pipeline overview includes every Master row as a light list row and makes no writes', () => {
+  const w = webWorkbooks();
+  w.pipeline.rows[1][14] = 'Why it matters.\n\n' + 'A long reason. '.repeat(40);
+  w.pipeline.rows[2][9] = 'Only a next step';
+  const rows = w.ctx.getPipelineOverview().rows;
   assert.equal(rows.length,2);
   assert.equal(rows[0].ID,'14');
   assert.equal(rows[1].Status,'Completed');
-  assert.match(rows[0].sheetUrl,/gid=2040100901&range=A2$/);
+  assert.ok(rows[0].summary.startsWith('Why it matters. A long reason.') && rows[0].summary.endsWith('…'));
+  assert.ok(rows[0].summary.length <= 181);
+  assert.equal(rows[1].summary,'Only a next step');
+  for (const field of ['Summary / Why','Next step / Research question','Revisit trigger','steps','version'])
+    assert.equal(field in rows[0], false, field);
+  const item = w.ctx.getPipelineItem('14');
+  assert.match(item.sheetUrl,/gid=2040100901&range=A2$/);
+  assert.match(item['Summary / Why'],/^Why it matters\.\n\n/);
+  assert.equal(item.route,'investigation');
+  assert.throws(() => w.ctx.getPipelineItem('99'),/Expected one ID 99; found 0/);
   assert.equal(w.pipeline.writes.length,0);
 });
+test('Pipeline search finds items by words in their long text, which the list does not carry', () => {
+  const w = webWorkbooks();
+  w.pipeline.rows[2][15] = 'Revisit when a pilot asks for Postmark sending.';
+  assert.deepEqual([...w.ctx.searchPipelineItems('postmark PILOT')],['22']);
+  assert.deepEqual([...w.ctx.searchPipelineItems('audience')],['22']);
+  assert.deepEqual([...w.ctx.searchPipelineItems('postmark beginners')],[]);
+  assert.deepEqual([...w.ctx.searchPipelineItems('  ')],[]);
+  assert.throws(() => w.ctx.searchPipelineItems('x'.repeat(121)),/too long/);
+});
 
-test('Pipeline overview gives each item its Steps-tab rows in order, and none without a tab', () => {
+test('An opened Pipeline item has its Steps-tab rows in order, and none without a tab', () => {
   const w = webWorkbooks({steps: [['Pipeline ID','Step','Task','Specialist','Status'],
     ['22','2','Write the plan','horology-gtm','Planned'],['22','1','Read the research','','Done'],
     ['14','','','','']]});
-  const rows = w.ctx.getPipelineOverview();
-  assert.deepEqual(JSON.parse(JSON.stringify(rows[1].steps.map(s => [s.number, s.task, s.status]))),
+  assert.deepEqual(JSON.parse(JSON.stringify(w.ctx.getPipelineItem('22').steps.map(s => [s.number, s.task, s.status]))),
     [['1','Read the research','Done'],['2','Write the plan','Planned']]);
-  assert.equal(rows[0].steps.length, 0);
-  assert.equal(webWorkbooks().ctx.getPipelineOverview()[0].steps.length, 0);
+  assert.equal(w.ctx.getPipelineItem('14').steps.length, 0);
+  assert.equal(webWorkbooks().ctx.getPipelineItem('14').steps.length, 0);
   assert.equal(w.pipeline.writes.length, 0);
 });
 test('Pipeline edit saves fields by ID and moves an Inbox Ready item to Stage 1', () => {
   const w = webWorkbooks();
   w.pipeline.rows[1][2] = 'Inbox'; w.pipeline.rows[1][3] = 'Stage 0';
-  const item = w.ctx.getPipelineOverview()[0];
+  const item = w.ctx.getPipelineItem('14');
   const result = w.ctx.updatePipelineItemFromWeb({pipelineId:'14',version:item.version,fields:{
     'Title':'Sharper title','Type':'Research','Summary / Why':'A clear reason',
     'Next step / Research question':'Investigate the gap','Revisit trigger':'After pilot',
@@ -392,7 +482,7 @@ test('Pipeline edit saves fields by ID and moves an Inbox Ready item to Stage 1'
   assert.ok(w.pipeline.rows[1][8] instanceof Date);
 });
 test('Pipeline edit rejects stale data, forbidden fields and invalid Ready moves', () => {
-  const w = webWorkbooks(), item = w.ctx.getPipelineOverview()[0];
+  const w = webWorkbooks(), item = w.ctx.getPipelineItem('14');
   const base = {pipelineId:'14',version:item.version,fields:{
     'Title':'Changed','Agent status':'Ready','Agent type':'Codex',
     'Run location':'Local','Next step / Research question':'Investigate'
@@ -406,24 +496,24 @@ test('Pipeline edit rejects stale data, forbidden fields and invalid Ready moves
 test('Pipeline edit makes a Fix item Ready at Stage 1, and an In progress one Ready again at Stage 3', () => {
   const w = webWorkbooks();
   w.pipeline.rows[1][2] = 'Inbox'; w.pipeline.rows[1][3] = 'Stage 0';
-  let item = w.ctx.getPipelineOverview()[0];
+  let item = w.ctx.getPipelineItem('14');
   const fields = {'Type':'Fix','Agent status':'Ready','Agent type':'Claude Code','Run location':'Cloud',
     'Next step / Research question':'Fix the broken link'};
   assert.equal(w.ctx.updatePipelineItemFromWeb({pipelineId:'14',version:item.version,fields}).stage,'Stage 1');
   w.pipeline.rows[1][2] = 'In progress'; w.pipeline.rows[1][3] = 'Stage 3'; w.pipeline.rows[1][5] = 'No action';
-  item = w.ctx.getPipelineOverview()[0];
+  item = w.ctx.getPipelineItem('14');
   assert.equal(item.route,'implementation');
   assert.equal(w.ctx.updatePipelineItemFromWeb({pipelineId:'14',version:item.version,fields}).stage,'Stage 3');
   assert.equal(w.pipeline.rows[1][5],'Ready');
   w.pipeline.rows[1][5] = 'No action';
-  item = w.ctx.getPipelineOverview()[0];
+  item = w.ctx.getPipelineItem('14');
   assert.throws(() => w.ctx.updatePipelineItemFromWeb({pipelineId:'14',version:item.version,
     fields:{...fields,'Type':'Research'}}),/Agent status change is not allowed/);
 });
 test('Pipeline edit leaves Stage 3 unchanged and avoids writes when nothing changed', () => {
   const w = webWorkbooks();
   w.pipeline.rows[1][2] = 'Approved'; w.pipeline.rows[1][3] = 'Stage 3';
-  const item = w.ctx.getPipelineOverview()[0];
+  const item = w.ctx.getPipelineItem('14');
   const unchanged = w.ctx.updatePipelineItemFromWeb({pipelineId:'14',version:item.version,fields:{}});
   assert.equal(unchanged.changed,false);
   assert.equal(w.pipeline.writes.length,0);
@@ -434,21 +524,89 @@ test('Pipeline edit leaves Stage 3 unchanged and avoids writes when nothing chan
   assert.equal(w.pipeline.rows[1][5],'Ready');
 });
 
-test('workspace groups decisions by item and combines search with Pipeline filters', () => {
+// The page script in a minimal browser: elements accept anything, and server calls are recorded.
+function page({embedded = null, hash = ''} = {}) {
   const html = fs.readFileSync(path.join(dir,'Review.html'),'utf8');
+  assert.match(html, /<script type="application\/json" id="initial-data"><\?!= initialJson \?><\/script>/);
   const script = html.match(/<script>([\s\S]*?)<\/script>/)[1];
-  const runner = {withSuccessHandler() { return this; },
-    withFailureHandler() { return this; }, getReviewDashboard() {}};
-  const ctx = vm.createContext({document:{getElementById:()=>({})},
-    HorologyUi:{element:()=>({})},google:{script:{run:runner}}});
-  vm.runInContext(script,ctx);
-  const groups = JSON.parse(vm.runInContext("dashboard={pending:[{id:'5',pipelineId:'22',editable:true}],recent:[{id:'4',pipelineId:'22',editable:false},{id:'3',pipelineId:'14',editable:false}]};JSON.stringify(decisionGroups())",ctx));
+  const element = () => new Proxy(function () {}, {
+    get: (target, key) => key === 'textContent' ? '' : key === Symbol.iterator ? [][Symbol.iterator] : element(),
+    set: () => true, apply: () => element()});
+  const calls = [], pushed = [];
+  const runner = () => {
+    const handlers = {};
+    return new Proxy({}, {get: (target, key) => {
+      if (key === 'withSuccessHandler') return fn => { handlers.ok = fn; return runner.current; };
+      if (key === 'withFailureHandler') return fn => { handlers.fail = fn; return runner.current; };
+      return (...args) => calls.push({method: key, args, ok: handlers.ok, fail: handlers.fail});
+    }});
+  };
+  const google = {script: {
+    get run() { runner.current = runner(); return runner.current; },
+    url: {getLocation: fn => fn({hash})},
+    history: {push: (state, params, h) => pushed.push(h), setChangeHandler: () => {}}}};
+  const initial = {textContent: JSON.stringify(embedded)};
+  const ctx = vm.createContext({window: {scrollTo() {}}, setTimeout: fn => fn(), clearTimeout() {},
+    document: {getElementById: id => id === 'initial-data' ? initial : element()},
+    HorologyUi: {element: () => element()}, google});
+  vm.runInContext(script, ctx);
+  return {ctx, calls, pushed, run: code => JSON.parse(vm.runInContext('JSON.stringify(' + code + ')', ctx))};
+}
+
+test('workspace groups decisions by item and combines search with Pipeline filters', () => {
+  const {run, ctx} = page();
+  vm.runInContext("dashboard={pending:[{id:'5',pipelineId:'22',editable:true,title:'Audience lists'}],recent:[{id:'4',pipelineId:'22',editable:false,title:'Audience lists'},{id:'3',pipelineId:'14',editable:false,title:'TF-IDF drafting',question:'Which content feature?'}]}", ctx);
+  const groups = run('decisionGroups()');
   assert.equal(groups.pending.length,1);
   assert.equal(groups.pending[0].length,2);
   assert.equal(groups.history[0][0].pipelineId,'14');
-  const filtered = JSON.parse(vm.runInContext("JSON.stringify(filteredPipelineRows([{ID:'1',Title:'Audience',Domain:'Article Aggregator',Entity:'',Type:'Research',Status:'Inbox',Stage:'', 'Agent status':'No action','Agent type':'Codex','Run location':'Local','Summary / Why':'','Next step / Research question':''},{ID:'2',Title:'Campaign',Domain:'Horology',Entity:'',Type:'Plan',Status:'Approved',Stage:'Stage 3','Agent status':'Ready','Agent type':'Claude Code','Run location':'Cloud','Summary / Why':'','Next step / Research question':''}], 'aud', {Domain:'Article Aggregator',Stage:'__blank__'}))",ctx));
+  const searched = run("decisionGroups('content FEATURE')");
+  assert.deepEqual([searched.pending.length, searched.history.length], [0, 1]);
+  const rows = "[{ID:'1',Title:'Audience',Domain:'Article Aggregator',Entity:'',Type:'Research',Status:'Inbox',Stage:'','Agent status':'No action','Agent type':'Codex','Run location':'Local',summary:'Lists for pilots'},{ID:'2',Title:'Campaign',Domain:'Horology',Entity:'',Type:'Plan',Status:'Approved',Stage:'Stage 3','Agent status':'Ready','Agent type':'Claude Code','Run location':'Cloud',summary:''}]";
+  const filtered = run(`filteredPipelineRows(${rows}, 'aud', {Domain:'Article Aggregator',Stage:'__blank__'})`);
   assert.equal(filtered.length,1);
   assert.equal(filtered[0].ID,'1');
+  assert.equal(run(`filteredPipelineRows(${rows}, 'pilots audience', {})`).length, 1);  // words in any field
+  assert.equal(run(`filteredPipelineRows(${rows}, 'postmark', {})`).length, 0);
+  // Items whose long text matched on the server are added, still within the filters.
+  assert.deepEqual(run(`filteredPipelineRows(${rows}, 'postmark', {}, new Set(['2'])).map(r => r.ID)`), ['2']);
+  assert.equal(run(`filteredPipelineRows(${rows}, 'postmark', {Status:'Inbox'}, new Set(['2'])).length`), 0);
+});
+test('Pipeline sort: sheet order, needs attention first, newest, recently updated', () => {
+  const {run} = page();
+  const rows = "[{ID:'9',Status:'Completed',Updated:'02/11/2026'},{ID:'12',Status:'Inbox',Updated:'30/10/2026'},{ID:'10',Status:'Awaiting decision',Updated:'01/12/2025'}]";
+  assert.deepEqual(run(`sortedPipelineRows(${rows},'sheet').map(r => r.ID)`), ['9','12','10']);
+  assert.deepEqual(run(`sortedPipelineRows(${rows},'status').map(r => r.ID)`), ['10','12','9']);
+  assert.deepEqual(run(`sortedPipelineRows(${rows},'newest').map(r => r.ID)`), ['12','10','9']);
+  assert.deepEqual(run(`sortedPipelineRows(${rows},'updated').map(r => r.ID)`), ['9','12','10']);
+});
+test('views are kept in the URL hash, and unknown hashes fall back to Decisions', () => {
+  const {run} = page();
+  assert.deepEqual(run("parseHash('#item/51')"), {view:'item',id:'51'});
+  assert.deepEqual(run("parseHash('decision/9')"), {view:'decision',id:'9'});
+  assert.deepEqual(run("parseHash('pipeline')"), {view:'pipeline'});
+  assert.deepEqual(run("parseHash('item')"), {view:'pipeline'});
+  for (const bad of ['', 'graph', 'item/<script>', 'decision/1/2'])
+    assert.deepEqual(run(`parseHash(${JSON.stringify(bad)})`), {view:'decisions'}, bad);
+  assert.equal(run("hashFor({view:'item',id:'51'})"), 'item/51');
+});
+test('the page paints the embedded Decisions list, then loads the Pipeline list in the background', () => {
+  const {calls} = page({embedded: {pending: [], recent: []}});
+  assert.deepEqual(calls.map(c => c.method), ['getPipelineOverview']);
+  assert.deepEqual(JSON.parse(JSON.stringify(calls[0].args)), [{fresh: false}]);
+  const without = page();
+  assert.deepEqual(without.calls.map(c => c.method), ['getReviewDashboard', 'getPipelineOverview']);
+});
+test('a linked item or decision is read fresh when opened, and opening one updates the hash', () => {
+  const item = page({embedded: {pending: [], recent: []}, hash: 'item/51'});
+  assert.deepEqual(item.calls.map(c => c.method + ':' + c.args.join()), ['getPipelineItem:51', 'getPipelineOverview:[object Object]']);
+  const decision = page({embedded: {pending: [], recent: []}, hash: 'decision/9'});
+  assert.equal(decision.calls[0].method + ':' + decision.calls[0].args[0], 'getDecisionReview:9');
+  vm.runInContext("show({view:'item',id:'14'},true)", decision.ctx);
+  assert.deepEqual(decision.pushed, ['item/14']);
+  // A failed load leaves an error with a retry, not a blank page.
+  const failed = decision.calls.find(c => c.method === 'getPipelineItem');
+  failed.fail(Error('Expected one ID 14; found 0.'));
 });
 
 test('writes find the row by ID, not by the position read earlier', () => {
