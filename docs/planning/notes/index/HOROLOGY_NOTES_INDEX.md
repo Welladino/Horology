@@ -47,6 +47,7 @@ Implementation notes under `docs/planning/notes/`, grouped by area. Add a row wh
 | 2026-10-29 | [Register ID allocator](../2026-10-29_register-id-allocator_note.md) | Atomic Decision/Document IDs, ownership check before register writes, rows found by ID (HOR-6) |
 | 2026-10-29 | [Text-based agent documents](../2026-10-29_text-based-agent-documents_note.md) | No images in agent Docs, visuals in Stage 4 synthesis, TA ratings table replaces quadrant (HOR-11 rejected) |
 | 2026-10-29 | [Structured decisions and revise](../2026-10-29_structured-decisions-and-revise_note.md) | Options and Steps tabs, option cards on the decision page, revising a decided decision (HOR-8 A+B) |
+| 2026-10-29 | [Document graph view and daily sync (plan)](../2026-10-29_document-graph-visual-view_note.md) | Graph links tab from the sync job, read-only Cytoscape.js Graph view, daily Graph sync schedule (HOR-8 D, Decision 9; not yet implemented) |
 
 ## Cloud, data and local infrastructure
 
