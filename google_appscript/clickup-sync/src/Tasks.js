@@ -4,16 +4,17 @@ function taskId(url) {
   return m?m[1]:'';
 }
 
-function syncRow(c,pt,item,st,live,out) {
+function syncRow(c,pt,dt,item,st,live,out) {
   const row=item.row,id=String(row.data.ID),key='task:'+id,s=item.prior;
   const task=api(c,'task/'+item.task);
   if(String(task.id)!==item.task) throw Error('ClickUp returned a different task ID.');
-  const desired=STATUS_MAP[norm(row.data.Status)],remote=norm(task.status&&task.status.status);
+  // A task shared by several Pipeline items has no single Pipeline status; only comments are posted.
+  const desired=item.shared?'':STATUS_MAP[norm(row.data.Status)],remote=norm(task.status&&task.status.status);
   if(desired && remote!==desired) {
     out.push({pipelineId:id,action:'update task status',taskId:item.task,from:remote,to:desired});
     if(live) api(c,'task/'+item.task,'put',{status:desired});
   }
-  const update=notebookUpdate(c,pt,row,s.notebook,item.snapshot);
+  const update=notebookUpdate(c,pt,dt,row,s,item.snapshot);
   if(update) {
     out.push({pipelineId:id,action:'post milestone comment',taskId:item.task,
       ...(!live ? {comment:update} : {})});
@@ -25,7 +26,7 @@ function syncRow(c,pt,item,st,live,out) {
     }
   }
   if(live) {
-    s.taskId=item.task;s.notebook=item.snapshot;
+    s.taskId=item.task;s.notebook=item.snapshot;s.shared=item.shared;
     s.remote=desired||remote;s.sheetStatus=row.data.Status;s.stage=row.data.Stage;
     st.save(key,s);
   }

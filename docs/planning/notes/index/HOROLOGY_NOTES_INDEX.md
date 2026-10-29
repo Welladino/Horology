@@ -27,6 +27,7 @@ Implementation notes under `docs/planning/notes/`, grouped by area. Add a row wh
 | 2026-10-19 | [Pipeline Locations tab](../2026-10-19_pipeline-locations-tab_note.md) | Agent Location Directory Doc replaced by a sheet tab; v1.2 folder provisioning dropped |
 | 2026-10-19 | [Folders, skills and Apps Script](../2026-10-19_folders-skills-and-apps-script_note.md) | Folder-only Locations, Domains tab, guide-free skills, bound decisions and Locations scripts, standalone ClickUp Sync |
 | 2026-10-22 | [Completed status and ClickUp comments](../2026-10-22_completed-and-clickup-comments_note.md) | Final status without ClickUp closure, comment preview and workspace links |
+| 2026-10-29 | [ClickUp shared tasks and onChange](../2026-10-29_clickup-shared-tasks-and-onchange_note.md) | Several items per ClickUp task, first-sync intro, Pipeline onChange trigger and lock |
 
 ## MCP gateway
 

@@ -142,16 +142,43 @@ Standalone. In the project's **Project Settings → Script Properties**:
 | `CLICKUP_TOKEN` | Your personal ClickUp API token (ClickUp settings → Apps). Type it here only. |
 | `PIPELINE_SHEET_ID` | The user's Pipeline workbook ID, found between `/d/` and `/edit` in its URL |
 
-Map an existing task by placing its full `https://app.clickup.com/t/...` URL in that Pipeline row's **ClickUp Pipeline URL** cell. AI can suggest a match, but confirm the task before saving its URL. Unlinked rows are ignored; this script does not create tasks.
+Map an existing task by placing its full `https://app.clickup.com/t/...` URL in that Pipeline row's **ClickUp Pipeline URL** cell. AI can suggest a match, but confirm the task before saving its URL. Unlinked rows are ignored; this script does not create tasks. Several Pipeline items can share one task: each posts its own comment headed `Pipeline <ID> · <title>`, and the sync leaves a shared task's ClickUp status alone.
 
 Then, in the editor:
 
 1. `previewSync`: inspect the linked task IDs, proposed status changes and exact proposed comment in the Execution log. Writes nothing.
-2. `applySync` once to align status and establish the baseline. It does not repost historical decisions or documents.
+2. `applySync` once to align status. Each linked item with no `_ClickUp Sync` record yet gets one intro comment (Stage, Status and latest decision with a link); items already recorded are not re-introduced, and history is not reposted.
 3. Make a small test change to a linked Pipeline row or its indexed documents, run `previewSync`, then `applySync`. Check that one comment appears and that repeating the run posts nothing. Completed posts a comment without changing the ClickUp status; close that task manually.
-4. Keep the existing hourly `applySync` trigger. If it is missing, `installHourlyTrigger` creates one; it leaves an existing trigger alone. `stopSync` removes it.
+4. Run `installTriggers`. It keeps an existing hourly `applySync` trigger and adds the Pipeline onChange trigger (`syncOnPipelineChange`); neither is duplicated if it already exists. Approve the authorization prompt, which now includes the Pipeline workbook trigger. `installHourlyTrigger` and `installChangeTrigger` install one each; `removeChangeTrigger` removes only the onChange trigger; `stopSync` removes both.
+5. Check both under **Triggers** (clock icon): `applySync` time-based hourly, and `syncOnPipelineChange` "From spreadsheet – On change".
 
-To pause: `stopSync`, or `ENABLE_WRITES: false` in `src/Config.js` and push.
+To pause: `stopSync`, or `ENABLE_WRITES: false` in `src/Config.js` and push. With writes off, the onChange handler returns without syncing.
+
+### Deploy the shared-task, intro and onChange version
+
+Run from `google_appscript/clickup-sync` with `.clasp.json` pointing at the live project:
+
+```bash
+npm test
+```
+
+```bash
+npx clasp status
+```
+
+```bash
+npx clasp push
+```
+
+Then in the editor: `previewSync` and read the log. Items not yet in `_ClickUp Sync` (for example ones that shared a task and were blocked before) show an intro comment; shared tasks show no status change. If it looks right, run `applySync`, then `installTriggers`. To roll back, `stopSync`, check out the previous commit of `google_appscript/clickup-sync/src`, push and run `installHourlyTrigger`; `_ClickUp Sync` records written by the new version stay valid.
+
+### Check which writes fire the onChange trigger
+
+Expected: an edit you type in the Pipeline workbook fires it; writes through the Sheets API (agents, connectors) and from the web workspace's Apps Script may not. Confirm once after installing:
+
+1. Type a change into a linked item's Stage cell. Within about a minute, **Executions** shows `syncOnPipelineChange` and, about 30 seconds later, ClickUp shows one comment for that item.
+2. Change a linked item through an agent or the Sheets API, and separately through the Horology web workspace. Note whether **Executions** shows `syncOnPipelineChange` for each. Whatever doesn't fire is posted by the next hourly `applySync`.
+3. Make several quick edits to one row. Expect several `syncOnPipelineChange` executions but one comment: earlier ones stop when a later change arrives.
 
 The previous `LIST_<Domain>` Script Properties are ignored. They may be removed after the new version is verified.
 
@@ -168,6 +195,8 @@ The previous `LIST_<Domain>` Script Properties are ignored. They may be removed 
 | "Registers tab needs exactly one row matching…" | The Registers tab has one row named like the register, with a Google Sheets link |
 | ClickUp item blocked "Task link conflicts with existing sync state" | Confirm the Pipeline URL, then reconcile the old task ID in `_ClickUp Sync` |
 | ClickUp item blocked "Uncertain previous ClickUp write" | Inspect ClickUp for the comment before clearing the pending state; avoid duplicates |
+| A ClickUp task's status doesn't follow Pipeline | More than one Pipeline item links that task; shared tasks only get comments |
+| "Sync already running." in Executions | Another run held the lock; the change is posted by that run or the next hourly one |
 | Remote edits differ | Compare as above before pushing |
 
 Runtime errors are in each project's **Executions** view. `clasp run` needs extra API setup and isn't used here.

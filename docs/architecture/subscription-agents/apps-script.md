@@ -74,37 +74,41 @@ The workspace **Folders** view presents Locations as a searchable path browser: 
 
 ## ClickUp Sync
 
-This optional standalone Apps Script updates ClickUp tasks already linked in Pipeline Master. ClickUp is a planning notebook; Sheets and the registers remain the operational record. The founder may use AI to suggest an existing task, then confirms its URL in **ClickUp Pipeline URL**. The sync never creates tasks, edits their names or descriptions, or imports ClickUp changes into Sheets. A task can be linked to only one Pipeline item.
+This optional standalone Apps Script updates ClickUp tasks already linked in Pipeline Master. ClickUp is a planning notebook; Sheets and the registers remain the operational record. The founder may use AI to suggest an existing task, then confirms its URL in **ClickUp Pipeline URL**. The sync never creates tasks, edits their names or descriptions, or imports ClickUp changes into Sheets. Several Pipeline items can link the same task, when each is a smaller part of a larger ClickUp goal; each item keeps its own sync state and posts its own comments.
 
 ### Status and comments
 
-Pipeline status maps one way to ClickUp: Inbox and Rework → backlogs; Parked → blocked; Researching and Approved → open; Awaiting decision → review; Rejected → rejected. **Completed does not change ClickUp status**; the founder closes the task manually. The ClickUp list must support the mapped statuses. A later mapped Pipeline change can replace a status set manually in ClickUp.
+Pipeline status maps one way to ClickUp: Inbox and Rework → backlogs; Parked → blocked; Researching and Approved → open; Awaiting decision → review; Rejected → rejected. **Completed does not change ClickUp status**; the founder closes the task manually. The ClickUp list must support the mapped statuses. A later mapped Pipeline change can replace a status set manually in ClickUp. A task linked by more than one Pipeline item has no single Pipeline status, so the sync leaves its ClickUp status alone and only comments; when it is linked by one item again, that item's status is applied on the next run.
 
-The run compares Pipeline status and stage, Decision Register records, and Document Index links with the last successful snapshot. It posts one combined "Horology updates:" comment per linked task when milestones or indexed documents change, with a Horology workspace link and the Pipeline sheet row. Completed can still produce this comment. The first run establishes a baseline and aligns mapped statuses without reposting historical decisions and documents. Unindexed Drive files are not detected; task descriptions and personal comments are left alone.
+The run compares Pipeline status and stage, Decision Register records, and Document Index links with the last successful snapshot. Each item posts one combined comment when its milestones or indexed documents change, headed `Pipeline <ID> · <title>` so items sharing a task stay distinguishable, with a Horology workspace link and the Pipeline sheet row. Completed can still produce this comment. An item's first sync posts one short intro instead: its current Stage and Status and its latest decision (the Current decision ID when it is in the register, otherwise the highest Decision ID) with a link to that Decision Register row, or "No decision yet". Historical decisions and documents are not reposted. Items that already have a `_ClickUp Sync` record are never re-introduced. Unindexed Drive files are not detected; task descriptions and personal comments are left alone.
 
 ### Selection and recovery
 
-Unlinked rows are skipped. Invalid URLs, duplicate task mappings, conflicting old task IDs and uncertain writes block the item. Duplicate Pipeline or Decision IDs, missing headers and invalid Document Index data stop the run. Every write finds its row again by ID immediately before writing, never by the position read earlier; a row whose ID has disappeared or is duplicated is not written. Only changed or new baselines call ClickUp. Each run handles up to `MAX_ITEMS_PER_RUN` (50) pending items with an ID cursor; preview writes nothing and includes the exact proposed comment in its output.
+Unlinked rows are skipped. Invalid URLs, conflicting old task IDs and uncertain writes block the item. Duplicate Pipeline or Decision IDs, missing headers and invalid Document Index data stop the run. Every write finds its row again by ID immediately before writing, never by the position read earlier; a row whose ID has disappeared or is duplicated is not written. Only changed items, new items and items whose task became shared or unshared call ClickUp. Each run handles up to `MAX_ITEMS_PER_RUN` (50) pending items with an ID cursor; preview writes nothing and includes the exact proposed comment in its output.
 
-The Pipeline's **`_ClickUp Sync`** tab holds task IDs, snapshots, pending comment markers and the cursor. A timeout after a comment request leaves a pending marker to prevent a duplicate; inspect ClickUp and reconcile the state before retrying. The script locks runs and paces API calls; preview output includes the proposed comment, so avoid sharing its logs externally. `CLICKUP_TOKEN` and `PIPELINE_SHEET_ID` are its only required Script Properties; old `LIST_<Domain>` properties are ignored.
+The Pipeline's **`_ClickUp Sync`** tab holds task IDs, snapshots, pending comment markers and the cursor. A timeout after a comment request leaves a pending marker to prevent a duplicate; inspect ClickUp and reconcile the state before retrying. One script lock covers manual runs and both triggers, so overlapping runs wait or stop instead of double-posting; the script also paces API calls; preview output includes the proposed comment, so avoid sharing its logs externally. `CLICKUP_TOKEN` and `PIPELINE_SHEET_ID` are its only required Script Properties; old `LIST_<Domain>` properties are ignored.
 
-Public functions: `previewSync`, `applySync`, `installHourlyTrigger`, `stopSync`, `testClickUpConnection`, `initializeSheets`, and `refreshDocumentCounts`. The last refreshes Document count separately; ClickUp sync itself does not write that field.
+### Triggers
+
+`applySync` runs hourly as the catch-all. An installable **onChange** trigger on the Pipeline workbook, created from the standalone script with `forSpreadsheet(PIPELINE_SHEET_ID)`, runs `syncOnPipelineChange` so updates post soon after a change. It ignores formatting-only changes, waits `CHANGE_SETTLE_SECONDS` (30) and runs only if no later change arrived, so a burst of edits gives one comment, then waits up to `CHANGE_LOCK_WAIT_SECONDS` (120) for a running sync before leaving the change to the next run. People's edits in the Sheets editor fire it. Writes through the Sheets API (agents, connectors) and from other Apps Scripts (the web workspace) are not expected to fire it, and Decision Register and Document Index changes are in other workbooks; the hourly run picks all of those up. Each change run sleeps for the settle time, which counts toward the account's daily trigger runtime.
+
+Public functions: `previewSync`, `applySync`, `installHourlyTrigger`, `installChangeTrigger`, `removeChangeTrigger`, `installTriggers` (both), `stopSync` (removes both), `testClickUpConnection`, `initializeSheets`, and `refreshDocumentCounts`. The last refreshes Document count separately; ClickUp sync itself does not write that field.
 
 | Module | Responsibility |
 | --- | --- |
 | Config.js | Write gate, batch size, status mapping and token |
 | Registers.js | Pipeline and register locations |
-| Sync.js | Preview/apply, lock and pending batch |
+| Sync.js | Preview/apply, onChange handler, lock and pending batch |
 | Eligibility.js | Link validation and batch ordering |
 | Tasks.js | Status and comment writes |
-| Notebook.js | Milestone snapshots and comment text |
+| Notebook.js | Milestone snapshots, first-sync intro and comment text |
 | ClickUpApi.js | Direct API requests and pacing |
 | Documents.js | Indexed documents and separate count refresh |
 | Sheets.js | Master reads and count writes |
 | SyncState.js | Persistent `_ClickUp Sync` state |
-| Setup.js | Schema and hourly trigger |
+| Setup.js | Schema, hourly and Pipeline onChange triggers |
 | Utils.js | Normalisation and hashing |
 
 ## Tests
 
-Each folder has offline tests (`npm test`) with fake sheets, Drive and ClickUp; nothing calls Google or ClickUp. They cover decision and revise rules, Options and Steps tabs with their text fallbacks, folder checks, and the ClickUp updater's linked-task guard, one-way status mapping, comment deduplication, preview isolation and bounded batch. They do not prove live permissions, list statuses or API behaviour: after publishing, run the preview in the live project.
+Each folder has offline tests (`npm test`) with fake sheets, Drive and ClickUp; nothing calls Google or ClickUp. They cover decision and revise rules, Options and Steps tabs with their text fallbacks, folder checks, and the ClickUp updater's linked-task guard, shared tasks, first-sync intro, one-way status mapping, comment deduplication, preview isolation, bounded batch, trigger install and removal, and the onChange settle and lock behaviour. They do not prove live permissions, list statuses or API behaviour: after publishing, run the preview in the live project.

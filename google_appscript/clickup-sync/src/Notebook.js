@@ -24,30 +24,23 @@ function compact(text,max) {
   return value.length>max ? value.slice(0,max-1).trimEnd()+'…' : value;
 }
 
-function notebookUpdate(c,pt,row,prior,now) {
-  // First run establishes a baseline. Historical decisions and documents are
-  // already available in Sheets; publishing all of them would flood ClickUp.
-  if(!prior) return '';
-  const lines=[];
-  if(prior.status!==now.status || prior.stage!==now.stage)
+function notebookUpdate(c,pt,dt,row,prior,now) {
+  // Items with no sync record yet get one short intro. A record without a
+  // notebook (an older baseline) stays silent: that item was already linked.
+  if(!prior.notebook) return prior.taskId ? '' : notebookIntro(c,pt,dt,row,now);
+  const before=prior.notebook,lines=[];
+  if(before.status!==now.status || before.stage!==now.stage)
     lines.push('Pipeline: '+(now.stage||'No stage')+' · '+now.status);
   const changedDecisions=Object.keys(now.decisions).filter(id=>
-    !prior.decisions || !prior.decisions[id] ||
-    prior.decisions[id].fingerprint!==now.decisions[id].fingerprint);
-  changedDecisions.slice(0,8).forEach(id=>{
-    const d=now.decisions[id];
-    lines.push('Decision '+id+' · '+d.status+
-      (d.stage?' ('+d.stage+')':'')+
-      (d.question?' — '+compact(d.question,180):'')+
-      (d.decision?'\n'+compact(d.decision,320):'')+
-      (d.reason?'\nReason: '+compact(d.reason,220):''));
-  });
+    !before.decisions || !before.decisions[id] ||
+    before.decisions[id].fingerprint!==now.decisions[id].fingerprint);
+  changedDecisions.slice(0,8).forEach(id=>lines.push(decisionLine(id,now.decisions[id])));
   if(changedDecisions.length>8) lines.push('And '+(changedDecisions.length-8)+' more decision updates in the Decision Register.');
   if(changedDecisions.length)
     lines.push('Decision Register: https://docs.google.com/spreadsheets/d/'+c.DECISIONS_SHEET_ID+'/edit');
   const changedDocs=Object.keys(now.documents).filter(key=>
-    !prior.documents || !prior.documents[key] ||
-    JSON.stringify(prior.documents[key])!==JSON.stringify(now.documents[key]));
+    !before.documents || !before.documents[key] ||
+    JSON.stringify(before.documents[key])!==JSON.stringify(now.documents[key]));
   changedDocs.slice(0,15).forEach(key=>{
     const d=now.documents[key];lines.push('Document: '+compact(d.title||'Untitled',140)+' — '+d.url);
   });
@@ -55,8 +48,37 @@ function notebookUpdate(c,pt,row,prior,now) {
   if(changedDocs.length)
     lines.push('Document Index: https://docs.google.com/spreadsheets/d/'+c.DOCUMENT_INDEX_SHEET_ID+'/edit');
   if(!lines.length) return '';
+  return notebookComment(c,pt,row,lines);
+}
+
+// First comment for an item: where it stands now and its latest decision, not its history.
+function notebookIntro(c,pt,dt,row,now) {
+  const lines=['Linked to Horology. Now: '+(now.stage||'No stage')+' · '+now.status];
+  const ids=Object.keys(now.decisions).sort(comparePipelineIds);
+  const current=String(row.data['Current decision ID']||'').trim();
+  const latest=now.decisions[current]?current:ids[ids.length-1];
+  if(latest) {
+    const register=dt.rows.find(r=>String(r.data['Decision ID'])===latest);
+    lines.push('Latest '+decisionLine(latest,now.decisions[latest],true)+
+      '\nhttps://docs.google.com/spreadsheets/d/'+c.DECISIONS_SHEET_ID+'/edit'+
+      (register?'#gid='+dt.sheet.getSheetId()+'&range=A'+register.row:''));
+  } else lines.push('No decision yet.');
+  return notebookComment(c,pt,row,lines);
+}
+
+// The intro is brief: no reason, and a shorter decision text.
+function decisionLine(id,d,brief) {
+  return 'Decision '+id+' · '+d.status+
+    (d.stage?' ('+d.stage+')':'')+
+    (d.question?' — '+compact(d.question,180):'')+
+    (d.decision?'\n'+compact(d.decision,brief?200:320):'')+
+    (d.reason&&!brief?'\nReason: '+compact(d.reason,220):'');
+}
+
+// Every comment names its item, because several Pipeline items can share one task.
+function notebookComment(c,pt,row,lines) {
   const pipeline='https://docs.google.com/spreadsheets/d/'+c.PIPELINE_SHEET_ID+
     '/edit#gid='+pt.sheet.getSheetId()+'&range=A'+row.row;
-  return 'Horology updates:\nPipeline '+row.data.ID+'\n\n'+lines.join('\n\n')+
+  return 'Pipeline '+row.data.ID+' · '+compact(row.data.Title||'Untitled',120)+'\n\n'+lines.join('\n\n')+
     '\n\nHorology workspace: '+c.WORKSPACE_URL+'\nPipeline sheet: '+pipeline;
 }
