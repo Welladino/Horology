@@ -66,14 +66,15 @@ The remaining examples use the globally available `clasp` command. With a projec
 
 ## Connect a project
 
-Each folder needs a `.clasp.json` (ignored by Git). Copy the template and add the Script ID from that user's Apps Script project settings:
+Each folder needs a `.clasp.json` (ignored by Git). Copy the template only when the file doesn't exist yet, then replace the placeholder with the Script ID from that user's Apps Script project settings (for `pipeline-decisions`: the Pipeline workbook → **Extensions → Apps Script → Project Settings → Script ID**):
 
 ```sh
-cp .clasp.example.json .clasp.json
+cp -n .clasp.example.json .clasp.json
+grep scriptId .clasp.json
 clasp status
 ```
 
-Keep `"rootDir": "src"`. Status lists the files that would upload: only `src/` modules, `.html` files and `appsscript.json`.
+`cp -n` never overwrites an existing `.clasp.json`, which is the only local record of the Script ID. Expected result: `grep` shows a Script ID, not `COPY_VERIFIED_SCRIPT_ID_FROM_PROJECT_SETTINGS`, and status lists the files that would upload: only `src/` modules, `.html` files and `appsscript.json`. Keep `"rootDir": "src"`.
 
 ## Publish a change
 
@@ -160,6 +161,7 @@ The previous `LIST_<Domain>` Script Properties are ignored. They may be removed 
 |---|---|
 | Login expired or wrong account | `clasp login`, then `clasp show-authorized-user` |
 | Script unavailable | The script ID, and the account's access to the project |
+| "Request contains an invalid argument" on push or pull | `.clasp.json` still holds the template placeholder: `grep scriptId .clasp.json`, then put back the Script ID from Project Settings |
 | Apps Script API disabled | Enable it in account settings and retry |
 | Unexpected upload files | `.clasp.json` rootDir, `.claspignore`, `clasp status` |
 | A menu is missing in the workbook | Reload the workbook; the menus are added when it opens |
