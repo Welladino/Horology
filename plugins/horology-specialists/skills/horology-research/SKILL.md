@@ -51,6 +51,6 @@ Agent status is No action, Plan or Ready; Agent type is Claude Code, Codex, Manu
 
 - Read back documents and affected records by ID; verify identities, backlinks, and preservation of unrelated cells. If `check_register_write` refused a write, report the clash instead of overwriting.
 - Check native headings, lists, table headers, readable spacing, and removal of leftover placeholders. When layout matters, inspect a rendered preview or disclose that it was unavailable.
-- Check visual labels, captions, source links, and readability at normal document width. Verify chart data and diagram source match the inserted visual.
+- Confirm the document has no inserted images or charts; comparisons and figures are native tables (see the presentation rules).
 - Inspect destinations after ambiguous write failures before retrying.
 - Confirm recommendations remain proposed until the founder explicitly chooses, and distinguish saved work from pending writes.

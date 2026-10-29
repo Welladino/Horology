@@ -2,15 +2,11 @@
 
 Copy the Technical Assessment template from the Templates tab into the Agent output folder for technical research (see the domains, folders and templates rules linked from SKILL.md). Never fill the template original during an assessment.
 
-## Ratings and quadrant
+## Ratings table
 
-Read scripts/render_quadrant.py when a renderer is needed. It requires Python and Pillow; use the platform's available plotting tools instead when needed, retaining editable source.
+Rate each material option Low, Medium, High or Unknown for implementation effort and for uncertainty, and fill the template's ratings table: Option, Effort, Uncertainty, Recommended, Reason. Ratings are ordinal, not measured precision; Unknown is never treated as Low. Mark one option recommended when you recommend one.
 
-Supply JSON with title and options. Each option has name, effort, uncertainty, and optional recommended boolean. Ratings are Low, Medium, High, or Unknown (case-insensitive). Keep names short, use a few material options, and separate labels if points overlap. The ordinal coordinates do not represent measured numeric precision. Unknown effort or uncertainty is unplotted and listed below the chart.
-
-Example invocation: python scripts/render_quadrant.py ratings.json quadrant.png.
-
-Generate the top summary and JSON from the same evidence and written reasons. Direct and ongoing costs remain separate, with assumptions and units. Embed the image at readable document width, add a caption/explanation, upload ratings.json or another editable source beside the assessment, and link it. Verify the actual assessment visual; do not reuse the template's blank quadrant as the result.
+Generate the top summary and the ratings table from the same evidence and written reasons. Direct and ongoing costs remain separate, with assumptions and units. Don't insert a chart or image; a visual quadrant, if useful, belongs in the Stage 4 synthesis artifact.
 
 ## Shared records
 

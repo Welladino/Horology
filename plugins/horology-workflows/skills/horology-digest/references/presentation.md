@@ -20,11 +20,9 @@ Choose the structure that makes the content quickest to understand. Templates sh
 
 ## Charts and diagrams
 
-Add a visual only when it makes a relationship, comparison, trend or dependency clearer than text.
+Agent documents are text-based. Show comparisons, ratings, timelines and flows as native tables and numbered lists; don't insert images or charts.
 
-- Diagrams: render the editable source (Mermaid or similar) to an image, insert the image, and keep the source beside the document or link it. Keep the two in step when revising.
-- Charts: use a linked Google Sheets chart when the data changes and the tools support it. Otherwise insert an image labelled as a snapshot, link the data, and say it needs refreshing to update.
-- Every visual gets a caption, a sentence on what it shows and a link to its source. Charts also give the data source, units, period and assumptions. Add alt text where supported.
+Charts and diagrams belong in the Stage 4 synthesis artifact (`horology-synthesis-artifacts`), which presents a Stage 3 deliverable visually. Inserting an image into a private Google Doc needs a publicly reachable URL or passing the whole image through the agent as base64, so documents don't carry them.
 
 ## Check before handing off
 
