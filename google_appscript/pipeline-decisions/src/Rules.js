@@ -2,6 +2,7 @@
  * Mirrors the decision transitions in workflow.yaml (horology-capture-triage
  * references); a Python test checks the two agree. "REVIEW" means the Pipeline
  * stage corresponding to Review stage. Agent status Ready applies only to agent rows.
+ * An Implementation question (implementation route) resumes the item at Stage 3, In progress.
  */
 
 const OUTCOMES = {
@@ -12,7 +13,11 @@ const OUTCOMES = {
   "parked|Investigation proposal": {"transition": "decide-park", "Status": "Parked", "Stage": "Stage 2", "Agent status": "No action"},
   "parked|Specialist deliverable": {"transition": "decide-park", "Status": "Parked", "Stage": "Stage 4", "Agent status": "No action"},
   "rejected|Investigation proposal": {"transition": "decide-reject", "Status": "Rejected", "Stage": "Stage 2", "Agent status": "No action"},
-  "rejected|Specialist deliverable": {"transition": "decide-reject", "Status": "Rejected", "Stage": "Stage 4", "Agent status": "No action"}
+  "rejected|Specialist deliverable": {"transition": "decide-reject", "Status": "Rejected", "Stage": "Stage 4", "Agent status": "No action"},
+  "accepted|Implementation question": {"transition": "resume-implementation", "Status": "In progress", "Stage": "Stage 3", "Agent status": "Ready"},
+  "rework|Implementation question": {"transition": "rework", "Status": "Rework", "Stage": "REVIEW", "Agent status": "Ready"},
+  "parked|Implementation question": {"transition": "decide-park", "Status": "Parked", "Stage": "Stage 3", "Agent status": "No action"},
+  "rejected|Implementation question": {"transition": "decide-reject", "Status": "Rejected", "Stage": "Stage 3", "Agent status": "No action"}
 };
 
 // Revising a decided decision (workflow.yaml revise): which recorded outcomes and item statuses allow it.

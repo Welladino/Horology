@@ -1,18 +1,34 @@
 /* Building a new Pipeline Master row from the Add item form, with no Google calls.
  * A new item follows the capture move in workflow.yaml (Inbox, Stage 0, No action,
  * Unassigned), or the select move when it is marked Ready straight away (Stage 1).
+ * Type chooses the route (workflow.yaml routes): implementation-route items plan at
+ * Stage 1 and implement at Stage 3 with Status In progress; the rest investigate.
  */
 
 const ITEM_FIELDS = ['Title', 'Domain', 'Entity', 'Type', 'Summary / Why', 'Next step / Research question',
   'Revisit trigger', 'Agent status', 'Agent type', 'Run location', 'Link type', 'URL', 'GitHub branch'];
 
 const ITEM_OPTIONS = {
-  'Type': ['Idea', 'Research', 'Direction', 'Plan', 'Feature', 'Enhancement', 'Refactor'],
+  'Type': ['Idea', 'Research', 'Direction', 'Plan', 'Feature', 'Enhancement', 'Refactor', 'Fix'],
   'Agent status': ['No action', 'Plan', 'Ready'],
   'Agent type': ['Unassigned', 'Claude Code', 'Codex', 'Manual'],
   'Run location': ['Local', 'Cloud'],
   'Link type': ['GitHub', 'Website', 'Service endpoint', 'Other']
 };
+
+const IMPLEMENTATION_TYPES = ['Feature', 'Enhancement', 'Refactor', 'Fix'];
+
+function itemRoute(type) {
+  return IMPLEMENTATION_TYPES.includes(String(type || '').trim()) ? 'implementation' : 'investigation';
+}
+
+/* The Statuses from which the founder may make an item Ready (select in workflow.yaml).
+ * An implementation-route item In progress can be selected again after its run failed or stopped.
+ */
+function readyStatuses(type) {
+  return itemRoute(type) === 'implementation'
+    ? ['Inbox', 'Rework', 'Approved', 'In progress'] : ['Inbox', 'Rework', 'Approved'];
+}
 
 // The next unused permanent ID: one more than the highest numeric ID.
 function nextItemId(ids) {

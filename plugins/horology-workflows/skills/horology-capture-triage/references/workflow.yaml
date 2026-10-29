@@ -2,7 +2,7 @@
 # Skills, the Apps Scripts and the digest's health checks follow this file.
 # Changing a rule means changing it here first. Validated by tests/unit/workflow/.
 
-version: 2
+version: 3
 
 # Who may change things.
 actors:
@@ -15,12 +15,14 @@ actors:
 
 # Pipeline Master fields that drive the workflow, with their allowed values.
 fields:
+  Type:
+    values: [Idea, Research, Direction, Plan, Feature, Enhancement, Refactor, Fix]
   Status:
-    values: [Inbox, Parked, Researching, Awaiting decision, Approved, Rework, Completed, Rejected]
+    values: [Inbox, Parked, Researching, In progress, Awaiting decision, Approved, Rework, Completed, Rejected]
   Stage:
     values: [Stage 0, Stage 1, Stage 2, Stage 3, Stage 4]
   Review stage:
-    values: [Investigation proposal, Specialist deliverable]
+    values: [Investigation proposal, Specialist deliverable, Implementation question]
   Agent status:
     values: [No action, Plan, Ready]
     default: No action
@@ -34,22 +36,31 @@ fields:
     values: ["No", "Yes"]
     set_by: [planner]
 
+# Type chooses the route an item's runs take. The investigation route reviews a Stage 1 proposal at
+# Stage 2 before the Stage 3 deliverable and Stage 4 synthesis. The implementation route was decided by
+# the founder: Stage 1 is the implementation plan (Steps rows), Stage 3 the implementation itself, with
+# Status In progress throughout and no Stage 2; a founder choice it needs is an Implementation question.
+routes:
+  investigation: {types: [Idea, Research, Direction, Plan], stages: [Stage 1, Stage 2, Stage 3, Stage 4]}
+  implementation: {types: [Feature, Enhancement, Refactor, Fix], stages: [Stage 1, Stage 3]}
+
 statuses:
   Inbox: {meaning: Captured; not yet scoped or selected, stages: [Stage 0, Stage 1]}
-  Parked: {meaning: Deliberately deferred, with a revisit trigger, stages: [Stage 0, Stage 1, Stage 2, Stage 4]}
-  Researching: {meaning: An authorised investigation or deliverable is in progress, stages: [Stage 1, Stage 3]}
-  Awaiting decision: {meaning: Work is ready for the founder's review, stages: [Stage 2, Stage 4]}
+  Parked: {meaning: Deliberately deferred, with a revisit trigger, stages: [Stage 0, Stage 1, Stage 2, Stage 3, Stage 4]}
+  Researching: {meaning: An authorised investigation or deliverable is in progress (investigation route), stages: [Stage 1, Stage 3]}
+  In progress: {meaning: An implementation-route run is planning (Stage 1) or implementing (Stage 3), stages: [Stage 1, Stage 3]}
+  Awaiting decision: {meaning: Work is ready for the founder's review, stages: [Stage 2, Stage 3, Stage 4]}
   Approved: {meaning: The founder accepted a Stage 1 proposal; the Stage 3 deliverable is next, stages: [Stage 3]}
   Rework: {meaning: The founder asked for changes; instructions are on the decision, stages: [Stage 1, Stage 3]}
-  Completed: {meaning: The Stage 4 briefing and specialist deliverable were accepted; workflow complete, stages: [Stage 4]}
-  Rejected: {meaning: Not pursued; history kept, stages: [Stage 2, Stage 4]}
+  Completed: {meaning: "Workflow complete: the Stage 4 review was accepted, or the implementation finished at Stage 3", stages: [Stage 3, Stage 4]}
+  Rejected: {meaning: Not pursued; history kept, stages: [Stage 2, Stage 3, Stage 4]}
 
 stages:
   Stage 0: Capture
-  Stage 1: Investigation and proposal (research, direction, plan or assessment)
-  Stage 2: Founder decision
-  Stage 3: Specialist deliverable
-  Stage 4: Visual synthesis of the investigation and Stage 3 deliverable, before final review
+  Stage 1: Investigation and proposal (research, direction, plan or assessment); on the implementation route, the implementation plan written as Steps rows
+  Stage 2: Founder decision (investigation route only)
+  Stage 3: Specialist deliverable; on the implementation route, the implementation itself
+  Stage 4: Visual synthesis of the investigation and Stage 3 deliverable, before final review (investigation route only)
 
 # Allowed moves. "from"/"to" give the fields that change; unlisted fields stay as they are.
 # "when" is the trigger. Moves not listed here are unexpected and the digest reports them.
@@ -86,15 +97,45 @@ transitions:
 
   - id: select
     actor: founder
-    from: {Agent status: [No action, Plan], Status: [Inbox, Rework, Approved], Agent type: [Claude Code, Codex]}
+    from: {Agent status: [No action, Plan], Status: [Inbox, Rework, Approved, In progress], Agent type: [Claude Code, Codex]}
     to: {Agent status: Ready, Stage: [Stage 1, Stage 3]}
-    when: The founder chooses Agent type and Run location and selects the item for a run. Manual and Unassigned items are never Ready.
+    when: >-
+      The founder chooses Agent type and Run location and selects the item for a run. Manual and Unassigned
+      items are never Ready. In progress applies to implementation-route items whose run failed or stopped.
 
   - id: start-run
     actor: supervisor
-    from: {Agent status: Ready}
+    from: {Agent status: Ready, Type: [Idea, Research, Direction, Plan]}
     to: {Status: Researching}
-    when: A supervisor session claims the item (claim_item) and starts work.
+    when: A supervisor session claims an investigation-route item (claim_item) and starts work.
+
+  - id: start-implementation
+    actor: supervisor
+    from: {Agent status: Ready, Type: [Feature, Enhancement, Refactor, Fix]}
+    to: {Status: In progress}
+    when: >-
+      A supervisor session claims an implementation-route item and starts work: at Stage 1 it writes the
+      implementation plan as Steps rows; at Stage 3 (resumed, rework or an older Approved item) it implements.
+
+  - id: plan-implementation
+    actor: supervisor
+    from: {Status: In progress, Stage: Stage 1}
+    to: {Stage: Stage 3}
+    when: The implementation plan is on the Steps tab. The run moves the item to Stage 3 itself and implements in the same run.
+
+  - id: complete-implementation
+    actor: supervisor
+    from: {Status: In progress, Stage: Stage 3}
+    to: {Status: Completed, Stage: Stage 3, Agent status: No action}
+    when: Every Steps row is Done or Skipped, the work is committed and recorded, and no founder decision is needed.
+
+  - id: raise-implementation-question
+    actor: supervisor
+    from: {Status: In progress, Stage: [Stage 1, Stage 3]}
+    to: {Status: Awaiting decision, Stage: Stage 3, Review stage: Implementation question, Agent status: No action}
+    when: >-
+      The run needs a founder choice. It stops with a proposed decision and Options rows, as for any proposal;
+      the work done so far stays committed and the Steps rows show what is left.
 
   - id: submit-for-review
     actor: supervisor
@@ -110,9 +151,9 @@ transitions:
 
   - id: run-failed
     actor: supervisor
-    from: {Status: Researching}
+    from: {Status: [Researching, In progress]}
     to: {Agent status: No action}
-    when: The run failed or was released; Status stays Researching and the Runs row explains why. The founder decides whether to select it again.
+    when: The run failed or was released; Status stays Researching or In progress and the Runs row explains why. The founder decides whether to select it again.
 
   - id: accept-stage-1
     actor: [founder, sync]
@@ -126,22 +167,30 @@ transitions:
     to: {Status: Completed, Stage: Stage 4, Agent status: No action}
     when: The founder accepts the Stage 3 deliverable after seeing its Stage 4 synthesis.
 
+  - id: resume-implementation
+    actor: [founder, sync]
+    from: {Status: Awaiting decision, Review stage: Implementation question}
+    to: {Status: In progress, Stage: Stage 3, Agent status: Ready}
+    when: The founder answers the Implementation question; the item resumes at Stage 3 Ready for its platform. Manual items get No action instead of Ready.
+
   - id: rework
     actor: [founder, sync]
     from: {Status: Awaiting decision}
     to: {Status: Rework, Stage: [Stage 1, Stage 3], Agent status: Ready}
-    when: The decision is marked rework with instructions. Stage returns to Stage 1 for Investigation proposal or Stage 3 for Specialist deliverable. Manual items get No action.
+    when: >-
+      The decision is marked rework with instructions. Stage returns to Stage 1 for Investigation proposal, or
+      Stage 3 for Specialist deliverable and Implementation question. Manual items get No action.
 
   - id: decide-park
     actor: [founder, sync]
     from: {Status: Awaiting decision}
-    to: {Status: Parked, Stage: [Stage 2, Stage 4], Agent status: No action}
+    to: {Status: Parked, Stage: [Stage 2, Stage 3, Stage 4], Agent status: No action}
     when: The decision is parked.
 
   - id: decide-reject
     actor: [founder, sync]
     from: {Status: Awaiting decision}
-    to: {Status: Rejected, Stage: [Stage 2, Stage 4], Agent status: No action}
+    to: {Status: Rejected, Stage: [Stage 2, Stage 3, Stage 4], Agent status: No action}
     when: The decision is rejected.
 
   - id: reject
@@ -159,7 +208,7 @@ transitions:
   - id: revise
     actor: [founder, sync]
     from: {Status: [Approved, Rework, Parked, Rejected, Completed]}
-    to: {Status: [Approved, Rework, Parked, Rejected, Completed], Stage: [Stage 1, Stage 2, Stage 3, Stage 4], Agent status: [Ready, No action]}
+    to: {Status: [Approved, Rework, Parked, Rejected, Completed, In progress], Stage: [Stage 1, Stage 2, Stage 3, Stage 4], Agent status: [Ready, No action]}
     when: >-
       The founder revises the item's current, already decided decision on the decision page (for example
       Approved to Parked). The item moves as the new outcome would have moved it from review; see revise below.
@@ -167,7 +216,7 @@ transitions:
 # Decision Register status values and the transition each one triggers.
 decisions:
   proposed: {meaning: Drafted by an agent; waiting for the founder}
-  accepted: {triggers: [accept-stage-1, accept-stage-3]}
+  accepted: {triggers: [accept-stage-1, accept-stage-3, resume-implementation]}
   rework: {triggers: [rework], requires: Rework instructions}
   parked: {triggers: [decide-park]}
   rejected: {triggers: [decide-reject]}
@@ -178,7 +227,7 @@ decisions:
 revise:
   transition: revise
   decision_statuses: [accepted, rework, parked, rejected]  # the recorded outcome being revised, and the new one
-  item_statuses: [Approved, Rework, Parked, Rejected, Completed]  # never Inbox, Researching or Awaiting decision
+  item_statuses: [Approved, Rework, Parked, Rejected, Completed]  # never Inbox, Researching, In progress or Awaiting decision
   requires: The decision is the item's Current decision ID, and a reason
   effect: The Pipeline fields the new outcome's decision transition sets for the decision's Review stage
 
@@ -232,4 +281,4 @@ rules:
   - Only the founder makes an item Ready, directly or through a decision (accept or rework), and only the founder chooses Agent type and Run location and decides.
   - Agents never record a decision as accepted, parked or rejected.
   - Each platform runs only rows whose Agent type is that platform. Manual rows are never run by agents.
-  - Ready selects the stated next step only; it never authorises implementation.
+  - Ready selects the stated next step only. Only an implementation-route Type (Feature, Enhancement, Refactor, Fix) authorises implementation; investigation-route items never do.

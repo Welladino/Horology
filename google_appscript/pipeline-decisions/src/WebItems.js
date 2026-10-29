@@ -28,7 +28,7 @@ function getPipelineOverview() {
     'Current decision ID', 'Link type', 'URL', 'GitHub branch',
     'ClickUp Pipeline URL', 'Created', 'Updated'];
   return table.rows.map(row => {
-    const item = {sheetUrl: 'https://docs.google.com/spreadsheets/d/' + id +
+    const item = {route: itemRoute(row.data.Type), readyStatuses: readyStatuses(row.data.Type), sheetUrl: 'https://docs.google.com/spreadsheets/d/' + id +
       '/edit#gid=' + sheetId + '&range=A' + row.row};
     fields.forEach(field => { item[field] = String(row.data[field] || ''); });
     item.version = pipelineEditVersion(row.data);
@@ -88,7 +88,7 @@ function updatePipelineItemFromWeb(request) {
     const after = next['Agent status'] || 'No action';
     const status = String(row.data.Status || '').trim();
     if (before !== after) {
-      const eligible = ['Inbox', 'Rework', 'Approved'].includes(status);
+      const eligible = readyStatuses(next.Type).includes(status);
       const allowed = eligible && ((before === 'No action' && ['Plan', 'Ready'].includes(after)) ||
         (before === 'Plan' && after === 'Ready'));
       if (!allowed) errors.push('This Agent status change is not allowed from the item’s current state.');
