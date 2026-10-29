@@ -17,14 +17,6 @@ def _as_list(value):
     return value if isinstance(value, list) else [value]
 
 
-def _script(path):
-    """An Apps Script source file. Cloud Build uploads only the files on its .gcloudignore
-    allow-list, so a check against another script file skips there and runs locally."""
-    if not path.exists():
-        pytest.skip(f"{path.name} is not in this checkout (Cloud Build uploads an allow-list)")
-    return path.read_text()
-
-
 def test_statuses_match_status_field(wf):
     assert set(wf["statuses"]) == set(wf["fields"]["Status"]["values"])
 
@@ -128,7 +120,7 @@ def test_child_tabs_match_the_web_page(wf):
     assert tabs["Steps"]["workbook"] == "Pipeline" and tabs["Options"]["workbook"] == "Decision Register"
     for tab in tabs.values():
         assert set(tab["key"]) <= set(tab["columns"])
-    web = _script(PIPELINE_DECISIONS / "src" / "WebApp.js")
+    web = (PIPELINE_DECISIONS / "src" / "WebApp.js").read_text()
     for name, tab in tabs.items():
         required = re.search(rf"readTab\(ids\.\w+, '{name}', \[(.*?)\]\)", web).group(1)
         assert set(re.findall(r"'([^']+)'", required)) <= set(tab["columns"]), name
@@ -191,7 +183,7 @@ def test_investigation_route_is_unchanged(wf):
 
 
 def test_type_list_matches_the_pipeline_decisions_script(wf):
-    rules = _script(PIPELINE_DECISIONS / "src" / "ItemRules.js")
+    rules = (PIPELINE_DECISIONS / "src" / "ItemRules.js").read_text()
     types = re.search(r"'Type':\s*\[(.*?)\]", rules).group(1)
     assert re.findall(r"'([^']+)'", types) == wf["fields"]["Type"]["values"]
     implementation = re.search(r"IMPLEMENTATION_TYPES\s*=\s*\[(.*?)\]", rules).group(1)

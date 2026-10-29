@@ -60,16 +60,19 @@ They need Docker running and `.env` populated, and are skipped when Docker isn't
 
 ### As Cloud Build sees the source
 
-Cloud Build uploads only the files `.gcloudignore` allows, so a test that reads any other file passes locally and in GitHub Actions but fails the release build. Before a release, run the suite on the upload set:
+Cloud Build uploads only the files `.gcloudignore` allows, so a test that reads any other file passes locally and in GitHub Actions but fails the release build. `scripts/ci/check.sh` also fails on any skipped test outside `tests/system/`, so such a test can't simply skip there. When a test starts reading a new file, add that file to the `.gcloudignore` allow-list.
+
+Before a release, run the suite on the upload set:
 
 ```bash
 d="$(mktemp -d)"
 gcloud meta list-files-for-upload . > "$d.list"
 rsync -a --files-from="$d.list" . "$d/"
-(cd "$d" && "$OLDPWD/.venv/bin/python" -m pytest tests/ -q -p no:cacheprovider)
+(cd "$d" && "$OLDPWD/.venv/bin/python" -m pytest tests/unit -q -p no:cacheprovider -rs)
+rm -rf "$d" "$d.list"
 ```
 
-Expected result: no failures; integration tests skip without the test database URLs. A test that checks a file outside the upload list must skip when the file is absent, as the Apps Script checks in `tests/unit/workflow/test_workflow_definition.py` do. Delete the temporary folder afterwards.
+Expected result: all unit tests pass and the summary lists no skipped tests (`-rs` prints any skip with its reason). The integration tests need the CI database, so this check runs only the unit tests; Cloud Build runs the rest.
 
 ### Gateway HTTP smoke check (by hand)
 

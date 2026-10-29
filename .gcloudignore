@@ -74,7 +74,8 @@
 !jobs/document-graph-sync/requirements.txt
 !jobs/document-graph-sync/graph_sync/
 !jobs/document-graph-sync/graph_sync/*.py
-# The Pipeline workflow (copied into the document-graph image) and the sync's status map its test checks.
+# The Pipeline workflow (copied into the document-graph image) and the Apps Script files its tests check
+# against it (status map, decision rules, child tabs, Type list).
 !plugins/
 !plugins/horology-workflows/
 !plugins/horology-workflows/skills/
@@ -103,3 +104,5 @@
 !google_appscript/pipeline-decisions/
 !google_appscript/pipeline-decisions/src/
 !google_appscript/pipeline-decisions/src/Rules.js
+!google_appscript/pipeline-decisions/src/WebApp.js
+!google_appscript/pipeline-decisions/src/ItemRules.js
