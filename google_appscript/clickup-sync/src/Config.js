@@ -8,9 +8,9 @@ const SYNC_CONFIG = {
   CHANGE_LOCK_WAIT_SECONDS: 120, // and up to this long for a running sync to finish.
   WORKSPACE_URL: 'https://script.google.com/a/macros/welladino.com/s/AKfycbxNK7mEVHiTBH-X_Upl8dOYA5sD6ATfEWCnyHrw8u5_fZzxyQuCMm4maiHUn1qJGD4Z2A/exec'
 };
-// 'in progress' is ClickUp's default in-progress status name; check it exists on the linked list.
+// The ClickUp lists use open, closed, review, blocked, rejected and backlogs; In progress uses open.
 const STATUS_MAP = {inbox:'backlogs', parked:'blocked', researching:'open',
-  'in progress':'in progress', 'awaiting decision':'review', approved:'open', rework:'backlogs',
+  'in progress':'open', 'awaiting decision':'review', approved:'open', rework:'backlogs',
   rejected:'rejected'};
 // Completed still posts notebook updates; the founder closes the ClickUp task.
 const COMMENT_ONLY_STATUSES = {completed:true};

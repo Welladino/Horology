@@ -117,11 +117,11 @@ test('new indexed document produces a linked comment and no duplicate',()=>{
   const posts=f.calls.filter(x=>x.method==='post');
   assert.equal(posts.length,1);assert.match(posts[0].payload.comment_text,/Assessment.*doc1\/edit/);
 });
-test('In progress (implementation route) sets the ClickUp task to in progress',()=>{
+test('In progress (implementation route) sets the ClickUp task to open',()=>{
   const f=fixture();f.run(true);f.calls.length=0;
   f.pt.rows[0].data.Status='In progress';f.pt.rows[0].data.Stage='Stage 3';
   f.run(true);f.run(true);
-  assert.equal(f.tasks.abc.status.status,'in progress');
+  assert.equal(f.tasks.abc.status.status,'open');
   assert.equal(f.calls.filter(x=>x.method==='put').length,1);
   assert.match(f.calls.filter(x=>x.method==='post')[0].payload.comment_text,/Pipeline: Stage 3 · In progress/);
 });
