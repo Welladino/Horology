@@ -6,13 +6,13 @@ The workflow's states, field values and allowed moves are defined once in [`work
 
 ## Status lifecycle
 
-This diagram shows the normal path in human terms. The table beneath it is the exact maintainer reference, including less common direct park, reject and reopen moves.
+This diagram shows the normal path in human terms. The table beneath it is the exact maintainer reference, including less common direct park, reject and reopen moves and the revise move, drawn once as a dotted line.
 
 ```mermaid
 flowchart LR
   %% Exact workflow moves represented by this lifecycle and the table below:
   %% capture, start-run, submit-for-review, synthesize-stage-3, accept-stage-1,
-  %% accept-stage-3, rework, park, decide-park, unpark, reject, decide-reject, reopen
+  %% accept-stage-3, rework, park, decide-park, unpark, reject, decide-reject, reopen, revise
   inbox["Inbox<br/>Stage 0"]
   investigate["Researching<br/>Stage 1 investigation"]
   review1{"Awaiting decision<br/>Stage 2 review"}
@@ -36,6 +36,7 @@ flowchart LR
   review1 -->|Stop| rejected
   review2 -->|Stop| rejected
   rejected -->|Reopen| inbox
+  approved -.->|revise · change a decided decision| parked
 
   classDef waiting fill:#f1f3f4,stroke:#5f6368,color:#202124
   classDef running fill:#f3e8fd,stroke:#9334e6,color:#681da8
@@ -64,6 +65,7 @@ flowchart LR
 | `reject` | Inbox or Parked → Rejected | Founder | Reject outside a review |
 | `decide-reject` | Awaiting decision → Rejected | Founder or decision sync | Reject during a review |
 | `reopen` | Rejected → Inbox | Founder | Return a rejected item to the queue |
+| `revise` | Approved, Rework, Parked, Rejected or Completed → any of those | Founder or decision page | Change the item's current, already applied decision (for example Approved → Parked); the item moves as the new outcome would from review |
 
 ## Agent selection
 
@@ -94,7 +96,7 @@ A run (`start-run`) only starts on a Ready row; the decisions script sets Ready 
 
 * **Stage 0, capture.** `horology-capture-triage` records an idea, parked proposal or research request as a Pipeline row and checks for duplicates.
 * **Stage 1, investigation and proposal.** The question decides the form: research (`horology-research`), direction, a plan, or a technical assessment (`horology-technical-assessment`). These are not a fixed sequence. The deliverable is saved to Drive and listed in the Document Index.
-* **Stage 2, founder decision.** Approve, rework, park or reject, recorded in the Decision Register with feedback. The Horology web workspace applies the decision immediately; direct edits in the register can be handled by its edit trigger.
+* **Stage 2, founder decision.** Approve, rework, park or reject, recorded in the Decision Register with feedback; options come from its Options tab. A decision already applied can later be revised from the decision page. The Horology web workspace applies the decision immediately; direct edits in the register can be handled by its edit trigger.
 * **Stage 3, specialist deliverable.** An approved scope becomes a detailed deliverable. For code work this is a planning note in the repository, not automatic implementation.
 * **Stage 4, synthesis.** In the same Stage 3 run, the supervisor calls Horology Synthesis Artifacts to turn the investigation and specialist deliverable into a concise visual briefing. HTML is preferred when it can be saved and opened reliably; a visual Doc or Sheet can be used when better suited. The item then awaits founder review at Stage 4. No new prompt, selection or schedule is needed for synthesis.
 
@@ -130,11 +132,11 @@ One session per item keeps each supervisor's context to a single item, and lets 
 | Run location   | Local or Cloud; blank means Local                                         |
 | Planner output | Yes or No; Yes when the planner has written a sharper question or steps   |
 
-Runs are recorded in Neon, not in the workbook. Each run makes two document-graph calls: `claim_item` at the start (a 2-hour claim, so two sessions never take the same item) and `finish_run` at the end. Specialists reserve each new Decision or Document ID with `reserve_id` and call `check_register_write` before each register write, so parallel runs can't take or overwrite each other's rows ([register IDs](../mcp/document-graph.md#register-ids)). Status changes, outputs and decisions are recorded from the sheets by the sync job's records pass, and read back with `list_runs` and `get_item_history` ([execution history](../mcp/document-graph.md#execution-history)). Planned steps are a numbered list in Next step; the item's session works through them in order. Rules: the supervisor skill's [runs reference](https://github.com/Welladino/Horology/blob/main/plugins/horology-workflows/skills/horology-supervisor/references/runs.md). To see one domain, use the Master table's filter.
+Runs are recorded in Neon, not in the workbook. Each run makes two document-graph calls: `claim_item` at the start (a 2-hour claim, so two sessions never take the same item) and `finish_run` at the end. Specialists reserve each new Decision or Document ID with `reserve_id` and call `check_register_write` before each register write, so parallel runs can't take or overwrite each other's rows ([register IDs](../mcp/document-graph.md#register-ids)). Status changes, outputs and decisions are recorded from the sheets by the sync job's records pass, and read back with `list_runs` and `get_item_history` ([execution history](../mcp/document-graph.md#execution-history)). Planned steps are rows on the Pipeline's Steps tab (older items: a numbered list in Next step); the item's session works through them in order and marks each one Done. Rules: the supervisor skill's [runs reference](https://github.com/Welladino/Horology/blob/main/plugins/horology-workflows/skills/horology-supervisor/references/runs.md). To see one domain, use the Master table's filter.
 
 Claude sessions, cloud and local, load the skills and connectors from the founder's claude.ai account, whatever repository they clone; plugins don't load in cloud sessions ([note](https://github.com/Welladino/Horology/blob/main/docs/planning/notes/2026-10-17_claude-skills-and-connectors-on-claude-ai_note.md)). Codex loads the skills from its plugins.
 
-**Scheduled oversight** does no item work. The **digest** (`horology-digest`, daily) writes a Google Doc report card: counts by status, what finished with key findings and recommendations, what's waiting on the founder, and health and graph checks. The **planner** (`horology-planner`) acts only on rows set to Plan: it rewrites Next step as a bounded question or a numbered list of steps, sets Planner output to Yes and Agent status back to No action; the founder then marks the item Ready. Both run on any platform's scheduler or on request. Design and options considered: [supervisor and runs brief](https://github.com/Welladino/Horology/blob/main/docs/planning/research/2026-10-16_subscription-agent-supervisor-and-runs_research.md).
+**Scheduled oversight** does no item work. The **digest** (`horology-digest`, daily) writes a Google Doc report card: counts by status, what finished with key findings and recommendations, what's waiting on the founder, and health and graph checks. The **planner** (`horology-planner`) acts only on rows set to Plan: it rewrites Next step as a bounded question, or writes the item's steps on the Steps tab with a one-line Next step, sets Planner output to Yes and Agent status back to No action; the founder then marks the item Ready. Both run on any platform's scheduler or on request. Design and options considered: [supervisor and runs brief](https://github.com/Welladino/Horology/blob/main/docs/planning/research/2026-10-16_subscription-agent-supervisor-and-runs_research.md).
 
 ## Related pages
 

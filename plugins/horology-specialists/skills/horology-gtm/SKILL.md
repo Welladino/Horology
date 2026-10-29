@@ -24,7 +24,7 @@ A Pipeline question about the path to paying customers: target segment, position
 4. Compare a small number of credible channel and positioning options against each other: expected reach, cost and effort, time to signal, and how you'd know it worked. Use primary sources for market and pricing claims and date them.
 5. Recommend one path with a first test: what to do, for whom, through which channel, what success looks like, and when to revisit. Say plainly if a proposed approach looks weak, and why.
 6. Copy the closest template from the Templates tab (usually Direction or Plan) into the Agent output folder that fits, fill it, and register it in the Document Index with a reserved Document ID, following the register ID and ownership rules in the linking rules.
-7. Set the Pipeline item to Awaiting decision when the recommendation is ready. Draft a proposed decision, with a reserved Decision ID, only when the requested workflow includes one.
+7. Set the Pipeline item to Awaiting decision when the recommendation is ready. Draft a proposed decision, with a reserved Decision ID, only when the requested workflow includes one: a one-line Decision and one Options row per option, as in the linking rules.
 
 ## Decision and permission boundaries
 

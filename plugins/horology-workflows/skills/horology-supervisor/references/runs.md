@@ -22,13 +22,13 @@ Call `finish_run(run_id, status, skills_used, steps_done, notes, session_link)` 
 |---|---|
 | status | `done` (work finished and saved), `failed` (it couldn't finish) or `released` (you didn't start it) |
 | skills_used | Specialist skills run, in order |
-| steps_done | Which numbered steps from Next step were completed, e.g. "1, 2" |
+| steps_done | Which planned steps were completed, e.g. "1, 2" |
 | notes | A few lines on the result or the blocker; the planner puts the old Next step wording here |
 | session_link | The session URL or ID, when known |
 
 ## Steps
 
-The planner writes an item's steps as a numbered list in Next step / Research question, one bounded question or task per line, optionally ending with the suggested specialist in brackets. The item's session works through them in order and reports the completed numbers in `steps_done`.
+The planner writes an item's steps on the Pipeline's **Steps** tab, one row per step: Pipeline ID, Step, Task, Specialist (optional) and Status (Planned, Done or Skipped). Next step / Research question stays a one-line question. The item's session works through the Planned rows in Step order, marks each finished one Done (found by Pipeline ID and Step, never by position) and reports the completed numbers in `steps_done`. Older items may still hold a numbered list in Next step; follow it the same way.
 
 ## Starting sessions
 
