@@ -46,6 +46,8 @@ Only Claude Code and Codex rows are made Ready; Manual and Unassigned get No act
 * To change your mind after a decision was applied, edit the Pipeline row; editing the decision again does nothing.
 * The web workspace applies a saved decision immediately. A remaining edit trigger can process a person's direct Decision Register edit. Apps Script and API writes do not fire edit triggers; their writers must call `applyDecisions` explicitly. The former ten-minute timer was removed by the founder.
 
+Each cell write finds its row again by permanent ID (ID or Decision ID) immediately before writing, so a sort, insert or agent write in between can't redirect it to another item; a missing or duplicated ID stops the write.
+
 Functions: `previewDecisions` (reports, writes nothing), `applyDecisions` (a preview while `ENABLE_WRITES` is false), `installTriggers`, `stopTriggers`. They remain available to administrators in the Apps Script editor, while **Open Horology workspace** is the only entry under **Extensions → Horology — Pipeline decisions**.
 
 ### Founder review web page
@@ -80,7 +82,7 @@ The run compares Pipeline status and stage, Decision Register records, and Docum
 
 ### Selection and recovery
 
-Unlinked rows are skipped. Invalid URLs, duplicate task mappings, conflicting old task IDs and uncertain writes block the item. Duplicate Pipeline or Decision IDs, missing headers and invalid Document Index data stop the run. Only changed or new baselines call ClickUp. Each run handles up to `MAX_ITEMS_PER_RUN` (50) pending items with an ID cursor; preview writes nothing and includes the exact proposed comment in its output.
+Unlinked rows are skipped. Invalid URLs, duplicate task mappings, conflicting old task IDs and uncertain writes block the item. Duplicate Pipeline or Decision IDs, missing headers and invalid Document Index data stop the run. Every write finds its row again by ID immediately before writing, never by the position read earlier; a row whose ID has disappeared or is duplicated is not written. Only changed or new baselines call ClickUp. Each run handles up to `MAX_ITEMS_PER_RUN` (50) pending items with an ID cursor; preview writes nothing and includes the exact proposed comment in its output.
 
 The Pipeline's **`_ClickUp Sync`** tab holds task IDs, snapshots, pending comment markers and the cursor. A timeout after a comment request leaves a pending marker to prevent a duplicate; inspect ClickUp and reconcile the state before retrying. The script locks runs and paces API calls; preview output includes the proposed comment, so avoid sharing its logs externally. `CLICKUP_TOKEN` and `PIPELINE_SHEET_ID` are its only required Script Properties; old `LIST_<Domain>` properties are ignored.
 

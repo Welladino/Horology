@@ -1,14 +1,25 @@
 # Records and linking
 
-Read live headers and dropdowns before writing. Edit Pipeline and Decision Register Master only; any other tabs there are views. Resolve items by permanent IDs, not row positions.
+Read live headers and dropdowns before writing. Edit Pipeline and Decision Register Master only; any other tabs there are views. Find every row by its permanent ID immediately before writing it, never by row position, title or a row number read earlier: other runs and the founder may add, sort or move rows in between.
 
 Keep longer cell text readable. In Pipeline Summary / Why, Next step / Research question and Revisit trigger, and Decision Register Question, Decision, Reason and Rework instructions, put distinct points on separate lines and numbered steps on separate lines. Use actual line breaks in cell values, not literal `\n` characters or one run-on paragraph. A single short thought can stay on one line. Preserve founder-written line breaks when revising a cell, and read back multiline values after saving.
 
 - [Pipeline](https://docs.google.com/spreadsheets/d/1aL678ACs97YpLIGrGU5LbpXHc7jQBxl64ED-sLyehvI/edit): permanent numeric ID; optional External ID; domain/entity, title, scope, status, Stage and Review stage. Current decision ID selects the active decision; ClickUp Pipeline URL identifies its UI task; Document count is derived from the Index. Removed link columns must not be recreated. Agent type Manual is skipped by scheduled agents; Ready is selection, not execution permission.
-- [Document Index](https://docs.google.com/spreadsheets/d/1kObhQNjsFhziS-wRzjaEIzr9j8jjbfvd-ZgvzuwQ-Jc/edit): upsert by Drive file ID/URL, preserving permanent numeric Document ID. Associate each document with Pipeline ID, Pipeline title and Related Pipeline URL where those live fields exist. Use the revision/sequence field and Supersedes document ID for substantive replacements; retain originals. An original plan and an assessment may both belong to one Pipeline item without either superseding the other. Copy exact field names and dropdown values from the live sheet.
+- [Document Index](https://docs.google.com/spreadsheets/d/1kObhQNjsFhziS-wRzjaEIzr9j8jjbfvd-ZgvzuwQ-Jc/edit): find an existing row by Drive file ID/URL and keep its permanent numeric Document ID; a new file gets a reserved ID. Associate each document with Pipeline ID, Pipeline title and Related Pipeline URL where those live fields exist. Use the revision/sequence field and Supersedes document ID for substantive replacements; retain originals. An original plan and an assessment may both belong to one Pipeline item without either superseding the other. Copy exact field names and dropdown values from the live sheet.
 - [Decision Register](https://docs.google.com/spreadsheets/d/1_megp_hD4gwRuF4wmk4g2vQGAWbLl4uNUpho-oLoygE/edit): permanent numeric Decision ID, Pipeline ID/title, evidence links, affected plan, reason, decision/status, Review stage and Rework instructions. Multiple decisions can refer to one Pipeline item. Only explicit founder choices are accepted decisions. Proposed decisions have no invented acceptance date. Preserve history and supersedes references.
 
-Allocate independent numeric IDs within each register; never renumber or reuse IDs. Use a single writer and reread before saving; concurrent allocation is not implemented. External IDs and Drive file IDs remain separate identifiers.
+Decision and Document IDs are permanent numeric IDs, independent in each register; never renumber or reuse them. Reserve each new ID and check ownership before every write as below. External IDs and Drive file IDs remain separate identifiers.
+
+## Register IDs and ownership
+
+Decision and Document IDs come from the document-graph connector, never from the sheet. Parallel runs share these registers, so counting up from the highest ID in the sheet lets two runs pick the same ID and the later write silently replaces the other run's row.
+
+1. **New row:** read the register's highest ID, then call `reserve_id(register, pipeline_id, run_id, live_max_id)` with register `decision` or `document`, the Pipeline ID, your run ID (from `claim_item`, e.g. R-12) and that highest ID. Use exactly the returned `id` in the row and anywhere else it appears (document metadata, the Pipeline's Current decision ID, Next step text). Reserve one ID per row, before you first write it anywhere; an unused reservation is simply skipped, never reused.
+2. **Before every write, new row or update:** find the row by its ID (never by row position, title or a remembered row number), then call `check_register_write(register, id, pipeline_id, drive_url, live_pipeline_id, live_drive_url, live_row_exists)` with what you are about to write and what the live row holds now. `drive_url` is required for the Document Index.
+3. **`ok: false` means stop.** The ID already belongs to another Pipeline item or Drive file. Don't write, overwrite or "fix" that row; reserve a new ID for your own row if you need one, and report the clash in your summary.
+4. Read the row back after writing and confirm its ID, Pipeline ID and Drive URL.
+
+If the connector is unavailable, don't allocate IDs: save the Drive output, leave the register rows unwritten and report them as pending.
 
 Metadata carries domain, entity, Pipeline ID/link, purpose, draft status and related decision when applicable. Domain and Entity come from the Domains tab, and folders and templates from Locations and Templates ([domains, folders and templates](locations.md)). Copy templates; preserve originals. Follow the [presentation rules](presentation.md).
 

@@ -30,7 +30,7 @@ A Pipeline item asking whether something is secure, what the security risks are,
 3. For each finding record: severity (Critical, High, Medium, Low), evidence (file and line, commit, alert ID or setting), whether it is exploitable in this codebase's actual use, and a suggested fix with rough effort.
 4. Separate verified findings from suspicions you couldn't confirm. A clean area gets one line, not padding.
 5. Compare with the last review: what's new, what's fixed, what's unchanged.
-6. Save the analysis from the Technical Assessment or closest template in the Templates tab, in the Agent output folder for technical research, and register it in the Document Index. Set the Pipeline item to Awaiting decision when ready.
+6. Save the analysis from the Technical Assessment or closest template in the Templates tab, in the Agent output folder for technical research, and register it in the Document Index with a reserved Document ID, following the register ID and ownership rules in the linking rules. Set the Pipeline item to Awaiting decision when ready.
 
 ## Decision and permission boundaries
 

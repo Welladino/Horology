@@ -39,7 +39,7 @@ This means examples such as Strategy, Research or Brand are suggestions, not sch
 
 ## Decision Register
 
-The Decision Register preserves the human review trail. Each row has its own permanent Decision ID and points back to a Pipeline ID.
+The Decision Register preserves the human review trail. Each row has its own permanent Decision ID and points back to a Pipeline ID. Agents get new Decision and Document IDs from the document graph's `reserve_id` and check ownership before every write; they never count up from the sheet, because parallel runs share these registers ([register IDs](../mcp/document-graph.md#register-ids)).
 
 It records the question under review, the proposed or accepted choice, the reason, status, evidence links, rework instructions and any decision it supersedes. Agents may draft proposals; a human accepts, requests rework, parks or rejects them. A later review creates a new row instead of overwriting the earlier decision.
 

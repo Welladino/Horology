@@ -32,6 +32,7 @@ flowchart TB
 | Entities | `list_entities`, `find_entity`, `entity_documents` |
 | Upkeep | `sync_graph`, `list_unembedded_documents` |
 | Runs and history | `claim_item`, `finish_run`, `list_runs`, `get_item_history` |
+| Register IDs | `reserve_id`, `check_register_write` |
 
 The service in `document_graph/graph.py` only validates input, takes the caller's workspace and calls `graph_core`; it has no graph logic or SQL of its own.
 
@@ -78,6 +79,15 @@ A row that fails keeps its previous graph copy. A file whose folder isn't shared
 Sheets are where the founder edits and decides; Neon keeps the machine history. An agent makes two calls per run: `claim_item` (an atomic 2-hour claim per item, so two runs never take the same one) and `finish_run` (status, plus self-reported skills used, steps done and notes). Everything else is derived.
 
 Before each sync, and on its own with `GRAPH_SYNC_MODE=records`, the job's **records pass** reads Pipeline Master, the Decision Register and the Document Index (read-only) and compares them with the previous copy. Each changed field becomes a `pipeline_events` row, attributed to the run active on that item at the time, and checked against the transitions in `workflow.yaml` (bundled in the image). Document Index rows changed during a run, and agent documents written during it, are linked to it as outputs. A failing records pass is logged and never blocks the document import. Changes made between two syncs appear as one.
+
+### Register IDs
+
+Decision Register and Document Index rows keep permanent numeric IDs. Parallel runs write the same registers, so agents never count up from the sheet: on 28/10/2026 two parallel runs both took Decision 5 and Document 25 and the later upsert silently replaced the earlier run's rows (HOR-6).
+
+- `reserve_id(register, pipeline_id, run_id, live_max_id)` returns the next ID of `decision` or `document` in one statement: greatest(last reserved, highest numeric ID in the synced sheet copy, the live maximum the agent just read) + 1. The upsert on `register_ids` locks the workspace's counter row, so concurrent calls queue and every call gets a different ID; IDs only go up. A Pipeline item's reservation needs the live run that holds the item, and is recorded in `register_reservations` against that run, so `get_item_history` shows which run took which ID straight away. An unused reservation leaves a gap; nothing reuses it.
+- `check_register_write(register, id, pipeline_id, drive_url, live row)` runs before every register write. It compares what the agent is about to write with the live row it just found by ID, the last synced copy and the reservation; any different Pipeline ID or Drive file (compared by Drive file ID) returns `ok: false` with a plain message, and the agent stops instead of overwriting. The first clean check of a Document ID binds its Drive URL to the reservation, so a second writer is refused even before the next sync.
+
+Pipeline IDs are not covered: the Add Pipeline item form allocates them under its Apps Script lock. The tools can't stop a writer that skips them; the skills require both calls, and the sync job's duplicate Document ID check still catches duplicated rows.
 
 `list_runs` and `get_item_history` read it back: recent runs with their outputs, and one item's timeline of runs, field changes (each marked expected or not), decisions and documents.
 
