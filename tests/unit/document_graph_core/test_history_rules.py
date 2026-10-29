@@ -52,3 +52,47 @@ def test_claims_are_validated_before_any_database_call(kwargs, message):
 def test_finish_needs_a_known_status():
     with pytest.raises(ValueError, match="status"):
         asyncio.run(history.finish("ws", "R-1", "complete"))
+
+
+# Register IDs (HOR-6): validation and the ownership rule, without a database.
+
+def test_register_ids_and_names_are_normalised():
+    assert history.register_id(" 25 ") == "25" and history.register_id(5.0) == "5"
+    for bad in ("D-5", "0", "-1", "", "2.5"):
+        with pytest.raises(ValueError):
+            history.register_id(bad)
+    with pytest.raises(ValueError, match="register must be one of"):
+        asyncio.run(history.reserve_id("ws", "pipeline"))  # Pipeline IDs come from the Apps Script form
+
+
+def test_a_pipeline_reservation_needs_its_run_and_the_reverse():
+    with pytest.raises(ValueError, match="run_id is required"):
+        asyncio.run(history.reserve_id("ws", "decision", 40))
+    with pytest.raises(ValueError, match="pipeline_id is required"):
+        asyncio.run(history.reserve_id("ws", "document", None, "R-3"))
+
+
+def test_links_to_the_same_drive_file_compare_equal():
+    a = "https://docs.google.com/document/d/16HPkIvjhCpaoMoGgvj7MOJBjqOVC829TYboOMC/edit"
+    assert history.drive_key(a) == history.drive_key(a.replace("/edit", "/view?usp=drivesdk"))
+    assert history.drive_key("https://drive.google.com/open?id=1aHCLHWuFYV2KVf75") == "1aHCLHWuFYV2KVf75"
+
+
+@pytest.mark.parametrize("register, owner, conflicts", [
+    ("decision", {"pipeline_id": "40"}, 1),  # another item's decision
+    ("decision", {"pipeline_id": "42"}, 0),  # its own
+    ("decision", {"pipeline_id": ""}, 0),  # an owner with no item yet doesn't block
+    ("document", {"pipeline_id": "42", "drive_url": "https://docs.google.com/document/d/AAAAAAAAAAAA/edit"}, 1),
+    ("document", {"pipeline_id": "40", "drive_url": "https://docs.google.com/document/d/AAAAAAAAAAAA/edit"}, 2),
+    ("document", {"pipeline_id": "42", "drive_url": "https://docs.google.com/document/d/BBBBBBBBBBBB/view"}, 0),
+    ("decision", None, 0),  # nobody has the ID
+])
+def test_ownership_conflicts(register, owner, conflicts):
+    found = history.ownership_conflicts(register, "42", "https://docs.google.com/document/d/BBBBBBBBBBBB/edit",
+                                        ("The live sheet row", owner))
+    assert len(found) == conflicts
+
+
+def test_a_document_write_needs_its_drive_url():
+    with pytest.raises(ValueError, match="drive_url is required"):
+        asyncio.run(history.check_register_write("ws", "document", 25, 40))

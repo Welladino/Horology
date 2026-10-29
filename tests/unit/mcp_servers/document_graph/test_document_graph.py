@@ -347,3 +347,26 @@ class TestSyncGraph:
         db.one.append((None, None, 1))
         with pytest.raises(ValueError, match="not configured"):
             run(graph.sync_graph())
+
+
+class TestRegisterIdTools:
+    def test_reserve_id_and_the_ownership_check_are_registered(self):
+        from document_graph import tools
+        names = {tool.__name__ for tool in tools.TOOLS}
+        assert {"reserve_id", "check_register_write", "claim_item"} <= names
+
+    def test_tools_pass_the_callers_workspace(self, monkeypatch):
+        from graph_core.history import service as history
+        monkeypatch.setattr(graph, "current_workspace", lambda: "ws-a")
+        reserve = AsyncMock(return_value={"reserved": True})
+        check = AsyncMock(return_value={"ok": True})
+        monkeypatch.setattr(history, "reserve_id", reserve)
+        monkeypatch.setattr(history, "check_register_write", check)
+        asyncio.run(graph.reserve_id("decision", 40, "R-13", 4))
+        reserve.assert_awaited_once_with("ws-a", "decision", 40, "R-13", "agent", 4)
+        asyncio.run(graph.check_register_write("document", 25, 42, "u2", live_pipeline_id="40",
+                                               live_drive_url="u1", live_row_exists=True))
+        check.assert_awaited_once_with("ws-a", "document", 25, 42, "u2", {"pipeline_id": "40", "drive_url": "u1"})
+        check.reset_mock()
+        asyncio.run(graph.check_register_write("decision", 5, 40))
+        check.assert_awaited_once_with("ws-a", "decision", 5, 40, None, None)
