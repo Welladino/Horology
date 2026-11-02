@@ -53,7 +53,9 @@ The founder can **revise** an item's current decision after it was applied, for 
 
 ## Document Index
 
-The Document Index is a catalog, not the file store. Drive remains the source file location; one index row records its permanent Document ID, title, Pipeline relationship, Drive URL, domain/entity, document type, approval state and optional predecessor. A repository planning note (a Stage 3 deliverable kept in Git) gets a Google Doc copy in the Agent output Plans folder: Drive URL is the Doc and Related Repo Document the GitHub link on `main`. Document 32 is the one older row indexed by its GitHub link; the ClickUp sync accepts such links, and skips any other non-Drive link with a log line instead of stopping.
+The Document Index is a catalog, not the file store. Drive remains the source file location; one index row records its permanent Document ID, title, Pipeline relationship, Drive URL, domain/entity, document type, approval state and optional predecessor. Every deliverable lives in Drive, in the Agent output folder and template that fit, so Drive URL is always a Drive link; the ClickUp sync skips any other link with a log line instead of stopping.
+
+A target repository gets a repo doc as well only when it already keeps its own docs, in that repository's own structure and style. The doc goes on the item's GitHub branch, or the run's working branch when that field is blank, never `main` by assumption. It names the Drive document by Document ID, and the Drive document wins on conflict. Related Repo Document holds its GitHub link on that branch, and is blank when there is no repo doc. Horology asks nothing of the target repository: its `CLAUDE.md`, `AGENTS.md` and similar files are not changed to record this workflow.
 
 The graph columns are explicit controls:
 
