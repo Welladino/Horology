@@ -1,6 +1,6 @@
 # Document graph view and daily sync: implementation plan (HOR-8 D)
 
-Status: planned, not implemented. Pipeline item 45, Decision 9 (accepted, Option C), Stage 1 assessment Document 31, this plan Document 32 (run R-22). Code read at `main` @ `efce2e1` (29/10/2026).
+Status: planned, not implemented. Pipeline item 45, Decision 9 (accepted, Option C), Stage 1 assessment Document 31. The canonical plan is Document 34 in Drive; this note is its repo reference (first indexed as Document 32 in run R-22, since removed from the Document Index). Code read at `main` @ `efce2e1` (29/10/2026).
 
 ## Context
 

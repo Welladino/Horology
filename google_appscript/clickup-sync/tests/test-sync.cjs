@@ -287,21 +287,20 @@ test('configuration uses token and register links without domain list properties
   assert.deepEqual(requested,['CLICKUP_TOKEN','PIPELINE_SHEET_ID']);
   assert.equal(cfg.max,50);assert.equal(cfg.DECISIONS_SHEET_ID,'dec');
 });
-test('Document Index accepts Drive and GitHub links and skips a bad row instead of stopping',()=>{
+test('Document Index accepts Drive links and skips a bad row instead of stopping',()=>{
   const logs=[],ctx=vm.createContext({console:{log:v=>logs.push(v)},Object,Array,String,Error,Set,JSON,Number});
   vm.runInContext(source,ctx);
   const head=['Document ID','Title','Drive URL','Pipeline ID'];
   const docs=ctx.indexDocuments([head,
     ['31','Assessment','https://docs.google.com/document/d/abc/edit','45'],
-    ['32','Plan','https://github.com/Welladino/horology/blob/main/docs/planning/notes/plan.md','45'],
+    ['32','Repo link','https://github.com/Welladino/horology/blob/main/docs/planning/notes/plan.md','45'],
     ['34','Odd link','https://example.com/file','45'],
     ['35','Bad item','https://docs.google.com/document/d/xyz/edit','forty'],
     ['36','No item','https://example.com/other','']]);
-  assert.deepEqual(JSON.parse(JSON.stringify(docs['45'].map(d=>[d.id,d.key]))),[['31','abc'],
-    ['32','https://github.com/Welladino/horology/blob/main/docs/planning/notes/plan.md']]);
+  assert.deepEqual(JSON.parse(JSON.stringify(docs['45'].map(d=>[d.id,d.key]))),[['31','abc']]);
   assert.equal(Object.keys(docs).length,1);
-  assert.equal(logs.length,2);
-  assert.match(logs[0],/Document ID 34/);assert.match(logs[1],/Document ID 35.*forty/);
+  assert.equal(logs.length,3);
+  assert.match(logs[0],/Document ID 32/);assert.match(logs[1],/Document ID 34/);assert.match(logs[2],/Document ID 35.*forty/);
   assert.throws(()=>ctx.indexDocuments([head,['31','A','https://docs.google.com/document/d/a/edit','45'],
     ['31','B','https://docs.google.com/document/d/b/edit','46']]),/Duplicate Document ID: 31/);
 });
