@@ -26,7 +26,9 @@ or for one item:
 
 > Use horology-supervisor to run Pipeline item 42.
 
-The supervisor claims each item through the document graph and starts one session per item. Check progress by asking a session to `list_runs`, or `get_item_history` for one item. Every run needs the document-graph connector. Claude cloud runs need the skills and the document graph and Google connectors on your claude.ai account. Codex runs need the Codex CLI installed and signed in.
+The supervisor claims each item through the document graph and starts one session per item. On Codex desktop it creates visible native threads, reports each durable thread ID, and waits for completion or an attention request; keep the dispatch chat open while those runs are active. The Codex CLI is needed only as an explicit fallback when the desktop cannot create a native thread. Check durable run history by asking a session to `list_runs`, or `get_item_history` for one item. Every run needs the document-graph connector. Claude cloud runs need the skills and the document graph and Google connectors on your claude.ai account.
+
+If a native Codex item thread asks for approval or input, answer it in that thread. The dispatcher reports the thread ID and does not answer on your behalf. A created native thread that fails is not automatically retried with `codex exec`; fix or rerun that item deliberately. When native thread creation itself is unavailable, Local fallback requires a signed-in Codex CLI and Cloud fallback additionally requires an existing Codex cloud environment ID.
 
 Feature, Enhancement, Refactor and Fix items take the implementation route: one run writes the plan on the Steps tab, moves the item to Stage 3 and implements it, with Status In progress throughout. It ends Completed at Stage 3 (check its pull request and the deploy steps in its `finish_run` notes), or Awaiting decision with an Implementation question for you to answer below. If an implementation run fails, the item stays In progress with Agent status No action; set it Ready again to retry.
 

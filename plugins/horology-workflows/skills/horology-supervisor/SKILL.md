@@ -29,9 +29,9 @@ The founder starts investigation, implementation and Stage 3 runs. Within each S
 1. Work out which platform you're running on: **Claude Code** or **Codex**. Only take rows whose Agent type matches it. Never run another platform's rows.
 2. Read Pipeline Master. Select rows with Agent status **Ready** and your Agent type.
 3. Claim each selected item with `claim_item` (kind `run`, the row's Run location) as described in [runs](references/runs.md). Skip items another run holds.
-4. Start one session per item, by the row's **Run location** (blank means Local). Pass the Pipeline ID and the run ID. Commands are in [runs](references/runs.md).
-5. If you can't run shell commands here (for example claude.ai chat), run each item yourself in item mode, one at a time, using a subagent per item where the platform allows.
-6. Report the items started, where each runs, and the session links. Local sessions return their final answer when they finish; cloud sessions return only a link, and their results land in the registers.
+4. Start one session per item, by the row's **Run location** (blank means Local). Pass the Pipeline ID and the run ID. On Codex desktop, prefer native visible threads with `create_thread`, record every returned thread ID and coordinate them with `wait_threads`; use the Codex CLI only when native thread creation is unavailable. Claude and fallback commands are in [runs](references/runs.md).
+5. If neither native thread creation nor shell commands are available (for example claude.ai chat), run each item yourself in item mode, one at a time, using a subagent per item where the platform allows.
+6. Report every item started, its run ID and Run location, and its native thread ID or fallback session link. For native Codex threads, keep the returned cursors and use bounded `wait_threads` calls until each thread completes or needs attention; report that completion state and leave approvals or user-input requests for the founder.
 
 ## Item mode
 
@@ -66,12 +66,12 @@ The founder talks to you instead of each session. Answer from what the runs reco
 
 1. Call `list_runs` for the period asked about (default the last 24 hours), or for one `pipeline_id`.
 2. Sort the runs into:
-   - **Running:** status claimed and not expired. You can't see progress inside a running session; give its start time, location and session link.
+   - **Running:** status claimed and not expired. Give its start time, location and session link. Execution history alone can't see progress inside a running session; when this dispatcher still has a native Codex thread ID, use `wait_threads` for its compact current state instead of polling the conversation.
    - **Finished:** status done. `list_runs` gives only an output count; get the outputs from `get_item_history` for that item, open them (Drive documents from their Document Index rows; agent documents with `get_document`) and give the key finding and recommendation in a sentence or two each.
    - **Failed or died:** status failed (give its notes), or a claim that expired without finishing (the session stopped; the item can be run again).
 3. Add what's waiting on the founder: Ready rows not yet claimed (by Agent type and Run location), Plan rows, and items Awaiting decision.
 4. For one item, use `get_item_history` for its full timeline. Flag changes marked `expected: false`.
-5. Answer follow-up questions from the saved outputs, and say when something isn't in them. A session's conversation isn't recorded; only what it saved, its `finish_run` notes and the status changes are. To see or steer a running session, give its session link.
+5. Answer follow-up questions from the saved outputs, and say when something isn't in them. A session's conversation isn't recorded in execution history; only what it saved, its `finish_run` notes and the status changes are. A native Codex thread remains visible in the desktop app and can be followed with its thread ID; otherwise give the saved session link.
 
 Skills used, steps done and notes are reported by the session itself; outputs and status changes come from the sheets. Say which you are relying on when it matters.
 
@@ -86,7 +86,7 @@ Skills used, steps done and notes are reported by the session itself; outputs an
 
 ## Output requirements
 
-- Dispatch: the items started, their run IDs, run location and session links, and any skipped (claimed, wrong platform) with the reason.
+- Dispatch: the items started, their run IDs, run location, native thread IDs or fallback session links, and completion/attention state; include any skipped (claimed, wrong platform) with the reason.
 - Item: the specialists used, where outputs were saved, the result of your check, and anything blocked or pending. Implementation route: steps done, branch, commits, pull request and anything left for the founder.
 - Status: running, finished (with findings and links), failed or died (with the reason), and waiting on the founder, in that order. Keep it short; offer detail on request.
 

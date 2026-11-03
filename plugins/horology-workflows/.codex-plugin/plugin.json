@@ -7,12 +7,12 @@
     ],
     "developerName": "Saravanaraj",
     "displayName": "horology-workflows",
-    "longDescription": "Horology skills for retaining ideas in Pipeline and for a supervisor that runs Ready items: it claims each, starts one session per item locally or in the cloud, chooses the specialist skills, checks the results, records the run and reports on runs. Also sets up domains, businesses and folders, creates document templates, and sets up scheduled watchers, each after showing the plan. Preserves duplicate checks and founder decision boundaries. Requires separately connected Google Drive, Docs, and Sheets; ClickUp access is needed when a task uses ClickUp. Install Horology Specialists for the specialist skills.",
+    "longDescription": "Horology skills for retaining ideas in Pipeline and for a supervisor that runs Ready items: it claims each, starts one session per item locally or in the cloud, prefers visible native Codex desktop threads with durable completion tracking, chooses the specialist skills, checks the results, records the run and reports on runs. Also sets up domains, businesses and folders, creates document templates, and sets up scheduled watchers, each after showing the plan. Preserves duplicate checks and founder decision boundaries. Requires separately connected Google Drive, Docs, and Sheets; ClickUp access is needed when a task uses ClickUp. Install Horology Specialists for the specialist skills.",
     "shortDescription": "Capture, run, plan and report",
     "capabilities": []
   },
   "name": "welladino-workflows",
-  "version": "0.6.8",
+  "version": "0.6.9",
   "description": "Capture and triage Pipeline ideas; run Ready items with a supervisor that invokes visual Stage 4 synthesis after Stage 3; plan items marked Plan; write a daily digest; set up domains, folders, templates and scheduled watchers.",
   "author": {
     "name": "Saravanaraj",

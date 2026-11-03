@@ -167,14 +167,14 @@ Investigation and Stage 3 runs are started by the founder, from a session: in Cl
 
 *   **Dispatch:** finds rows with Agent status Ready whose **Agent type** is the platform it's running on (Claude Code or Codex; each platform runs only its own rows), claims each with `claim_item` (2-hour claim), and starts **one session per item** according to the row's **Run location**:
 
-    | Agent type  | Local        | Cloud              |
-    | ----------- | ------------ | ------------------ |
-    | Claude Code | `claude -p`  | `claude --cloud`   |
-    | Codex       | `codex exec` | `codex cloud exec` |
+    | Agent type  | Local | Cloud |
+    | ----------- | ----- | ----- |
+    | Claude Code | `claude -p` | `claude --cloud` |
+    | Codex desktop | Native visible project thread | Native visible Codex cloud thread |
 
-    Where shell commands aren't available (for example claude.ai chat), it runs the items itself, one at a time.
+    Codex desktop creates each item with `create_thread`, records its durable thread ID, and coordinates up to eight at a time with cursor-based `wait_threads` calls until they complete or need attention. This keeps every run visible in the sidebar and lets the dispatching chat report a concrete completion state. `codex exec` and `codex cloud exec` are explicit fallbacks only when native thread creation is unavailable before a thread is created. A failed or attention-blocked native thread is reported in place; it is not silently rerun through the CLI. Where neither native creation nor shell commands are available (for example claude.ai chat), the supervisor runs items itself, one at a time.
 * **Item:** handles exactly one item. It reads the row, decision feedback, any planned steps and the document graph; chooses specialist skills (`horology-specialists`); runs them as subagents; checks the results; and finishes the run. Specialist skills save their own Drive outputs, Document Index rows and proposed decisions.
-* **Status:** read-only. Asked "what's happening?" or "what did item 42 find?", it reports running, finished (with key findings), failed and died runs, and what's waiting on the founder, from `list_runs`, `get_item_history` and the saved outputs. The founder talks to the supervisor instead of each session. It can't see progress inside a running session or steer one; that needs the session link.
+* **Status:** read-only. Asked "what's happening?" or "what did item 42 find?", it reports running, finished (with key findings), failed and died runs, and what's waiting on the founder, from `list_runs`, `get_item_history` and the saved outputs. Execution history does not contain a running conversation. The dispatching Codex desktop chat can additionally follow the native thread IDs it created with `wait_threads`; other status chats use the saved thread ID or session link to direct the founder to the run.
 
 One session per item keeps each supervisor's context to a single item, and lets its specialists run as subagents (subagents can't start their own).
 

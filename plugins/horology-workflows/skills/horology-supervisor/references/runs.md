@@ -39,8 +39,13 @@ Run from a checkout of the Horology repository, so cloud sessions clone the righ
 | Agent type | Local | Cloud |
 |---|---|---|
 | Claude Code | `claude -p "<prompt>" --permission-mode auto --output-format json` | `claude --cloud "<prompt>"` |
-| Codex | `codex exec "<prompt>"` | `codex cloud exec --env <ENV_ID> "<prompt>"` |
+| Codex desktop | Native `create_thread`, current Horology project, local environment | Native `create_thread`, configured Codex cloud environment |
 
-- Start local sessions in the background, a few at a time, and note each session ID from its JSON output.
+- On Codex desktop, the founder's dispatch request authorises creating the item threads and sending their coordination follow-up. Call `list_projects` first and use the current Horology project for Local rows. For Cloud rows, call `list_cloud_environments` and use the already configured compatible environment; do not invent one.
+- Call `create_thread` once per claimed item with the self-contained prompt and a short title containing the Pipeline ID. Do not request a worktree unless the founder explicitly asked for one. Record the returned `threadId` and `hostId`; a `clientThreadId` means setup is still pending and is not valid for thread tools yet.
+- After a real `threadId` is returned, call `send_message_to_thread` once with a coordination follow-up containing that thread ID and instructing the item session to pass it as `session_link` to `finish_run`. Do not send repeated progress prompts.
+- Coordinate up to eight native threads at a time with `wait_threads`. Keep each returned cursor as `afterCursor`, continue until every thread completes or needs attention, and use `timeoutMs: 0` only for an immediate snapshot. Commentary does not wake the wait. Leave approvals and user-input requests in their item thread for the founder; do not answer them on the founder's behalf.
+- A completed native thread gives the dispatcher its final result. For a thread that needs attention, report the thread ID and the requested action. Do not repeatedly call `read_thread`; use it only when the compact wait result does not identify the action needed.
+- The Codex CLI is an explicit fallback, not the default. Use `codex exec "<prompt>"` for Local or `codex cloud exec --env <ENV_ID> "<prompt>"` for Cloud only when the native `create_thread` capability is absent or returns an unavailability/capability error before creating a thread. Do not fall back because a created thread fails, needs attention, or has an ambiguous project/environment; report that state instead. The CLI must be installed and signed in, and cloud fallback needs an existing environment ID. If neither native creation nor the applicable CLI path is available, finish the claim as failed with the reason.
+- Start Claude local sessions in the background, a few at a time, and note each session ID from its JSON output.
 - `claude --cloud` returns a session link. Cloud sessions use the skills and connectors on the founder's claude.ai account, whatever repository they clone.
-- `codex exec` and `codex cloud exec` need the Codex CLI installed and signed in; `codex cloud exec` is experimental and needs a Codex cloud environment ID. If either isn't available, finish the run as failed with the reason.

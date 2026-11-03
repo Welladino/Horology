@@ -58,3 +58,17 @@ def test_register_ids_are_never_taken_from_the_sheet(path):
         for match in re.finditer(pattern, text):
             line = text[text.rfind("\n", 0, match.start()) + 1:text.find("\n", match.end())]
             assert allowed and allowed in line, f"{path.name}: '{match.group(0)}' - use reserve_id"
+
+
+def test_codex_dispatch_prefers_native_desktop_threads():
+    supervisor = (PLUGINS / "horology-workflows/skills/horology-supervisor/SKILL.md").read_text()
+    runs = (PLUGINS / "horology-workflows/skills/horology-supervisor/references/runs.md").read_text()
+
+    assert "`create_thread`" in supervisor
+    assert "`wait_threads`" in supervisor
+    assert "native thread ID" in supervisor
+    assert runs.index("`create_thread`") < runs.index('`codex exec "<prompt>"`')
+    assert "explicit fallback, not the default" in runs
+    assert "before creating a thread" in runs
+    assert "`send_message_to_thread`" in runs
+    assert "pass it as `session_link` to `finish_run`" in runs
