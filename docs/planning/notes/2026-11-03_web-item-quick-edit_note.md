@@ -18,3 +18,9 @@ Pipeline item 65 (ClickUp HOR-15). On the web app's item page, long cells split 
 
 - `npm test` in `google_appscript/pipeline-decisions`: new cases for items 39 and 55 text, Domain and Entity changes (valid, unknown domain, entity of another domain, cleared entity, stale version, disallowed status move, unchanged legacy domain) and the item page's Agent status choices.
 - `.venv/bin/python -m pytest tests/unit -q`.
+- `npm run clasp:push` was run on 03/11/2026 after checking that the live project matched the branch base (`clasp pull` diff empty), so the project's HEAD code has this change. The web-app deployment was **not** updated: the live `/exec` page still serves version 25 until the founder deploys a new version.
+
+## Founder steps
+
+1. Apps Script editor for the Pipeline decisions project: **Deploy → Manage deployments**, the existing web-app deployment, **Edit**, Version **New version**, **Deploy** (or `clasp deploy --deploymentId <existing ID>` from `google_appscript/pipeline-decisions`).
+2. Open items 39 and 55 in the workspace and run the checks in the runbook's "Deploy the web page after a change".
