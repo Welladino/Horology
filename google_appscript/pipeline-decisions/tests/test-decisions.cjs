@@ -224,7 +224,7 @@ function webWorkbooks(tabs = {}) {
       'Should we own sending?','Accepted: stay ESP-delegated (Option A).','No pilot demand.',
       'accepted','2026-10-20','','','']]);
   const registers = sheet([['Register','Location'],['Horology — Decision Register','https://docs.google.com/spreadsheets/d/D/edit']]);
-  const domains = sheet([['Domain','Entities'],['Article Aggregator',''],['Horology','']]);
+  const domains = sheet(tabs.domains || [['Domain','Entities'],['Article Aggregator',''],['Horology','']]);
   const books = {P:{Master:pipeline,Registers:registers,Domains:domains},D:{Master:register}};
   if (tabs.options) books.D.Options = sheet(tabs.options);
   if (tabs.steps) books.P.Steps = sheet(tabs.steps);
@@ -492,7 +492,7 @@ test('Pipeline edit rejects stale data, forbidden fields and invalid Ready moves
     'Run location':'Local','Next step / Research question':'Investigate'
   }};
   assert.throws(() => w.ctx.updatePipelineItemFromWeb({...base,version:'old'}),/changed since/);
-  assert.throws(() => w.ctx.updatePipelineItemFromWeb({...base,fields:{...base.fields,Domain:'Horology'}}),
+  assert.throws(() => w.ctx.updatePipelineItemFromWeb({...base,fields:{...base.fields,Status:'Completed'}}),
     /cannot be edited/);
   assert.throws(() => w.ctx.updatePipelineItemFromWeb(base),/Agent status change is not allowed/);
   assert.equal(w.pipeline.writes.length,0);
@@ -528,13 +528,50 @@ test('Pipeline edit leaves Stage 3 unchanged and avoids writes when nothing chan
   assert.equal(w.pipeline.rows[1][5],'Ready');
 });
 
+const NEWSLETTER_DOMAINS = [['Domain','Entities'],['Article Aggregator',''],['Horology',''],
+  ['Newsletter','WIP_exercise science, Weekly digest']];
+test('Quick edit changes Domain and Entity by ID, validated against the Domains tab', () => {
+  const w = webWorkbooks({domains: NEWSLETTER_DOMAINS});
+  let item = w.ctx.getPipelineItem('14');
+  const quick = fields => w.ctx.updatePipelineItemFromWeb({pipelineId:'14',version:item.version,fields});
+  const result = quick({'Agent status':'No action','Agent type':'Claude Code','Run location':'Cloud',
+    'Domain':'Newsletter','Entity':'WIP_exercise science'});
+  assert.equal(result.changed,true);
+  assert.deepEqual(w.pipeline.rows[1].slice(10,14),['Newsletter','WIP_exercise science','Research','Cloud']);
+  assert.equal(w.pipeline.rows[1][6],'Claude Code');
+  assert.equal(w.pipeline.rows[1][1],'TF-IDF and SERP-grounded drafting');  // fields not sent are kept
+  assert.equal(w.pipeline.rows[2][10],'Article Aggregator');  // other rows untouched
+  // A domain with no entities clears the Entity.
+  item = w.ctx.getPipelineItem('14');
+  quick({'Domain':'Horology','Entity':'WIP_exercise science'});
+  assert.deepEqual(w.pipeline.rows[1].slice(10,12),['Horology','']);
+});
+test('Quick edit rejects an unknown domain, an entity of another domain, stale data and a disallowed move', () => {
+  const w = webWorkbooks({domains: NEWSLETTER_DOMAINS}), item = w.ctx.getPipelineItem('14');
+  const quick = (fields, version = item.version) =>
+    () => w.ctx.updatePipelineItemFromWeb({pipelineId:'14',version,fields});
+  assert.throws(quick({'Domain':'Gardening'}),/Choose a domain from the Domains tab/);
+  assert.throws(quick({'Domain':'Newsletter','Entity':'Shopify store'}),/Shopify store is not an entity of Newsletter/);
+  assert.throws(quick({'Domain':'Newsletter'},'old'),/changed since/);
+  // Item 14 is Awaiting decision, so it cannot be made Ready from here.
+  assert.throws(quick({'Agent status':'Ready','Agent type':'Codex','Run location':'Local'}),
+    /Agent status change is not allowed/);
+  assert.throws(quick({'Agent type':'Robot'}),/Agent type must be one of/);
+  assert.equal(w.pipeline.writes.length,0);
+  // An unchanged legacy Domain that is no longer on the Domains tab does not block other edits.
+  w.pipeline.rows[1][10] = 'Retired domain';
+  const legacy = w.ctx.getPipelineItem('14');
+  w.ctx.updatePipelineItemFromWeb({pipelineId:'14',version:legacy.version,fields:{'Run location':'Cloud','Domain':'Retired domain'}});
+  assert.equal(w.pipeline.rows[1][13],'Cloud');
+});
+
 // The page script in a minimal browser: elements accept anything, and server calls are recorded.
 function page({embedded = null, hash = ''} = {}) {
   const html = fs.readFileSync(path.join(dir,'Review.html'),'utf8');
   assert.match(html, /<script type="application\/json" id="initial-data"><\?!= initialJson \?><\/script>/);
   const script = html.match(/<script>([\s\S]*?)<\/script>/)[1];
   const element = () => new Proxy(function () {}, {
-    get: (target, key) => key === 'textContent' ? '' : key === Symbol.iterator ? [][Symbol.iterator] : element(),
+    get: (target, key) => key === 'textContent' || key === 'value' ? '' : key === Symbol.iterator ? [][Symbol.iterator] : element(),
     set: () => true, apply: () => element()});
   const calls = [], pushed = [];
   const runner = () => {
@@ -647,6 +684,22 @@ test('a linked item or decision is read fresh when opened, and opening one updat
   failed.fail(Error('Expected one ID 14; found 0.'));
 });
 
+test('the item view loads the quick-edit fields and offers only the allowed Agent status moves', () => {
+  const opened = page({embedded: {pending: [], recent: []}, hash: 'item/65'});
+  const load = opened.calls.find(c => c.method === 'getPipelineItem');
+  load.ok({ID:'65',Title:'Quick edit',Status:'Inbox','Agent status':'No action',Domain:'Horology',
+    readyStatuses:['Inbox','Rework','Approved','In progress'],steps:[],version:'v'});
+  const fields = opened.calls.filter(c => c.method === 'getPipelineFormData');
+  assert.equal(fields.length, 1);
+  fields[0].ok({domains:{Horology:[]},options:{'Agent type':['Claude Code'],'Run location':['Local']}});
+  const {run} = opened;
+  assert.deepEqual(run("agentStatusChoices({Status:'In progress','Agent status':'No action',readyStatuses:['Inbox','In progress']})"),
+    ['No action','Plan','Ready']);
+  assert.deepEqual(run("agentStatusChoices({Status:'Awaiting decision','Agent status':'No action'})"), ['No action']);
+  assert.deepEqual(run("agentStatusChoices({Status:'Inbox','Agent status':'Plan'})"), ['Plan','Ready']);
+  assert.deepEqual(run("withCurrent(['Horology'],'Retired domain')"), ['Retired domain','Horology']);
+  assert.deepEqual(run("withCurrent(['Horology'],'Horology')"), ['Horology']);
+});
 test('a long cell reads as spaced paragraphs, starting a new one at each labelled sentence', () => {
   const {run} = page({embedded: {pending: [], recent: []}});
   const long = 'A'.repeat(200) + '. Second sentence keeps the first chunk going past the limit. Third starts a new one.';
@@ -654,6 +707,26 @@ test('a long cell reads as spaced paragraphs, starting a new one at each labelle
     ['A'.repeat(200) + '. Second sentence keeps the first chunk going past the limit.', 'Third starts a new one.']);
   assert.deepEqual(run(`paragraphChunks('Proposed: park it (Option A). Keep the steps, e.g. 2 and 3. Alternatives: B build. If accepted, plan it.\\n\\nNew line.')`),
     ['Proposed: park it (Option A). Keep the steps, e.g. 2 and 3.', 'Alternatives: B build.', 'If accepted, plan it.', 'New line.']);
+});
+test('a numbered step stays one paragraph with its marker (HOR-15: items 39 and 55)', () => {
+  const {run} = page({embedded: {pending: [], recent: []}});
+  // Item 39's Next step: step text that opens with a labelled phrase used to leave "1." on its own.
+  const item39 = 'Founder decision on Decision 6: accept the proposed direction, rework, park or reject. Steps 1–4 done on 28/10/2026; retained below for history.\n' +
+    '1. Reader demand: which audience (gym beginners and intermediate trainees, strength and performance enthusiasts, coaches and fitness-curious readers) shows the strongest interest in evidence-based exercise science, what questions do they ask, and what depth of detail do they want? Answered = ranked audience hypotheses with sourced demand signals and a stated lead audience, or \'no clear demand\'. [horology-research]\n' +
+    '4. Direction and plan: using steps 1–3, propose the target readership. Concept level only; brand name, cadence, distribution and monetisation stay deferred. Answered = concise proposed direction for founder review. [horology-gtm]\n\n' +
+    'Read the entity\'s registered 00_Foundations Agent reference documents first. Treat them as founder intent.';
+  const chunks = run(`paragraphChunks(${JSON.stringify(item39)})`);
+  assert.deepEqual(chunks.map(c => c.slice(0, 18)), ['Founder decision o', '1. Reader demand: ',
+    '4. Direction and p', 'Read the entity\'s ']);
+  assert.ok(chunks[1].endsWith('[horology-research]'));
+  // Item 55's steps, which were once a numbered Next step: long, labelled and ending "Stop here until answered."
+  const item55 = '3. Implementation question, one decision for Groups B and C: run select name, model_default from system_prompts where model_default is not null; then ask the founder (a) whether prompt defaults should start winning for the Group B features (drafting, digest, article cards, analysis, curation) and (b) which Group C features get a plan role. Stop here until answered.\n' +
+    '4. After the decision: move the Group B and C sites as decided and delete the 4 *_MODEL_FALLBACK constants.\n' +
+    '5) Check: outside tests and alembic/versions, "gemini-2.5-flash-lite" remains only in config.py; run the unit suite.\n' +
+    '- Note: a bulleted line keeps its marker too.';
+  assert.deepEqual(run(`paragraphChunks(${JSON.stringify(item55)})`), item55.split('\n'));
+  // A number inside prose, or a year, is not a marker.
+  assert.deepEqual(run(`paragraphChunks('2026 was busy. Check: the list.')`), ['2026 was busy.', 'Check: the list.']);
 });
 
 test('writes find the row by ID, not by the position read earlier', () => {

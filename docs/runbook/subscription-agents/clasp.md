@@ -130,6 +130,8 @@ Bound to the Pipeline workbook. **Extensions → Horology — Pipeline decisions
    - Opening a decision or item shows "Loading …" briefly, and the address bar ends in `#decision/<ID>` or `#item/<ID>`; the browser's Back button returns to the list.
    - Searching the Pipeline for a word that appears only in an item's Next step finds it after a moment ("searching full text…").
    - An edit made directly in the sheet shows in the lists within a minute, or at once after **Refresh**.
+   - Item 39's Next step shows each numbered step as one paragraph with its number (no "1." on a line of its own).
+   - An item page has an **Agent and domain** section with five controls and **Save agent and domain**; Entity choices change with Domain. **Edit item** no longer has those fields.
    - The page has the dark top bar, IBM Plex Sans and the amber **Add item** button. Decisions shows the inbox beside the reading pane; Pipeline shows the five-column board, and a card opens the item. At phone width (or a narrow window) the inbox stacks above the decision and the board scrolls sideways.
 
    `appsscript.json` is unchanged by this release.

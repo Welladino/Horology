@@ -73,9 +73,11 @@
     .section p.hint { color:var(--muted); font-size:13px; margin:-2px 0 10px; }
     .plain-copy { margin:0; white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.6; }
     .plain-copy + .plain-copy { margin-top:14px; }
+    .plain-copy.list-line { padding-left:1.6em; text-indent:-1.6em; }
+    .plain-copy.list-line + .plain-copy.list-line { margin-top:8px; }
     .bullets { margin:0; padding-left:20px; line-height:1.6; }
     .bullets li + li { margin-top:4px; }
-    .steps { margin:0; padding-left:22px; line-height:1.6; }
+    .steps { margin:0; padding-left:22px; line-height:1.6; overflow-wrap:anywhere; }
     .steps li + li { margin-top:6px; }
     .steps small { color:var(--muted); margin-left:6px; }
     .empty { background:#fff; border:1px dashed #b9c5cc; border-radius:8px; padding:18px; color:var(--muted); }
@@ -177,6 +179,8 @@
     .field small { display:block; margin:-2px 0 6px; color:var(--muted); font-size:12px; }
     .field small:empty { display:none; }
     textarea { min-height:88px; resize:vertical; }
+    .quick-grid { grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); }
+    .quick-edit .actions { margin-top:14px; }
     .actions { display:flex; align-items:center; flex-wrap:wrap; gap:12px; }
     .more { border:1px solid var(--line); border-radius:8px; padding:0 16px; }
     .more summary,.filter-panel summary { display:flex; align-items:center; min-height:44px; cursor:pointer;
@@ -209,7 +213,7 @@
     .card-meta { display:flex; justify-content:space-between; align-items:center; gap:8px;
       color:var(--muted); font-size:12px; }
     .card-meta .id { color:var(--ink); font-weight:700; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
-    .card-title { display:block; margin:6px 0; font-weight:600; line-height:1.35; }
+    .card-title { display:block; margin:6px 0; font-weight:600; line-height:1.35; overflow-wrap:anywhere; }
     .card-foot { display:block; color:var(--muted); font-size:12px; }
     .card-foot .ready { color:#0b4a5a; font-weight:700; }
     .type-tag { flex:none; padding:2px 8px; border-radius:99px; font-size:11px; font-weight:700; }
@@ -681,14 +685,18 @@
     }
     // A cell as spaced paragraphs: each line, and a long line in chunks of a few sentences.
     // A labelled sentence ("Alternatives: …", "If accepted, …") starts a new paragraph.
+    // A numbered or bulleted line ("1. Check: …") stays one paragraph with its marker.
+    const LIST_LINE = /^(?:\d{1,3}[.)]|[-•*])\s/;
     function paragraphs(parent,text,empty) {
       const chunks = paragraphChunks(text);
       if (!chunks.length && empty) chunks.push(empty);
-      chunks.forEach(chunk => parent.appendChild(node('p','plain-copy',chunk)));
+      chunks.forEach(chunk => parent.appendChild(node('p',
+        'plain-copy' + (LIST_LINE.test(chunk) ? ' list-line' : ''),chunk)));
     }
     function paragraphChunks(text) {
       const out = [];
       String(text || '').split('\n').map(line => line.trim()).filter(Boolean).forEach(line => {
+        if (LIST_LINE.test(line)) { out.push(line); return; }
         let chunk = '';
         line.split(/(?<=[.!?])\s+(?=[A-Z(“"'‘])/).forEach(sentence => {
           const labelled = /^(?:[A-Z][\w’' /-]{0,30}:|If (?:accepted|approved)\b)/.test(sentence);
@@ -1033,6 +1041,8 @@
       edit.onclick = () => withFormData(token,() => renderPipelineEdit(item));
       tools.appendChild(edit); toolbar.appendChild(tools); panel.appendChild(head);
       const body = node('div','panel-body'); panel.appendChild(body);
+      quickEdit(section(body,'Agent and domain',
+        'Who works next, where, and the item\u2019s domain. Saves only these five fields.'),item,token);
       for (const pair of [
         ['Summary / Why',item['Summary / Why']],
         ['Next step / Research question',item['Next step / Research question']],
@@ -1048,8 +1058,7 @@
       const context = section(body,'Details');
       const facts = node('div','meta');
       for (const pair of [
-        ['Type',item.Type],['Entity',item.Entity],['Agent',item['Agent type']],
-        ['Run location',item['Run location']],
+        ['Type',item.Type],
         ['Current decision',item['Current decision ID'] ? '#' + item['Current decision ID'] : ''],
         ['Created',item.Created],['Updated',item.Updated]
       ]) if (pair[1]) facts.appendChild(node('span','h-pill',pair[0] + ': ' + pair[1]));
@@ -1068,6 +1077,86 @@
       links.appendChild(linkRow);
       showNotice(notice); notice = '';
     }
+    // The Agent status moves the founder may make from here (select in workflow.yaml).
+    function agentStatusChoices(item) {
+      const current = item['Agent status'] || 'No action', allowed = [current];
+      if ((item.readyStatuses || ['Inbox','Rework','Approved']).includes(item.Status)) {
+        if (current === 'No action') allowed.push('Plan','Ready');
+        else if (current === 'Plan') allowed.push('Ready');
+      }
+      return allowed;
+    }
+    // Options with the item's own value kept, so an older value still shows as selected.
+    function withCurrent(values,current) {
+      return current && !(values || []).includes(current) ? [current,...(values || [])] : values || [];
+    }
+    // Agent status, Agent type, Run location, Domain and Entity, saved on their own.
+    // A stale version shows the conflict and reloads the item.
+    function quickEdit(parent,item,token) {
+      if (!formData) {
+        const wait = node('p','message','Loading fields…'); parent.appendChild(wait);
+        serve('getPipelineFormData',[],data => {
+          formData = data; if (!isCurrent(token)) return;
+          wait.remove(); quickEdit(parent,item,token);
+        },message => { wait.className = 'message error'; wait.textContent = 'Could not load the fields: ' + message; });
+        return;
+      }
+      const form = node('form','quick-edit'); parent.appendChild(form);
+      const grid = node('div','grid quick-grid'); form.appendChild(grid);
+      const agentStatus = field(grid,'Agent status','quick-agent-status','select');
+      const agentType = field(grid,'Agent type','quick-agent-type','select');
+      const runLocation = field(grid,'Run location','quick-run-location','select');
+      const domain = field(grid,'Domain','quick-domain','select');
+      const entity = field(grid,'Entity','quick-entity','select');
+      fill(agentStatus.control,agentStatusChoices(item),false);
+      agentStatus.control.value = item['Agent status'] || 'No action';
+      fill(agentType.control,formData.options['Agent type'],false);
+      agentType.control.value = item['Agent type'] || 'Unassigned';
+      fill(runLocation.control,formData.options['Run location'],true);
+      runLocation.control.value = item['Run location'];
+      fill(domain.control,withCurrent(Object.keys(formData.domains),item.Domain),true);
+      domain.control.value = item.Domain;
+      domain.hint.textContent = 'Existing documents stay in their folders.';
+      function updateEntities() {
+        const listed = formData.domains[domain.control.value] || [];
+        const keep = domain.control.value === item.Domain ? item.Entity : '';
+        fill(entity.control,withCurrent(listed,keep),true);
+        entity.control.value = keep;
+        entity.control.disabled = !listed.length && !keep;
+        entity.hint.textContent = entity.control.disabled ? 'This domain has no entities.' : '';
+      }
+      domain.control.onchange = updateEntities; updateEntities();
+      const bar = node('div','actions'), save = node('button','h-button h-button--primary','Save agent and domain');
+      save.type = 'submit'; const message = node('span','message'); message.setAttribute('role','status');
+      append(bar,save,message); form.appendChild(bar);
+      form.onsubmit = event => {
+        event.preventDefault(); save.disabled = true;
+        message.className = 'message'; message.textContent = 'Saving…';
+        const payload = {pipelineId:item.ID,version:item.version,fields:{
+          'Agent status':agentStatus.control.value,'Agent type':agentType.control.value,
+          'Run location':runLocation.control.value,'Domain':domain.control.value,
+          'Entity':entity.control.value}};
+        const reload = (text,failed) => serve('getPipelineItem',[item.ID],saved => {
+          notice = text; if (isCurrent(token)) renderPipelineDetail(saved);
+        },error => {
+          message.className = 'message error';
+          message.textContent = (failed ? text + ' ' : 'Saved, but ') + 'could not reload the item: ' + error;
+          save.disabled = false;
+        });
+        google.script.run.withSuccessHandler(result => {
+          afterWrite();
+          reload(result.changed ? 'Agent and domain saved.' : 'No changes to save.',false);
+        }).withFailureHandler(error => {
+          const text = error && error.message ? error.message : String(error);
+          if (/changed since/.test(text)) {
+            afterWrite(); message.className = 'message error'; message.textContent = text + ' Reloading…';
+            reload('Not saved: someone else changed this item. The latest version is shown.',true);
+            return;
+          }
+          message.className = 'message error'; message.textContent = text; save.disabled = false;
+        }).updatePipelineItemFromWeb(payload);
+      };
+    }
     function renderPipelineEdit(item) {
       app.replaceChildren();
       const back = node('button','h-button back','← Back to item'); back.type = 'button';
@@ -1076,11 +1165,13 @@
       const panel = node('article','panel'), head = itemHead(item,'Edit ' + (item.Title || 'item'));
       const readOnly = node('div','meta');
       for (const pair of [['Domain',item.Domain],['Entity',item.Entity],
-        ['Status',item.Status],['Stage',item.Stage]])
+        ['Status',item.Status],['Stage',item.Stage],['Agent status',item['Agent status']],
+        ['Agent type',item['Agent type']],['Run location',item['Run location']]])
         if (pair[1]) readOnly.appendChild(node('span','h-pill',pair[0] + ': ' + pair[1]));
       head.appendChild(readOnly); panel.appendChild(head); app.appendChild(panel);
       const form = node('form','panel-body'); panel.appendChild(form);
-      const work = section(form,'The work','Domain and Entity stay with the original item.');
+      const work = section(form,'The work',
+        'Agent status, Agent type, Run location, Domain and Entity are changed on the item page.');
       const workGrid = node('div','grid'); work.appendChild(workGrid);
       const title = field(workGrid,'Title','edit-title','input','wide');
       title.control.value = item.Title; title.control.required = true; title.control.maxLength = 240;
@@ -1093,23 +1184,6 @@
       next.control.maxLength = 4000;
       const trigger = field(workGrid,'Revisit trigger','edit-trigger','input','wide');
       trigger.control.value = item['Revisit trigger']; trigger.control.maxLength = 2000;
-      const assignment = section(form,'Who works next',
-        'Changing to Ready selects the next step. Stage updates automatically when required.');
-      const agentGrid = node('div','grid'); assignment.appendChild(agentGrid);
-      const agentStatus = field(agentGrid,'Agent status','edit-agent-status','select');
-      const agentType = field(agentGrid,'Agent type','edit-agent-type','select');
-      const runLocation = field(agentGrid,'Run location','edit-run-location','select');
-      const currentStatus = item['Agent status'] || 'No action';
-      const allowed = [currentStatus];
-      if ((item.readyStatuses || ['Inbox','Rework','Approved']).includes(item.Status)) {
-        if (currentStatus === 'No action') allowed.push('Plan','Ready');
-        else if (currentStatus === 'Plan') allowed.push('Ready');
-      }
-      fill(agentStatus.control,allowed,false); agentStatus.control.value = currentStatus;
-      fill(agentType.control,formData.options['Agent type'],false);
-      agentType.control.value = item['Agent type'] || 'Unassigned';
-      fill(runLocation.control,formData.options['Run location'],true);
-      runLocation.control.value = item['Run location'];
       const bar = node('div','actions'), save = node('button','h-button h-button--primary','Save item');
       save.type = 'submit'; const message = node('span','message'); message.setAttribute('role','status');
       append(bar,save,message); form.appendChild(bar);
@@ -1120,10 +1194,7 @@
           'Title':title.control.value,'Type':type.control.value,
           'Summary / Why':summary.control.value,
           'Next step / Research question':next.control.value,
-          'Revisit trigger':trigger.control.value,
-          'Agent status':agentStatus.control.value,
-          'Agent type':agentType.control.value,
-          'Run location':runLocation.control.value
+          'Revisit trigger':trigger.control.value
         }};
         google.script.run.withSuccessHandler(result => {
           afterWrite();
