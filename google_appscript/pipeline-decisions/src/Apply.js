@@ -16,6 +16,10 @@ function run(live, onlyDecisionId) {
     pipeline.rows.forEach(row => {
       if (onlyDecisionId && String(row.data['Current decision ID']).trim() !== String(onlyDecisionId).trim()) return;
       const result = decide(row.data, decisions);
+      // A decision saved from the web page that changes nothing (accepting a Completed Stage 4
+      // deliverable) is reported as applied, so the page doesn't call it pending.
+      if (result.skip && onlyDecisionId && result.decision)
+        out.push({pipelineId: row.data['ID'], decision: result.decision, transition: result.transition, set: {}, applied: live});
       if (result.skip) return;
       if (result.error) { out.push({pipelineId: row.data['ID'], error: result.error}); return; }
       out.push({pipelineId: row.data['ID'], decision: result.decision, transition: result.transition, set: result.set, applied: live});

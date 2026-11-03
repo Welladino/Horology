@@ -16,7 +16,7 @@
 ## Waiting on the founder
 
 - Pipeline items with Status Awaiting decision, oldest first, with days waiting (from Updated) and Review stage (an Implementation question holds up a half-done implementation).
-- Decision Register rows with status proposed.
+- Decision Register rows with status proposed. A proposed Specialist deliverable decision on a Completed Stage 4 item is a finished deliverable to look at, not a blocked item.
 - Items with Agent status Plan.
 - Rows that look too big for one run (several unrelated questions in Next step, or a broad scope with no question). List them as "set Plan if you agree"; don't change them.
 
@@ -27,7 +27,7 @@
 | Stale claims | `list_runs` entries with status claimed or running and `expired` true |
 | Failed runs | `list_runs` entries with status failed in the period, with their notes |
 | Stuck decisions | Awaiting decision for more than 7 days |
-| Missing records | Investigation-route runs finished as done with no outputs, or Awaiting decision items with no output documents (an Implementation question needs only its Decision row); implementation-route runs finished as done with no branch, commit or pull request in their notes |
+| Missing records | Investigation-route runs finished as done with no outputs, or Awaiting decision items with no output documents (an Implementation question needs only its Decision row); Completed Stage 4 items reached after 03/11/2026 whose Current decision ID is not a Specialist deliverable decision; implementation-route runs finished as done with no branch, commit or pull request in their notes |
 | Stalled implementation | In progress items with Agent status No action and no live claim: the run failed or stopped; the founder can select them again |
 | Wrong route | Investigation-route Types (Idea, Research, Direction, Plan) In progress, or implementation-route Types (Feature, Enhancement, Refactor, Fix) Researching or at Stage 2 or Stage 4 after 29/10/2026; older items may still be on the investigation route |
 | Unfinished steps | Completed items with Steps rows still Planned |

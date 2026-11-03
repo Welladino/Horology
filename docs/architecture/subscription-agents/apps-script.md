@@ -29,20 +29,20 @@ Triggers and authorisation never come with a copy; the new owner installs them o
 
 ## Pipeline decisions
 
-When the current decision for an item that is **Awaiting decision** is set to accepted, rework, parked or rejected in the Decision Register, the item moves on:
+When the current decision for an item with an **open review** is set to accepted, rework, parked or rejected in the Decision Register, the item moves on. A review is open while the item is Awaiting decision, or Completed at Stage 4 with Review stage Specialist deliverable (`open_review` in `workflow.yaml`, `OPEN_REVIEW` in `Rules.js`):
 
 | Decision                           | Review stage | Pipeline becomes                  |
 | ---------------------------------- | ------------ | --------------------------------- |
 | accepted                           | Investigation proposal | Approved, Stage 3, Ready          |
-| accepted                           | Specialist deliverable | Completed, Stage 4, No action     |
+| accepted                           | Specialist deliverable | Completed, Stage 4, No action (already so: nothing is written) |
 | accepted (answered)                | Implementation question | In progress, Stage 3, Ready (implementation resumes) |
 | rework (needs Rework instructions) | any | Rework, back to the reviewed stage (Stage 1 for an Investigation proposal, else Stage 3), Ready |
 | parked                             | Investigation / Specialist / Implementation question | Parked, Stage 2 / Stage 4 / Stage 3, No action |
 | rejected                           | Investigation / Specialist / Implementation question | Rejected, Stage 2 / Stage 4 / Stage 3, No action |
 
-Only Claude Code and Codex rows are made Ready; Manual and Unassigned get No action. It also sets the item's Updated date and, if blank, the decision's Decision Date. The supervisor creates the Stage 4 synthesis immediately after Stage 3 and before this final review. The decision script preserves Stage 4 when the founder decides on the specialist deliverable. The rules come from [`workflow.yaml`](https://github.com/Welladino/Horology/blob/main/plugins/horology-workflows/skills/horology-capture-triage/references/workflow.yaml); a unit test checks they agree.
+Only Claude Code and Codex rows are made Ready; Manual and Unassigned get No action. It also sets the item's Updated date and, if blank, the decision's Decision Date. The supervisor creates the Stage 4 synthesis immediately after Stage 3, proposes a Specialist deliverable decision and sets the item Completed at Stage 4; rework, park or reject on that decision reopen it. The decision script preserves Stage 4 for park and reject. The rules come from [`workflow.yaml`](https://github.com/Welladino/Horology/blob/main/plugins/horology-workflows/skills/horology-capture-triage/references/workflow.yaml); a unit test checks they agree.
 
-* It acts only on items still Awaiting decision, using the decision named in Current decision ID, so a decision is never applied twice and old accepted decisions are never replayed. It keeps no state of its own.
+* It acts only on items with an open review, using the decision named in Current decision ID, so a decision is never applied twice and old accepted decisions are never replayed. An accepted Specialist deliverable decision on a Completed item changes nothing and is skipped; a Completed item whose current decision is for another Review stage is skipped without an error. It keeps no state of its own.
 * Proposed decisions are skipped. Problems (no Current decision ID, a decision for another item or stage, rework without instructions) are reported and that item is left unchanged.
 * To change your mind after a decision was applied, **revise** it on the decision page (below); editing the decision's Status again in the sheet does nothing.
 * The web workspace applies a saved decision immediately. A remaining edit trigger can process a person's direct Decision Register edit. Apps Script and API writes do not fire edit triggers; their writers must call `applyDecisions` explicitly. The former ten-minute timer was removed by the founder.

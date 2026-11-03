@@ -41,7 +41,7 @@ flowchart LR
   choose{"<b>Choose an outcome</b>"}
   accepted{"<b>Accepted</b><br/>What was reviewed?"}
   proposal["<b>Investigation proposal</b><br/>Approved · Stage 3 · Ready<br/>for the detailed deliverable"]
-  complete["<b>Specialist deliverable</b><br/>Completed · Stage 4<br/>No action"]
+  complete["<b>Specialist deliverable</b><br/>Stays Completed · Stage 4<br/>No action"]
   resume["<b>Implementation question</b><br/>In progress · Stage 3 · Ready<br/>implementation resumes"]
   rework["<b>Rework</b><br/>Add clear instructions<br/>Item returns to Ready"]
   parked["<b>Parked</b><br/>No action until its<br/>revisit trigger applies"]
@@ -79,6 +79,8 @@ Use **Pipeline** to browse all Master rows as Cards or Rows. Search the text or 
 
 In **Decisions**, expand a Pipeline item to see its decisions, then choose a decision to review it or read its recorded outcome and reason.
 
+An investigation item is **Completed** as soon as its Stage 3 run saves the deliverable and Stage 4 synthesis. Its Specialist deliverable decision still appears under **Needs review**. **Keep completed** accepts it and changes nothing. Rework, park or reject reopen the item.
+
 To change a decision that was already applied (for example an Approved item you now want to park), open it under **Decision history**. **Revise this decision** is shown when it is the item's current decision and no run or review is open (the item is Approved, Rework, Parked, Rejected or Completed). Choose the new outcome, give a reason (rework: the instructions), and **Revise decision**. The decision keeps its ID, your reason is added to it, and the Pipeline item moves straight away. If the item is Researching or In progress, wait for the run to finish.
 
 To capture new work, choose **Add Pipeline item** in the same page. Fill Title and Domain, then optionally add the reason, next step, revisit trigger and target. Ready items need an agent and a Next step. **Add item** writes the next permanent ID to Pipeline Master. The old Add Pipeline item entry is no longer in the Workbook Extensions menu.
@@ -87,7 +89,7 @@ The existing sheet route also works: in the Decision Register, set the current d
 
 ## Scheduled jobs
 
-Create the oversight jobs below on a platform scheduler. Investigation and Stage 3 runs remain founder-started. During a Stage 3 run, the supervisor invokes Horology Synthesis Artifacts immediately after saving the deliverable, then presents both outputs for review. No Stage 4 schedule or second founder prompt is needed.
+Create the oversight jobs below on a platform scheduler. Investigation and Stage 3 runs remain founder-started. During a Stage 3 run, the supervisor invokes Horology Synthesis Artifacts immediately after saving the deliverable, proposes a Specialist deliverable decision and sets the item Completed at Stage 4. No Stage 4 schedule or second founder prompt is needed.
 
 | Job | When | Prompt |
 |---|---|---|

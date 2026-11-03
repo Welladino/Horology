@@ -58,6 +58,32 @@ test('only the current decision counts, and it must match the item', () => {
   assert.match(decide(item(), [decision({'Review stage': 'Stage 2'})]).error, /Review stage/);
 });
 
+test('a Stage 4 item is Completed with its Specialist deliverable decision still open', () => {
+  const done = (o = {}) => item({'Status': 'Completed', 'Stage': 'Stage 4', 'Review stage': 'Specialist deliverable', ...o});
+  const deliverable = (o = {}) => decision({'Review stage': 'Specialist deliverable', ...o});
+  assert.ok(decide(done(), [deliverable({'Status': 'proposed'})]).skip);
+  // Accepting changes nothing, so the item is not rewritten on every check.
+  const accepted = decide(done(), [deliverable()]);
+  assert.match(accepted.skip, /already applied/);
+  assert.equal(accepted.decision, 'D-3');
+  assert.equal(accepted.transition, 'accept-stage-3');
+  // Rework, park and reject reopen it.
+  assert.deepEqual({...decide(done(), [deliverable({'Status': 'rework', 'Rework instructions': 'Add costs'})]).set},
+    {'Status': 'Rework', 'Stage': 'Stage 3', 'Agent status': 'Ready'});
+  assert.deepEqual({...decide(done(), [deliverable({'Status': 'parked'})]).set},
+    {'Status': 'Parked', 'Stage': 'Stage 4', 'Agent status': 'No action'});
+  assert.equal(decide(done(), [deliverable({'Status': 'rejected'})]).set['Status'], 'Rejected');
+});
+test('a Completed item without an open Stage 4 review is left alone, without errors', () => {
+  // Items finished before Stage 4 had its own decision still point at their Stage 2 decision.
+  assert.match(decide(item({'Status': 'Completed', 'Stage': 'Stage 4', 'Review stage': 'Specialist deliverable'}),
+    [decision()]).skip, /is for Investigation proposal/);
+  assert.ok(decide(item({'Status': 'Completed', 'Stage': 'Stage 4', 'Review stage': 'Specialist deliverable',
+    'Current decision ID': ''}), [decision()]).skip);
+  // A finished implementation (Completed at Stage 3) has no open review.
+  assert.ok(decide(item({'Status': 'Completed', 'Stage': 'Stage 3', 'Review stage': 'Implementation question'}),
+    [decision({'Status': 'parked', 'Review stage': 'Implementation question'})]).skip);
+});
 test('revise moves a decided item as the new outcome would from review', () => {
   const approved = item({'Status': 'Approved', 'Stage': 'Stage 3', 'Agent status': 'Ready'});
   const r = revise(approved, decision(), 'parked');
@@ -320,6 +346,23 @@ test('web review accepts a different option and applies the Pipeline transition 
   assert.match(w.register.rows[1][7], /Founder reason for Option C/);
   assert.equal(w.pipeline.rows[1][2],'Approved');
   assert.equal(w.pipeline.rows[1][3],'Stage 3');
+});
+test('web review offers a Completed Stage 4 item\'s proposed decision: accept keeps it, rework reopens it', () => {
+  const proposed = () => { const w = webWorkbooks(); w.register.rows[3][8] = 'proposed'; return w; };
+  let w = proposed();
+  assert.equal(w.ctx.getReviewDashboard().pending.map(r=>r.id).join(','), '1,4');
+  let record = w.ctx.getDecisionReview('4');
+  assert.equal(record.editable, true);
+  assert.equal(record.itemStatus, 'Completed');
+  const kept = w.ctx.submitDecisionReview({decisionId:'4',version:record.version,action:'accepted',
+    optionCode:'A',wording:'Accepted: stay ESP-delegated (Option A).',note:'Fine as it is.'});
+  assert.equal(kept.applied, true);
+  assert.equal(kept.warning, '');
+  assert.equal(w.register.rows[3][8], 'accepted');
+  assert.deepEqual(w.pipeline.writes, []);
+  w = proposed(); record = w.ctx.getDecisionReview('4');
+  w.ctx.submitDecisionReview({decisionId:'4',version:record.version,action:'rework',note:'Add the costs.'});
+  assert.deepEqual(w.pipeline.rows[2].slice(2, 6), ['Rework','Stage 3','Specialist deliverable','Ready']);
 });
 test('web review rejects stale proposals and requires a reason for an alternative', () => {
   const w = webWorkbooks(), version = w.ctx.getDecisionReview('1').version;

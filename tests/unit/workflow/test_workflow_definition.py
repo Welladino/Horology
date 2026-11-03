@@ -170,16 +170,36 @@ def test_implementation_route_skips_stage_2_and_resumes_at_stage_3(wf):
             assert "Stage 2" not in _as_list(t["to"].get("Stage", [])), t["id"]
 
 
-def test_investigation_route_is_unchanged(wf):
+def test_investigation_route_ends_completed_at_stage_4(wf):
     transitions = {t["id"]: t for t in wf["transitions"]}
     assert transitions["submit-for-review"]["to"] == {
         "Status": "Awaiting decision", "Stage": "Stage 2", "Review stage": "Investigation proposal",
         "Agent status": "No action"}
+    # Decision 15 (03/11/2026): Completed when the synthesis is saved; its decision can still reopen it.
     assert transitions["synthesize-stage-3"]["to"] == {
-        "Status": "Awaiting decision", "Stage": "Stage 4", "Review stage": "Specialist deliverable",
+        "Status": "Completed", "Stage": "Stage 4", "Review stage": "Specialist deliverable",
         "Agent status": "No action"}
     assert transitions["accept-stage-1"]["to"] == {"Status": "Approved", "Stage": "Stage 3", "Agent status": "Ready"}
     assert transitions["accept-stage-3"]["to"] == {"Status": "Completed", "Stage": "Stage 4", "Agent status": "No action"}
+    for tid in ("accept-stage-3", "rework", "decide-park", "decide-reject"):
+        assert "Completed" in _as_list(transitions[tid]["from"]["Status"]), tid
+
+
+def test_open_review_matches_the_pipeline_decisions_script(wf):
+    rules = (PIPELINE_DECISIONS / "src" / "Rules.js").read_text()
+    script = json.loads(re.search(r"OPEN_REVIEW\s*=\s*(\[.*?\]);", rules, re.S).group(1))
+    assert script == wf["open_review"]
+    assert {"Status": "Awaiting decision"} in wf["open_review"]
+    transitions = {t["id"]: t for t in wf["transitions"]}
+    synthesized = transitions["synthesize-stage-3"]["to"]
+    assert {k: synthesized[k] for k in ("Status", "Stage", "Review stage")} in wf["open_review"]
+    # Every outcome a Specialist deliverable decision can have starts from each open review state.
+    for status, decision in wf["decisions"].items():
+        for tid in decision.get("triggers", []):
+            if transitions[tid]["from"].get("Review stage", "Specialist deliverable") != "Specialist deliverable":
+                continue
+            sources = set(_as_list(transitions[tid]["from"]["Status"]))
+            assert {s["Status"] for s in wf["open_review"]} <= sources, tid
 
 
 def test_type_list_matches_the_pipeline_decisions_script(wf):
