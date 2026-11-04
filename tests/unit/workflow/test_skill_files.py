@@ -218,6 +218,13 @@ def test_hermes_coordinator_document_graph_is_read_only():
         assert write_tool not in block
 
 
+def test_hermes_operator_can_publish_stage_4_pages():
+    # Operator makes investigation-route Stage 4 pages, so its gateway allow-list must include publishing.
+    config = (REPO / "hermes/operator/config.yaml").read_text()
+    block = re.search(r"\n  mcp-gateway-https:\n(.*?)(?=\n  \S|\Z)", config, re.S).group(1)  # up to the next server
+    assert "enabled: true" in block and "- publish_synthesis" in block
+
+
 def test_claude_supervisor_zip_substitutes_only_its_dispatch_adapter(tmp_path):
     script = REPO / "scripts/ops/claude/build_skill_zips.py"
     spec = importlib.util.spec_from_file_location("build_skill_zips", script)

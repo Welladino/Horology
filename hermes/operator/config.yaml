@@ -242,6 +242,7 @@ mcp_servers:
         - firecrawl_alibaba_search
         - firecrawl_alibaba_product
         - firecrawl_trends
+        - publish_synthesis
   Github MCP:
     url: https://api.githubcopilot.com/mcp/readonly
     headers:
