@@ -10,6 +10,19 @@ from support.paths import PLUGINS, REPO
 SKILL_FILES = sorted(p for p in PLUGINS.glob("horology-*/skills/**/*.md"))
 LINK = re.compile(r"\]\(([^)#\s]+)(?:#[^)]*)?\)")
 
+# The Claude supervisor's dispatch adapter lives outside the plugin; build_skill_zips.py copies it in
+# as the supervisor's references/dispatch.md. Check it as the file it becomes in the zip.
+CLAUDE_DISPATCH = REPO / "scripts/ops/claude/horology_supervisor_dispatch.md"
+SUPERVISOR_DISPATCH = PLUGINS / "horology-workflows/skills/horology-supervisor/references/dispatch.md"
+# (source file, where it is packaged): plugin files are packaged where they are.
+PACKAGED = [(p, p) for p in SKILL_FILES] + [(CLAUDE_DISPATCH, SUPERVISOR_DISPATCH)]
+
+
+def _packaged_id(pair):
+    source, packaged = pair
+    name = str(packaged.relative_to(PLUGINS))
+    return name if source == packaged else "claude:" + name
+
 # References shared by both plugins. Codex packages each plugin on its own, so each keeps a copy.
 SHARED = [
     ("horology-workflows/skills/horology-capture-triage/references/locations.md",
@@ -26,11 +39,12 @@ def _local_links(path):
     return [t for t in LINK.findall(path.read_text()) if not re.match(r"[a-z]+:", t)]
 
 
-@pytest.mark.parametrize("path", SKILL_FILES, ids=lambda p: str(p.relative_to(PLUGINS)))
-def test_links_resolve_inside_the_plugin(path):
-    plugin = path.relative_to(PLUGINS).parts[0]
+@pytest.mark.parametrize("pair", PACKAGED, ids=_packaged_id)
+def test_links_resolve_inside_the_plugin(pair):
+    path, packaged = pair
+    plugin = packaged.relative_to(PLUGINS).parts[0]
     for target in _local_links(path):
-        resolved = (path.parent / target).resolve()
+        resolved = (packaged.parent / target).resolve()
         assert resolved.exists(), f"{target} does not exist"
         assert resolved.is_relative_to((PLUGINS / plugin).resolve()), f"{target} leaves the {plugin} plugin"
 
@@ -41,9 +55,9 @@ def test_shared_copies_are_identical(pair):
     assert first.read_text() == second.read_text()
 
 
-@pytest.mark.parametrize("path", SKILL_FILES, ids=lambda p: str(p.relative_to(PLUGINS)))
-def test_no_domain_names(path):
-    text = path.read_text()
+@pytest.mark.parametrize("pair", PACKAGED, ids=_packaged_id)
+def test_no_domain_names(pair):
+    text = pair[0].read_text()
     assert not [name for name in DOMAIN_NAMES if name in text]
 
 
@@ -52,10 +66,11 @@ STALE_ALLOCATION = [r"next (unused|free) (numeric )?(document |decision )?id", r
                     r"concurrent allocation is not implemented", r"coordinated allocator is required"]
 
 
-@pytest.mark.parametrize("path", SKILL_FILES, ids=lambda p: str(p.relative_to(PLUGINS)))
-def test_register_ids_are_never_taken_from_the_sheet(path):
+@pytest.mark.parametrize("pair", PACKAGED, ids=_packaged_id)
+def test_register_ids_are_never_taken_from_the_sheet(pair):
+    path, packaged = pair
     text = path.read_text().lower()
-    allowed = "pipeline id" if "capture-triage" in str(path) else None  # Pipeline IDs: the form allocates them
+    allowed = "pipeline id" if "capture-triage" in str(packaged) else None  # Pipeline IDs: the form allocates them
     for pattern in STALE_ALLOCATION:
         for match in re.finditer(pattern, text):
             line = text[text.rfind("\n", 0, match.start()) + 1:text.find("\n", match.end())]
@@ -65,8 +80,8 @@ def test_register_ids_are_never_taken_from_the_sheet(path):
 # HOR-9 / item 70: Pages links were stored nowhere the founder could see them.
 def _publishing_skills():
     skills = {}
-    for path in SKILL_FILES:
-        skill = path.relative_to(PLUGINS).parts[:3]
+    for path, packaged in PACKAGED:
+        skill = packaged.relative_to(PLUGINS).parts[:3]
         skills.setdefault(skill, []).append(path.read_text())
     return {"/".join(skill): "\n".join(texts) for skill, texts in skills.items() if "publish_synthesis" in "\n".join(texts)}
 
