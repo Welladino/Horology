@@ -2,7 +2,7 @@
 # Skills, the Apps Scripts and the digest's health checks follow this file.
 # Changing a rule means changing it here first. Validated by tests/unit/workflow/.
 
-version: 3
+version: 4
 
 # Who may change things.
 actors:
@@ -36,13 +36,15 @@ fields:
     values: ["No", "Yes"]
     set_by: [planner]
 
-# Type chooses the route an item's runs take. The investigation route reviews a Stage 1 proposal at
+# Type chooses the route an item's runs take. Both routes start with a Stage 1 specialist document in
+# Drive plus Steps rows (founder, 04/11/2026). The investigation route reviews that Stage 1 proposal at
 # Stage 2 before the Stage 3 deliverable and Stage 4 synthesis. The implementation route was decided by
-# the founder: Stage 1 is the implementation plan (Steps rows), Stage 3 the implementation itself, with
-# Status In progress throughout and no Stage 2; a founder choice it needs is an Implementation question.
+# the founder: Stage 1 is the implementation plan, Stage 3 the implementation and its Implementation
+# report, Stage 4 a page made from that report, with Status In progress until it ends Completed and no
+# Stage 2; a founder choice it needs is an Implementation question, which links the Stage 1 document.
 routes:
   investigation: {types: [Idea, Research, Direction, Plan], stages: [Stage 1, Stage 2, Stage 3, Stage 4]}
-  implementation: {types: [Feature, Enhancement, Refactor, Fix], stages: [Stage 1, Stage 3]}
+  implementation: {types: [Feature, Enhancement, Refactor, Fix], stages: [Stage 1, Stage 3, Stage 4]}
 
 statuses:
   Inbox: {meaning: Captured; not yet scoped or selected, stages: [Stage 0, Stage 1]}
@@ -52,15 +54,15 @@ statuses:
   Awaiting decision: {meaning: Work is ready for the founder's review, stages: [Stage 2, Stage 3, Stage 4]}
   Approved: {meaning: The founder accepted a Stage 1 proposal; the Stage 3 deliverable is next, stages: [Stage 3]}
   Rework: {meaning: The founder asked for changes; instructions are on the decision, stages: [Stage 1, Stage 3]}
-  Completed: {meaning: "Workflow complete: the Stage 4 synthesis was saved (the founder can still reopen it from its decision), or the implementation finished at Stage 3", stages: [Stage 3, Stage 4]}
+  Completed: {meaning: "Workflow complete: the Stage 4 synthesis or page was saved (the founder can still reopen it from its decision); implementations finished before 04/11/2026 ended at Stage 3", stages: [Stage 3, Stage 4]}
   Rejected: {meaning: Not pursued; history kept, stages: [Stage 2, Stage 3, Stage 4]}
 
 stages:
   Stage 0: Capture
-  Stage 1: Investigation and proposal (research, direction, plan or assessment); on the implementation route, the implementation plan written as Steps rows
+  Stage 1: A specialist document in Drive (Research, Direction, Plan or Technical Assessment template) plus Steps rows; the investigation and proposal, or on the implementation route the implementation plan
   Stage 2: Founder decision (investigation route only)
-  Stage 3: Specialist deliverable; on the implementation route, the implementation itself
-  Stage 4: Visual synthesis of the investigation and Stage 3 deliverable; the item is Completed, and its Specialist deliverable decision can reopen it (investigation route only)
+  Stage 3: Specialist deliverable; on the implementation route, the implementation and its Implementation report Google Doc
+  Stage 4: Visual synthesis of the Stage 3 deliverable (on the implementation route, a page made from the Implementation report); the item is Completed, and its Specialist deliverable decision can reopen it
 
 # Allowed moves. "from"/"to" give the fields that change; unlisted fields stay as they are.
 # "when" is the trigger. Moves not listed here are unexpected and the digest reports them.
@@ -124,10 +126,15 @@ transitions:
     when: The implementation plan is on the Steps tab. The run moves the item to Stage 3 itself and implements in the same run.
 
   - id: complete-implementation
-    actor: supervisor
+    actor: [supervisor, synthesis]
     from: {Status: In progress, Stage: Stage 3}
-    to: {Status: Completed, Stage: Stage 3, Agent status: No action}
-    when: Every Steps row is Done or Skipped, the work is committed and recorded, and no founder decision is needed.
+    to: {Status: Completed, Stage: Stage 4, Review stage: Specialist deliverable, Agent status: No action}
+    when: >-
+      Every Steps row is Done or Skipped, the work is committed and pushed, no founder decision is needed,
+      and in the same run the Implementation report Google Doc and the Stage 4 page made from it are saved
+      to the Document Index (decided by the founder on 04/11/2026). As for synthesize-stage-3, the run
+      proposes a Specialist deliverable decision and makes it the Current decision ID; the founder can
+      accept it or reopen the item from it (see open_review).
 
   - id: raise-implementation-question
     actor: supervisor
@@ -135,7 +142,8 @@ transitions:
     to: {Status: Awaiting decision, Stage: Stage 3, Review stage: Implementation question, Agent status: No action}
     when: >-
       The run needs a founder choice. It stops with a proposed decision and Options rows, as for any proposal;
-      the work done so far stays committed and the Steps rows show what is left.
+      the work done so far stays committed and pushed, the Steps rows show what is left, and the decision's
+      Research Links name the item's Stage 1 document in Drive.
 
   - id: submit-for-review
     actor: supervisor
@@ -170,8 +178,9 @@ transitions:
     from: {Status: [Completed, Awaiting decision], Stage: Stage 4, Review stage: Specialist deliverable}
     to: {Status: Completed, Stage: Stage 4, Agent status: No action}
     when: >-
-      The founder accepts the Stage 3 deliverable after seeing its Stage 4 synthesis. The item is already
-      Completed, so nothing changes; Awaiting decision covers items that reached Stage 4 before 03/11/2026.
+      The founder accepts the Stage 3 deliverable (or the implementation and its report) after seeing its
+      Stage 4 synthesis or page. The item is already Completed, so nothing changes; Awaiting decision covers
+      items that reached Stage 4 before 03/11/2026.
 
   - id: resume-implementation
     actor: [founder, sync]
@@ -229,7 +238,7 @@ decisions:
   rejected: {triggers: [decide-reject]}
 
 # Where an item's current proposed decision can be decided: Awaiting decision, or a Stage 4 item that
-# synthesize-stage-3 left Completed with a proposed Specialist deliverable decision. Deciding it there
+# synthesize-stage-3 or complete-implementation left Completed with a proposed Specialist deliverable decision. Deciding it there
 # accepts the deliverable (no change) or reopens the item with rework, park or reject. A Completed item
 # whose current decision is for another Review stage has no open review.
 open_review:
@@ -272,8 +281,8 @@ register_ids:
   find_rows_by: ID  # never by row position, title or a row number read earlier
 
 # Child tabs: one row per entry, joined to the parent row by its permanent ID, never by row position.
-# Steps: the planner writes one row per planned step; Next step / Research question stays a one-line
-# question. Older items may still hold a numbered list in Next step, which is read the same way.
+# Steps: the planner, or a Stage 1 run on either route that finds no open rows, writes one row per planned
+# step; Next step / Research question stays a one-line question. Older items may still hold a numbered list in Next step, which is read the same way.
 # The run reports the completed numbers in finish_run's steps_done and marks those rows Done.
 # Options: whoever drafts a proposed decision writes one row per option; the Master Decision cell
 # keeps a one-line summary. Decisions without Options rows fall back to the option codes in their text.
@@ -297,3 +306,4 @@ rules:
   - Agents never record a decision as accepted, parked or rejected.
   - Each platform runs only rows whose Agent type is that platform. Manual rows are never run by agents.
   - Ready selects the stated next step only. Only an implementation-route Type (Feature, Enhancement, Refactor, Fix) authorises implementation; investigation-route items never do.
+  - Graph Inclusion on the Document Index is the founder's. Agents add new rows with it FALSE and never set it TRUE or change a value already there.

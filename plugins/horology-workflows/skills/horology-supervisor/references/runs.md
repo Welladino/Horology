@@ -28,7 +28,7 @@ Call `finish_run(run_id, status, skills_used, steps_done, notes, session_link)` 
 
 ## Steps
 
-The planner, or an implementation-route run at Stage 1, writes an item's steps on the Pipeline's **Steps** tab, one row per step: Pipeline ID, Step, Task, Specialist (optional) and Status (Planned, Done or Skipped). Next step / Research question stays a one-line question. The item's session works through the Planned rows in Step order, marks each finished one Done (found by Pipeline ID and Step, never by position) and reports the completed numbers in `steps_done`. Older items may still hold a numbered list in Next step; follow it the same way.
+The planner, or a Stage 1 run on either route that finds no open rows, writes an item's steps on the Pipeline's **Steps** tab, one row per step: Pipeline ID, Step, Task, Specialist (optional) and Status (Planned, Done or Skipped). Next step / Research question stays a one-line question. The item's session works through the Planned rows in Step order, marks each finished one Done (found by Pipeline ID and Step, never by position) and reports the completed numbers in `steps_done`. Older items may still hold a numbered list in Next step; follow it the same way. On the investigation route a Stage 1 run's steps are the steps of its investigation; on the implementation route they are the implementation plan, ending with the Implementation report and Stage 4 page. Steps rows sit beside the Stage 1 Drive document, never instead of it.
 
 ## Starting sessions
 

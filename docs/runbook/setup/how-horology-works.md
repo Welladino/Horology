@@ -109,20 +109,20 @@ Work uses five numbered stages, from capture at Stage 0 through synthesis at Sta
 | Stage                                | What happens                                                                                                                                                                   |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Stage 0, capture**                 | An idea or request is recorded. Nothing runs.                                                                                                                                  |
-| **Stage 1, investigate and propose** | Agents research the question, or write a direction, plan or technical assessment, and propose what to do.                                                                      |
+| **Stage 1, investigate and propose** | Agents research the question, or write a direction, plan or technical assessment as a Drive document with its steps on the Steps tab, and propose what to do. |
 | **Stage 2, your decision**           | You review the documents and record a decision.                                                                                                                                |
 | **Stage 3, the deliverable**         | For an accepted proposal, agents produce the detailed piece: a go-to-market plan, a marketing plan, content drafts, or a planning note for code. Then you review it once more. |
 | **Stage 4, visual synthesis**        | In the same Stage 3 run, the supervisor creates a concise visual artifact that makes the deliverable easier to review. The item is then **Completed**; you can accept its deliverable decision, or reopen the item with rework, park or reject. |
 
-That is the **investigation route**, for Idea, Research, Direction and Plan items. **Feature, Enhancement, Refactor and Fix** items take the shorter **implementation route**: in one run the agent writes its plan as steps on the Steps tab (Stage 1), moves the item to Stage 3 and does the work, with Status **In progress** throughout. It finishes **Completed** at Stage 3, or, if it needs your choice, stops at Awaiting decision with an **Implementation question** you answer on the decision page; the item then goes back to In progress and Ready, and the next run carries on.
+That is the **investigation route**, for Idea, Research, Direction and Plan items. **Feature, Enhancement, Refactor and Fix** items take the shorter **implementation route**: in one run the agent writes its plan as a Drive document and steps on the Steps tab (Stage 1), moves the item to Stage 3, does the work and writes an **Implementation report** Google Doc, then makes a Stage 4 page from the report that shows what was done. It finishes **Completed** at Stage 4, and you can accept its decision or reopen the item from it. Or, if it needs your choice, stops at Awaiting decision with an **Implementation question** you answer on the decision page; the item then goes back to In progress and Ready, and the next run carries on.
 
 ```mermaid
 flowchart LR
   readyi["<b>Ready · Stage 1</b><br/>Feature, Enhancement,<br/>Refactor or Fix"]
-  plani["<b>Plan · Stage 1</b><br/>In progress: steps<br/>on the Steps tab"]
-  buildi["<b>Implement · Stage 3</b><br/>In progress: the change,<br/>tests and pull request"]
+  plani["<b>Plan · Stage 1</b><br/>In progress: plan document<br/>and Steps rows"]
+  buildi["<b>Implement · Stage 3</b><br/>In progress: the change, tests,<br/>pull request and report"]
   questioni{"<b>Implementation question</b><br/>Your choice is needed"}
-  donei["<b>Completed · Stage 3</b>"]
+  donei["<b>Completed · Stage 4</b><br/>A page made from the report"]
   readyi --> plani --> buildi --> donei
   buildi --> questioni -->|You answer| buildi
 

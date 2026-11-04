@@ -74,6 +74,21 @@ test('a Stage 4 item is Completed with its Specialist deliverable decision still
     {'Status': 'Parked', 'Stage': 'Stage 4', 'Agent status': 'No action'});
   assert.equal(decide(done(), [deliverable({'Status': 'rejected'})]).set['Status'], 'Rejected');
 });
+test('a finished implementation is Completed at Stage 4 and its decision can send it back to Stage 3', () => {
+  // Item 69 (04/11/2026): the implementation route ends like the investigation route.
+  const done = (o = {}) => item({'Type': 'Enhancement', 'Status': 'Completed', 'Stage': 'Stage 4',
+    'Review stage': 'Specialist deliverable', ...o});
+  const deliverable = (o = {}) => decision({'Review stage': 'Specialist deliverable', ...o});
+  assert.match(decide(done(), [deliverable()]).skip, /already applied/);
+  const rework = decide(done(), [deliverable({'Status': 'rework', 'Rework instructions': 'Cover the digest too'})]);
+  assert.equal(rework.transition, 'rework');
+  assert.deepEqual({...rework.set}, {'Status': 'Rework', 'Stage': 'Stage 3', 'Agent status': 'Ready'});
+  assert.ok(load().readyStatuses("Enhancement").includes("Rework"));
+  assert.deepEqual({...decide(done({'Agent type': 'Manual'}), [deliverable({'Status': 'rework', 'Rework instructions': 'x'})]).set},
+    {'Status': 'Rework', 'Stage': 'Stage 3', 'Agent status': 'No action'});
+  assert.deepEqual({...decide(done(), [deliverable({'Status': 'parked'})]).set},
+    {'Status': 'Parked', 'Stage': 'Stage 4', 'Agent status': 'No action'});
+});
 test('a Completed item without an open Stage 4 review is left alone, without errors', () => {
   // Items finished before Stage 4 had its own decision still point at their Stage 2 decision.
   assert.match(decide(item({'Status': 'Completed', 'Stage': 'Stage 4', 'Review stage': 'Specialist deliverable'}),

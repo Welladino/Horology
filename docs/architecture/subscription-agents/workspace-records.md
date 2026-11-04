@@ -11,10 +11,10 @@ The Pipeline is the main control surface. Work is selected here, but a row never
 | Tab | Purpose |
 | --- | --- |
 | **Master** | One row per work item. It holds the permanent Pipeline ID, title, domain and optional entity, Type (which chooses the investigation or implementation route), lifecycle status and stage, review state, agent platform, a one-line next question, linked repository or external task, and document/decision references. |
-| **Steps** | One row per planned step of an item: Pipeline ID, Step, Task, Specialist and Status (Planned, Done or Skipped). The planner writes them, or on the implementation route the item's own run writes its implementation plan at Stage 1; the item's run marks each one Done. Rows join Master by Pipeline ID, never by position. Older items may still keep a numbered list in Next step, which the run and the decision page read the same way. |
+| **Steps** | One row per planned step of an item: Pipeline ID, Step, Task, Specialist and Status (Planned, Done or Skipped). The planner writes them, or the item's own Stage 1 run on either route writes its steps when none are open, beside its Stage 1 Drive document; the item's run marks each one Done. Rows join Master by Pipeline ID, never by position. Older items may still keep a numbered list in Next step, which the run and the decision page read the same way. |
 | **Locations** | The workspace's Drive folder directory. This is the source of truth for where agents read and write; the repository does not prescribe folder names or a fixed tree. |
 | **Domains** | A derived view of the root folders and entity folders in Locations. Agents use it as the valid list of domains and entities. Add or change the corresponding Locations row instead of editing this tab directly. |
-| **Templates** | Links to document templates and a short description of when each is appropriate. Agents copy templates; they do not modify the originals. |
+| **Templates** | Links to document templates and a short description of when each is appropriate. Agents copy templates; they do not modify the originals. Stage 1 documents use the Research, Direction, Plan or Technical Assessment template; an implementation-route item's Stage 3 record uses the Implementation report template. |
 | **Registers** | Links to the Pipeline and the other three workbooks, with a short statement of each register's role. |
 | **Read Me** | Field definitions and operating rules for the workbook. |
 | **_ClickUp Sync** | Internal state for the optional ClickUp integration. It is not the everyday editing surface. |
@@ -61,7 +61,7 @@ A target repository gets a repo doc as well only when it already keeps its own d
 
 The graph columns are explicit controls:
 
-- **Graph Inclusion** chooses whether the document may enter searchable memory.
+- **Graph Inclusion** chooses whether the document may enter searchable memory. It is the founder's choice: agents add rows with it FALSE and never change it.
 - **Graph Sync Status** reports pending, synced, not shared, too long or another error.
 - **Graph Document ID** and **Last Synced Revision** show what was imported.
 

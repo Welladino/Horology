@@ -10,10 +10,12 @@ An item's **Type** chooses its route ([`routes`](https://github.com/Welladino/Ho
 
 | Route | Types | Stages | Status while a run works |
 | --- | --- | --- | --- |
-| Investigation | Idea, Research, Direction, Plan | Stage 1 proposal → Stage 2 founder decision → Stage 3 deliverable → Stage 4 synthesis → Completed (reopenable from its decision) | Researching |
-| Implementation | Feature, Enhancement, Refactor, Fix | Stage 1 implementation plan (Steps rows) → Stage 3 implementation; no Stage 2 or Stage 4 | In progress |
+| Investigation | Idea, Research, Direction, Plan | Stage 1 proposal (Drive document and Steps rows) → Stage 2 founder decision → Stage 3 deliverable → Stage 4 synthesis → Completed (reopenable from its decision) | Researching |
+| Implementation | Feature, Enhancement, Refactor, Fix | Stage 1 plan (Drive document and Steps rows) → Stage 3 implementation and Implementation report → Stage 4 page → Completed (reopenable from its decision); no Stage 2 | In progress |
 
-The implementation route was decided by the founder on 29/10/2026 ([note](https://github.com/Welladino/Horology/blob/main/docs/planning/notes/2026-10-29_implementation-route_note.md)). The run writes its plan as Steps rows, moves the item to Stage 3 itself and implements in the same run. It finishes **Completed** at Stage 3 when no founder decision is needed. When it needs one, it stops at **Awaiting decision** with Review stage **Implementation question** (a proposed decision with Options rows, reviewed on the decision page); the founder's answer resumes the item at Stage 3, In progress and Ready for its platform.
+The implementation route was decided by the founder on 29/10/2026 ([note](https://github.com/Welladino/Horology/blob/main/docs/planning/notes/2026-10-29_implementation-route_note.md)). The run writes its plan document to Drive and its steps as Steps rows, moves the item to Stage 3 itself and implements in the same run. When no founder decision is needed it writes an **Implementation report** Google Doc from its template (what changed and why, commits and pull request, tests, changes from the plan, what's left for the founder), makes a Stage 4 page from the report through Horology Synthesis Artifacts, proposes a Specialist deliverable decision and finishes **Completed** at Stage 4, as the founder decided on 04/11/2026 ([note](https://github.com/Welladino/Horology/blob/main/docs/planning/notes/2026-11-04_stage-1-document-and-implementation-report_note.md)). Implementations finished before then ended Completed at Stage 3. When a run needs a founder choice, it stops at **Awaiting decision** with Review stage **Implementation question** (a proposed decision with Options rows whose Research Links name the Stage 1 document, reviewed on the decision page); the founder's answer resumes the item at Stage 3, In progress and Ready for its platform.
+
+Every route's Stage 1 writes a specialist document in Drive (Research, Direction, Plan or Technical Assessment template) plus Steps rows, so the founder can read what was planned and done without asking an agent. The Docs are the record; Stage 4 pages are viewing copies and don't enter the document graph. Graph Inclusion on the Document Index stays the founder's: agents add rows with it FALSE and never change it.
 
 ## Status lifecycle
 
@@ -67,15 +69,18 @@ flowchart LR
   %% start-implementation, plan-implementation, complete-implementation, raise-implementation-question,
   %% resume-implementation, run-failed (Status stays; Agent status back to No action)
   inbox2["Inbox<br/>Stage 0"]
-  planning["In progress<br/>Stage 1 plan on the Steps tab"]
-  implementing["In progress<br/>Stage 3 implementation"]
+  planning["In progress<br/>Stage 1 plan document<br/>and Steps rows"]
+  implementing["In progress<br/>Stage 3 implementation<br/>and Implementation report"]
   question{"Awaiting decision<br/>Implementation question"}
-  done["Completed<br/>Stage 3"]
+  done["Completed<br/>Stage 4 page, its Specialist<br/>deliverable decision open"]
   rework2["Rework<br/>Stage 3"]
-  stopped["Parked or Rejected<br/>Stage 3"]
+  stopped["Parked or Rejected<br/>Stage 3 or Stage 4"]
 
   inbox2 -->|Start selected work| planning -->|Plan written; same run| implementing
-  implementing -->|No decision needed| done
+  implementing -->|Report and page saved; same run| done
+  done -->|Accept · no change| done
+  done -->|Reopen · request changes| rework2
+  done -->|Reopen · do later or stop| stopped
   planning -->|Needs a founder choice| question
   implementing -->|Needs a founder choice| question
   question -->|Answer · Ready again| implementing
@@ -99,8 +104,8 @@ flowchart LR
 | `capture` | New → Inbox | Capture skill | Record a Stage 0 item; do not run it |
 | `start-run` | Inbox, Rework or Approved → Researching | Supervisor | Begin the selected Stage 1 or Stage 3 work of an investigation-route item |
 | `start-implementation` | Ready → In progress | Supervisor | Begin an implementation-route item: plan at Stage 1, or implement at Stage 3 |
-| `plan-implementation` | In progress, Stage 1 → Stage 3 | Supervisor | The plan is on the Steps tab; implement in the same run |
-| `complete-implementation` | In progress, Stage 3 → Completed | Supervisor | Every step Done or Skipped and no founder decision needed |
+| `plan-implementation` | In progress, Stage 1 → Stage 3 | Supervisor | The plan document is in Drive and the steps on the Steps tab; implement in the same run |
+| `complete-implementation` | In progress, Stage 3 → Completed, Stage 4 | Supervisor and synthesis specialist | Every step Done or Skipped, no founder decision needed, the Implementation report and Stage 4 page saved, and a Specialist deliverable decision proposed as the Current decision ID |
 | `raise-implementation-question` | In progress → Awaiting decision, Stage 3 | Supervisor | Stop with a proposed decision and Options rows (Review stage Implementation question) |
 | `resume-implementation` | Awaiting decision → In progress, Stage 3 | Founder or decision sync | The founder answered the Implementation question; Ready again for its platform |
 | `run-failed` | Researching or In progress (Agent status → No action) | Supervisor | The run failed or was released; Status stays and the run's notes say why |
@@ -146,13 +151,13 @@ A run (`start-run` or `start-implementation`) only starts on a Ready row; the de
 ## Stages
 
 * **Stage 0, capture.** `horology-capture-triage` records an idea, parked proposal or research request as a Pipeline row and checks for duplicates.
-* **Stage 1, investigation and proposal (investigation route).** The question decides the form: research (`horology-research`), direction, a plan, or a technical assessment (`horology-technical-assessment`). These are not a fixed sequence. The deliverable is saved to Drive and listed in the Document Index.
-* **Stage 1 and Stage 3, implementation route.** Feature, Enhancement, Refactor and Fix items: the run writes the implementation plan as Steps rows (Stage 1), moves the item to Stage 3 itself, implements it (code on a branch with a pull request, or the named change), marks each step Done and finishes Completed at Stage 3. A founder choice it needs becomes an Implementation question. There is no Stage 2 or Stage 4.
+* **Stage 1, investigation and proposal (investigation route).** The question decides the form: research (`horology-research`), direction, a plan, or a technical assessment (`horology-technical-assessment`). These are not a fixed sequence. The deliverable is saved to Drive and listed in the Document Index, and the run's steps are written as Steps rows when none are open.
+* **Stages 1, 3 and 4, implementation route.** Feature, Enhancement, Refactor and Fix items: the run writes the implementation plan to Drive (Plan template, or a technical assessment when options must be compared first) and as Steps rows (Stage 1), moves the item to Stage 3 itself, implements it (code on a branch with a pull request, or the named change) and marks each step Done. It then writes the Implementation report Google Doc, saved beside the Stage 1 document, and the Stage 4 page made from it, proposes a Specialist deliverable decision and finishes Completed at Stage 4. A founder choice it needs becomes an Implementation question. There is no Stage 2.
 * **Stage 2, founder decision.** Approve, rework, park or reject, recorded in the Decision Register with feedback; options come from its Options tab. A decision already applied can later be revised from the decision page. The Horology web workspace applies the decision immediately; direct edits in the register can be handled by its edit trigger.
 * **Stage 3, specialist deliverable.** An approved scope becomes a detailed deliverable. On the investigation route, code work is a planning note in the repository, not implementation; implementation belongs to the implementation route.
-* **Stage 4, synthesis.** In the same Stage 3 run, the supervisor calls Horology Synthesis Artifacts to turn the investigation and specialist deliverable into a concise visual briefing. HTML is preferred when it can be saved and opened reliably; a visual Doc or Sheet can be used when better suited. The supervisor proposes a Specialist deliverable decision (accept, rework, park), makes it the Current decision ID and sets the item **Completed** at Stage 4, as the founder decided on 03/11/2026 (Decision 15). No new prompt, selection or schedule is needed for synthesis.
+* **Stage 4, synthesis.** In the same Stage 3 run, the supervisor calls Horology Synthesis Artifacts to turn the investigation and specialist deliverable (on the implementation route, the Implementation report) into a concise visual briefing. HTML is preferred when it can be saved and opened reliably; a visual Doc or Sheet can be used when better suited. The supervisor proposes a Specialist deliverable decision (accept, rework, park), makes it the Current decision ID and sets the item **Completed** at Stage 4, as the founder decided on 03/11/2026 (Decision 15). No new prompt, selection or schedule is needed for synthesis.
 
-Stage and Review stage are separate fields. At Stage 2 the founder reviews the Investigation proposal; at Stage 4 the item is already Completed and the founder reviews the Specialist deliverable alongside its synthesis when convenient; on the implementation route, at Stage 3, the founder answers an Implementation question.
+Stage and Review stage are separate fields. At Stage 2 the founder reviews the Investigation proposal; at Stage 4 the item is already Completed and the founder reviews the Specialist deliverable (or the implementation and its report) alongside its synthesis when convenient; on the implementation route, at Stage 3, the founder answers an Implementation question.
 
 An item's review is **open** (`open_review` in `workflow.yaml`) while it is Awaiting decision, or Completed at Stage 4 with Review stage Specialist deliverable. Its current proposed decision can be decided only then. At Stage 4, accepting changes nothing, and rework, park or reject reopen the item. Items 45 and 53 reached Stage 4 before this rule and still name their Stage 2 decision; they have no open review, and revising that decision would move them as an Investigation proposal outcome (back to Approved, Stage 3).
 

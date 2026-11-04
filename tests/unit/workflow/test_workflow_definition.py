@@ -158,8 +158,6 @@ def test_implementation_route_skips_stage_2_and_resumes_at_stage_3(wf):
     transitions = {t["id"]: t for t in wf["transitions"]}
     assert transitions["plan-implementation"]["from"]["Stage"] == "Stage 1"
     assert transitions["plan-implementation"]["to"] == {"Stage": "Stage 3"}
-    assert transitions["complete-implementation"]["to"]["Status"] == "Completed"
-    assert transitions["complete-implementation"]["to"]["Stage"] == "Stage 3"
     question = transitions["raise-implementation-question"]["to"]
     assert question["Status"] == "Awaiting decision" and question["Review stage"] == "Implementation question"
     resume = transitions["resume-implementation"]
@@ -168,6 +166,26 @@ def test_implementation_route_skips_stage_2_and_resumes_at_stage_3(wf):
     for t in wf["transitions"]:
         if "In progress" in _as_list(t["from"].get("Status", [])) or t["to"].get("Status") == "In progress":
             assert "Stage 2" not in _as_list(t["to"].get("Stage", [])), t["id"]
+
+
+def test_implementation_route_ends_completed_at_stage_4_with_an_open_review(wf):
+    # Founder decisions of 04/11/2026 (item 69): an Implementation report at Stage 3 and a page made from
+    # it at Stage 4; the item is Completed with a proposed Specialist deliverable decision, as for item 67.
+    transitions = {t["id"]: t for t in wf["transitions"]}
+    assert "Stage 4" in wf["routes"]["implementation"]["stages"]
+    done = transitions["complete-implementation"]
+    assert done["from"] == {"Status": "In progress", "Stage": "Stage 3"}
+    assert done["to"] == {"Status": "Completed", "Stage": "Stage 4", "Review stage": "Specialist deliverable",
+                          "Agent status": "No action"}
+    assert "synthesis" in _as_list(done["actor"])
+    assert {k: done["to"][k] for k in ("Status", "Stage", "Review stage")} in wf["open_review"]
+    # Reworking it sends the implementation back to Stage 3, where start-implementation picks it up.
+    assert transitions["rework"]["to"]["Status"] == "Rework" and "Stage 3" in transitions["rework"]["to"]["Stage"]
+    assert "Rework" in transitions["select"]["from"]["Status"]
+
+
+def test_graph_inclusion_stays_with_the_founder(wf):
+    assert any("Graph Inclusion" in rule and "founder" in rule for rule in wf["rules"])
 
 
 def test_investigation_route_ends_completed_at_stage_4(wf):

@@ -4,7 +4,7 @@
 
 Choose from the installed specialist `horology-*` skills: research, technical assessment, security review, GTM, marketing strategy and content planner. Their names and descriptions say what each does; open a candidate's `SKILL.md` when the fit isn't clear. Ignore other installed skills. The Agent Register is an overview for the founder, not an input.
 
-- Type chooses the route first. Feature, Enhancement, Refactor and Fix take the implementation route: the run plans and implements the change itself, and a specialist is used only for a step that asks for its kind of output (for example a security review of the change). Idea, Research, Direction and Plan take the investigation route below.
+- Type chooses the route first. Feature, Enhancement, Refactor and Fix take the implementation route: the run writes its Stage 1 plan document (Plan template, or `horology-technical-assessment` when options must be compared first), implements the change itself, writes the Implementation report and hands it to `horology-synthesis-artifacts` for the Stage 4 page. Other specialists are used only for a step that asks for their kind of output (for example a security review of the change). Idea, Research, Direction and Plan take the investigation route below.
 - On the investigation route, start from the question in Next step / Research question. Research and Idea questions usually go to research; a question about whether or how to build a change goes to technical assessment.
 - Neighbouring specialists split the work like this:
   - **Security review** answers "is this safe, what are the risks"; **technical assessment** answers "should we build this change, and how".
@@ -22,3 +22,4 @@ Choose from the installed specialist `horology-*` skills: research, technical as
 - Nothing contradicts earlier decisions without saying so.
 - `auto_link_similar_documents` scores of 0.90 or more are reported as near-duplicates.
 - Outputs are in Drive, listed in the Document Index, and linked to the Pipeline ID.
+- On the implementation route, the report names the branch, commits and pull request, the tests run, and each Steps row that was skipped or changed.

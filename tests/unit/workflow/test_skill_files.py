@@ -78,3 +78,20 @@ def test_every_publishing_skill_lists_the_page_on_the_pages_tab(skill):
     text = _publishing_skills()[skill]
     assert "Pages** tab" in text or "Pages tab" in text, f"{skill} publishes but never adds a Pages tab row"
     assert "do not add a sheet column" not in text.lower()
+
+
+IMPLEMENTATION_ROUTE_SKILLS = ["horology-supervisor", "horology-synthesis-artifacts"]
+
+
+@pytest.mark.parametrize("skill", IMPLEMENTATION_ROUTE_SKILLS)
+def test_implementation_route_ends_with_a_report_and_a_stage_4_page(skill):
+    # Item 69 (04/11/2026): an Implementation report Doc at Stage 3, a page made from it at Stage 4.
+    text = next(PLUGINS.glob(f"horology-*/skills/{skill}/SKILL.md")).read_text()
+    assert "Implementation report" in text and "Stage 4" in text
+
+
+def test_supervisor_writes_a_stage_1_document_and_leaves_graph_inclusion_alone():
+    text = next(PLUGINS.glob("horology-*/skills/horology-supervisor/SKILL.md")).read_text()
+    assert "complete-implementation" in text
+    assert "Stage 1 document" in text
+    assert "Graph Inclusion" in text and "never change it" in text
