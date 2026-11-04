@@ -6,11 +6,6 @@ import pytest
 from support.paths import PLUGINS
 
 SKILL_FILES = sorted(p for p in PLUGINS.glob("horology-*/skills/**/*.md"))
-
-# Cloud Build uploads only a few plugin files (.gcloudignore), so tests that read SKILL.md skip there.
-needs_skills = pytest.mark.skipif(not any(PLUGINS.glob("horology-*/skills/*/SKILL.md")),
-                                  reason="skill files aren't in the Cloud Build upload")
-
 LINK = re.compile(r"\]\(([^)#\s]+)(?:#[^)]*)?\)")
 
 # References shared by both plugins. Codex packages each plugin on its own, so each keeps a copy.
@@ -74,12 +69,10 @@ def _publishing_skills():
     return {"/".join(skill): "\n".join(texts) for skill, texts in skills.items() if "publish_synthesis" in "\n".join(texts)}
 
 
-@needs_skills
 def test_a_skill_publishes_pages():
     assert "horology-specialists/skills/horology-synthesis-artifacts" in _publishing_skills()
 
 
-@needs_skills
 @pytest.mark.parametrize("skill", sorted(_publishing_skills()))
 def test_every_publishing_skill_lists_the_page_on_the_pages_tab(skill):
     text = _publishing_skills()[skill]
@@ -90,7 +83,6 @@ def test_every_publishing_skill_lists_the_page_on_the_pages_tab(skill):
 IMPLEMENTATION_ROUTE_SKILLS = ["horology-supervisor", "horology-synthesis-artifacts"]
 
 
-@needs_skills
 @pytest.mark.parametrize("skill", IMPLEMENTATION_ROUTE_SKILLS)
 def test_implementation_route_ends_with_a_report_and_a_stage_4_page(skill):
     # Item 69 (04/11/2026): an Implementation report Doc at Stage 3, a page made from it at Stage 4.
@@ -98,7 +90,6 @@ def test_implementation_route_ends_with_a_report_and_a_stage_4_page(skill):
     assert "Implementation report" in text and "Stage 4" in text
 
 
-@needs_skills
 def test_supervisor_writes_a_stage_1_document_and_leaves_graph_inclusion_alone():
     text = next(PLUGINS.glob("horology-*/skills/horology-supervisor/SKILL.md")).read_text()
     assert "complete-implementation" in text
