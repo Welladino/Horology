@@ -49,8 +49,62 @@ copy_skill_group() {
   local destination="$2"
 
   [[ -d "${source}" ]] || die "skill source not found: ${source}"
+  # A single skill is copied to its exact destination. A plugin skill group is
+  # merged into a shared namespace one skill at a time (horology-tools and
+  # horology-document-graph intentionally share one). Clear each skill folder,
+  # not the whole group, so removed files do not linger and neighbours survive.
+  if [[ -f "${source}/SKILL.md" ]]; then
+    docker exec --user root "${CONTAINER}" rm -rf "${destination}"
+    docker exec --user root "${CONTAINER}" mkdir -p "${destination}"
+    docker cp "${source}/." "${CONTAINER}:${destination}/"
+    return
+  fi
+
+  local skill_source skill_name skill_destination
   docker exec --user root "${CONTAINER}" mkdir -p "${destination}"
-  docker cp "${source}/." "${CONTAINER}:${destination}/"
+  for skill_source in "${source}"/*; do
+    [[ -d "${skill_source}" && -f "${skill_source}/SKILL.md" ]] || continue
+    skill_name="$(basename "${skill_source}")"
+    skill_destination="${destination}/${skill_name}"
+    docker exec --user root "${CONTAINER}" rm -rf "${skill_destination}"
+    docker exec --user root "${CONTAINER}" mkdir -p "${skill_destination}"
+    docker cp "${skill_source}/." "${CONTAINER}:${skill_destination}/"
+  done
+}
+
+# Remove skill folders that the repository no longer has. Each skills/horology-*
+# namespace is Horology's own, so a folder in it that none of the given sources
+# provides was retired or renamed. Pass every source that installs into the
+# namespace (a plugin skills folder or a single skill folder).
+prune_skill_namespace() {
+  local destination="$1"
+  shift
+  case "${destination}" in
+    */skills/horology-*) ;;
+    *) die "refusing to prune outside a Horology skill namespace: ${destination}" ;;
+  esac
+
+  local keep=" " source skill_source installed name
+  for source in "$@"; do
+    if [[ -f "${source}/SKILL.md" ]]; then
+      keep+="$(basename "${source}") "
+      continue
+    fi
+    for skill_source in "${source}"/*; do
+      [[ -f "${skill_source}/SKILL.md" ]] && keep+="$(basename "${skill_source}") "
+    done
+  done
+  [[ "${keep}" != " " ]] || die "no skills found for ${destination}; refusing to prune"
+
+  while IFS= read -r installed; do
+    [[ -n "${installed}" ]] || continue
+    name="$(basename "${installed}")"
+    if [[ "${keep}" != *" ${name} "* ]]; then
+      note "Removing retired skill ${destination}/${name}"
+      docker exec --user root "${CONTAINER}" rm -rf "${installed}"
+    fi
+  done < <(docker exec --user root "${CONTAINER}" \
+    find "${destination}" -mindepth 1 -maxdepth 1 -type d 2>/dev/null || true)
 }
 
 profile_exists() {
@@ -130,10 +184,19 @@ for profile_root in /opt/data /opt/data/profiles/operator; do
   copy_skill_group "${REPO_ROOT}/plugins/horology-specialists/skills" "${profile_root}/skills/horology-specialists"
   copy_skill_group "${REPO_ROOT}/plugins/horology-tools/skills" "${profile_root}/skills/horology-tools"
   copy_skill_group "${REPO_ROOT}/plugins/horology-document-graph/skills" "${profile_root}/skills/horology-tools"
-  # This supervisor dispatches Claude/Codex sessions and does not belong in
-  # Hermes' profile router.
-  docker exec --user root "${CONTAINER}" \
-    rm -rf "${profile_root}/skills/horology-workflows/horology-supervisor"
+  # The source supervisor is harness-neutral. Install Hermes' adapter in the
+  # package-only dispatch path, as the Claude and Codex builders do.
+  copy_runtime_file \
+    "${REPO_ROOT}/scripts/ops/hermes/horology_supervisor_dispatch.md" \
+    "${profile_root}/skills/horology-workflows/horology-supervisor/references/dispatch.md"
+  # Skills deleted or renamed in the repository must not linger in the volume.
+  prune_skill_namespace "${profile_root}/skills/horology-workflows" \
+    "${REPO_ROOT}/plugins/horology-workflows/skills"
+  prune_skill_namespace "${profile_root}/skills/horology-specialists" \
+    "${REPO_ROOT}/plugins/horology-specialists/skills"
+  prune_skill_namespace "${profile_root}/skills/horology-tools" \
+    "${REPO_ROOT}/plugins/horology-tools/skills" \
+    "${REPO_ROOT}/plugins/horology-document-graph/skills"
 done
 
 note "Installing Hermes profile-specific skills..."
@@ -146,6 +209,11 @@ copy_skill_group \
 copy_skill_group \
   "${REPO_ROOT}/plugins/horology-hermes/skills/horology-composio-guide" \
   "/opt/data/profiles/operator/skills/horology-hermes/horology-composio-guide"
+prune_skill_namespace "/opt/data/skills/horology-hermes" \
+  "${REPO_ROOT}/plugins/horology-hermes/skills/horology-coordinator" \
+  "${REPO_ROOT}/plugins/horology-hermes/skills/horology-composio-reader"
+prune_skill_namespace "/opt/data/profiles/operator/skills/horology-hermes" \
+  "${REPO_ROOT}/plugins/horology-hermes/skills/horology-composio-guide"
 
 note "Normalising ownership and selecting Coordinator..."
 docker exec --user root "${CONTAINER}" sh -lc \

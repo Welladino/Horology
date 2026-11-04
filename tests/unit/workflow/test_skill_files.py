@@ -14,8 +14,9 @@ LINK = re.compile(r"\]\(([^)#\s]+)(?:#[^)]*)?\)")
 # supervisor's references/dispatch.md, which doesn't exist in plugins/. Check each as the file it becomes.
 CLAUDE_DISPATCH = REPO / "scripts/ops/claude/horology_supervisor_dispatch.md"
 CODEX_DISPATCH = REPO / "scripts/ops/codex/horology_supervisor_dispatch.md"
+HERMES_DISPATCH = REPO / "scripts/ops/hermes/horology_supervisor_dispatch.md"
 SUPERVISOR_DISPATCH = PLUGINS / "horology-workflows/skills/horology-supervisor/references/dispatch.md"
-ADAPTERS = {CLAUDE_DISPATCH: "claude", CODEX_DISPATCH: "codex"}
+ADAPTERS = {CLAUDE_DISPATCH: "claude", CODEX_DISPATCH: "codex", HERMES_DISPATCH: "hermes"}
 PACKAGED_ONLY = {SUPERVISOR_DISPATCH.resolve()}  # present in every package, absent from the source tree
 # (source file, where it is packaged): plugin files are packaged where they are.
 PACKAGED = [(p, p) for p in SKILL_FILES] + [(adapter, SUPERVISOR_DISPATCH) for adapter in ADAPTERS]
@@ -165,6 +166,7 @@ def test_supervisor_core_delegates_dispatch_to_the_packaged_adapter():
     runs = (skill / "references/runs.md").read_text()
     codex = CODEX_DISPATCH.read_text()
     claude = CLAUDE_DISPATCH.read_text()
+    hermes = HERMES_DISPATCH.read_text()
 
     assert not SUPERVISOR_DISPATCH.exists(), "each builder supplies dispatch.md; plugins/ stays harness-neutral"
     assert "[dispatch adapter](references/dispatch.md)" in supervisor
@@ -178,6 +180,42 @@ def test_supervisor_core_delegates_dispatch_to_the_packaged_adapter():
     assert "`claude -p" in claude and "`claude --cloud" in claude
     assert "`start_session`" in claude and "CLI fallback" in claude
     assert "`create_thread`" not in claude
+    assert "only\nPipeline Agent type **Hermes**" in hermes
+    assert "Coordinator" in hermes and "never calls\n  `claim_item`" in hermes
+    assert "Operator" in hermes and "`agent_type: \"Hermes\"`" in hermes
+    assert "`explorer` Kanban task" in hermes and "`parents`" in hermes
+    # A row stays Ready while it runs and a claim expires after 2 hours, so open Kanban tasks mark it running.
+    assert "Skip items that are already running" in hermes and "`Pipeline <ID> · `" in hermes
+
+
+def test_hermes_bootstrap_installs_a_clean_supervisor_with_its_adapter():
+    script = (REPO / "scripts/ops/hermes/bootstrap.sh").read_text()
+    assert 'rm -rf "${destination}"' in script and 'rm -rf "${skill_destination}"' in script
+    assert 'skill_destination="${destination}/${skill_name}"' in script
+    assert "horology_supervisor_dispatch.md" in script
+    assert "horology-supervisor/references/dispatch.md" in script
+    assert 'rm -rf "${profile_root}/skills/horology-workflows/horology-supervisor"' not in script
+
+
+def test_hermes_bootstrap_prunes_every_namespace_it_installs():
+    # Skills deleted or renamed in the repository must not linger in the Hermes volume.
+    script = (REPO / "scripts/ops/hermes/bootstrap.sh").read_text()
+    body = script[script.index('note "Installing canonical Horology skills'):]
+    namespace = r'"([^"]*/skills/horology-[\w-]+)'
+    installed = set(re.findall(r'copy_skill_group\s*\\?\s*"[^"]+"\s*\\?\s*' + namespace, body))
+    installed = {re.sub(r"(/skills/horology-[\w-]+).*", r"\1", path) for path in installed}
+    pruned = set(re.findall(r"prune_skill_namespace " + namespace, body))
+    assert installed and installed == pruned
+    assert "refusing to prune outside a Horology skill namespace" in script
+    assert "no skills found for" in script and '"${keep}" != " "' in script  # never prune with nothing to keep
+
+
+def test_hermes_coordinator_document_graph_is_read_only():
+    config = (REPO / "hermes/coordinator/config.yaml").read_text()
+    block = config[config.index("document-graph-https:"):config.index("mcp-gateway:")]
+    assert "enabled: true" in block and "list_runs" in block and "get_item_history" in block
+    for write_tool in ("claim_item", "finish_run", "reserve_id", "check_register_write", "write_document"):
+        assert write_tool not in block
 
 
 def test_claude_supervisor_zip_substitutes_only_its_dispatch_adapter(tmp_path):

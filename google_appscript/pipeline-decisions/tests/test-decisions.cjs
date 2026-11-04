@@ -41,6 +41,8 @@ test('Manual and Unassigned items are never made Ready', () => {
   assert.equal(decide(item({'Agent type': 'Manual'}), [decision()]).set['Agent status'], 'No action');
   assert.equal(decide(item({'Agent type': 'Unassigned'}), [decision({'Status': 'rework', 'Rework instructions': 'x'})]).set['Agent status'], 'No action');
   assert.equal(decide(item({'Agent type': 'Codex'}), [decision()]).set['Agent status'], 'Ready');
+  assert.equal(decide(item({'Agent type': 'ChatGPT Work'}), [decision()]).set['Agent status'], 'Ready');
+  assert.equal(decide(item({'Agent type': 'Hermes'}), [decision()]).set['Agent status'], 'Ready');
 });
 test('only items still awaiting a decision are touched, so nothing is applied twice', () => {
   assert.ok(decide(item({'Status': 'Approved'}), [decision()]).skip);
@@ -484,8 +486,28 @@ test('web item form uses live domains and adds a captured row with the next perm
 test('web item form rejects invalid Ready items before writing', () => {
   const w = webWorkbooks();
   assert.throws(() => w.ctx.addPipelineItemFromWeb({Title:'Ready idea',Domain:'Horology',
-    'Agent status':'Ready','Agent type':'Unassigned'}),/Claude Code or Codex/);
+    'Agent status':'Ready','Agent type':'Unassigned'}),/Claude Code, Codex, ChatGPT Work or Hermes/);
   assert.equal(w.pipeline.writes.length,0);
+});
+test('web item form enforces ChatGPT Work Cloud-only and Hermes Local-only', () => {
+  let w = webWorkbooks();
+  assert.throws(() => w.ctx.addPipelineItemFromWeb({Title:'Work item',Domain:'Horology',
+    'Agent status':'Ready','Agent type':'ChatGPT Work','Run location':'Local',
+    'Next step / Research question':'Research'}),/ChatGPT Work uses Run location Cloud only/);
+  assert.equal(w.pipeline.writes.length,0);
+  w = webWorkbooks();
+  assert.throws(() => w.ctx.addPipelineItemFromWeb({Title:'Hermes item',Domain:'Horology',
+    'Agent status':'Ready','Agent type':'Hermes','Run location':'Cloud',
+    'Next step / Research question':'Run locally'}),/Hermes uses Run location Local only/);
+  assert.equal(w.pipeline.writes.length,0);
+  w = webWorkbooks();
+  assert.equal(w.ctx.addPipelineItemFromWeb({Title:'Work item',Domain:'Horology',
+    'Agent status':'Ready','Agent type':'ChatGPT Work','Run location':'Cloud',
+    'Next step / Research question':'Research'}).stage,'Stage 1');
+  w = webWorkbooks();
+  assert.equal(w.ctx.addPipelineItemFromWeb({Title:'Hermes item',Domain:'Horology',
+    'Agent status':'Ready','Agent type':'Hermes','Run location':'Local',
+    'Next step / Research question':'Run locally'}).stage,'Stage 1');
 });
 test('Pipeline overview includes every Master row as a light list row and makes no writes', () => {
   const w = webWorkbooks();
@@ -553,6 +575,14 @@ test('Pipeline edit rejects stale data, forbidden fields and invalid Ready moves
   assert.throws(() => w.ctx.updatePipelineItemFromWeb({...base,fields:{...base.fields,Status:'Completed'}}),
     /cannot be edited/);
   assert.throws(() => w.ctx.updatePipelineItemFromWeb(base),/Agent status change is not allowed/);
+  assert.equal(w.pipeline.writes.length,0);
+});
+test('Pipeline edit enforces the harness Run location', () => {
+  const w = webWorkbooks(), item = w.ctx.getPipelineItem('14');
+  assert.throws(() => w.ctx.updatePipelineItemFromWeb({pipelineId:'14',version:item.version,
+    fields:{'Agent type':'ChatGPT Work','Run location':'Local'}}),/ChatGPT Work uses Run location Cloud only/);
+  assert.throws(() => w.ctx.updatePipelineItemFromWeb({pipelineId:'14',version:item.version,
+    fields:{'Agent type':'Hermes','Run location':'Cloud'}}),/Hermes uses Run location Local only/);
   assert.equal(w.pipeline.writes.length,0);
 });
 test('Pipeline edit makes a Fix item Ready at Stage 1, and an In progress one Ready again at Stage 3', () => {

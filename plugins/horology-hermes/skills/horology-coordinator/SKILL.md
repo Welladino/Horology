@@ -1,25 +1,23 @@
 ---
 name: horology-coordinator
-description: Orient the user on Horology Pipeline work from the document graph, identify the right specialist skill for a bounded question, and report what Hermes can do with its currently connected tools. Use for Pipeline status and task-routing questions in Hermes.
+description: Apply Hermes-specific Kanban routing, read-only Coordinator boundaries and approval rules around the shared horology-supervisor skill. Use for Pipeline dispatch, status and cross-profile task coordination in Hermes.
 ---
 
 # Horology coordinator
 
-This skill runs in Hermes's Coordinator profile. The other Horology skills are
-specialist instructions, not persistent profiles. Do not use Horology's retired
-workflow persona-dispatch system; use Hermes Kanban for profile execution.
-
-In the shared `workflow.yaml` contract, the `supervisor` actor maps to this
-Coordinator profile. Specialist execution maps to Operator, code execution
-maps to Explorer, and decisions remain with the user.
+This skill contains only Hermes-specific rules. Load `horology-supervisor` for
+the Pipeline workflow, modes, routes, checks and record rules; its packaged
+`references/dispatch.md` is the Hermes adapter. Do not copy those rules here.
+Coordinator is the user-facing entry point, Operator owns item-mode runs and
+workspace writes, Explorer performs code steps, and decisions remain with the
+user.
 
 ## Start with the records
 
-1. Get the Pipeline ID or bounded topic from the request.
-2. Use `horology-document-graph` to search relevant documents, related documents, `get_item_history` and `list_runs` as appropriate. Distinguish graph history from live workflow state: the graph may lag Sheets and Drive.
-3. Load `horology-composio-reader` when current Pipeline, Locations, register, Drive or Docs state affects the answer or delegation. Read only the bounded records needed for the task.
-4. Identify the relevant specialist skill. Answer a bounded status question directly, or delegate a task with its live status, evidence, configured locations, acceptance criteria and approval gate.
-5. State the finding, evidence links, what remains uncertain, and the next useful action.
+1. Load `horology-supervisor` and select dispatch or status mode from the user request.
+2. Load `horology-composio-reader` for the live Pipeline rows and Locations needed by that mode. Read only the bounded records needed.
+3. Follow the packaged Hermes dispatch adapter. For dispatch, select only Ready rows whose Agent type is Hermes and create the initial Operator Kanban task without claiming the item. For status, use the allowed read-only graph calls.
+4. Review worker evidence before reporting a saved or finished result. Distinguish live Kanban state, run history and Sheet/Drive state.
 
 ## Google and execution boundary
 
@@ -30,10 +28,10 @@ statuses, append records, edit documents, move files or perform any other
 Google write.
 
 Delegate authorised non-code execution and Google writes to Operator. Delegate
-code work to Explorer. Do not claim a Pipeline run, saved deliverable or live
-record change until the worker provides evidence and Coordinator verifies the
-result. A graph `write_document` saves an agent document in Neon; it does not
-perform a Sheet or Drive action.
+code work to Explorer through the dependency chain in the Hermes dispatch
+adapter. Coordinator never calls `claim_item`, `finish_run`, `reserve_id`,
+`check_register_write` or any graph write tool. A graph `write_document` saves
+an agent document in Neon; it does not perform a Sheet or Drive action.
 
 ## Kanban profile routing
 
@@ -63,10 +61,8 @@ required by the worker profile. Do not claim that a profile is working unless a
 real Kanban task and run exist. Review the worker's result and evidence before
 relying on it or reporting completion.
 
-## Status questions
-
-Use `list_runs` for recent runs and `get_item_history` for one item. Follow links to original documents where available. Group the answer into running, finished, failed, and awaiting user action. Do not present a claimed run as completed, or an indexed document as current without checking its date and source.
-
-## Decisions
+## Approvals and decisions
 
 The user chooses among proposals. Hermes may explain options or prepare a recommendation. Do not accept, reject or park a Decision Register entry on the user's behalf.
+Do not treat a Kanban dependency, worker result or successful test as approval
+to merge, deploy, publish, spend money or broaden connected-service access.

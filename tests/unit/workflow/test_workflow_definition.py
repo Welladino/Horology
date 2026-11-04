@@ -226,3 +226,17 @@ def test_type_list_matches_the_pipeline_decisions_script(wf):
     assert re.findall(r"'([^']+)'", types) == wf["fields"]["Type"]["values"]
     implementation = re.search(r"IMPLEMENTATION_TYPES\s*=\s*\[(.*?)\]", rules).group(1)
     assert re.findall(r"'([^']+)'", implementation) == wf["routes"]["implementation"]["types"]
+
+
+def test_agent_types_match_the_pipeline_decisions_script(wf):
+    item_rules = (PIPELINE_DECISIONS / "src" / "ItemRules.js").read_text()
+    rules = (PIPELINE_DECISIONS / "src" / "Rules.js").read_text()
+    options = re.search(r"'Agent type':\s*\[(.*?)\]", item_rules).group(1)
+    executable = re.search(r"EXECUTABLE_AGENT_TYPES\s*=\s*\[(.*?)\]", item_rules).group(1)
+    ready = re.search(r"AGENT_TYPES\s*=\s*\[(.*?)\]", rules).group(1)
+    assert set(re.findall(r"'([^']+)'", options)) == set(wf["fields"]["Agent type"]["values"])
+    expected = {value for value in wf["fields"]["Agent type"]["values"] if value not in {"Manual", "Unassigned"}}
+    assert set(re.findall(r"'([^']+)'", executable)) == expected
+    assert set(re.findall(r"'([^']+)'", ready)) == {value.lower() for value in expected}
+    assert "ChatGPT Work uses Run location Cloud only" in item_rules
+    assert "Hermes uses Run location Local only" in item_rules

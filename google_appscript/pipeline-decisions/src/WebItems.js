@@ -135,9 +135,11 @@ function updatePipelineItemFromWeb(request) {
         (before === 'Plan' && after === 'Ready'));
       if (!allowed) errors.push('This Agent status change is not allowed from the item’s current state.');
     }
+    const locationError = agentLocationError(next['Agent type'], next['Run location']);
+    if (locationError) errors.push(locationError);
     if (after === 'Ready') {
-      if (!['Claude Code', 'Codex'].includes(next['Agent type']))
-        errors.push('A Ready item needs Agent type Claude Code or Codex.');
+      if (!EXECUTABLE_AGENT_TYPES.includes(next['Agent type']))
+        errors.push('A Ready item needs Agent type Claude Code, Codex, ChatGPT Work or Hermes.');
       if (!next['Next step / Research question'])
         errors.push('A Ready item needs a Next step / Research question.');
       if (!next['Run location']) errors.push('A Ready item needs a Run location.');

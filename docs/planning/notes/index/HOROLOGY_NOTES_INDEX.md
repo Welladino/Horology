@@ -38,6 +38,7 @@ Implementation notes under `docs/planning/notes/`, grouped by area. Add a row wh
 | 2026-11-04 | [Pages tab for published pages](../2026-11-04_pages-tab_note.md) | Document Index Pages tab lists every Cloudflare page; the publishing skill adds the row after a verified publish; backfill of items 39 and 45 (item 70, HOR-9) |
 | 2026-11-04 | [Stage 1 document and Implementation report](../2026-11-04_stage-1-document-and-implementation-report_note.md) | Every route writes a Stage 1 Drive document plus Steps rows; the implementation route writes an Implementation report and a Stage 4 page and ends Completed at Stage 4; Graph Inclusion stays the founder's (item 69, HOR-9) |
 | 2026-11-04 | [Stage 4 HTML out of the Document Index](../2026-11-04_stage-4-html-out-of-document-index_note.md) | Stage 4 HTML stays in Drive with no Document Index row; the Pages tab's Document ID is the source document; Documents 24, 33, 40 and 45 removed; Implementation report metadata as a table (item 71, HOR-9) |
+| 2026-11-04 | [Hermes supervisor and Agent types](../2026-11-04_hermes-supervisor-and-agent-types_note.md) | Hermes Coordinator dispatch/status, Operator item mode and Explorer code-task chaining; Hermes and ChatGPT Work become enforced Agent types; bootstrap installs a clean harness-specific supervisor (item 72) |
 
 ## MCP gateway
 

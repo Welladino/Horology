@@ -133,7 +133,7 @@ flowchart LR
   ready["Ready"]
   noaction -- "request-plan · founder" --> plan
   plan -- "planned · planner · Planner output Yes" --> noaction
-  noaction -- "select · founder · Stage 1 or 3, Claude Code or Codex rows" --> ready
+  noaction -- "select · founder · Stage 1 or 3, executable Agent type" --> ready
   noaction -- "accept-stage-1, resume-implementation or rework · decision sync" --> ready
   plan -- "select · founder" --> ready
   ready -- "submit-for-review, synthesize-stage-3, complete-implementation, raise-implementation-question or run-failed · supervisor" --> noaction
@@ -169,17 +169,18 @@ The Pipeline's permanent numeric ID joins decisions and documents; each register
 
 `Agent status = Ready` marks the next bounded step for an AI agent; `Agent type` names the intended platform; `Manual` means founder-led. A sheet value alone launches nothing.
 
-Investigation and Stage 3 runs are started by the founder, from a session: in Claude Code or Codex, "run the Ready items" or "run item 42". Stage 4 runs automatically within the Stage 3 session. The **supervisor** (`horology-supervisor`) has three modes:
+Investigation and Stage 3 runs are started by the founder from the selected platform: in Claude Code, Codex or Hermes, "run the Ready items" or "run item 42"; ChatGPT Work is started by the Codex supervisor. Stage 4 runs automatically within the Stage 3 session. The **supervisor** (`horology-supervisor`) has three modes:
 
-*   **Dispatch:** finds rows with Agent status Ready whose **Agent type** its packaged harness adapter handles, claims each with `claim_item` (2-hour claim), and starts **one session per item**. The workflow core is shared, while the built package supplies the dispatch mechanism:
+*   **Dispatch:** finds rows with Agent status Ready whose **Agent type** its packaged harness adapter handles and starts **one execution per item**. Claude and Codex claim before creating the child; Hermes Coordinator creates an Operator Kanban task without claiming, and Operator claims in item mode. The workflow core is shared, while the built package supplies the dispatch mechanism:
 
     | Supervisor package | Agent type | Session mechanism |
     | ------------------ | ---------- | ----------------- |
     | Claude | Claude Code | `claude -p` locally or `claude --cloud` |
     | Codex desktop | Codex | Native visible Codex thread in the saved target project, local or configured cloud |
     | Codex desktop | ChatGPT Work | Native projectless ChatGPT Work cloud thread for non-code work |
+    | Hermes Coordinator | Hermes | Local Operator Kanban task; Explorer code tasks and the Operator continuation are chained with `parents` |
 
-    The sheet value chooses the child; there is no Auto option. Manual and Unassigned rows are never dispatched. The Codex supervisor can start without a selected project: it resolves a Codex row's saved project from target metadata without loading that repository into the supervisor context. Claude keeps its existing command-based behavior. The Codex supervisor creates all Codex and ChatGPT Work children; a Work child does not create Codex sessions. Where Claude shell commands aren't available (for example claude.ai chat), it runs its selected items itself, one at a time.
+    The sheet value chooses the child; there is no Auto option. Manual and Unassigned rows are never dispatched. ChatGPT Work is Cloud only and is claimed as Codex; Hermes is Local only and is claimed as Hermes by Operator. The Codex supervisor can start without a selected project: it resolves a Codex row's saved project from target metadata without loading that repository into the supervisor context. Claude keeps its existing command-based behavior. The Codex supervisor creates all Codex and ChatGPT Work children; a Work child does not create Codex sessions. Where Claude shell commands aren't available (for example claude.ai chat), it runs its selected items itself, one at a time.
 * **Item:** handles exactly one item. It reads the row, decision feedback, any planned steps and the document graph; chooses specialist skills (`horology-specialists`); runs them as subagents; checks the results; and finishes the run. Specialist skills save their own Drive outputs, Document Index rows and proposed decisions.
 * **Status:** read-only. Asked "what's happening?" or "what did item 42 find?", it reports running, finished (with key findings), failed and died runs, and what's waiting on the founder, from `list_runs`, `get_item_history` and the saved outputs. The founder talks to the supervisor instead of each session. A Codex desktop dispatcher also coordinates the native child threads while it retains their IDs; execution history remains the durable cross-session record.
 
@@ -188,8 +189,8 @@ One session per item keeps each supervisor's context to a single item, and lets 
 | Pipeline field | Values                                                                    |
 | -------------- | ------------------------------------------------------------------------- |
 | Agent status   | No action, **Plan** (asks the planner to scope or split the item), Ready  |
-| Agent type     | Claude Code, Codex, Manual (founder-led, never run by agents), Unassigned |
-| Run location   | Local or Cloud; blank means Local                                         |
+| Agent type     | Claude Code, Codex, ChatGPT Work, Hermes, Manual (founder-led, never run by agents), Unassigned |
+| Run location   | Local or Cloud; blank means Local. ChatGPT Work is Cloud only; Hermes is Local only.             |
 | Planner output | Yes or No; Yes when the planner has written a sharper question or steps   |
 
 Runs are recorded in Neon, not in the workbook. Each run makes two document-graph calls: `claim_item` at the start (a 2-hour claim, so two sessions never take the same item) and `finish_run` at the end. Specialists reserve each new Decision or Document ID with `reserve_id` and call `check_register_write` before each register write, so parallel runs can't take or overwrite each other's rows ([register IDs](../mcp/document-graph.md#register-ids)). Status changes, outputs and decisions are recorded from the sheets by the sync job's records pass, and read back with `list_runs` and `get_item_history` ([execution history](../mcp/document-graph.md#execution-history)). Planned steps are rows on the Pipeline's Steps tab (older items: a numbered list in Next step); the item's session works through them in order and marks each one Done. Rules: the supervisor skill's [runs reference](https://github.com/Welladino/Horology/blob/main/plugins/horology-workflows/skills/horology-supervisor/references/runs.md). To see one domain, use the Master table's filter.
