@@ -76,22 +76,12 @@
 !jobs/document-graph-sync/graph_sync/*.py
 # The Pipeline workflow (copied into the document-graph image) and the Apps Script files its tests check
 # against it (status map, decision rules, child tabs, Type list).
+# Both plugins go up whole: the skill-file tests read SKILL.md files and check their links resolve.
 !plugins/
 !plugins/horology-workflows/
-!plugins/horology-workflows/skills/
-!plugins/horology-workflows/skills/horology-capture-triage/
-!plugins/horology-workflows/skills/horology-capture-triage/references/
-!plugins/horology-workflows/skills/horology-capture-triage/references/workflow.yaml
-!plugins/horology-workflows/skills/horology-capture-triage/references/locations.md
-!plugins/horology-workflows/skills/horology-digest/
-!plugins/horology-workflows/skills/horology-digest/references/
-!plugins/horology-workflows/skills/horology-digest/references/presentation.md
+!plugins/horology-workflows/**
 !plugins/horology-specialists/
-!plugins/horology-specialists/skills/
-!plugins/horology-specialists/skills/horology-research/
-!plugins/horology-specialists/skills/horology-research/references/
-!plugins/horology-specialists/skills/horology-research/references/locations.md
-!plugins/horology-specialists/skills/horology-research/references/presentation.md
+!plugins/horology-specialists/**
 !docs/
 !docs/architecture/
 !docs/architecture/subscription-agents/
