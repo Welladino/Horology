@@ -26,12 +26,14 @@ The founder starts investigation, implementation and Stage 3 runs. Within each i
 
 ## Dispatch mode
 
-1. Work out which platform you're running on: **Claude Code** or **Codex**. Only take rows whose Agent type matches it. Never run another platform's rows.
-2. Read Pipeline Master. Select rows with Agent status **Ready** and your Agent type.
-3. Claim each selected item with `claim_item` (kind `run`, the row's Run location) as described in [runs](references/runs.md). Skip items another run holds.
-4. Start one session per item, by the row's **Run location** (blank means Local). Pass the Pipeline ID and the run ID. Commands are in [runs](references/runs.md).
-5. If you can't run shell commands here (for example claude.ai chat), run each item yourself in item mode, one at a time, using a subagent per item where the platform allows.
-6. Report the items started, where each runs, and the session links. Local sessions return their final answer when they finish; cloud sessions return only a link, and their results land in the registers.
+Read the packaged [dispatch adapter](references/dispatch.md) first. It names the Agent types this harness handles and gives the harness-specific session, monitoring and follow-up instructions. The Pipeline value is the dispatch choice; never infer or change it.
+
+1. Read Pipeline Master. Select rows with Agent status **Ready** whose Agent type is handled by this adapter. Skip Manual, Unassigned and every type the adapter does not handle.
+2. Resolve any project or environment the adapter requires without loading the target repository into this supervisor's context.
+3. Claim each selected item with `claim_item` (kind `run`, the adapter's claiming harness and its effective Run location) as described in [runs](references/runs.md). Skip items another run holds. Agent type still chooses the child target; the claim records the supervisor harness. Normally the effective location is the row value (blank means Local), but an adapter may define an Agent type as cloud-only.
+4. Start one session per item using the adapter. Pass the Pipeline ID and run ID; blank Run location means Local unless the adapter says that Agent type supports only one location.
+5. Coordinate the child sessions using the adapter. Item sessions may use their own subagents; their checked final result returns to this supervisor and their durable outputs and run result go through `finish_run` and the registers.
+6. Report the items started, their run IDs, Agent types, locations and session links or IDs, plus anything skipped or needing founder attention.
 
 ## Item mode
 
@@ -68,10 +70,10 @@ The founder talks to you instead of each session. Answer from what the runs reco
 
 1. Call `list_runs` for the period asked about (default the last 24 hours), or for one `pipeline_id`.
 2. Sort the runs into:
-   - **Running:** status claimed and not expired. You can't see progress inside a running session; give its start time, location and session link.
+   - **Running:** status claimed and not expired. Execution history can't see progress inside a running session; give its start time, location and session link, and use the packaged adapter when this dispatcher still holds a native child-thread ID.
    - **Finished:** status done. `list_runs` gives only an output count; get the outputs from `get_item_history` for that item, open them (Drive documents from their Document Index rows; agent documents with `get_document`) and give the key finding and recommendation in a sentence or two each.
    - **Failed or died:** status failed (give its notes), or a claim that expired without finishing (the session stopped; the item can be run again).
-3. Add what's waiting on the founder: Ready rows not yet claimed (by Agent type and Run location), Plan rows, and items Awaiting decision.
+3. Add what's waiting on the founder: Ready rows not yet claimed (grouped by Agent type and Run location), Plan rows, and items Awaiting decision. In a harness-specific supervisor, distinguish types this adapter can dispatch from types that need their own harness.
 4. For one item, use `get_item_history` for its full timeline. Flag changes marked `expected: false`.
 5. Answer follow-up questions from the saved outputs, and say when something isn't in them. A session's conversation isn't recorded; only what it saved, its `finish_run` notes and the status changes are. To see or steer a running session, give its session link.
 
@@ -89,7 +91,7 @@ Skills used, steps done and notes are reported by the session itself; outputs an
 
 ## Output requirements
 
-- Dispatch: the items started, their run IDs, run location and session links, and any skipped (claimed, wrong platform) with the reason.
+- Dispatch: the items started, their run IDs, Agent type, run location and session links or IDs, their completion or attention state when the adapter can observe it, and any skipped with the reason.
 - Item: the specialists used, where outputs were saved, the result of your check, and anything blocked or pending. Implementation route: steps done, branch, commits, pull request, the Stage 1 document and Implementation report links (and the page link if one was requested), and anything left for the founder.
 - Status: running, finished (with findings and links), failed or died (with the reason), and waiting on the founder, in that order. Keep it short; offer detail on request.
 

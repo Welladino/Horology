@@ -22,6 +22,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[3]
 OUT = REPO / 'plugins' / 'dist' / 'claude'
 EXCLUDED_PLUGINS = {'horology-hermes'}
+SUPERVISOR_DISPATCH = Path(__file__).with_name('horology_supervisor_dispatch.md')
 CROSS = re.compile(r'\]\(\.\./([\w-]+)/references/([^)#\s]+)\)')
 SIBLING = re.compile(r'\]\(([\w.-]+\.(?:md|yaml))\)')
 
@@ -30,6 +31,8 @@ def build(name, src, skills):
     with tempfile.TemporaryDirectory() as tmp:
         dst = Path(tmp) / name
         shutil.copytree(src, dst, ignore=shutil.ignore_patterns('agents', '.DS_Store', '__pycache__'))
+        if name == 'horology-supervisor':
+            shutil.copy2(SUPERVISOR_DISPATCH, dst / 'references' / 'dispatch.md')
         pulled = []
         for md in list(dst.rglob('*.md')):
             text = md.read_text()

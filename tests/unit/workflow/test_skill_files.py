@@ -1,9 +1,11 @@
-"""Skill files link only to files their own plugin ships, shared copies stay identical, and no domain names are written in."""
+"""Skill files link only to shipped files and keep harness-specific dispatch separate."""
+import importlib.util
 import re
+import zipfile
 
 import pytest
 
-from support.paths import PLUGINS
+from support.paths import PLUGINS, REPO
 
 SKILL_FILES = sorted(p for p in PLUGINS.glob("horology-*/skills/**/*.md"))
 LINK = re.compile(r"\]\(([^)#\s]+)(?:#[^)]*)?\)")
@@ -137,3 +139,45 @@ def test_investigation_route_stage_4_synthesis_stays_automatic():
     supervisor = _skill_text("horology-supervisor")
     assert "For Stage 3, invoke `horology-synthesis-artifacts` in this same run" in supervisor
     assert "final step of every Stage 3 run" in _skill_text("horology-synthesis-artifacts")
+
+
+def test_supervisor_core_delegates_dispatch_to_the_packaged_adapter():
+    skill = PLUGINS / "horology-workflows/skills/horology-supervisor"
+    supervisor = (skill / "SKILL.md").read_text()
+    runs = (skill / "references/runs.md").read_text()
+    codex = (skill / "references/dispatch.md").read_text()
+    claude = (REPO / "scripts/ops/claude/horology_supervisor_dispatch.md").read_text()
+
+    assert "[dispatch adapter](references/dispatch.md)" in supervisor
+    assert "claiming supervisor harness" in runs
+    assert "**Codex** and **ChatGPT Work**" in codex
+    assert "Use **Codex** as `claim_item.agent_type`" in codex
+    assert "`create_thread`" in codex and "`wait_threads`" in codex
+    assert "Always Cloud" in codex
+    assert "Codex CLI" in codex and "not the Codex CLI" in codex
+    assert "only Pipeline Agent type **Claude Code**" in claude
+    assert "`claude -p" in claude and "`claude --cloud" in claude
+    assert "`create_thread`" not in claude
+
+
+def test_claude_supervisor_zip_substitutes_only_its_dispatch_adapter(tmp_path):
+    script = REPO / "scripts/ops/claude/build_skill_zips.py"
+    spec = importlib.util.spec_from_file_location("build_skill_zips", script)
+    builder = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(builder)
+    builder.OUT = tmp_path
+    skills = {
+        path.parent.name: path.parent
+        for path in REPO.glob("plugins/*/skills/*/SKILL.md")
+        if path.relative_to(REPO / "plugins").parts[0] not in builder.EXCLUDED_PLUGINS
+    }
+
+    builder.build("horology-supervisor", skills["horology-supervisor"], skills)
+
+    with zipfile.ZipFile(tmp_path / "horology-supervisor.zip") as archive:
+        dispatch = archive.read("horology-supervisor/references/dispatch.md").decode()
+        supervisor = archive.read("horology-supervisor/SKILL.md").decode()
+    assert "only Pipeline Agent type **Claude Code**" in dispatch
+    assert "ChatGPT Work rows" in dispatch
+    assert "`create_thread`" not in dispatch
+    assert "[dispatch adapter](references/dispatch.md)" in supervisor
