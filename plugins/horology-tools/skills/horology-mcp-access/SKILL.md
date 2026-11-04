@@ -1,6 +1,6 @@
 ---
 name: horology-mcp-access
-description: Use Horology's restricted MCP tools for Supabase metadata, capped Tavily search/extraction and fixed Firecrawl Alexandria reads or single-page scraping. Apply when a task uses the Horology gateway; it does not grant access to other providers or to the document graph, which has its own connector and skill.
+description: Use Horology's restricted MCP tools for Supabase metadata, capped Tavily search/extraction, fixed Firecrawl Alexandria reads or single-page scraping, and private Cloudflare Pages publishing of HTML pages, small multi-page sites and dashboards. Apply when a task uses the Horology gateway; it does not grant access to other providers or to the document graph, which has its own connector and skill.
 ---
 
 # Horology MCP access
@@ -20,6 +20,19 @@ Read `gateway_status` once when starting provider work. Match the requested repo
 Shopify search/details and trends take a `country`: an uppercase ISO 3166-1 alpha-2 code for one market, for example `SG` Singapore, `MY` Malaysia, `ID` Indonesia, `TH` Thailand, `PH` Philippines, `VN` Vietnam, `AU` Australia, `US` United States, `GB` United Kingdom (not `UK`). Trends also accepts `WORLDWIDE` for global interest; Shopify does not. Lowercase, three-letter or made-up codes are refused before any credits are spent.
 
 Pick the market the question is about. Compare markets with separate calls, one country each, and keep the number of calls proportionate: each Alexandria call costs five credits. When the question names no market, say which one you chose and why, or use `WORLDWIDE` for trends. Free discovery reads approved contracts; it cannot enable or execute arbitrary providers. Alibaba results are mainly sponsored and do not verify stock; Shopify results are estimates. Treat truncation as partial coverage.
+
+- **Cloudflare Pages:** `publish_synthesis` publishes a private page, small site or dashboard for one Pipeline item. See [Private pages](#private-pages).
+
+## Private pages
+
+Use a page when the founder will look at or click through the result: a dashboard, a set of linked pages, a visual briefing. Writing people will edit stays a Google Doc and tables stay Sheets. The Drive copy and its Document Index row are the record; the Pages link is a viewing copy.
+
+- **Call:** `publish_synthesis(pipeline_id, html, assets, page)`. `html` becomes `index.html`. `assets` are extra files as `{path, base64}` with relative paths (`about.html`, `items/66.html`, `app.js`, `data/runs.json`, `assets/style.css`, `assets/chart.svg`). Allowed types: `.html`, `.js`, `.json`, `.css`, `.svg`, `.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`.
+- **Limits:** 64 extra files and 8 MiB in all; `index.html` and each `.html`, `.js` or `.json` file at most 2 MiB. Paths starting with `_` (`_worker.js`, `_headers`, `_redirects`, `_routes.json`) or `functions/`, hidden files and `..` are refused, so a page cannot change how Pages serves or runs code.
+- **Page name:** without `page` the site goes to `pipeline-<ID>`, which belongs to the item's Stage 4 synthesis. For anything else give a short `page` name (lowercase letters and digits, single hyphens, such as `dashboard` or `runs-2026-11`); it publishes to `pipeline-<ID>-<page>`, and the whole alias must be at most 28 characters. Publishing the same name again replaces that site only.
+- **Pages, not apps:** link pages with relative paths, keep data in local `.json` files, and keep scripts small. Bundle any library as a local file instead of loading it from a CDN, and add no trackers or calls to outside services; the page is private and should stay self-contained.
+- **Check:** the result gives `url` and `branch`. Without an Access session the URL must ask for sign-in or deny access, never show the page. Every branch sits under the workspace's Access rules; never ask for them to be widened. A refused file, page name or size comes back as `permission_denied`: fix the input against the limits above rather than retrying. `needs_admin_setup` means the workspace administrator must set up Pages or Access; keep the Drive copy and report it.
+- **Record:** save the HTML (and its data files) to the item's Agent output folder in Drive first, then publish, and put the Pages URL in the Drive document or its Document Index row.
 
 
 Google sign-in establishes MCP identity only. GitHub and Google document/register adapters are parked outside the gateway; use separately connected native platform tools when authorized. Their permissions and usage are not enforced by Horology. Keep research read-only on GitHub; native connector availability is not authorization to modify code. DataForSEO remains pending. The document graph is a separate connector with its own skill (`horology-document-graph`); this gateway does not expose it.
