@@ -1,103 +1,33 @@
-# Positive list: never upload credentials, local policy or runtime state.
-**
-!cloudbuild.yaml
-!requirements-dev.txt
-!.bandit.yaml
-!.trivyignore.yaml
-!alembic.ini
-!alembic/
-!alembic/**
-!tests/
-!tests/**
-!scripts/
-!scripts/ci/
-!scripts/ci/**
-!scripts/ops/
-!scripts/ops/mcp/
-!scripts/ops/mcp/access.py
-!scripts/ops/gcp/
-!scripts/ops/gcp/**
-# The Claude and Codex packaging (builders, Codex config, supervisor dispatch adapters), which the skill-file tests read.
-!scripts/ops/claude/
-!scripts/ops/claude/**
-!scripts/ops/codex/
-!scripts/ops/codex/**
-!shared-runtime/
-!shared-runtime/pyproject.toml
-!shared-runtime/horology_runtime/
-!shared-runtime/horology_runtime/*.py
-!shared-runtime/horology_runtime/oauth/
-!shared-runtime/horology_runtime/oauth/*.py
-!shared-runtime/horology_runtime/oauth/*.css
-# Graph logic shared by the document-graph service and its sync job.
-!document-graph-core/
-!document-graph-core/pyproject.toml
-!document-graph-core/graph_core/
-!document-graph-core/graph_core/**/
-!document-graph-core/graph_core/**/*.py
-!document-graph-core/graph_core/*.py
-!mcp-servers/
-!mcp-servers/mcp-gateway/
-!mcp-servers/mcp-gateway/Dockerfile
-!mcp-servers/mcp-gateway/requirements.txt
-!mcp-servers/mcp-gateway/server.py
-!mcp-servers/mcp-gateway/policy.py
-!mcp-servers/mcp-gateway/integrations/
-!mcp-servers/mcp-gateway/integrations/**
-!mcp-servers/mcp-gateway/shared/
-!mcp-servers/mcp-gateway/shared/**
-!tests/manual/gateway/
-!tests/manual/gateway/**
-!mcp-servers/mcp-gateway/config/
-!mcp-servers/mcp-gateway/config/policy.example.json
-!mcp-servers/mcp-gateway/config/policy.cloud.json
-!mcp-servers/mcp-gateway/certs/
-!mcp-servers/mcp-gateway/certs/supabase-prod-ca-2021.crt
-!mcp-servers/document-graph/
-!mcp-servers/document-graph/Dockerfile
-!mcp-servers/document-graph/requirements.txt
-!mcp-servers/document-graph/server.py
-!mcp-servers/document-graph/document_graph/
-!mcp-servers/document-graph/document_graph/**
-!.dockerignore
-**/__pycache__/**
-**/.env*
+# Cloud Build source upload: the whole repository, minus what is listed here.
+# Check what would be uploaded with: gcloud meta list-files-for-upload .
+
+# Everything Git ignores (.env files, Hermes state, caches, build output, clasp logins).
+#!include:.gitignore
+
+# Secrets and local state, listed again so a change to .gitignore can't start uploading them.
+# Nested .gitignore files (tests/manual/gateway/fixtures/private/) are not read by gcloud.
+**/.env
+**/.env.*
 **/*.local.json
-**/*.pyc
-
-!mcp-servers/mcp-gateway/database/
-!mcp-servers/mcp-gateway/database/**/
-!mcp-servers/mcp-gateway/database/**/*.py
-!mcp-servers/mcp-gateway/database/*.py
-
-# Private manual-test credentials must never enter Cloud Build source.
 **/fixtures/private/**
+.auth/
+reports/
+hermes-data/
+hermes/hermes-output/
+mcp-servers/mcp-gateway/**/state/
+mcp-servers/mcp-gateway/config/client.cloud.json
+**/.clasp.json
+**/.clasprc*.json
 
-# Document Index sync job, packaged into the document-graph image.
-!jobs/
-!jobs/document-graph-sync/
-!jobs/document-graph-sync/requirements.txt
-!jobs/document-graph-sync/graph_sync/
-!jobs/document-graph-sync/graph_sync/*.py
-# The Pipeline workflow (copied into the document-graph image) and the Apps Script files its tests check
-# against it (status map, decision rules, child tabs, Type list).
-# Both plugins go up whole: the skill-file tests read SKILL.md files and check their links resolve.
-!plugins/
-!plugins/horology-workflows/
-!plugins/horology-workflows/**
-!plugins/horology-specialists/
-!plugins/horology-specialists/**
-!docs/
-!docs/architecture/
-!docs/architecture/subscription-agents/
-!docs/architecture/subscription-agents/subscription-agents.md
-!docs/architecture/subscription-agents/workflow.md
-!google_appscript/
-!google_appscript/clickup-sync/
-!google_appscript/clickup-sync/src/
-!google_appscript/clickup-sync/src/Config.js
-!google_appscript/pipeline-decisions/
-!google_appscript/pipeline-decisions/src/
-!google_appscript/pipeline-decisions/src/Rules.js
-!google_appscript/pipeline-decisions/src/WebApp.js
-!google_appscript/pipeline-decisions/src/ItemRules.js
+# Not needed by the build or its tests.
+.git/
+.github/
+.gcloudignore
+.venv/
+**/node_modules/
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+**/.hypothesis/
+plugins/dist/
+**/.DS_Store
