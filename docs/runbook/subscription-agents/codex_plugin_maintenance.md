@@ -6,7 +6,7 @@ Use this runbook when a skill or Codex plugin manifest has changed and the accou
 
 ```mermaid
 flowchart LR
-  source["<b>Source</b><br/>plugins/&lt;plugin&gt;/skills<br/>and .codex-plugin"]
+  source["<b>Source</b><br/>plugins/&lt;plugin&gt;/skills<br/>and scripts/ops/codex/plugins"]
   build["<b>Build</b><br/>scripts/ops/codex/<br/>build_codex_plugins.py"]
   archive["<b>Upload archive</b><br/>plugins/dist/codex<br/>ignored by Git"]
   account["<b>Account release</b><br/>Existing backend identity<br/>and registered App binding"]
@@ -27,7 +27,8 @@ flowchart LR
 | Layer | Edit it? | Notes |
 | --- | --- | --- |
 | `plugins/<plugin>/skills/` | Yes | Platform-independent skill instructions and supporting files |
-| `plugins/<plugin>/.codex-plugin/` | Yes | Codex metadata and verified App mappings |
+| `scripts/ops/codex/plugins/<plugin>/` | Yes | Codex metadata and verified App mappings |
+| `scripts/ops/codex/horology_supervisor_dispatch.md` | Yes | The Codex supervisor's dispatch adapter, packaged as the supervisor's `references/dispatch.md` |
 | `plugins/dist/codex/` | No | Generated, ignored upload archives |
 | Installed plugin or cache | No | Distribution only; updating it does not update this repository |
 
@@ -35,10 +36,12 @@ flowchart LR
 
 Each account plugin must contain exactly the skills in its corresponding source folder. Keep supporting references and assets with the skill that loads them.
 
-Codex configuration belongs under `plugins/<plugin>/.codex-plugin/`:
+Codex configuration belongs under `scripts/ops/codex/plugins/<plugin>/`, beside its builder, so `plugins/` holds only harness-neutral skills:
 
 - `plugin.json` contains the canonical name, description, version and presentation.
 - `apps.json` contains verified registered App mappings when the plugin uses an MCP connection.
+
+The supervisor's dispatch adapter is harness-specific too. The Codex one is `scripts/ops/codex/horology_supervisor_dispatch.md`; the builder copies it into the workflows archive as `skills/horology-supervisor/references/dispatch.md`. The Claude one lives in `scripts/ops/claude/` and its zip builder does the same.
 
 Do not create a source `mcp.json` for the hosted Horology connections. Their URL, OAuth and connection state belong to the registered App.
 

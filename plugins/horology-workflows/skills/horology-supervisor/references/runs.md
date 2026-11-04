@@ -6,8 +6,8 @@ Runs are recorded in the execution history (Neon), through the document-graph co
 
 Call `claim_item(pipeline_id, agent_type, run_location, kind)` once per item, before any work on it:
 
-- `agent_type`: the platform you run on, Claude Code or Codex.
-- `run_location`: the item's Run location, Local or Cloud (blank in the sheet means Local).
+- `agent_type`: the claiming supervisor harness, Claude Code or Codex. The packaged dispatch adapter gives its claim value; this can differ from the child Agent type (for example, a Codex supervisor dispatching ChatGPT Work).
+- `run_location`: the adapter's effective location. This is normally the item's Run location (blank means Local); a cloud-only child uses Cloud without editing the row.
 - `kind`: `run` for the supervisor, `plan` for the planner.
 
 `claimed: true` returns a run ID (for example `R-12`) and a claim that expires in 2 hours. `claimed: false` means another live run holds the item: skip it and report the run ID it gives. An expired claim means a run died; the item can be claimed again.
@@ -32,15 +32,8 @@ The planner, or a Stage 1 run on either route that finds no open rows, writes an
 
 ## Starting sessions
 
-Run from a checkout of the Horology repository, so cloud sessions clone the right repository. Pass a self-contained prompt:
+Pass a self-contained prompt to the harness-specific mechanism in [dispatch](dispatch.md):
 
 > Use the horology-supervisor skill in item mode for Pipeline item `<ID>`, run `<RUN-ID>`.
 
-| Agent type | Local | Cloud |
-|---|---|---|
-| Claude Code | `claude -p "<prompt>" --permission-mode auto --output-format json` | `claude --cloud "<prompt>"` |
-| Codex | `codex exec "<prompt>"` | `codex cloud exec --env <ENV_ID> "<prompt>"` |
-
-- Start local sessions in the background, a few at a time, and note each session ID from its JSON output.
-- `claude --cloud` returns a session link. Cloud sessions use the skills and connectors on the founder's claude.ai account, whatever repository they clone.
-- `codex exec` and `codex cloud exec` need the Codex CLI installed and signed in; `codex cloud exec` is experimental and needs a Codex cloud environment ID. If either isn't available, finish the run as failed with the reason.
+The dispatch adapter owns session creation, monitoring, follow-up and the identifier passed as `session_link` to `finish_run`. If it cannot create the requested session, finish the claimed run as failed with the reason; do not silently run it through another Agent type.

@@ -171,16 +171,17 @@ The Pipeline's permanent numeric ID joins decisions and documents; each register
 
 Investigation and Stage 3 runs are started by the founder, from a session: in Claude Code or Codex, "run the Ready items" or "run item 42". Stage 4 runs automatically within the Stage 3 session. The **supervisor** (`horology-supervisor`) has three modes:
 
-*   **Dispatch:** finds rows with Agent status Ready whose **Agent type** is the platform it's running on (Claude Code or Codex; each platform runs only its own rows), claims each with `claim_item` (2-hour claim), and starts **one session per item** according to the row's **Run location**:
+*   **Dispatch:** finds rows with Agent status Ready whose **Agent type** its packaged harness adapter handles, claims each with `claim_item` (2-hour claim), and starts **one session per item**. The workflow core is shared, while the built package supplies the dispatch mechanism:
 
-    | Agent type  | Local        | Cloud              |
-    | ----------- | ------------ | ------------------ |
-    | Claude Code | `claude -p`  | `claude --cloud`   |
-    | Codex       | `codex exec` | `codex cloud exec` |
+    | Supervisor package | Agent type | Session mechanism |
+    | ------------------ | ---------- | ----------------- |
+    | Claude | Claude Code | `claude -p` locally or `claude --cloud` |
+    | Codex desktop | Codex | Native visible Codex thread in the saved target project, local or configured cloud |
+    | Codex desktop | ChatGPT Work | Native projectless ChatGPT Work cloud thread for non-code work |
 
-    Where shell commands aren't available (for example claude.ai chat), it runs the items itself, one at a time.
+    The sheet value chooses the child; there is no Auto option. Manual and Unassigned rows are never dispatched. The Codex supervisor can start without a selected project: it resolves a Codex row's saved project from target metadata without loading that repository into the supervisor context. Claude keeps its existing command-based behavior. The Codex supervisor creates all Codex and ChatGPT Work children; a Work child does not create Codex sessions. Where Claude shell commands aren't available (for example claude.ai chat), it runs its selected items itself, one at a time.
 * **Item:** handles exactly one item. It reads the row, decision feedback, any planned steps and the document graph; chooses specialist skills (`horology-specialists`); runs them as subagents; checks the results; and finishes the run. Specialist skills save their own Drive outputs, Document Index rows and proposed decisions.
-* **Status:** read-only. Asked "what's happening?" or "what did item 42 find?", it reports running, finished (with key findings), failed and died runs, and what's waiting on the founder, from `list_runs`, `get_item_history` and the saved outputs. The founder talks to the supervisor instead of each session. It can't see progress inside a running session or steer one; that needs the session link.
+* **Status:** read-only. Asked "what's happening?" or "what did item 42 find?", it reports running, finished (with key findings), failed and died runs, and what's waiting on the founder, from `list_runs`, `get_item_history` and the saved outputs. The founder talks to the supervisor instead of each session. A Codex desktop dispatcher also coordinates the native child threads while it retains their IDs; execution history remains the durable cross-session record.
 
 One session per item keeps each supervisor's context to a single item, and lets its specialists run as subagents (subagents can't start their own).
 

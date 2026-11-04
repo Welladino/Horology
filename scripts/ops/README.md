@@ -8,8 +8,9 @@ system they operate:
   deployment checks.
 - `gcp/` — one-command Cloud Run release of the MCP services
   (`docs/runbook/gcp/mcp_deployment.md`).
-- `claude/` — Claude skill packaging.
-- `codex/` — Codex plugin packaging.
+- `claude/` — Claude skill packaging and the Claude supervisor's dispatch adapter.
+- `codex/` — Codex plugin packaging: each plugin's Codex config in `codex/plugins/<plugin>/` and
+  the Codex supervisor's dispatch adapter.
 
 Security scanners and repository audit checks belong in `scripts/security/`.
 The MCP administration scripts remain here because they can change live access

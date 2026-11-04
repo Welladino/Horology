@@ -1,4 +1,8 @@
-"""Build Codex upload archives from .codex-plugin configuration and shared skills.
+"""Build Codex upload archives from the Codex configuration here and the shared skills in plugins/.
+
+Each plugin's Codex configuration (plugin.json, and apps.json where it uses a registered App) lives in
+scripts/ops/codex/plugins/<plugin>/; its skills stay in plugins/<plugin>/skills/. The supervisor's
+Codex dispatch adapter is copied in as skills/horology-supervisor/references/dispatch.md.
 
 Run from any directory. Root package files exist only in plugins/dist/codex/.
 """
@@ -7,11 +11,15 @@ import json
 from pathlib import Path
 import zipfile
 
-REPO = Path(__file__).resolve().parents[3]
+HERE = Path(__file__).resolve().parent
+REPO = HERE.parents[2]
+CONFIG = HERE / 'plugins'
+SUPERVISOR_DISPATCH = HERE / 'horology_supervisor_dispatch.md'
+DISPATCH_PATH = 'skills/horology-supervisor/references/dispatch.md'
 
 
-def build(source, output):
-    config = source / '.codex-plugin'
+def build(source, output, config=None):
+    config = config or CONFIG / source.name
     legacy = json.loads((config / 'plugin.json').read_text())
     extension = dict(legacy.get('extensions', {}).get('com.openai', {}))
     for key in ('interface', 'apps', 'hooks', 'requires_local_executor', 'publicationPolicy', 'id'):
@@ -43,6 +51,8 @@ def build(source, output):
             if path.is_symlink():
                 raise ValueError(f'Symlink is not a package file: {path}')
             files[path.relative_to(source).as_posix()] = path.read_bytes()
+    if 'skills/horology-supervisor/SKILL.md' in files:
+        files[DISPATCH_PATH] = SUPERVISOR_DISPATCH.read_bytes()
     expected = {p.parent.name for p in (source / 'skills').glob('*/SKILL.md')}
     actual = {Path(name).parent.name for name in files if name.startswith('skills/') and name.endswith('/SKILL.md')}
     if expected != actual:
@@ -59,7 +69,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('names', nargs='*')
     args = parser.parse_args()
-    sources = {p.parent.parent.name: p.parent.parent for p in REPO.glob('plugins/*/.codex-plugin/plugin.json')}
+    sources = {p.parent.name: REPO / 'plugins' / p.parent.name for p in CONFIG.glob('*/plugin.json')}
     if set(args.names) - sources.keys():
         parser.error('Unknown plugin name')
     for name in sorted(args.names or sources):
