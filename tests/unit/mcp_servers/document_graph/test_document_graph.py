@@ -366,7 +366,11 @@ class TestRegisterIdTools:
         reserve.assert_awaited_once_with("ws-a", "decision", 40, "R-13", "agent", 4)
         asyncio.run(graph.check_register_write("document", 25, 42, "u2", live_pipeline_id="40",
                                                live_drive_url="u1", live_row_exists=True))
-        check.assert_awaited_once_with("ws-a", "document", 25, 42, "u2", {"pipeline_id": "40", "drive_url": "u1"})
+        check.assert_awaited_once_with("ws-a", "document", 25, 42, "u2", {"pipeline_id": "40", "drive_url": "u1"},
+                                       None)
         check.reset_mock()
         asyncio.run(graph.check_register_write("decision", 5, 40))
-        check.assert_awaited_once_with("ws-a", "decision", 5, 40, None, None)
+        check.assert_awaited_once_with("ws-a", "decision", 5, 40, None, None, None)
+        check.reset_mock()
+        asyncio.run(graph.check_register_write("decision", 5, 40, research_links=["https://github.com/x/y"]))
+        check.assert_awaited_once_with("ws-a", "decision", 5, 40, None, None, ["https://github.com/x/y"])

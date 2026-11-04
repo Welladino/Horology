@@ -264,7 +264,7 @@ async def reserve_id(register: str, pipeline_id: int | None = None, run_id: str 
 
 async def check_register_write(register: str, id: int, pipeline_id: int | None = None, drive_url: str | None = None,
                                live_pipeline_id: str | None = None, live_drive_url: str | None = None,
-                               live_row_exists: bool = False) -> dict:
+                               live_row_exists: bool = False, research_links: list[str] | None = None) -> dict:
     """Check ownership before every Decision Register or Document Index write, new row or update.
 
     Re-read the live register row with this ID immediately before calling:
@@ -275,9 +275,14 @@ async def check_register_write(register: str, id: int, pipeline_id: int | None =
     Pipeline item or Drive file: do not write or overwrite the row; report the
     message, or reserve a new ID with reserve_id. Rows are found by ID only,
     never by row position.
+    For a Decision Register write that sets Research Links, pass every link as
+    research_links: they must be Drive files (Google Docs, Sheets, Slides or an
+    HTML file in Drive). ok: false with reason research_links_not_drive lists
+    the links to replace with a Drive document before writing.
     """
     live = {"pipeline_id": live_pipeline_id, "drive_url": live_drive_url} if live_row_exists else None
-    return await history.check_register_write(current_workspace(), register, id, pipeline_id, drive_url, live)
+    return await history.check_register_write(current_workspace(), register, id, pipeline_id, drive_url, live,
+                                              research_links)
 
 
 async def finish_run(run_id: str, status: str, skills_used: list[str] | None = None, steps_done: str | None = None,

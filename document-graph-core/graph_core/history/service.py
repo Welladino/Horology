@@ -15,6 +15,10 @@ CLAIM_HOURS = 2
 KINDS = ("run", "plan")
 FINISH_STATUSES = ("done", "failed", "released")
 _DRIVE_ID = re.compile(r"/(?:file|document|spreadsheets|presentation)/d/([A-Za-z0-9_-]{10,})|[?&]id=([A-Za-z0-9_-]{10,})")
+_DRIVE_FILE = re.compile(
+    r"^https://(?:docs\.google\.com/(?:document|spreadsheets|presentation)/d/[A-Za-z0-9_-]{10,}"
+    r"|drive\.google\.com/(?:file/d/[A-Za-z0-9_-]{10,}|open\?(?:[^#\s]*&)?id=[A-Za-z0-9_-]{10,}))(?:[/?#&]\S*)?$")
+_LINK_SPLIT = re.compile(r"[\s,]+")
 
 
 def _repository():
@@ -115,6 +119,21 @@ def drive_key(url):
     return (match.group(1) or match.group(2)) if match else text
 
 
+def is_drive_file(url):
+    """True for a link to one Drive file: a Google Doc, Sheet or Slides file, or any file in Drive (e.g. HTML)."""
+    return bool(_DRIVE_FILE.match(str(url or "").strip()))
+
+
+def research_link_problems(research_links):
+    """The Research Links that are not Drive files. Accepts a list or the cell text (one link per line).
+    Returns the offending links in order; empty means every link is a Drive file."""
+    if research_links in (None, ""):
+        return []
+    items = [research_links] if isinstance(research_links, str) else list(research_links)
+    links = [part for item in items for part in _LINK_SPLIT.split(str(item or "")) if part]
+    return [link for link in links if not is_drive_file(link)]
+
+
 async def reserve_id(workspace, register, pipeline_id=None, run_id=None, reserved_by=None, live_max=None):
     """Reserve the next permanent ID of a register, atomically. Two calls never get the same ID.
 
@@ -165,16 +184,31 @@ def ownership_conflicts(register, wanted_pipeline, wanted_drive, *owners):
 
 
 async def check_register_write(workspace, register, register_id_value, pipeline_id=None, drive_url=None,
-                               live_row=None):
+                               live_row=None, research_links=None):
     """The ownership check before every register write: may this ID be written for this item and file?
 
     Compares the intended owner with the live sheet row the caller just read (live_row: its Pipeline
     ID and Drive URL, or None when no row has that ID), the last synced copy and the reservation. On the
     first clean check of a Document ID its Drive URL is bound to the reservation, so a later writer
     with another file is refused even before the next sync. Never raises for a conflict: returns
-    ok False with the reasons, and the caller must stop instead of overwriting."""
+    ok False with the reasons, and the caller must stop instead of overwriting.
+
+    research_links (Decision Register only) are the links about to go in Research Links. Each must be a
+    Drive file (Doc, Sheet, Slides or a Drive file such as HTML); any other link is refused before the
+    ownership check, so nothing is bound."""
     register = _register(register)
     wanted_id = register_id(register_id_value)
+    if research_links not in (None, "", []) and register != "decision":
+        raise ValueError("research_links is only for a Decision Register write")
+    bad_links = research_link_problems(research_links)
+    if bad_links:
+        return {"ok": False, "reason": "research_links_not_drive", "id": wanted_id, "register": register,
+                "links": bad_links,
+                "message": ("Research Links holds Drive files only (Google Docs, Sheets, Slides or an HTML file in "
+                            "Drive). Not Drive files: " + ", ".join(bad_links) + "."),
+                "next_step": ("Don't write the row yet. Save the evidence to a Drive document (a repository file "
+                              "goes in that document's Related Repo Document in the Document Index) and link it "
+                              "instead.")}
     wanted_pipeline = item_id(pipeline_id) if pipeline_id not in (None, "") else None
     wanted_drive = str(drive_url or "").strip() or None
     if register == "document" and not wanted_drive:

@@ -44,6 +44,8 @@ The Decision Register preserves the human review trail. Each row has its own per
 
 It records the question under review, a one-line proposed or accepted choice, the reason and key figures, status, evidence links, rework instructions and any decision it supersedes. Agents may draft proposals; a human accepts, requests rework, parks or rejects them. A later review creates a new row instead of overwriting the earlier decision.
 
+Research Links holds Drive files only: Google Docs, Sheets or Slides, or an HTML file saved in Drive, one per line. A GitHub compare, commit, branch or repository-file link, a Drive folder or a web page does not go there. Evidence that lives in a repository gets a Drive document that copies or summarises it, indexed in the Document Index with the GitHub link in Related Repo Document, the same Drive-first rule as for deliverables. `check_register_write` refuses non-Drive links when an agent passes them as `research_links`.
+
 | Tab | Purpose |
 | --- | --- |
 | **Master** | One row per decision, keyed by Decision ID. |
