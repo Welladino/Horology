@@ -35,6 +35,7 @@ Implementation notes under `docs/planning/notes/`, grouped by area. Add a row wh
 | 2026-11-02 | [Drive-first agent documents](../2026-11-02_drive-first-agent-documents_note.md) | Every deliverable in Drive with the template the agent chooses; repo docs only where a repository keeps its own, on the item's branch; ClickUp sync accepts Drive links only |
 | 2026-11-03 | [Stage 4 items end Completed](../2026-11-03_stage-4-completed_note.md) | Synthesis saved means Completed at Stage 4; a proposed Specialist deliverable decision stays open to keep or reopen the item (HOR-14, item 67, Decision 15) |
 | 2026-11-04 | [Drive-only Research Links](../2026-11-04_drive-only-research-links_note.md) | Decision Register Research Links holds Drive files only; `check_register_write` refuses other links; Decisions 13 and 14 relinked to Drive documents (HOR-9, item 68) |
+| 2026-11-04 | [Pages tab for published pages](../2026-11-04_pages-tab_note.md) | Document Index Pages tab lists every Cloudflare page; the publishing skill adds the row after a verified publish; backfill of items 39 and 45 (item 70, HOR-9) |
 
 ## MCP gateway
 

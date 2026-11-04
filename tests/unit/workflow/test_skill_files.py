@@ -58,3 +58,23 @@ def test_register_ids_are_never_taken_from_the_sheet(path):
         for match in re.finditer(pattern, text):
             line = text[text.rfind("\n", 0, match.start()) + 1:text.find("\n", match.end())]
             assert allowed and allowed in line, f"{path.name}: '{match.group(0)}' - use reserve_id"
+
+
+# HOR-9 / item 70: Pages links were stored nowhere the founder could see them.
+def _publishing_skills():
+    skills = {}
+    for path in SKILL_FILES:
+        skill = path.relative_to(PLUGINS).parts[:3]
+        skills.setdefault(skill, []).append(path.read_text())
+    return {"/".join(skill): "\n".join(texts) for skill, texts in skills.items() if "publish_synthesis" in "\n".join(texts)}
+
+
+def test_a_skill_publishes_pages():
+    assert "horology-specialists/skills/horology-synthesis-artifacts" in _publishing_skills()
+
+
+@pytest.mark.parametrize("skill", sorted(_publishing_skills()))
+def test_every_publishing_skill_lists_the_page_on_the_pages_tab(skill):
+    text = _publishing_skills()[skill]
+    assert "Pages** tab" in text or "Pages tab" in text, f"{skill} publishes but never adds a Pages tab row"
+    assert "do not add a sheet column" not in text.lower()
