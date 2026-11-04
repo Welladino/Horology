@@ -83,7 +83,7 @@ Agent runs on Pipeline items are recorded here. A run makes two calls, plus one 
 - `claim_item` before working on an item (kind `run` for the supervisor, `plan` for the planner). `claimed: false` means another live run holds it: skip it. Claims expire after 2 hours.
 - `finish_run` once at the end, with status `done`, `failed` or `released`, the skills used, steps done and notes.
 - `reserve_id(register, pipeline_id, run_id, live_max_id)` for every new Decision Register (`decision`) or Document Index (`document`) row: it returns the next permanent ID, and two runs never get the same one. Pass the Pipeline ID and run ID when the row is for an item; `reserved: false` means the run isn't live or isn't that item's. Never count up from the highest ID in the sheet yourself.
-- `check_register_write(register, id, pipeline_id, drive_url, live_pipeline_id, live_drive_url, live_row_exists)` before every register write, with the live row you just found by ID. `ok: false` means the ID belongs to another item or Drive file: stop and report instead of overwriting.
+- `check_register_write(register, id, pipeline_id, drive_url, live_pipeline_id, live_drive_url, live_row_exists, research_links)` before every register write, with the live row you just found by ID. `ok: false` means the ID belongs to another item or Drive file: stop and report instead of overwriting. For a Decision Register row, pass its Research Links as `research_links`: they must be Drive files (Docs, Sheets, Slides or an HTML file in Drive), and `ok: false` with reason `research_links_not_drive` lists the ones to replace with a Drive document.
 
 The supervisor skill's runs reference has the full rules. To look back:
 

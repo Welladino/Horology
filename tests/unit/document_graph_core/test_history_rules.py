@@ -1,5 +1,6 @@
 """Execution-history rules with no database: workflow checks, IDs and argument validation."""
 import asyncio
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -98,3 +99,55 @@ def test_ownership_conflicts(register, owner, conflicts):
 def test_a_document_write_needs_its_drive_url():
     with pytest.raises(ValueError, match="drive_url is required"):
         asyncio.run(history.check_register_write("ws", "document", 25, 40))
+
+
+DOC = "https://docs.google.com/document/d/1m3YseqUX30ddXAc7mvAvB-qUSkaDRxvSIkBTD2BTidQ/edit"
+
+
+@pytest.mark.parametrize("link, drive", [
+    (DOC, True),
+    ("https://docs.google.com/spreadsheets/d/1Il7NvidmZ5n4s3kzaCjEHT0tcE-2KcS5IYvffOtNIqY/edit#gid=0", True),
+    ("https://docs.google.com/presentation/d/1AbCdEfGhIjKlMnOp/edit?usp=sharing", True),
+    ("https://drive.google.com/file/d/1aHCLHWuFYV2KVf75wclJM-uZQ3c7fyNx/view", True),  # e.g. an HTML file
+    ("https://drive.google.com/open?id=1aHCLHWuFYV2KVf75", True),
+    ("https://github.com/Welladino/Article_aggregator_agent/compare/version_v1.8...claude/item-55?expand=1", False),
+    ("https://github.com/Welladino/Article_aggregator_agent/blob/main/docs/planning/notes/note.md", False),
+    ("https://drive.google.com/drive/folders/1mv8AzjLxR6ZQ9PN1zf_-t4rw_Qkfve0o", False),  # a folder, not a file
+    ("https://docs.google.com.evil.example/document/d/1m3YseqUX30ddXAc7mvAvB/edit", False),
+    ("http://docs.google.com/document/d/1m3YseqUX30ddXAc7mvAvB/edit", False),
+    ("https://example.com/report", False),
+])
+def test_is_drive_file(link, drive):
+    assert history.is_drive_file(link) is drive
+
+
+def test_research_link_problems_reads_a_list_or_the_cell_text():
+    gh = "https://github.com/Welladino/Horology/compare/main...x"
+    assert history.research_link_problems(None) == []
+    assert history.research_link_problems([DOC]) == []
+    assert history.research_link_problems(f"{DOC}\n\n{gh}") == [gh]
+    assert history.research_link_problems([DOC, gh]) == [gh]
+
+
+def test_a_decision_with_a_github_research_link_is_refused_before_the_ownership_check(monkeypatch):
+    repository = AsyncMock()
+    monkeypatch.setattr(history, "_repository", lambda: repository)
+    gh = "https://github.com/Welladino/Article_aggregator_agent/compare/version_v1.8...claude/item-55?expand=1"
+    result = asyncio.run(history.check_register_write("ws", "decision", 13, 55, research_links=[DOC, gh]))
+    assert result["ok"] is False and result["reason"] == "research_links_not_drive"
+    assert result["links"] == [gh]
+    repository.register_owner.assert_not_called()
+
+
+def test_drive_research_links_go_on_to_the_ownership_check(monkeypatch):
+    repository = AsyncMock()
+    repository.register_owner.return_value = ({"pipeline_id": "55"}, None)
+    monkeypatch.setattr(history, "_repository", lambda: repository)
+    result = asyncio.run(history.check_register_write("ws", "decision", 13, 55, research_links=[DOC]))
+    assert result["ok"] is True
+    repository.register_owner.assert_awaited_once()
+
+
+def test_research_links_are_only_for_the_decision_register():
+    with pytest.raises(ValueError, match="only for a Decision Register"):
+        asyncio.run(history.check_register_write("ws", "document", 25, 40, DOC, research_links=[DOC]))
