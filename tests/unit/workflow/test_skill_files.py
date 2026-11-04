@@ -10,18 +10,21 @@ from support.paths import PLUGINS, REPO
 SKILL_FILES = sorted(p for p in PLUGINS.glob("horology-*/skills/**/*.md"))
 LINK = re.compile(r"\]\(([^)#\s]+)(?:#[^)]*)?\)")
 
-# The Claude supervisor's dispatch adapter lives outside the plugin; build_skill_zips.py copies it in
-# as the supervisor's references/dispatch.md. Check it as the file it becomes in the zip.
+# Each harness keeps its supervisor dispatch adapter beside its builder; the builder copies it in as the
+# supervisor's references/dispatch.md, which doesn't exist in plugins/. Check each as the file it becomes.
 CLAUDE_DISPATCH = REPO / "scripts/ops/claude/horology_supervisor_dispatch.md"
+CODEX_DISPATCH = REPO / "scripts/ops/codex/horology_supervisor_dispatch.md"
 SUPERVISOR_DISPATCH = PLUGINS / "horology-workflows/skills/horology-supervisor/references/dispatch.md"
+ADAPTERS = {CLAUDE_DISPATCH: "claude", CODEX_DISPATCH: "codex"}
+PACKAGED_ONLY = {SUPERVISOR_DISPATCH.resolve()}  # present in every package, absent from the source tree
 # (source file, where it is packaged): plugin files are packaged where they are.
-PACKAGED = [(p, p) for p in SKILL_FILES] + [(CLAUDE_DISPATCH, SUPERVISOR_DISPATCH)]
+PACKAGED = [(p, p) for p in SKILL_FILES] + [(adapter, SUPERVISOR_DISPATCH) for adapter in ADAPTERS]
 
 
 def _packaged_id(pair):
     source, packaged = pair
     name = str(packaged.relative_to(PLUGINS))
-    return name if source == packaged else "claude:" + name
+    return f"{ADAPTERS[source]}:{name}" if source in ADAPTERS else name
 
 # References shared by both plugins. Codex packages each plugin on its own, so each keeps a copy.
 SHARED = [
@@ -45,7 +48,7 @@ def test_links_resolve_inside_the_plugin(pair):
     plugin = packaged.relative_to(PLUGINS).parts[0]
     for target in _local_links(path):
         resolved = (packaged.parent / target).resolve()
-        assert resolved.exists(), f"{target} does not exist"
+        assert resolved.exists() or resolved in PACKAGED_ONLY, f"{target} does not exist"
         assert resolved.is_relative_to((PLUGINS / plugin).resolve()), f"{target} leaves the {plugin} plugin"
 
 
@@ -160,9 +163,10 @@ def test_supervisor_core_delegates_dispatch_to_the_packaged_adapter():
     skill = PLUGINS / "horology-workflows/skills/horology-supervisor"
     supervisor = (skill / "SKILL.md").read_text()
     runs = (skill / "references/runs.md").read_text()
-    codex = (skill / "references/dispatch.md").read_text()
-    claude = (REPO / "scripts/ops/claude/horology_supervisor_dispatch.md").read_text()
+    codex = CODEX_DISPATCH.read_text()
+    claude = CLAUDE_DISPATCH.read_text()
 
+    assert not SUPERVISOR_DISPATCH.exists(), "each builder supplies dispatch.md; plugins/ stays harness-neutral"
     assert "[dispatch adapter](references/dispatch.md)" in supervisor
     assert "claiming supervisor harness" in runs
     assert "**Codex** and **ChatGPT Work**" in codex
@@ -197,3 +201,35 @@ def test_claude_supervisor_zip_substitutes_only_its_dispatch_adapter(tmp_path):
     assert "ChatGPT Work rows" in dispatch
     assert "`create_thread`" not in dispatch
     assert "[dispatch adapter](references/dispatch.md)" in supervisor
+
+
+def _codex_builder():
+    script = REPO / "scripts/ops/codex/build_codex_plugins.py"
+    spec = importlib.util.spec_from_file_location("build_codex_plugins", script)
+    builder = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(builder)
+    return builder
+
+
+def test_codex_workflows_zip_gets_its_config_and_only_its_dispatch_adapter(tmp_path):
+    builder = _codex_builder()
+    builder.build(PLUGINS / "horology-workflows", tmp_path)
+
+    with zipfile.ZipFile(tmp_path / "horology-workflows.zip") as archive:
+        dispatch = archive.read(builder.DISPATCH_PATH).decode()
+        manifest = archive.read("plugin.json").decode()
+        names = archive.namelist()
+    assert "**Codex** and **ChatGPT Work**" in dispatch and "`create_thread`" in dispatch
+    assert "`claude -p" not in dispatch
+    assert '"name": "welladino-workflows"' in manifest
+    assert "skills/horology-supervisor/SKILL.md" in names
+
+
+def test_codex_config_lives_beside_its_builder_not_in_plugins():
+    assert not list(PLUGINS.glob("*/.codex-plugin")), "Codex config belongs in scripts/ops/codex/plugins/"
+    configured = {p.parent.name for p in (REPO / "scripts/ops/codex/plugins").glob("*/plugin.json")}
+    assert configured
+    # Cloud Build uploads only some plugin folders, so check the ones present.
+    for name in configured:
+        if (PLUGINS / name).exists():
+            assert (PLUGINS / name / "skills").is_dir(), f"{name} has Codex config but no skills"

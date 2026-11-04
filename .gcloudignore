@@ -17,9 +17,11 @@
 !scripts/ops/mcp/access.py
 !scripts/ops/gcp/
 !scripts/ops/gcp/**
-# The Claude skill-zip builder and the Claude supervisor's dispatch adapter, which the skill-file tests read.
+# The Claude and Codex packaging (builders, Codex config, supervisor dispatch adapters), which the skill-file tests read.
 !scripts/ops/claude/
 !scripts/ops/claude/**
+!scripts/ops/codex/
+!scripts/ops/codex/**
 !shared-runtime/
 !shared-runtime/pyproject.toml
 !shared-runtime/horology_runtime/
