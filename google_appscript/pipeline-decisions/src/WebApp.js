@@ -221,6 +221,7 @@ function reviewRecord(decision, item, tables) {
     editable, revisable,
     version: editable || revisable ? reviewVersion(item, decision, options) : '',
     itemStatus: p ? p.Status : '',
+    itemType: p ? p.Type || '' : '',
     reviewTrigger: d['Review Trigger'] || '',
     reworkInstructions: d['Rework instructions'] || ''
   };

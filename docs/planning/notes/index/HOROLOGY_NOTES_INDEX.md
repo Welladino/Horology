@@ -36,6 +36,7 @@ Implementation notes under `docs/planning/notes/`, grouped by area. Add a row wh
 | 2026-11-03 | [Stage 4 items end Completed](../2026-11-03_stage-4-completed_note.md) | Synthesis saved means Completed at Stage 4; a proposed Specialist deliverable decision stays open to keep or reopen the item (HOR-14, item 67, Decision 15) |
 | 2026-11-04 | [Drive-only Research Links](../2026-11-04_drive-only-research-links_note.md) | Decision Register Research Links holds Drive files only; `check_register_write` refuses other links; Decisions 13 and 14 relinked to Drive documents (HOR-9, item 68) |
 | 2026-11-04 | [Pages tab for published pages](../2026-11-04_pages-tab_note.md) | Document Index Pages tab lists every Cloudflare page; the publishing skill adds the row after a verified publish; backfill of items 39 and 45 (item 70, HOR-9) |
+| 2026-11-04 | [Stage 1 document and Implementation report](../2026-11-04_stage-1-document-and-implementation-report_note.md) | Every route writes a Stage 1 Drive document plus Steps rows; the implementation route writes an Implementation report and a Stage 4 page and ends Completed at Stage 4; Graph Inclusion stays the founder's (item 69, HOR-9) |
 
 ## MCP gateway
 

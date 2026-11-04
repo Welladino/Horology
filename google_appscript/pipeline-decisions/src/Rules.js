@@ -3,7 +3,8 @@
  * references); a Python test checks the two agree. "REVIEW" means the Pipeline
  * stage corresponding to Review stage. Agent status Ready applies only to agent rows.
  * An Implementation question (implementation route) resumes the item at Stage 3, In progress.
- * A Stage 4 item is Completed when its synthesis is saved; its proposed Specialist deliverable
+ * A Stage 4 item is Completed when its synthesis is saved, or on the implementation route when its
+ * Implementation report and the page made from it are saved; its proposed Specialist deliverable
  * decision stays open (OPEN_REVIEW), so accepting changes nothing and rework, park or reject reopen it.
  */
 

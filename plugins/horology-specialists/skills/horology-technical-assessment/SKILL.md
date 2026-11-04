@@ -7,7 +7,7 @@ description: Investigate a selected software change before committing to impleme
 
 ## When to use
 
-Use for Stage 1 evaluation of a code-related Pipeline item on the investigation route (a question about whether or how to build a change, or a known issue needing scope/feasibility assessment), or for a step of an implementation-route item (Feature, Enhancement, Refactor, Fix) that asks for an assessment. Implementation-route items are otherwise planned and implemented by the supervisor run itself. A known symptom can shorten the investigation; it does not prove the diagnosis. This skill produces an assessment, not implementation or a Stage 3 repo planning note.
+Use for Stage 1 evaluation of a code-related Pipeline item on the investigation route (a question about whether or how to build a change, or a known issue needing scope/feasibility assessment), or as the Stage 1 document of an implementation-route item (Feature, Enhancement, Refactor, Fix) whose change needs options compared before it is built, or for a step that asks for an assessment. On the implementation route the run carries on to Stage 3 without a Stage 2 review, so don't set Awaiting decision or draft a decision there; an Implementation question, if one comes up, links this document. Implementation-route items are otherwise planned (Plan template) and implemented by the supervisor run itself. A known symptom can shorten the investigation; it does not prove the diagnosis. This skill produces an assessment, not implementation or a Stage 3 repo planning note.
 
 ## Required context and locations
 
