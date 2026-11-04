@@ -44,6 +44,7 @@ Implementation notes under `docs/planning/notes/`, grouped by area. Add a row wh
 | 2026-10-11 | [Supabase TLS](../2026-10-11_gateway-supabase-tls_note.md) | The official public CA, packaged in the image |
 | 2026-10-12 | [Provider scope](../2026-10-12_gateway-provider-scope_note.md) | Alexandria and extraction added, GitHub and Google removed, public HTTPS scraping |
 | 2026-10-13 | [Shared policy and budgets](../2026-10-13_gateway-shared-policy-and-budgets_note.md) | No assignments, Audience sign-in, baked policy, daily and monthly caps |
+| 2026-11-04 | [Multi-page Pages publishing](../2026-11-04_multipage-pages-publishing_note.md) | Extra HTML, JS and JSON files, page-named branches, Access unchanged |
 
 ## Document graph
 

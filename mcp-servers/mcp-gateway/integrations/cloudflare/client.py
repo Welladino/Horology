@@ -1,4 +1,4 @@
-"""Upload a bounded static synthesis to a configured workspace Pages project.
+"""Upload a bounded static page or small site to a configured workspace Pages project.
 
 The asset protocol and hash match Cloudflare Wrangler's Pages uploader.
 Credentials never enter an MCP tool argument or result.
@@ -22,15 +22,22 @@ PROJECT_NAME = re.compile(r"[a-z][a-z0-9-]{0,62}\Z")
 CONTENT_TYPES = {
     ".css": "text/css",
     ".gif": "image/gif",
+    ".html": "text/html",
     ".jpeg": "image/jpeg",
     ".jpg": "image/jpeg",
+    ".js": "text/javascript",
+    ".json": "application/json",
     ".png": "image/png",
     ".svg": "image/svg+xml",
     ".webp": "image/webp",
 }
-MAX_HTML = 2 * 1024 * 1024
+TEXT_TYPES = {".html", ".js", ".json"}
+MAX_HTML = 2 * 1024 * 1024  # index.html and each extra .html, .js or .json file
 MAX_TOTAL = 8 * 1024 * 1024
-MAX_ASSETS = 24
+MAX_ASSETS = 64
+# Cloudflare truncates branch aliases to 28 characters; refuse longer names so two never collide.
+MAX_BRANCH = 28
+PAGE_NAME = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
 
 
 def _file_hash(data: bytes, path: str) -> str:
@@ -46,7 +53,7 @@ def _files(html: str, assets: list[dict]) -> dict[str, tuple[bytes, str]]:
     if len(html_bytes) > MAX_HTML:
         raise Denied("HTML exceeds the 2 MiB limit")
     if not isinstance(assets, list) or len(assets) > MAX_ASSETS:
-        raise Denied("At most 24 image or CSS assets are allowed")
+        raise Denied(f"At most {MAX_ASSETS} extra files are allowed")
     files = {"index.html": (html_bytes, "text/html")}
     total = len(html_bytes)
     for asset in assets:
@@ -59,16 +66,22 @@ def _files(html: str, assets: list[dict]) -> dict[str, tuple[bytes, str]]:
         parts = PurePosixPath(path).parts
         if any(part in (".", "..") or part.startswith(".") for part in parts) or path in files:
             raise Denied("Duplicate or hidden asset path")
-        content_type = CONTENT_TYPES.get(PurePosixPath(path).suffix.lower())
+        # _worker.js, _headers, _redirects, _routes.json and functions/ control Pages behaviour.
+        if parts[0].startswith("_") or parts[0].lower() == "functions":
+            raise Denied("Pages control files are not allowed")
+        suffix = PurePosixPath(path).suffix.lower()
+        content_type = CONTENT_TYPES.get(suffix)
         if content_type is None or not isinstance(encoded, str):
-            raise Denied("Only image and CSS assets are allowed")
+            raise Denied("Only HTML, JavaScript, JSON, CSS and image files are allowed")
         try:
             data = base64.b64decode(encoded, validate=True)
         except (binascii.Error, ValueError) as exc:
             raise Denied("Asset base64 is invalid") from exc
+        if suffix in TEXT_TYPES and len(data) > MAX_HTML:
+            raise Denied(f"{path} exceeds the 2 MiB limit for a text file")
         total += len(data)
         if total > MAX_TOTAL:
-            raise Denied("Synthesis exceeds the 8 MiB limit")
+            raise Denied("Upload exceeds the 8 MiB limit")
         files[path] = (data, content_type)
     return files
 
@@ -85,13 +98,24 @@ def _result(response: httpx.Response):
     return body.get("result")
 
 
-async def publish(pipeline_id: int, html: str, assets: list[dict], project: str) -> dict:
+def branch_name(pipeline_id: int, page: str | None = None) -> str:
     if isinstance(pipeline_id, bool) or not isinstance(pipeline_id, int) or not 1 <= pipeline_id <= 999999999:
         raise Denied("Pipeline ID must be a positive number")
+    if page is None or page == "":
+        return f"pipeline-{pipeline_id}"
+    if not isinstance(page, str) or not PAGE_NAME.fullmatch(page):
+        raise Denied("Page name must be lowercase letters and digits separated by single hyphens")
+    branch = f"pipeline-{pipeline_id}-{page}"
+    if len(branch) > MAX_BRANCH:
+        raise Denied(f"pipeline-<ID>-<page> must be at most {MAX_BRANCH} characters")
+    return branch
+
+
+async def publish(pipeline_id: int, html: str, assets: list[dict], project: str, page: str | None = None) -> dict:
+    branch = branch_name(pipeline_id, page)
     if not isinstance(project, str) or not PROJECT_NAME.fullmatch(project):
         raise Denied("Cloudflare project is not configured")
     files = _files(html, assets)
-    branch = f"pipeline-{pipeline_id}"
     api_token = credential("CLOUDFLARE_PAGES_API_TOKEN")
     account_headers = {"Authorization": f"Bearer {api_token}"}
     project_path = f"/accounts/{ACCOUNT_ID}/pages/projects/{project}"
@@ -120,7 +144,7 @@ async def publish(pipeline_id: int, html: str, assets: list[dict], project: str)
             files={
                 "branch": (None, branch),
                 "manifest": (None, json.dumps(manifest)),
-                "commit_message": (None, f"Publish synthesis for Pipeline {pipeline_id}"),
+                "commit_message": (None, f"Publish {branch} for Pipeline {pipeline_id}"),
             },
         )
         deployment = _result(response)
@@ -130,7 +154,7 @@ async def publish(pipeline_id: int, html: str, assets: list[dict], project: str)
             deployment = _result(response)
             stage = deployment.get("latest_stage") or {}
             if stage.get("status") == "success":
-                return {"pipeline_id": pipeline_id, "url": f"https://{branch}.{project}.pages.dev/",
+                return {"pipeline_id": pipeline_id, "branch": branch, "url": f"https://{branch}.{project}.pages.dev/",
                         "deployment_id": deployment_id, "file_count": len(files)}
             if stage.get("status") in ("failure", "canceled"):
                 raise RuntimeError(f"Cloudflare deployment {deployment_id} {stage['status']}")
