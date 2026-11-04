@@ -69,11 +69,11 @@ function searchPipelineItems(query) {
   }).map(row => String(row.data.ID));
 }
 
+// Domain and Entity can change here; existing Drive documents stay where they were saved.
 const PIPELINE_EDIT_FIELDS = ['Title', 'Type', 'Summary / Why',
   'Next step / Research question', 'Revisit trigger', 'Agent status',
-  'Agent type', 'Run location'];
-const PIPELINE_VERSION_FIELDS = ['ID', 'Domain', 'Entity', 'Status', 'Stage',
-  'Updated', ...PIPELINE_EDIT_FIELDS];
+  'Agent type', 'Run location', 'Domain', 'Entity'];
+const PIPELINE_VERSION_FIELDS = ['ID', 'Status', 'Stage', 'Updated', ...PIPELINE_EDIT_FIELDS];
 
 function pipelineEditVersion(data) {
   return JSON.stringify(PIPELINE_VERSION_FIELDS.map(key => String(data[key] || '')));
@@ -114,6 +114,17 @@ function updatePipelineItemFromWeb(request) {
     for (const key of ['Type', 'Agent status', 'Agent type', 'Run location']) {
       if (next[key] && options[key].length && !options[key].includes(next[key]))
         errors.push(key + ' must be one of: ' + options[key].join(', ') + '.');
+    }
+    // A changed Domain must be on the Domains tab; Entity must be one of its entities, and is
+    // cleared for a domain that lists none. An unchanged legacy value is left alone.
+    if (next.Domain !== String(row.data.Domain || '') || next.Entity !== String(row.data.Entity || '')) {
+      const tab = openBook(DECISIONS_CONFIG.WEB_PIPELINE_SHEET_ID).getSheetByName('Domains');
+      const domains = tab ? domainMap(tab.getDataRange().getDisplayValues()) : {};
+      const entities = domains[next.Domain];
+      if (!entities) errors.push('Choose a domain from the Domains tab.');
+      else if (!entities.length) next.Entity = '';
+      else if (next.Entity && !entities.includes(next.Entity))
+        errors.push(next.Entity + ' is not an entity of ' + next.Domain + '.');
     }
     const before = String(row.data['Agent status'] || 'No action').trim();
     const after = next['Agent status'] || 'No action';

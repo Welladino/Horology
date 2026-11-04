@@ -31,6 +31,7 @@ Implementation notes under `docs/planning/notes/`, grouped by area. Add a row wh
 | 2026-10-29 | [Implementation route](../2026-10-29_implementation-route_note.md) | Type chooses the route; Feature/Enhancement/Refactor/Fix plan at Stage 1 and implement at Stage 3, In progress, Completed or Implementation question (HOR-12 a) |
 | 2026-10-29 | [Web workspace scale and usability](../2026-10-29_web-workspace-scale-and-ux_note.md) | Light lists with details on open, a 60-second list cache, embedded first list, hash navigation, search, chips, sort and paging (HOR-12 c) |
 | 2026-10-30 | [Web workspace Triage board](../2026-10-30_web-workspace-triage-board_note.md) | Dark top bar, decisions inbox with reading pane, Pipeline board by workflow column, Build/Investigate Type filter (HOR-12 c, item 52) |
+| 2026-11-03 | [Web item quick edit](../2026-11-03_web-item-quick-edit_note.md) | Numbered steps kept with their marker, Agent and domain quick edit on the item page, Domain and Entity validation (HOR-15, item 65) |
 | 2026-11-02 | [Drive-first agent documents](../2026-11-02_drive-first-agent-documents_note.md) | Every deliverable in Drive with the template the agent chooses; repo docs only where a repository keeps its own, on the item's branch; ClickUp sync accepts Drive links only |
 
 ## MCP gateway
