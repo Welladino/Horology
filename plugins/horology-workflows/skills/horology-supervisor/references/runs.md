@@ -6,7 +6,7 @@ Runs are recorded in the execution history (Neon), through the document-graph co
 
 Call `claim_item(pipeline_id, agent_type, run_location, kind)` once per item, before any work on it:
 
-- `agent_type`: the claiming supervisor harness, Claude Code or Codex. The packaged dispatch adapter gives its claim value; this can differ from the child Agent type (for example, a Codex supervisor dispatching ChatGPT Work).
+- `agent_type`: the claiming supervisor harness, Claude Code, Codex or Hermes. The packaged dispatch adapter gives its claim value; this can differ from the child Agent type (for example, a Codex supervisor dispatching ChatGPT Work). Hermes Coordinator does not claim; Operator is the claiming item harness and claims the item as Hermes in item mode.
 - `run_location`: the adapter's effective location. This is normally the item's Run location (blank means Local); a cloud-only child uses Cloud without editing the row.
 - `kind`: `run` for the supervisor, `plan` for the planner.
 

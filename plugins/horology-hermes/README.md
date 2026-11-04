@@ -12,7 +12,9 @@ part of the Claude or Codex subscription-agent distributions.
 
 Shared workflow, specialist and MCP skills remain in the other
 `plugins/horology-*` packages. The Hermes bootstrap installs those shared
-skills for Coordinator and Operator, removes the subscription-agent supervisor
-from both profiles, installs `horology-coordinator` only for Coordinator, and
-installs `horology-composio-reader` only for Coordinator and
-`horology-composio-guide` only for Operator.
+skills for Coordinator and Operator, installs the harness-neutral supervisor
+with `scripts/ops/hermes/horology_supervisor_dispatch.md` as its dispatch
+adapter, installs `horology-coordinator` only for Coordinator, and installs
+`horology-composio-reader` only for Coordinator and `horology-composio-guide`
+only for Operator. Every destination is cleared before copying so removed skill
+files cannot linger in the persistent Hermes volume.

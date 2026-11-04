@@ -167,7 +167,8 @@ Current as of **27 October 2026**.
 ### Profile boundaries
 
 - **Coordinator** has a read-only Composio session for Pipeline, Locations,
-  registers, Drive and Docs.
+  registers, Drive and Docs, plus a read-only allow-list on the deployed
+  document graph for supervisor search and status mode.
 - **Operator** has no terminal or code-execution tool. It has a separate,
   selectively write-capable Composio session for approved Google Workspace
   work.
@@ -186,11 +187,17 @@ active profile directory. Their recoverable local archive is
 
 | Connection | Profile | Boundary |
 |---|---|---|
+| Document graph | Coordinator | Deployed HTTPS MCP with OAuth; read-only search, document, entity, topic and run-history tools only |
 | Document graph and restricted gateway | Operator | Deployed HTTPS MCPs with OAuth; gateway selects 13 tools and excludes `publish_synthesis` |
 | GitHub MCP | Operator | Read-only GitHub information through a fine-grained PAT |
 | Git | Trusted `/workspace` checkout | Clone, fetch and pull only; it does not provide GitHub write access |
 | Composio | Coordinator | Read-only Google workspace inspection |
 | Composio | Operator | Approved Google Workspace reads and writes allowed by its Session Config |
+
+The founder must complete Coordinator's document-graph OAuth login before the
+live status check. Explorer's implementation-route smoke check separately
+waits for the founder-provided GitHub hook; do not copy Operator credentials
+into Explorer to bypass it.
 
 The bundled GitHub skill remains disabled until a maintained replacement is
 selected. Composio permissions and MCP URLs are maintained separately for
@@ -247,10 +254,12 @@ Maintained shared skills live in:
 - `plugins/horology-document-graph/skills/`;
 - `plugins/horology-tools/skills/`.
 
-The bootstrap installs them for Coordinator and Operator, except for the
-subscription-agent `horology-supervisor`. Coordinator instead receives
-`plugins/horology-hermes/skills/horology-coordinator`; Operator receives
-neither supervisor nor coordinator. Explorer receives no workflow skills.
+The bootstrap clears and reinstalls them for Coordinator and Operator. Both
+receive the harness-neutral `horology-supervisor`, with
+`scripts/ops/hermes/horology_supervisor_dispatch.md` installed as its
+`references/dispatch.md`; Coordinator also receives
+`plugins/horology-hermes/skills/horology-coordinator`. Explorer receives no
+workflow skills and instead receives bounded code tasks through Kanban.
 
 When changing a skill:
 

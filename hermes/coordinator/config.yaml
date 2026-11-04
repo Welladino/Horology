@@ -36,9 +36,23 @@ platform_toolsets:
     - skills
     - todo
 mcp_servers:
-  document-graph:
-    url: http://document-graph-mcp:8765/mcp
-    enabled: false
+  document-graph-https:
+    url: https://document-graph-366292507424.us-central1.run.app/mcp
+    auth: oauth
+    enabled: true
+    tools:
+      include:
+        - search_documents
+        - get_document
+        - get_related_documents
+        - list_documents
+        - list_topics
+        - get_topic
+        - find_entity
+        - entity_documents
+        - list_entities
+        - list_runs
+        - get_item_history
   mcp-gateway:
     url: http://horology-mcp-gateway:8767/mcp
     enabled: false

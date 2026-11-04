@@ -1,6 +1,6 @@
 # Repository guidance
 
-Horology is a personal or small trusted-group agent operating system. Its main workflow uses Claude, ChatGPT or Codex subscriptions with versioned skills, Google Sheets as the visible workflow record, Drive for source material and deliverables, Apps Script for a lightweight UI, and restricted MCP services backed by Neon. Hermes is an optional local runtime with one default agent; do not reintroduce the retired profile/kanban design.
+Horology is a personal or small trusted-group agent operating system. Its main workflow uses Claude, ChatGPT, Codex or the optional local Hermes runtime with versioned skills, Google Sheets as the visible workflow record, Drive for source material and deliverables, Apps Script for a lightweight UI, and restricted MCP services backed by Neon. Hermes uses Coordinator, Operator and Explorer with bounded Kanban routing; keep those profile and permission boundaries intact.
 
 Read [the architecture overview](docs/architecture/overview.md) before changing system behavior and [workspace records](docs/architecture/subscription-agents/workspace-records.md) before changing workbook logic.
 

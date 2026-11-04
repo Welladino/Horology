@@ -27,7 +27,7 @@ fields:
     values: [No action, Plan, Ready]
     default: No action
   Agent type:
-    values: [Claude Code, Codex, Manual, Unassigned]
+    values: [Claude Code, Codex, ChatGPT Work, Hermes, Manual, Unassigned]
     default: Unassigned
   Run location:
     values: [Local, Cloud]
@@ -99,11 +99,12 @@ transitions:
 
   - id: select
     actor: founder
-    from: {Agent status: [No action, Plan], Status: [Inbox, Rework, Approved, In progress], Agent type: [Claude Code, Codex]}
+    from: {Agent status: [No action, Plan], Status: [Inbox, Rework, Approved, In progress], Agent type: [Claude Code, Codex, ChatGPT Work, Hermes]}
     to: {Agent status: Ready, Stage: [Stage 1, Stage 3]}
     when: >-
-      The founder chooses Agent type and Run location and selects the item for a run. Manual and Unassigned
-      items are never Ready. In progress applies to implementation-route items whose run failed or stopped.
+      The founder chooses Agent type and Run location and selects the item for a run. ChatGPT Work is Cloud
+      only; Hermes is Local only. Manual and Unassigned items are never Ready. In progress applies to
+      implementation-route items whose run failed or stopped.
 
   - id: start-run
     actor: supervisor
@@ -307,5 +308,6 @@ rules:
   - Only the founder makes an item Ready, directly or through a decision (accept or rework), and only the founder chooses Agent type and Run location and decides.
   - Agents never record a decision as accepted, parked or rejected.
   - Each platform runs only rows whose Agent type is that platform. Manual rows are never run by agents.
+  - ChatGPT Work rows use Run location Cloud and are claimed by the Codex supervisor harness. Hermes rows use Run location Local and are claimed by Operator as Hermes; Coordinator only dispatches them through Kanban.
   - Ready selects the stated next step only. Only an implementation-route Type (Feature, Enhancement, Refactor, Fix) authorises implementation; investigation-route items never do.
   - Graph Inclusion on the Document Index is the founder's. Agents add new rows with it FALSE and never set it TRUE or change a value already there.

@@ -49,8 +49,27 @@ copy_skill_group() {
   local destination="$2"
 
   [[ -d "${source}" ]] || die "skill source not found: ${source}"
+  # A single skill is copied to its exact destination. A plugin skill group is
+  # merged into a shared namespace one skill at a time (horology-tools and
+  # horology-document-graph intentionally share one). Clear each skill folder,
+  # not the whole group, so removed files do not linger and neighbours survive.
+  if [[ -f "${source}/SKILL.md" ]]; then
+    docker exec --user root "${CONTAINER}" rm -rf "${destination}"
+    docker exec --user root "${CONTAINER}" mkdir -p "${destination}"
+    docker cp "${source}/." "${CONTAINER}:${destination}/"
+    return
+  fi
+
+  local skill_source skill_name skill_destination
   docker exec --user root "${CONTAINER}" mkdir -p "${destination}"
-  docker cp "${source}/." "${CONTAINER}:${destination}/"
+  for skill_source in "${source}"/*; do
+    [[ -d "${skill_source}" && -f "${skill_source}/SKILL.md" ]] || continue
+    skill_name="$(basename "${skill_source}")"
+    skill_destination="${destination}/${skill_name}"
+    docker exec --user root "${CONTAINER}" rm -rf "${skill_destination}"
+    docker exec --user root "${CONTAINER}" mkdir -p "${skill_destination}"
+    docker cp "${skill_source}/." "${CONTAINER}:${skill_destination}/"
+  done
 }
 
 profile_exists() {
@@ -130,10 +149,11 @@ for profile_root in /opt/data /opt/data/profiles/operator; do
   copy_skill_group "${REPO_ROOT}/plugins/horology-specialists/skills" "${profile_root}/skills/horology-specialists"
   copy_skill_group "${REPO_ROOT}/plugins/horology-tools/skills" "${profile_root}/skills/horology-tools"
   copy_skill_group "${REPO_ROOT}/plugins/horology-document-graph/skills" "${profile_root}/skills/horology-tools"
-  # This supervisor dispatches Claude/Codex sessions and does not belong in
-  # Hermes' profile router.
-  docker exec --user root "${CONTAINER}" \
-    rm -rf "${profile_root}/skills/horology-workflows/horology-supervisor"
+  # The source supervisor is harness-neutral. Install Hermes' adapter in the
+  # package-only dispatch path, as the Claude and Codex builders do.
+  copy_runtime_file \
+    "${REPO_ROOT}/scripts/ops/hermes/horology_supervisor_dispatch.md" \
+    "${profile_root}/skills/horology-workflows/horology-supervisor/references/dispatch.md"
 done
 
 note "Installing Hermes profile-specific skills..."

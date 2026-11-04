@@ -11,12 +11,20 @@ const ITEM_FIELDS = ['Title', 'Domain', 'Entity', 'Type', 'Summary / Why', 'Next
 const ITEM_OPTIONS = {
   'Type': ['Idea', 'Research', 'Direction', 'Plan', 'Feature', 'Enhancement', 'Refactor', 'Fix'],
   'Agent status': ['No action', 'Plan', 'Ready'],
-  'Agent type': ['Unassigned', 'Claude Code', 'Codex', 'Manual'],
+  'Agent type': ['Unassigned', 'Claude Code', 'Codex', 'ChatGPT Work', 'Hermes', 'Manual'],
   'Run location': ['Local', 'Cloud'],
   'Link type': ['GitHub', 'Website', 'Service endpoint', 'Other']
 };
 
 const IMPLEMENTATION_TYPES = ['Feature', 'Enhancement', 'Refactor', 'Fix'];
+const EXECUTABLE_AGENT_TYPES = ['Claude Code', 'Codex', 'ChatGPT Work', 'Hermes'];
+
+function agentLocationError(agentType, runLocation) {
+  const agent = String(agentType || '').trim(), location = String(runLocation || '').trim();
+  if (agent === 'ChatGPT Work' && location !== 'Cloud') return 'ChatGPT Work uses Run location Cloud only.';
+  if (agent === 'Hermes' && location !== 'Local') return 'Hermes uses Run location Local only.';
+  return '';
+}
 
 function itemRoute(type) {
   return IMPLEMENTATION_TYPES.includes(String(type || '').trim()) ? 'implementation' : 'investigation';
@@ -63,9 +71,13 @@ function itemValues(form, domains, options, ids, today) {
     if (f[k] && options[k].length && options[k].indexOf(f[k]) < 0) errors.push(k + ' must be one of: ' + options[k].join(', ') + '.');
   });
   if (f['Agent status'] === 'Ready') {
-    if (['Claude Code', 'Codex'].indexOf(f['Agent type']) < 0) errors.push('A Ready item needs Agent type Claude Code or Codex.');
+    if (!EXECUTABLE_AGENT_TYPES.includes(f['Agent type']))
+      errors.push('A Ready item needs Agent type Claude Code, Codex, ChatGPT Work or Hermes.');
     if (!f['Next step / Research question']) errors.push('A Ready item needs a Next step / Research question.');
+    if (!f['Run location']) errors.push('A Ready item needs a Run location.');
   }
+  const locationError = agentLocationError(f['Agent type'], f['Run location']);
+  if (locationError) errors.push(locationError);
   if (errors.length) return {errors};
   const values = Object.assign({}, f, {
     'ID': String(nextItemId(ids)), 'Status': 'Inbox', 'Created': today, 'Updated': today,

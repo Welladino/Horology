@@ -32,7 +32,7 @@ const OPEN_REVIEW = [{"Status": "Awaiting decision"},
   {"Status": "Completed", "Stage": "Stage 4", "Review stage": "Specialist deliverable"}];
 
 // Only these Agent types can be made Ready; Manual and Unassigned never are.
-const AGENT_TYPES = ['claude code', 'codex'];
+const AGENT_TYPES = ['claude code', 'codex', 'chatgpt work', 'hermes'];
 
 function norm(x) { return String(x == null ? '' : x).trim().toLowerCase(); }
 

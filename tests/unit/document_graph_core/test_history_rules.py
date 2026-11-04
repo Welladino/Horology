@@ -9,6 +9,7 @@ from graph_core.history import service as history, workflow
 
 def test_workflow_values_come_from_workflow_yaml():
     assert workflow.values("Agent status") == ["No action", "Plan", "Ready"]
+    assert workflow.values("Agent type") == ["Claude Code", "Codex", "ChatGPT Work", "Hermes", "Manual", "Unassigned"]
     assert workflow.values("Run location") == ["Local", "Cloud"]
     assert workflow.values("Not a field") is None
 
@@ -44,12 +45,23 @@ def test_ids_are_normalised():
 @pytest.mark.parametrize("kwargs, message", [
     ({"agent_type": "ChatGPT"}, "agent_type"),
     ({"run_location": "Moon"}, "Run location"),
+    ({"agent_type": "Hermes", "run_location": "Cloud"}, "Hermes claims"),
     ({"kind": "review"}, "kind"),
 ])
 def test_claims_are_validated_before_any_database_call(kwargs, message):
     args = {"agent_type": "Claude Code", "run_location": "Local", "kind": "run", **kwargs}
     with pytest.raises(ValueError, match=message):
         asyncio.run(history.claim("ws", 42, **args))
+
+
+def test_hermes_can_claim_a_local_item(monkeypatch):
+    repository = AsyncMock()
+    repository.claim.return_value = (None, None, {
+        "id": 7, "started_at": "2026-11-04T00:00:00Z", "claim_expires": "2026-11-04T02:00:00Z"})
+    monkeypatch.setattr(history, "_repository", lambda: repository)
+    result = asyncio.run(history.claim("ws", 42, "Hermes", "Local", "run"))
+    assert result["claimed"] is True and result["run_id"] == "R-7"
+    repository.claim.assert_awaited_once_with("ws", "42", "Hermes", "run", "Local", history.CLAIM_HOURS)
 
 
 def test_finish_needs_a_known_status():

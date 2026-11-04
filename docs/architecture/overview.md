@@ -1,6 +1,6 @@
 # Architecture
 
-Horology combines human-readable workspace records with subscription agents and narrowly scoped backend services. The primary workflow runs in Claude, ChatGPT or Codex using versioned skills. Hermes is an optional local agent runtime with one default agent; it is not currently the orchestrator for the full Sheets-and-Drive workflow.
+Horology combines human-readable workspace records with subscription agents and narrowly scoped backend services. The workflow runs in Claude, ChatGPT, Codex or the optional local Hermes runtime using versioned skills. Hermes routes Pipeline work across Coordinator, Operator and Explorer through Kanban.
 
 ```mermaid
 flowchart LR
@@ -49,7 +49,7 @@ The diagram intentionally shows the major path rather than every connection. The
 | Gateway | Fixed external tools, shared budgets, URL/output limits and protected Pages publishing. |
 | Document graph | Workspace discovery, run claims/history and searchable retained knowledge. |
 | Neon | Protected machine-facing persistence; it is not the everyday UI or the canonical Drive file store. |
-| Hermes | Optional local runtime for direct agent work and experimentation. It currently has one default agent rather than the retired profile/kanban design. |
+| Hermes | Optional local Pipeline harness. Coordinator dispatches and reports status, Operator owns item-mode records and non-code work, and Explorer performs repository steps through dependent Kanban tasks. |
 
 Agents never receive general database or provider credentials. Sheets and Drive access comes from native platform connectors; those connector permissions are separate from gateway policy. See [Security and trust boundaries](security.md).
 

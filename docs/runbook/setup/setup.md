@@ -167,8 +167,8 @@ Some current skill sources still contain operator-workspace register references,
 
 ## 7. Run your first item
 
-1. Open **Extensions → Horology — Pipeline decisions → Open Horology workspace**, then **Add Pipeline item**. Give it a Title and a Domain, write the question in **Next step / Research question**, set **Agent type** to Claude Code or Codex and **Agent status** to **Ready**, then **Add item**. The form fills the ID, dates, Status (Inbox) and Stage (Stage 1 for a Ready item). You can also type the row into Master yourself, or ask an agent: "capture this idea in the Pipeline".
-2. In a Claude Code or Codex session: "run the Ready items". The supervisor claims the item, runs the specialists and saves their documents in your Agent output folders.
+1. Open **Extensions → Horology — Pipeline decisions → Open Horology workspace**, then **Add Pipeline item**. Give it a Title and a Domain, write the question in **Next step / Research question**, choose Claude Code, Codex, ChatGPT Work or Hermes as **Agent type**, and set **Agent status** to **Ready**, then **Add item**. ChatGPT Work requires Cloud and Hermes requires Local. The form fills the ID, dates, Status (Inbox) and Stage (Stage 1 for a Ready item). You can also type the row into Master yourself, or ask an agent: "capture this idea in the Pipeline".
+2. Ask the matching Claude Code, Codex or Hermes supervisor to "run the Ready items". ChatGPT Work is started by Codex. The item-mode worker claims the item, runs the specialists and saves their documents in your Agent output folders.
 3. When the item reaches **Awaiting decision**, read the documents, then record your decision in the Decision Register (accepted, rework with instructions, parked or rejected). The script applies it.
 
 Ask the supervisor "what's happening?" at any point. For a vague item, set Agent status to **Plan** first and the planner turns it into a sharper question or steps.

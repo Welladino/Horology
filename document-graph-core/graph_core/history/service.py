@@ -56,13 +56,15 @@ def _check(field, value):
 async def claim(workspace, pipeline_id, agent_type, run_location="Local", kind="run"):
     """Claim an item for CLAIM_HOURS. Refused (claimed: false) while another live run holds it."""
     pipeline_id = item_id(pipeline_id)
-    if agent_type not in ("Claude Code", "Codex"):
-        raise ValueError("agent_type must be Claude Code or Codex")
+    if agent_type not in ("Claude Code", "Codex", "Hermes"):
+        raise ValueError("agent_type must be Claude Code, Codex or Hermes")
     _check("Agent type", agent_type)
     run_location = run_location or "Local"
     _check("Run location", run_location)
     if run_location not in ("Local", "Cloud"):
         raise ValueError("run_location must be Local or Cloud")
+    if agent_type == "Hermes" and run_location != "Local":
+        raise ValueError("Hermes claims must use run_location Local")
     if kind not in KINDS:
         raise ValueError(f"kind must be one of {KINDS}")
     held_id, held_expires, created = await _repository().claim(

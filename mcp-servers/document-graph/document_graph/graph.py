@@ -234,7 +234,9 @@ async def claim_item(pipeline_id: int, agent_type: str, run_location: str = "Loc
     """Claim a Pipeline item before working on it, so no other run takes it at the same time.
 
     Call once per item, before starting its work. agent_type is the platform
-    you run on: "Claude Code" or "Codex". run_location is the item's Run
+    you run on: "Claude Code", "Codex" or "Hermes". ChatGPT Work is claimed
+    as Codex by its supervisor; Hermes is claimed as Hermes by Operator.
+    run_location is the item's Run
     location ("Local" or "Cloud"; blank in the sheet means Local). kind is
     "run" for doing the work (supervisor) or "plan" for planning it (planner).
     Returns claimed: true with a run_id (e.g. R-12) and claim_expires (2

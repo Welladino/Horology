@@ -18,7 +18,7 @@ The tests fail if a move or status in `workflow.yaml` is missing from the diagra
 
 ## Run Ready items
 
-Set the item's Agent status to Ready, Agent type to Claude Code or Codex, and Run location to Local or Cloud (blank means Local). Then, in a Claude Code or Codex session opened in the Horology repository:
+Set the item's Agent status to Ready and choose an executable Agent type. Claude Code and Codex may use Local or Cloud; ChatGPT Work uses Cloud only; Hermes uses Local only. Then ask the matching supervisor entry point:
 
 > Use horology-supervisor to run the Ready items.
 
@@ -26,7 +26,7 @@ or for one item:
 
 > Use horology-supervisor to run Pipeline item 42.
 
-The supervisor claims each item through the document graph and starts one session per item. Check progress by asking a session to `list_runs`, or `get_item_history` for one item. Every run needs the document-graph connector. Claude cloud runs need the skills and the document graph and Google connectors on your claude.ai account. Codex runs need the Codex CLI installed and signed in.
+Claude and Codex supervisors claim each item through the document graph and start one session per item. Hermes Coordinator creates one Operator Kanban task per item without claiming; Operator claims it as Hermes/Local, and Coordinator chains Explorer and continuation tasks when implementation needs code. Check progress with `list_runs` or `get_item_history`, and with Kanban for live Hermes tasks. Every run needs the document-graph connector. Claude cloud runs need the skills and the document graph and Google connectors on your claude.ai account. Codex uses native desktop threads. Hermes status mode needs Coordinator's read-only document-graph connection, and its implementation path needs Explorer's founder-provided GitHub hook.
 
 Feature, Enhancement, Refactor and Fix items take the implementation route: one run writes the plan document to Drive and the steps on the Steps tab, moves the item to Stage 3 and implements it, with Status In progress until it finishes. It ends Completed at Stage 4 with an **Implementation report** Google Doc (what changed and why, commits and pull request, tests, changes from the plan and what's left for you, including deploy steps) in the Document Index. No page is made by default; ask a session for one ("make the Stage 4 page for item N") and it builds it from the report, saves the HTML in the Synthesis folder and lists it on the Document Index workbook's Pages tab. If the run needs your choice, it stops at Awaiting decision with an Implementation question for you to answer below. If an implementation run fails, the item stays In progress with Agent status No action; set it Ready again to retry.
 
