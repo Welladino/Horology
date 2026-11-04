@@ -77,18 +77,18 @@ flowchart TB
   proposal["<b>Review · Stage 2</b><br/>Evidence, recommendation and<br/>a proposed decision are ready."]
   decision{"<b>Your decision</b><br/>What should happen next?"}
   deliverable["<b>Specialist deliverable · Stage 3</b><br/>The accepted proposal becomes<br/>the detailed piece of work."]
-  synthesis["<b>Visual synthesis · Stage 4</b><br/>Created in the same run and<br/>returned with the deliverable."]
+  synthesis["<b>Visual synthesis · Stage 4</b><br/>Created in the same run;<br/>the item is then Completed."]
   revise["<b>Rework</b><br/>Your instructions return<br/>the item to Ready."]
   stopped["<b>Parked or rejected</b><br/>No agent action"]
-  done["<b>Completed</b><br/>You accepted the specialist<br/>deliverable after Stage 4 review."]
+  done["<b>Completed</b><br/>Accept the deliverable to keep it,<br/>or reopen it from its decision."]
 
   capture --> plan --> ready
   capture --> ready
   ready --> investigate --> proposal --> decision
-  decision -->|Accept proposal| deliverable --> synthesis --> decision
+  decision -->|Accept proposal| deliverable --> synthesis --> done
   decision -->|Rework| revise --> ready
   decision -->|Park or reject| stopped
-  decision -->|Accept specialist deliverable| done
+  done -->|Reopen: rework, park or reject| decision
 
   classDef captureStyle fill:#f1f3f4,stroke:#5f6368,color:#202124
   classDef selected fill:#e8f0fe,stroke:#1a73e8,color:#174ea6
@@ -112,7 +112,7 @@ Work uses five numbered stages, from capture at Stage 0 through synthesis at Sta
 | **Stage 1, investigate and propose** | Agents research the question, or write a direction, plan or technical assessment, and propose what to do.                                                                      |
 | **Stage 2, your decision**           | You review the documents and record a decision.                                                                                                                                |
 | **Stage 3, the deliverable**         | For an accepted proposal, agents produce the detailed piece: a go-to-market plan, a marketing plan, content drafts, or a planning note for code. Then you review it once more. |
-| **Stage 4, visual synthesis**        | In the same Stage 3 run, the supervisor creates a concise visual artifact that makes the deliverable easier to review. The deliverable and synthesis return together for your decision. |
+| **Stage 4, visual synthesis**        | In the same Stage 3 run, the supervisor creates a concise visual artifact that makes the deliverable easier to review. The item is then **Completed**; you can accept its deliverable decision, or reopen the item with rework, park or reject. |
 
 That is the **investigation route**, for Idea, Research, Direction and Plan items. **Feature, Enhancement, Refactor and Fix** items take the shorter **implementation route**: in one run the agent writes its plan as steps on the Steps tab (Stage 1), moves the item to Stage 3 and does the work, with Status **In progress** throughout. It finishes **Completed** at Stage 3, or, if it needs your choice, stops at Awaiting decision with an **Implementation question** you answer on the decision page; the item then goes back to In progress and Ready, and the next run carries on.
 

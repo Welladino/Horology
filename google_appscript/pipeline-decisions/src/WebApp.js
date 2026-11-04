@@ -205,7 +205,7 @@ function sourceLinks(text) {
 
 function reviewRecord(decision, item, tables) {
   const d = decision.data, p = item && item.data;
-  const editable = !!p && norm(p.Status) === 'awaiting decision' &&
+  const editable = !!p && reviewOpen(p) &&
     String(p['Current decision ID']).trim() === String(d['Decision ID']).trim() &&
     norm(d.Status) === 'proposed' && norm(p['Review stage']) === norm(d['Review stage']);
   const revisable = !!p && !editable && !revise(p, d, 'parked').error;
@@ -258,7 +258,7 @@ function getReviewDashboard(request) {
     const tables = reviewTables(false), current = currentItems(tables.pipeline), pending = [], recent = [];
     tables.register.rows.forEach(row => {
       const d = row.data, item = itemFor(row, current), p = item && item.data;
-      const editable = !!p && norm(p.Status) === 'awaiting decision' &&
+      const editable = !!p && reviewOpen(p) &&
         norm(d.Status) === 'proposed' && norm(p['Review stage']) === norm(d['Review stage']);
       const summary = {
         id: String(d['Decision ID']), pipelineId: String(d['Pipeline ID']),
@@ -305,7 +305,7 @@ function submitDecisionReview(request) {
     const tables = reviewTables();
     const decision = uniqueRow(tables.register, 'Decision ID', id);
     const item = uniqueRow(tables.pipeline, 'ID', decision.data['Pipeline ID']);
-    if (norm(item.data.Status) !== 'awaiting decision' ||
+    if (!reviewOpen(item.data) ||
         String(item.data['Current decision ID']).trim() !== id ||
         norm(decision.data.Status) !== 'proposed' ||
         norm(item.data['Review stage']) !== norm(decision.data['Review stage']))

@@ -3,6 +3,8 @@
  * references); a Python test checks the two agree. "REVIEW" means the Pipeline
  * stage corresponding to Review stage. Agent status Ready applies only to agent rows.
  * An Implementation question (implementation route) resumes the item at Stage 3, In progress.
+ * A Stage 4 item is Completed when its synthesis is saved; its proposed Specialist deliverable
+ * decision stays open (OPEN_REVIEW), so accepting changes nothing and rework, park or reject reopen it.
  */
 
 const OUTCOMES = {
@@ -24,18 +26,28 @@ const OUTCOMES = {
 const REVISE = {"transition": "revise", "decision_statuses": ["accepted", "rework", "parked", "rejected"],
   "item_statuses": ["Approved", "Rework", "Parked", "Rejected", "Completed"]};
 
+// Where an item's current proposed decision can be decided (workflow.yaml open_review).
+const OPEN_REVIEW = [{"Status": "Awaiting decision"},
+  {"Status": "Completed", "Stage": "Stage 4", "Review stage": "Specialist deliverable"}];
+
 // Only these Agent types can be made Ready; Manual and Unassigned never are.
 const AGENT_TYPES = ['claude code', 'codex'];
 
 function norm(x) { return String(x == null ? '' : x).trim().toLowerCase(); }
 
+// True while the item's current proposed decision can be decided.
+function reviewOpen(item) {
+  return OPEN_REVIEW.some(state => Object.keys(state).every(h => norm(item[h]) === norm(state[h])));
+}
+
 /* The change one Pipeline item needs, or {skip} / {error} with the reason.
  * item and decisions are {header: display text} maps. Pure: no sheet access.
  */
 function decide(item, decisions) {
-  if (norm(item['Status']) !== 'awaiting decision') return {skip: 'not awaiting decision'};
+  if (!reviewOpen(item)) return {skip: 'no open review'};
+  const awaiting = norm(item['Status']) === 'awaiting decision';
   const id = String(item['Current decision ID'] || '').trim();
-  if (!id) return {error: 'Awaiting decision but no Current decision ID'};
+  if (!id) return awaiting ? {error: 'Awaiting decision but no Current decision ID'} : {skip: 'no current decision'};
   const matches = decisions.filter(d => String(d['Decision ID']).trim() === id);
   if (matches.length !== 1) return {error: (matches.length ? 'Duplicate' : 'No') + ' Decision Register row ' + id};
   const d = matches[0];
@@ -44,14 +56,22 @@ function decide(item, decisions) {
   const status = norm(d['Status']);
   if (status === 'proposed' || !status) return {skip: 'decision ' + id + ' not decided yet'};
   const stage = String(d['Review stage'] || '').trim();
+  const itemStage = String(item['Review stage'] || '').trim();
+  // A Completed item whose current decision is an earlier review's (items finished before Stage 4 got
+  // its own decision) has nothing to apply.
+  if (!awaiting && itemStage !== stage) return {skip: 'decision ' + id + ' is for ' + stage};
   const outcome = OUTCOMES[status + '|' + stage];
   if (!outcome) return {error: 'Decision ' + id + ': unknown status "' + d['Status'] + '" or Review stage "' + stage + '"'};
-  const itemStage = String(item['Review stage'] || '').trim();
   if (itemStage && itemStage !== stage)
     return {error: 'Decision ' + id + ' is for ' + stage + ' but the item is reviewing ' + itemStage};
   if (status === 'rework' && !String(d['Rework instructions'] || '').trim())
     return {error: 'Decision ' + id + ' is rework but has no Rework instructions'};
-  return {decision: id, transition: outcome.transition, set: pipelineChange(item, outcome, stage)};
+  const set = pipelineChange(item, outcome, stage);
+  // Accepting a deliverable that is already Completed changes nothing; the item's review stays open
+  // (OPEN_REVIEW), so later checks must not keep rewriting it.
+  if (Object.keys(set).every(h => norm(item[h]) === norm(set[h])))
+    return {skip: 'decision ' + id + ' already applied', decision: id, transition: outcome.transition};
+  return {decision: id, transition: outcome.transition, set};
 }
 
 // The Pipeline fields an outcome sets, for the decision's Review stage and the item's Agent type.

@@ -10,7 +10,7 @@ An item's **Type** chooses its route ([`routes`](https://github.com/Welladino/Ho
 
 | Route | Types | Stages | Status while a run works |
 | --- | --- | --- | --- |
-| Investigation | Idea, Research, Direction, Plan | Stage 1 proposal → Stage 2 founder decision → Stage 3 deliverable → Stage 4 synthesis and review | Researching |
+| Investigation | Idea, Research, Direction, Plan | Stage 1 proposal → Stage 2 founder decision → Stage 3 deliverable → Stage 4 synthesis → Completed (reopenable from its decision) | Researching |
 | Implementation | Feature, Enhancement, Refactor, Fix | Stage 1 implementation plan (Steps rows) → Stage 3 implementation; no Stage 2 or Stage 4 | In progress |
 
 The implementation route was decided by the founder on 29/10/2026 ([note](https://github.com/Welladino/Horology/blob/main/docs/planning/notes/2026-10-29_implementation-route_note.md)). The run writes its plan as Steps rows, moves the item to Stage 3 itself and implements in the same run. It finishes **Completed** at Stage 3 when no founder decision is needed. When it needs one, it stops at **Awaiting decision** with Review stage **Implementation question** (a proposed decision with Options rows, reviewed on the decision page); the founder's answer resumes the item at Stage 3, In progress and Ready for its platform.
@@ -30,23 +30,22 @@ flowchart LR
   review1{"Awaiting decision<br/>Stage 2 review"}
   approved["Approved<br/>Stage 3 is Ready"]
   specialist["Researching<br/>Stage 3 deliverable<br/>and Stage 4 synthesis"]
-  review2{"Awaiting decision<br/>Stage 4 review"}
-  completed["Completed"]
+  completed["Completed<br/>Stage 4, its Specialist<br/>deliverable decision open"]
   rework["Rework<br/>Instructions required"]
   parked["Parked<br/>No action"]
   rejected["Rejected<br/>No action"]
 
   inbox -->|Start selected work| investigate -->|Submit proposal| review1
-  review1 -->|Accept proposal| approved --> specialist -->|Submit both outputs| review2
-  review2 -->|Accept deliverable| completed
+  review1 -->|Accept proposal| approved --> specialist -->|Save both outputs| completed
+  completed -->|Accept deliverable · no change| completed
   review1 -->|Request changes| rework
-  review2 -->|Request changes| rework
+  completed -->|Reopen · request changes| rework
   rework -->|Run again| investigate
   review1 -->|Do later| parked
-  review2 -->|Do later| parked
+  completed -->|Reopen · do later| parked
   parked -->|Revisit| inbox
   review1 -->|Stop| rejected
-  review2 -->|Stop| rejected
+  completed -->|Reopen · stop| rejected
   rejected -->|Reopen| inbox
   approved -.->|revise · change a decided decision| parked
 
@@ -57,7 +56,7 @@ flowchart LR
   classDef revise fill:#fce8e6,stroke:#c5221f,color:#a50e0e
   class inbox,parked,rejected waiting
   class investigate,specialist running
-  class review1,review2 decision
+  class review1 decision
   class approved,completed success
   class rework revise
 ```
@@ -106,15 +105,15 @@ flowchart LR
 | `resume-implementation` | Awaiting decision → In progress, Stage 3 | Founder or decision sync | The founder answered the Implementation question; Ready again for its platform |
 | `run-failed` | Researching or In progress (Agent status → No action) | Supervisor | The run failed or was released; Status stays and the run's notes say why |
 | `submit-for-review` | Researching → Awaiting decision | Supervisor | Submit a Stage 1 investigation for Stage 2 review |
-| `synthesize-stage-3` | Researching → Awaiting decision | Supervisor and synthesis specialist | Submit the Stage 3 deliverable and Stage 4 synthesis together |
+| `synthesize-stage-3` | Researching → Completed, Stage 4 | Supervisor and synthesis specialist | Save the Stage 3 deliverable and Stage 4 synthesis, and propose a Specialist deliverable decision as the Current decision ID |
 | `accept-stage-1` | Awaiting decision → Approved | Founder or decision sync | Accept the investigation; make Stage 3 Ready |
-| `accept-stage-3` | Awaiting decision → Completed | Founder or decision sync | Accept the specialist deliverable after Stage 4 review |
-| `rework` | Awaiting decision → Rework | Founder or decision sync | Save instructions and make the item Ready again (Stage 1 for an Investigation proposal, Stage 3 otherwise) |
+| `accept-stage-3` | Completed → Completed (or Awaiting decision → Completed for items that reached Stage 4 before 03/11/2026) | Founder or decision sync | Accept the specialist deliverable; nothing changes |
+| `rework` | Awaiting decision, or Completed with an open Stage 4 review → Rework | Founder or decision sync | Save instructions and make the item Ready again (Stage 1 for an Investigation proposal, Stage 3 otherwise) |
 | `park` | Inbox or Rework → Parked | Founder | Stop before review and retain the item |
-| `decide-park` | Awaiting decision → Parked | Founder or decision sync | Park during a review |
+| `decide-park` | Awaiting decision, or Completed with an open Stage 4 review → Parked | Founder or decision sync | Park during a review |
 | `unpark` | Parked → Inbox | Founder | Return a parked item to the queue |
 | `reject` | Inbox or Parked → Rejected | Founder | Reject outside a review |
-| `decide-reject` | Awaiting decision → Rejected | Founder or decision sync | Reject during a review |
+| `decide-reject` | Awaiting decision, or Completed with an open Stage 4 review → Rejected | Founder or decision sync | Reject during a review |
 | `reopen` | Rejected → Inbox | Founder | Return a rejected item to the queue |
 | `revise` | Approved, Rework, Parked, Rejected or Completed → any of those | Founder or decision page | Change the item's current, already applied decision (for example Approved → Parked); the item moves as the new outcome would from review |
 
@@ -151,9 +150,11 @@ A run (`start-run` or `start-implementation`) only starts on a Ready row; the de
 * **Stage 1 and Stage 3, implementation route.** Feature, Enhancement, Refactor and Fix items: the run writes the implementation plan as Steps rows (Stage 1), moves the item to Stage 3 itself, implements it (code on a branch with a pull request, or the named change), marks each step Done and finishes Completed at Stage 3. A founder choice it needs becomes an Implementation question. There is no Stage 2 or Stage 4.
 * **Stage 2, founder decision.** Approve, rework, park or reject, recorded in the Decision Register with feedback; options come from its Options tab. A decision already applied can later be revised from the decision page. The Horology web workspace applies the decision immediately; direct edits in the register can be handled by its edit trigger.
 * **Stage 3, specialist deliverable.** An approved scope becomes a detailed deliverable. On the investigation route, code work is a planning note in the repository, not implementation; implementation belongs to the implementation route.
-* **Stage 4, synthesis.** In the same Stage 3 run, the supervisor calls Horology Synthesis Artifacts to turn the investigation and specialist deliverable into a concise visual briefing. HTML is preferred when it can be saved and opened reliably; a visual Doc or Sheet can be used when better suited. The item then awaits founder review at Stage 4. No new prompt, selection or schedule is needed for synthesis.
+* **Stage 4, synthesis.** In the same Stage 3 run, the supervisor calls Horology Synthesis Artifacts to turn the investigation and specialist deliverable into a concise visual briefing. HTML is preferred when it can be saved and opened reliably; a visual Doc or Sheet can be used when better suited. The supervisor proposes a Specialist deliverable decision (accept, rework, park), makes it the Current decision ID and sets the item **Completed** at Stage 4, as the founder decided on 03/11/2026 (Decision 15). No new prompt, selection or schedule is needed for synthesis.
 
-Stage and Review stage are separate fields. At Stage 2 the founder reviews the Investigation proposal; at Stage 4 the founder reviews the Specialist deliverable alongside its synthesis; on the implementation route, at Stage 3, the founder answers an Implementation question.
+Stage and Review stage are separate fields. At Stage 2 the founder reviews the Investigation proposal; at Stage 4 the item is already Completed and the founder reviews the Specialist deliverable alongside its synthesis when convenient; on the implementation route, at Stage 3, the founder answers an Implementation question.
+
+An item's review is **open** (`open_review` in `workflow.yaml`) while it is Awaiting decision, or Completed at Stage 4 with Review stage Specialist deliverable. Its current proposed decision can be decided only then. At Stage 4, accepting changes nothing, and rework, park or reject reopen the item. Items 45 and 53 reached Stage 4 before this rule and still name their Stage 2 decision; they have no open review, and revising that decision would move them as an Investigation proposal outcome (back to Approved, Stage 3).
 
 ## IDs and records
 

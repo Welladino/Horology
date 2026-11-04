@@ -808,7 +808,11 @@
       const outcome = outcomeField.control;
       // An Implementation question is answered, and the implementation resumes at Stage 3.
       const question = String(r.stage).trim().toLowerCase() === 'implementation question';
-      [['accepted',question ? 'Answer and resume Stage 3' : 'Approve chosen option'],['rework','Request rework'],
+      // A Stage 4 deliverable is already Completed: accepting keeps it, the other outcomes reopen it.
+      const completed = String(r.itemStatus).trim().toLowerCase() === 'completed';
+      if (completed) box.appendChild(node('p','message','Pipeline ' + r.pipelineId +
+        ' is already Completed. Accept to keep it that way, or choose rework, park or reject to reopen it.'));
+      [['accepted',question ? 'Answer and resume Stage 3' : completed ? 'Keep completed' : 'Approve chosen option'],['rework','Request rework'],
         ['parked','Park for now'],['rejected','Reject']].forEach(pair => {
           const option = node('option','',pair[1]); option.value = pair[0]; outcome.appendChild(option);
         });
