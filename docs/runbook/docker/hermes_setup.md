@@ -261,6 +261,12 @@ receive the harness-neutral `horology-supervisor`, with
 `plugins/horology-hermes/skills/horology-coordinator`. Explorer receives no
 workflow skills and instead receives bounded code tasks through Kanban.
 
+A skill deleted or renamed in the repository is removed from Hermes on the next
+bootstrap: each `skills/horology-*` folder is Horology's own, so the bootstrap
+deletes any skill folder in it that the repository no longer provides. Other
+skills in the Hermes volume are not touched. (Claude and Codex keep retired
+skills until you delete them in claude.ai or the Codex release.)
+
 When changing a skill:
 
 1. Put shared task instructions in the relevant source plugin skill.

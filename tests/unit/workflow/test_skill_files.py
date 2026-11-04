@@ -184,6 +184,8 @@ def test_supervisor_core_delegates_dispatch_to_the_packaged_adapter():
     assert "Coordinator" in hermes and "never calls\n  `claim_item`" in hermes
     assert "Operator" in hermes and "`agent_type: \"Hermes\"`" in hermes
     assert "`explorer` Kanban task" in hermes and "`parents`" in hermes
+    # A row stays Ready while it runs and a claim expires after 2 hours, so open Kanban tasks mark it running.
+    assert "Skip items that are already running" in hermes and "`Pipeline <ID> · `" in hermes
 
 
 def test_hermes_bootstrap_installs_a_clean_supervisor_with_its_adapter():
@@ -193,6 +195,19 @@ def test_hermes_bootstrap_installs_a_clean_supervisor_with_its_adapter():
     assert "horology_supervisor_dispatch.md" in script
     assert "horology-supervisor/references/dispatch.md" in script
     assert 'rm -rf "${profile_root}/skills/horology-workflows/horology-supervisor"' not in script
+
+
+def test_hermes_bootstrap_prunes_every_namespace_it_installs():
+    # Skills deleted or renamed in the repository must not linger in the Hermes volume.
+    script = (REPO / "scripts/ops/hermes/bootstrap.sh").read_text()
+    body = script[script.index('note "Installing canonical Horology skills'):]
+    namespace = r'"([^"]*/skills/horology-[\w-]+)'
+    installed = set(re.findall(r'copy_skill_group\s*\\?\s*"[^"]+"\s*\\?\s*' + namespace, body))
+    installed = {re.sub(r"(/skills/horology-[\w-]+).*", r"\1", path) for path in installed}
+    pruned = set(re.findall(r"prune_skill_namespace " + namespace, body))
+    assert installed and installed == pruned
+    assert "refusing to prune outside a Horology skill namespace" in script
+    assert "no skills found for" in script and '"${keep}" != " "' in script  # never prune with nothing to keep
 
 
 def test_hermes_coordinator_document_graph_is_read_only():

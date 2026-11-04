@@ -20,15 +20,26 @@ Hermes separates dispatch from execution:
 ## Dispatch with Kanban
 
 For each Ready Hermes row, Coordinator creates exactly one initial Kanban task
-assigned to `operator`. Do not claim the row first. Give the task the
-self-contained prompt:
+assigned to `operator`. Do not claim the row first.
+
+**Skip items that are already running.** A row stays Ready while its run is in
+progress, and a run claim expires after 2 hours while an Operator, Explorer and
+Operator chain can take longer. So the claim alone cannot show that an item is
+running. Before creating a task, list the open (not done or archived) Kanban
+tasks and skip any row that already has one whose title contains
+`Pipeline <ID>`; report it as already running with that task's ID. Every task
+this adapter creates, including Explorer and continuation tasks, has a title
+that starts with `Pipeline <ID> · `.
+
+Give the task the self-contained prompt:
 
 > Use the horology-supervisor skill in item mode for Pipeline item `<ID>`. No
 > run ID has been assigned; claim it as Hermes/Local before changing anything.
 
 Include the row's bounded next step, target fields and acceptance criteria.
-Pass `skills: ["horology-supervisor"]`. A second task for the same item is safe:
-Operator must stop when `claim_item` returns `claimed: false`.
+Pass `skills: ["horology-supervisor"]`. A second task for the same item is still
+safe while its claim is live: Operator must stop when `claim_item` returns
+`claimed: false`.
 
 Record the Kanban task and run identifiers when Operator reports them. A Kanban
 task is not a run claim and must never be presented as one.
