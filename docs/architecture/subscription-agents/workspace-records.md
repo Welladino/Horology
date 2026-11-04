@@ -63,6 +63,8 @@ The graph columns are explicit controls:
 - **Graph Sync Status** reports pending, synced, not shared, too long or another error.
 - **Graph Document ID** and **Last Synced Revision** show what was imported.
 
+The **Pages** tab lists every private Cloudflare Pages copy so the founder can find a page without asking an agent or opening Cloudflare: Pipeline ID, Document ID (blank when the page has no index row), Title, Description, URL, Published and Run ID. The skill that publishes writes the row after a verified deployment, using the URL the publish result returned; a redeploy to the same address updates its row. The Drive file and its index row stay the record, and the page is a viewing copy.
+
 The workbook also contains controlled entity-type definitions and a reviewable list of extracted entities. Sync is on demand, so Drive and the Sheet may be newer than Neon's searchable copy.
 
 ## Agent Register
@@ -84,6 +86,7 @@ The register documents expected access, while service policy and code enforce th
 | Drive folder routing | Pipeline Locations |
 | Human review and rework | Decision Register |
 | Deliverable identity and graph eligibility | Document Index |
+| Published page addresses | Document Index Pages |
 | Source material and finished files | Google Drive |
 | Scheduled-agent specification | Agent Register |
 | Agent run claims and outcomes | Neon run history |

@@ -34,6 +34,7 @@ Implementation notes under `docs/planning/notes/`, grouped by area. Add a row wh
 | 2026-11-03 | [Web item quick edit](../2026-11-03_web-item-quick-edit_note.md) | Numbered steps kept with their marker, Agent and domain quick edit on the item page, Domain and Entity validation (HOR-15, item 65) |
 | 2026-11-02 | [Drive-first agent documents](../2026-11-02_drive-first-agent-documents_note.md) | Every deliverable in Drive with the template the agent chooses; repo docs only where a repository keeps its own, on the item's branch; ClickUp sync accepts Drive links only |
 | 2026-11-03 | [Stage 4 items end Completed](../2026-11-03_stage-4-completed_note.md) | Synthesis saved means Completed at Stage 4; a proposed Specialist deliverable decision stays open to keep or reopen the item (HOR-14, item 67, Decision 15) |
+| 2026-11-04 | [Pages tab for published pages](../2026-11-04_pages-tab_note.md) | Document Index Pages tab lists every Cloudflare page; the publishing skill adds the row after a verified publish; backfill of items 39 and 45 (item 70, HOR-9) |
 
 ## MCP gateway
 
