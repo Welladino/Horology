@@ -131,8 +131,8 @@ transitions:
     to: {Status: Completed, Stage: Stage 4, Review stage: Specialist deliverable, Agent status: No action}
     when: >-
       Every Steps row is Done or Skipped, the work is committed and pushed, no founder decision is needed,
-      and in the same run the Implementation report Google Doc and the Stage 4 page made from it are saved
-      to the Document Index (decided by the founder on 04/11/2026). As for synthesize-stage-3, the run
+      and in the same run the Implementation report Google Doc is saved to the Document Index and the Stage 4
+      page made from it to the Synthesis folder, with no Document Index row (decided by the founder on 04/11/2026). As for synthesize-stage-3, the run
       proposes a Specialist deliverable decision and makes it the Current decision ID; the founder can
       accept it or reopen the item from it (see open_review).
 
@@ -156,7 +156,8 @@ transitions:
     from: {Status: Researching, Stage: Stage 3}
     to: {Status: Completed, Stage: Stage 4, Review stage: Specialist deliverable, Agent status: No action}
     when: >-
-      In the same Stage 3 run, the specialist deliverable and visual synthesis are saved to the Document Index.
+      In the same Stage 3 run, the specialist deliverable is saved to the Document Index and the visual
+      synthesis to the Synthesis folder (a Stage 4 HTML page has no Document Index row; the Pages tab lists it).
       The run also proposes a Specialist deliverable decision (accept, rework, park) and makes it the Current
       decision ID. The item is Completed straight away (decided by the founder on 03/11/2026, Decision 15);
       the founder can accept that decision, or reopen the item from it with rework or park (see open_review).

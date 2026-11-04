@@ -9,12 +9,12 @@
 
 ## Publish only to a verified private project
 
-The Drive HTML and its Document Index entry are canonical. Cloudflare Pages is an optional viewing copy, not a new Pipeline stage or a replacement for Drive. The MCP gateway selects the registered Pages project from the signed-in email's sole workspace; the agent never supplies a project name. If publishing is unavailable, return the Drive artifact and report that it was skipped.
+The Drive HTML in the Synthesis folder is the saved copy, kept so the page can be republished; it gets no Document Index row and no Document ID. The record is its source document (the Stage 3 deliverable, or the Implementation report on the implementation route), which is in the Document Index. Cloudflare Pages is an optional viewing copy, not a new Pipeline stage or a replacement for Drive. The MCP gateway selects the registered Pages project from the signed-in email's sole workspace; the agent never supplies a project name. If publishing is unavailable, return the Drive artifact and report that it was skipped.
 
 1. The gateway checks the live Pages project and both Access applications before uploading, including exact-email policies for the main `<project>.pages.dev` hostname and previews `*.<project>.pages.dev`. If it returns `needs_admin_setup`, tell the user to contact the Cloudflare administrator; keep the Drive synthesis and do not try another upload path.
 2. Stage only this Pipeline item's `index.html` and assets. Call `publish_synthesis` with the Pipeline ID, full HTML, and any local images or CSS as `{path, base64}` assets. It publishes to the fixed `pipeline-<Pipeline ID>` branch under the workspace project. A later deployment for the same item updates that alias without replacing other items' branches. Do not upload source documents, credentials, raw research or unrelated files.
 3. Read the deployment result and test the exact alias and at least one asset. Without an Access session, they must require authentication or deny access, never return the private HTML or image. Check the signed-in rendering if the run has an authorised session; otherwise give the founder the link and mark that visual check as pending. Record the page on the Document Index workbook's **Pages** tab and return the link to the supervisor (see [Pages tab](#pages-tab)).
-4. If upload, access verification or rendering fails, preserve the Drive output and report the Pages issue. Never weaken Access to make a link work. A revised Stage 4 artifact may redeploy the same branch after checking the new source and assets; keep the earlier Drive artifact and Document Index history intact.
+4. If upload, access verification or rendering fails, preserve the Drive output and report the Pages issue. Never weaken Access to make a link work. A revised Stage 4 artifact may redeploy the same branch after checking the new source and assets; keep the earlier Drive HTML intact.
 
 ## Pages tab
 
@@ -23,8 +23,8 @@ The Document Index workbook's **Pages** tab lists every published page so the fo
 | Column | Value |
 | --- | --- |
 | Pipeline ID | The item the page was published for |
-| Document ID | The Drive artifact's Document ID; blank if the page has no Document Index row |
-| Title | The Document Index title, or a short name for the page |
+| Document ID | The page's source document: the Stage 3 deliverable, or the Implementation report on the implementation route; blank if the page has no indexed source |
+| Title | A short name for the page, such as the Stage 4 HTML's title |
 | Description | One or two sentences on what the page shows |
 | URL | The exact `url` the publish result returned, never one built by hand |
 | Published | Date of this deployment, `DD/MM/YYYY` |

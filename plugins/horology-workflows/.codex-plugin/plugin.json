@@ -12,7 +12,7 @@
     "capabilities": []
   },
   "name": "welladino-workflows",
-  "version": "0.6.12",
+  "version": "0.6.13",
   "description": "Capture and triage Pipeline ideas; run Ready items with a supervisor that invokes visual Stage 4 synthesis after Stage 3; plan items marked Plan; write a daily digest; set up domains, folders, templates and scheduled watchers.",
   "author": {
     "name": "Saravanaraj",

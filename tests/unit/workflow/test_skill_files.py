@@ -95,3 +95,22 @@ def test_supervisor_writes_a_stage_1_document_and_leaves_graph_inclusion_alone()
     assert "complete-implementation" in text
     assert "Stage 1 document" in text
     assert "Graph Inclusion" in text and "never change it" in text
+
+
+# Item 71 (04/11/2026): a Stage 4 page's HTML stays in Drive but gets no Document Index row or Document ID;
+# the Pages tab lists the page, and its Document ID is the page's source document.
+STAGE_4_HTML_INDEXED = [r"synthesis folder and its document index row", r"drive (html|artifact|copy) and (its )?document index",
+                        r"and index rows are verified", r"the drive artifact's document id"]
+
+
+@pytest.mark.parametrize("skill", sorted(_publishing_skills()) + ["horology-workflows/skills/horology-supervisor"])
+def test_stage_4_html_gets_no_document_index_row(skill):
+    text = "\n".join(p.read_text() for p in (PLUGINS / skill).rglob("*.md")).lower()
+    for pattern in STAGE_4_HTML_INDEXED:
+        assert not re.search(pattern, text), f"{skill}: '{pattern}' - Stage 4 HTML has no Document Index row"
+
+
+def test_pages_tab_document_id_is_the_source_document():
+    text = (PLUGINS / "horology-specialists/skills/horology-synthesis-artifacts/references/visuals-and-pages.md").read_text()
+    row = next(line for line in text.splitlines() if line.startswith("| Document ID |"))
+    assert "source document" in row and "Implementation report" in row
