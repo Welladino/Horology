@@ -157,6 +157,7 @@ def test_supervisor_core_delegates_dispatch_to_the_packaged_adapter():
     assert "Codex CLI" in codex and "not the Codex CLI" in codex
     assert "only Pipeline Agent type **Claude Code**" in claude
     assert "`claude -p" in claude and "`claude --cloud" in claude
+    assert "`start_session`" in claude and "CLI fallback" in claude
     assert "`create_thread`" not in claude
 
 
