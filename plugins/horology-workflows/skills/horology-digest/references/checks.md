@@ -4,7 +4,7 @@
 
 - Count items by Status, by Agent status (No action, Plan, Ready) and by Agent type, plus per Domain.
 - Ready items by Agent type and Run location, so the founder knows which sessions to start.
-- Items In progress (implementation route), with their Stage and how many Steps rows are Done of the total. Finished implementations link their Implementation report and Stage 4 page under Done since the last digest.
+- Items In progress (implementation route), with their Stage and how many Steps rows are Done of the total. Finished implementations link their Implementation report (and a page, if one was requested) under Done since the last digest.
 
 ## Done since the last digest
 
@@ -27,7 +27,7 @@
 | Stale claims | `list_runs` entries with status claimed or running and `expired` true |
 | Failed runs | `list_runs` entries with status failed in the period, with their notes |
 | Stuck decisions | Awaiting decision for more than 7 days |
-| Missing records | Investigation-route runs finished as done with no outputs, or Awaiting decision items with no output documents (an Implementation question needs only its Decision row); Completed Stage 4 items reached after 03/11/2026 whose Current decision ID is not a Specialist deliverable decision; implementation-route items Completed after 04/11/2026 with no Implementation report in the Document Index or no Stage 4 page in the Synthesis folder, or still at Stage 3; a Document Index row for a Stage 4 HTML page made after 04/11/2026 (it belongs on the Pages tab only); items started after 04/11/2026 with no Stage 1 document; implementation-route runs finished as done with no branch, commit or pull request in their notes |
+| Missing records | Investigation-route runs finished as done with no outputs, or Awaiting decision items with no output documents (an Implementation question needs only its Decision row); Completed Stage 4 items reached after 03/11/2026 whose Current decision ID is not a Specialist deliverable decision; implementation-route items Completed after 04/11/2026 with no Implementation report in the Document Index, or still at Stage 3 (no page is expected unless the founder asked for one); a Document Index row for a Stage 4 HTML page made after 04/11/2026 (it belongs on the Pages tab only); items started after 04/11/2026 with no Stage 1 document; implementation-route runs finished as done with no branch, commit or pull request in their notes |
 | Stalled implementation | In progress items with Agent status No action and no live claim: the run failed or stopped; the founder can select them again |
 | Wrong route | Investigation-route Types (Idea, Research, Direction, Plan) In progress, or implementation-route Types (Feature, Enhancement, Refactor, Fix) Researching or at Stage 2 after 29/10/2026, or at Stage 4 with a Status other than Completed, Parked or Rejected; older items may still be on the investigation route |
 | Unfinished steps | Completed items with Steps rows still Planned |

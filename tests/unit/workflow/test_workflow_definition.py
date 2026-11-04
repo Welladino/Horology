@@ -169,8 +169,8 @@ def test_implementation_route_skips_stage_2_and_resumes_at_stage_3(wf):
 
 
 def test_implementation_route_ends_completed_at_stage_4_with_an_open_review(wf):
-    # Founder decisions of 04/11/2026 (item 69): an Implementation report at Stage 3 and a page made from
-    # it at Stage 4; the item is Completed with a proposed Specialist deliverable decision, as for item 67.
+    # Founder decisions of 04/11/2026 (items 69 and 71): an Implementation report at Stage 3; a page made
+    # from it only on request (synthesis stays an actor for that); the item is Completed with a proposed Specialist deliverable decision, as for item 67.
     transitions = {t["id"]: t for t in wf["transitions"]}
     assert "Stage 4" in wf["routes"]["implementation"]["stages"]
     done = transitions["complete-implementation"]
