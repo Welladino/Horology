@@ -674,7 +674,7 @@ test('the page paints the embedded Decisions list, then loads the Pipeline list 
 });
 test('a linked item or decision is read fresh when opened, and opening one updates the hash', () => {
   const item = page({embedded: {pending: [], recent: []}, hash: 'item/51'});
-  assert.deepEqual(item.calls.map(c => c.method + ':' + c.args.join()), ['getPipelineItem:51', 'getPipelineOverview:[object Object]']);
+  assert.deepEqual(item.calls.map(c => c.method + ':' + c.args.join()), ['getPipelineFormData:', 'getPipelineItem:51', 'getPipelineOverview:[object Object]']);
   const decision = page({embedded: {pending: [], recent: []}, hash: 'decision/9'});
   assert.equal(decision.calls[0].method + ':' + decision.calls[0].args[0], 'getDecisionReview:9');
   vm.runInContext("show({view:'item',id:'14'},true)", decision.ctx);
@@ -691,8 +691,15 @@ test('the item view loads the quick-edit fields and offers only the allowed Agen
     readyStatuses:['Inbox','Rework','Approved','In progress'],steps:[],version:'v'});
   const fields = opened.calls.filter(c => c.method === 'getPipelineFormData');
   assert.equal(fields.length, 1);
+  // The options were requested alongside the item, so the selects fill as soon as the item renders.
   fields[0].ok({domains:{Horology:[]},options:{'Agent type':['Claude Code'],'Run location':['Local']}});
   const {run} = opened;
+  assert.equal(opened.calls.filter(c => c.method === 'getPipelineFormData').length, 1);
+  assert.equal(run("formData !== null"), true);
+  // The Domain hint is placed after its control (the page's DOM is a stub, so check the source).
+  const html = fs.readFileSync(path.join(dir,'Review.html'),'utf8');
+  assert.match(html, /\.field small\.hint-after \{ margin:6px 0 0; \}/);
+  assert.match(html, /domain\.hint\.className = 'hint-after'; domain\.wrap\.appendChild\(domain\.hint\);/);
   assert.deepEqual(run("agentStatusChoices({Status:'In progress','Agent status':'No action',readyStatuses:['Inbox','In progress']})"),
     ['No action','Plan','Ready']);
   assert.deepEqual(run("agentStatusChoices({Status:'Awaiting decision','Agent status':'No action'})"), ['No action']);

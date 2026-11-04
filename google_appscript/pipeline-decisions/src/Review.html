@@ -178,6 +178,7 @@
     .field label,.filter-field label { display:block; margin-bottom:6px; font-size:13px; font-weight:600; }
     .field small { display:block; margin:-2px 0 6px; color:var(--muted); font-size:12px; }
     .field small:empty { display:none; }
+    .field small.hint-after { margin:6px 0 0; }
     textarea { min-height:88px; resize:vertical; }
     .quick-grid { grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); }
     .quick-edit .actions { margin-top:14px; }
@@ -496,10 +497,15 @@
       loadPipeline(fresh,() => isCurrent(token) && done(),message => isCurrent(token) &&
         app.replaceChildren(errorBox('Could not load Pipeline items: ' + message,() => show({view:'pipeline'}))));
     }
+    // One shared request for the field options; the item page starts it early so its selects are ready.
+    function loadFormData(ok,fail) {
+      if (formData) { if (ok) ok(); return; }
+      loadOnce('formData','getPipelineFormData',[],data => { formData = data; },ok,fail);
+    }
     function withFormData(token,done) {
       if (formData) { done(); return; }
       app.replaceChildren(loadingBox('Loading Pipeline fields…'));
-      serve('getPipelineFormData',[],data => { formData = data; if (isCurrent(token)) done(); },
+      loadFormData(() => isCurrent(token) && done(),
         message => isCurrent(token) && app.replaceChildren(errorBox('Could not load the Pipeline fields: ' + message,
           () => show({view:page === 'add' ? 'add' : 'item',id:selectedPipelineId}))));
     }
@@ -1008,6 +1014,7 @@
     function openPipelineItem(token) {
       const id = selectedPipelineId;
       app.replaceChildren(loadingBox('Loading Pipeline item ' + id + '…'));
+      loadFormData(null,() => {}); // in parallel; quickEdit shows its own message if this fails
       serve('getPipelineItem',[id],item => { if (isCurrent(token)) renderPipelineDetail(item); },
         message => isCurrent(token) && app.replaceChildren(errorBox('Could not load Pipeline item ' + id + ': ' + message,
           () => show({view:'item',id}))));
@@ -1095,8 +1102,8 @@
     function quickEdit(parent,item,token) {
       if (!formData) {
         const wait = node('p','message','Loading fields…'); parent.appendChild(wait);
-        serve('getPipelineFormData',[],data => {
-          formData = data; if (!isCurrent(token)) return;
+        loadFormData(() => {
+          if (!isCurrent(token)) return;
           wait.remove(); quickEdit(parent,item,token);
         },message => { wait.className = 'message error'; wait.textContent = 'Could not load the fields: ' + message; });
         return;
@@ -1117,6 +1124,7 @@
       fill(domain.control,withCurrent(Object.keys(formData.domains),item.Domain),true);
       domain.control.value = item.Domain;
       domain.hint.textContent = 'Existing documents stay in their folders.';
+      domain.hint.className = 'hint-after'; domain.wrap.appendChild(domain.hint);
       function updateEntities() {
         const listed = formData.domains[domain.control.value] || [];
         const keep = domain.control.value === item.Domain ? item.Entity : '';
