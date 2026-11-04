@@ -31,3 +31,10 @@ mcp-servers/mcp-gateway/config/client.cloud.json
 **/.hypothesis/
 plugins/dist/
 **/.DS_Store
+
+docs/*
+!docs/architecture/
+docs/architecture/*
+!docs/architecture/subscription-agents/
+docs/architecture/subscription-agents/*
+!docs/architecture/subscription-agents/workflow.md
