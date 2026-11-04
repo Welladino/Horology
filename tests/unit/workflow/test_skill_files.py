@@ -95,3 +95,45 @@ def test_supervisor_writes_a_stage_1_document_and_leaves_graph_inclusion_alone()
     assert "complete-implementation" in text
     assert "Stage 1 document" in text
     assert "Graph Inclusion" in text and "never change it" in text
+
+
+# Item 71 (04/11/2026): a Stage 4 page's HTML stays in Drive but gets no Document Index row or Document ID;
+# the Pages tab lists the page, and its Document ID is the page's source document.
+STAGE_4_HTML_INDEXED = [r"synthesis folder and its document index row", r"drive (html|artifact|copy) and (its )?document index",
+                        r"and index rows are verified", r"the drive artifact's document id"]
+
+
+@pytest.mark.parametrize("skill", sorted(_publishing_skills()) + ["horology-workflows/skills/horology-supervisor"])
+def test_stage_4_html_gets_no_document_index_row(skill):
+    text = "\n".join(p.read_text() for p in (PLUGINS / skill).rglob("*.md")).lower()
+    for pattern in STAGE_4_HTML_INDEXED:
+        assert not re.search(pattern, text), f"{skill}: '{pattern}' - Stage 4 HTML has no Document Index row"
+
+
+def test_pages_tab_document_id_is_the_source_document():
+    text = (PLUGINS / "horology-specialists/skills/horology-synthesis-artifacts/references/visuals-and-pages.md").read_text()
+    row = next(line for line in text.splitlines() if line.startswith("| Document ID |"))
+    assert "source document" in row and "Implementation report" in row
+
+
+# Item 71 follow-up (04/11/2026): on the implementation route the Stage 4 page is made only on request,
+# to save cost; the investigation route keeps its automatic Stage 4 synthesis.
+def _skill_text(skill):
+    return next(PLUGINS.glob(f"horology-*/skills/{skill}/SKILL.md")).read_text()
+
+
+def test_implementation_route_makes_a_page_only_on_request():
+    supervisor = _skill_text("horology-supervisor")
+    route = supervisor[supervisor.index("## Implementation route"):supervisor.index("## Status mode")]
+    assert "Don't invoke `horology-synthesis-artifacts`" in route
+    assert "**Page on request.**" in route and "Pages tab" in route
+    assert "Invoke `horology-synthesis-artifacts` in this same run" not in route
+    synthesis = _skill_text("horology-synthesis-artifacts")
+    assert "**Implementation route: on request only.**" in synthesis
+    assert "The supervisor invokes this specialist as the final step of a Stage 3 run, on both routes" not in synthesis
+
+
+def test_investigation_route_stage_4_synthesis_stays_automatic():
+    supervisor = _skill_text("horology-supervisor")
+    assert "For Stage 3, invoke `horology-synthesis-artifacts` in this same run" in supervisor
+    assert "final step of every Stage 3 run" in _skill_text("horology-synthesis-artifacts")

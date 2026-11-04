@@ -40,8 +40,8 @@ fields:
 # Drive plus Steps rows (founder, 04/11/2026). The investigation route reviews that Stage 1 proposal at
 # Stage 2 before the Stage 3 deliverable and Stage 4 synthesis. The implementation route was decided by
 # the founder: Stage 1 is the implementation plan, Stage 3 the implementation and its Implementation
-# report, Stage 4 a page made from that report, with Status In progress until it ends Completed and no
-# Stage 2; a founder choice it needs is an Implementation question, which links the Stage 1 document.
+# report, Stage 4 Completed with that report as the record (a page made from it only on the founder's request,
+# 04/11/2026), with Status In progress until then and no Stage 2; a founder choice it needs is an Implementation question, which links the Stage 1 document.
 routes:
   investigation: {types: [Idea, Research, Direction, Plan], stages: [Stage 1, Stage 2, Stage 3, Stage 4]}
   implementation: {types: [Feature, Enhancement, Refactor, Fix], stages: [Stage 1, Stage 3, Stage 4]}
@@ -54,7 +54,7 @@ statuses:
   Awaiting decision: {meaning: Work is ready for the founder's review, stages: [Stage 2, Stage 3, Stage 4]}
   Approved: {meaning: The founder accepted a Stage 1 proposal; the Stage 3 deliverable is next, stages: [Stage 3]}
   Rework: {meaning: The founder asked for changes; instructions are on the decision, stages: [Stage 1, Stage 3]}
-  Completed: {meaning: "Workflow complete: the Stage 4 synthesis or page was saved (the founder can still reopen it from its decision); implementations finished before 04/11/2026 ended at Stage 3", stages: [Stage 3, Stage 4]}
+  Completed: {meaning: "Workflow complete: the Stage 4 synthesis, or on the implementation route the Implementation report, was saved (the founder can still reopen it from its decision); implementations finished before 04/11/2026 ended at Stage 3", stages: [Stage 3, Stage 4]}
   Rejected: {meaning: Not pursued; history kept, stages: [Stage 2, Stage 3, Stage 4]}
 
 stages:
@@ -62,7 +62,7 @@ stages:
   Stage 1: A specialist document in Drive (Research, Direction, Plan or Technical Assessment template) plus Steps rows; the investigation and proposal, or on the implementation route the implementation plan
   Stage 2: Founder decision (investigation route only)
   Stage 3: Specialist deliverable; on the implementation route, the implementation and its Implementation report Google Doc
-  Stage 4: Visual synthesis of the Stage 3 deliverable (on the implementation route, a page made from the Implementation report); the item is Completed, and its Specialist deliverable decision can reopen it
+  Stage 4: Visual synthesis of the Stage 3 deliverable (on the implementation route, the Implementation report, with a page made from it only on request); the item is Completed, and its Specialist deliverable decision can reopen it
 
 # Allowed moves. "from"/"to" give the fields that change; unlisted fields stay as they are.
 # "when" is the trigger. Moves not listed here are unexpected and the digest reports them.
@@ -131,8 +131,9 @@ transitions:
     to: {Status: Completed, Stage: Stage 4, Review stage: Specialist deliverable, Agent status: No action}
     when: >-
       Every Steps row is Done or Skipped, the work is committed and pushed, no founder decision is needed,
-      and in the same run the Implementation report Google Doc and the Stage 4 page made from it are saved
-      to the Document Index (decided by the founder on 04/11/2026). As for synthesize-stage-3, the run
+      and in the same run the Implementation report Google Doc is saved to the Document Index (decided by the
+      founder on 04/11/2026). No page is made by default; the synthesis specialist makes one from the report
+      only when the founder asks, with no Document Index row and no status change. As for synthesize-stage-3, the run
       proposes a Specialist deliverable decision and makes it the Current decision ID; the founder can
       accept it or reopen the item from it (see open_review).
 
@@ -156,7 +157,8 @@ transitions:
     from: {Status: Researching, Stage: Stage 3}
     to: {Status: Completed, Stage: Stage 4, Review stage: Specialist deliverable, Agent status: No action}
     when: >-
-      In the same Stage 3 run, the specialist deliverable and visual synthesis are saved to the Document Index.
+      In the same Stage 3 run, the specialist deliverable is saved to the Document Index and the visual
+      synthesis to the Synthesis folder (a Stage 4 HTML page has no Document Index row; the Pages tab lists it).
       The run also proposes a Specialist deliverable decision (accept, rework, park) and makes it the Current
       decision ID. The item is Completed straight away (decided by the founder on 03/11/2026, Decision 15);
       the founder can accept that decision, or reopen the item from it with rework or park (see open_review).

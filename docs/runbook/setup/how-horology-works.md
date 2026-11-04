@@ -114,7 +114,7 @@ Work uses five numbered stages, from capture at Stage 0 through synthesis at Sta
 | **Stage 3, the deliverable**         | For an accepted proposal, agents produce the detailed piece: a go-to-market plan, a marketing plan, content drafts, or a planning note for code. Then you review it once more. |
 | **Stage 4, visual synthesis**        | In the same Stage 3 run, the supervisor creates a concise visual artifact that makes the deliverable easier to review. The item is then **Completed**; you can accept its deliverable decision, or reopen the item with rework, park or reject. |
 
-That is the **investigation route**, for Idea, Research, Direction and Plan items. **Feature, Enhancement, Refactor and Fix** items take the shorter **implementation route**: in one run the agent writes its plan as a Drive document and steps on the Steps tab (Stage 1), moves the item to Stage 3, does the work and writes an **Implementation report** Google Doc, then makes a Stage 4 page from the report that shows what was done. It finishes **Completed** at Stage 4, and you can accept its decision or reopen the item from it. Or, if it needs your choice, stops at Awaiting decision with an **Implementation question** you answer on the decision page; the item then goes back to In progress and Ready, and the next run carries on.
+That is the **investigation route**, for Idea, Research, Direction and Plan items. **Feature, Enhancement, Refactor and Fix** items take the shorter **implementation route**: in one run the agent writes its plan as a Drive document and steps on the Steps tab (Stage 1), moves the item to Stage 3, does the work and writes an **Implementation report** Google Doc. It finishes **Completed** at Stage 4, and you can accept its decision or reopen the item from it. To save cost no page is made by default; ask the agent if you want a page made from the report. Or, if it needs your choice, stops at Awaiting decision with an **Implementation question** you answer on the decision page; the item then goes back to In progress and Ready, and the next run carries on.
 
 ```mermaid
 flowchart LR
@@ -122,7 +122,7 @@ flowchart LR
   plani["<b>Plan · Stage 1</b><br/>In progress: plan document<br/>and Steps rows"]
   buildi["<b>Implement · Stage 3</b><br/>In progress: the change, tests,<br/>pull request and report"]
   questioni{"<b>Implementation question</b><br/>Your choice is needed"}
-  donei["<b>Completed · Stage 4</b><br/>A page made from the report"]
+  donei["<b>Completed · Stage 4</b><br/>The report; a page on request"]
   readyi --> plani --> buildi --> donei
   buildi --> questioni -->|You answer| buildi
 

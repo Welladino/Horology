@@ -65,7 +65,7 @@ The graph columns are explicit controls:
 - **Graph Sync Status** reports pending, synced, not shared, too long or another error.
 - **Graph Document ID** and **Last Synced Revision** show what was imported.
 
-The **Pages** tab lists every private Cloudflare Pages copy so the founder can find a page without asking an agent or opening Cloudflare: Pipeline ID, Document ID (blank when the page has no index row), Title, Description, URL, Published and Run ID. The skill that publishes writes the row after a verified deployment, using the URL the publish result returned; a redeploy to the same address updates its row. The Drive file and its index row stay the record, and the page is a viewing copy.
+The **Pages** tab lists every private Cloudflare Pages copy so the founder can find a page without asking an agent or opening Cloudflare: Pipeline ID, Document ID, Title, Description, URL, Published and Run ID. Document ID is the page's source document: the Stage 3 deliverable, or the Implementation report on the implementation route (blank when the page has no indexed source). The skill that publishes writes the row after a verified deployment, using the URL the publish result returned; a redeploy to the same address updates its row. The page's HTML is kept in the Synthesis folder so it can be republished, but it has no Document Index row or Document ID of its own; the source document is the record, and the page is a viewing copy. Documents 24, 33, 40 and 45 were such HTML rows and were removed on 04/11/2026; their IDs stay retired.
 
 The workbook also contains controlled entity-type definitions and a reviewable list of extracted entities. Sync is on demand, so Drive and the Sheet may be newer than Neon's searchable copy.
 
