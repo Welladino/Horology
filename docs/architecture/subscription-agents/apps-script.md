@@ -83,7 +83,7 @@ The workspace **Folders** view presents Locations as a searchable path browser: 
 
 ## ClickUp Sync
 
-This optional standalone Apps Script updates ClickUp tasks already linked in Pipeline Master. ClickUp is a planning notebook; Sheets and the registers remain the operational record. The founder may use AI to suggest an existing task, then confirms its URL in **ClickUp Pipeline URL**. The sync never creates tasks, edits their names or descriptions, or imports ClickUp changes into Sheets. Several Pipeline items can link the same task, when each is a smaller part of a larger ClickUp goal; each item keeps its own sync state and posts its own comments.
+This optional standalone Apps Script updates ClickUp tasks already linked in Pipeline Master. ClickUp is optional: Horology works without it. A founder who plans in ClickUp picks the tasks Horology should work on and captures each one as a Pipeline row, with the task's URL in **ClickUp Pipeline URL**. From then on Sheets and the registers are the operational record for that item. A ClickUp task with no Pipeline row has not been picked yet. The sync never creates tasks, edits their names or descriptions, or imports ClickUp changes into Sheets. Several Pipeline items can link the same task, when each is a smaller part of a larger ClickUp goal; each item keeps its own sync state and posts its own comments.
 
 ### Status and comments
 
